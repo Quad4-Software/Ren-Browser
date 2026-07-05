@@ -1,5 +1,5 @@
 {
-  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": ["src/main.ts", "vite.config.ts", "vitest.config.ts", "src/**/*.test.ts"],
   "project": ["src/**/*.{ts,svelte}", "vite.config.ts", "vitest.config.ts"],
   "ignore": ["bindings/**", "dist/**"],

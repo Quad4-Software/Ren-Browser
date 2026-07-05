@@ -1,0 +1,4 @@
+bindings/**
+dist/**
+node_modules/**
+public/vendor/**

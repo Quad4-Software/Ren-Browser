@@ -2,6 +2,7 @@
   "extends": "@tsconfig/svelte/tsconfig.json",
   "compilerOptions": {
     "target": "ESNext",
+    "ignoreDeprecations": "6.0",
     "useDefineForClassFields": true,
     "module": "ESNext",
     "resolveJsonModule": true,
