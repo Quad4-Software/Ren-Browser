@@ -44,7 +44,11 @@ func parseRNSURL(raw string) (PageURL, error) {
 		path = "/page/index.mu"
 	}
 	fields := parseQueryFields(u.RawQuery)
-	return PageURL{NodeHash: normalizeHash(node), Path: normalizePath(path), Request: parseRequestPairs(fields)}, nil
+	node = normalizeHash(node)
+	if node == "" {
+		return PageURL{}, ErrInvalidNode
+	}
+	return PageURL{NodeHash: node, Path: normalizePath(path), Request: parseRequestPairs(fields)}, nil
 }
 
 func parseMeshURL(raw string) (PageURL, error) {
@@ -53,6 +57,9 @@ func parseMeshURL(raw string) (PageURL, error) {
 		return PageURL{}, ErrInvalidNode
 	}
 	node := normalizeHash(parts[0])
+	if node == "" {
+		return PageURL{}, ErrInvalidNode
+	}
 	rest := parts[1]
 	path := rest
 	var fields map[string]string
