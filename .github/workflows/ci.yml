@@ -27,7 +27,7 @@ defaults:
     working-directory: RenBrowser
 
 env:
-  GOFLAGS: -mod=mod
+  GOFLAGS: -mod=vendor
 
 jobs:
   go:
@@ -56,7 +56,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          unformatted="$(gofmt -l .)"
+          dirs="$(go list -mod=vendor -f '{{.Dir}}' ./...)"
+          unformatted="$(gofmt -l ${dirs})"
           if [ -n "$unformatted" ]; then
             echo "Unformatted Go files:"
             echo "$unformatted"
@@ -120,7 +121,7 @@ jobs:
           scan-ref: RenBrowser
           severity: HIGH,CRITICAL
           exit-code: 1
-          skip-dirs: frontend/node_modules,bin,build/android/.gradle,build/android/build,third_party
+          skip-dirs: frontend/node_modules,bin,build/android/.gradle,build/android/build,vendor,third_party
 
       - name: Trivy Dockerfile scan
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1

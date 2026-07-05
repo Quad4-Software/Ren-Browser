@@ -33,7 +33,7 @@ defaults:
     working-directory: RenBrowser
 
 env:
-  GOFLAGS: -mod=mod
+  GOFLAGS: -mod=vendor
   REGISTRY: ghcr.io
 
 jobs:

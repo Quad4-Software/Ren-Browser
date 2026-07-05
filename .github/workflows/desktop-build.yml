@@ -38,7 +38,7 @@ defaults:
     working-directory: RenBrowser
 
 env:
-  GOFLAGS: -mod=mod
+  GOFLAGS: -mod=vendor
 
 jobs:
   version:

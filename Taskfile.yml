@@ -35,7 +35,14 @@ tasks:
   fmt:go:
     desc: Format Go sources
     cmds:
-      - gofmt -w .
+      - gofmt -w $(go list -mod=vendor -f '{{.Dir}}' ./...)
+    env:
+      GOFLAGS: "-mod=vendor"
+
+  vendor:go:
+    desc: Refresh vendor/ from go.mod (fetches reticulum-go, patches, vendors all deps)
+    cmds:
+      - bash build/scripts/vendor-go.sh
     env:
       GOFLAGS: "-mod=mod"
 
@@ -48,10 +55,9 @@ tasks:
   gosec:
     desc: Run gosec security scanner
     cmds:
-      - bash build/scripts/ci-prep-go.sh
-      - go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-generated -fmt=text -exclude-dir=node_modules -exclude-dir=frontend -exclude-dir=build/android -exclude-dir=build/ios -exclude-dir=third_party ./...
+      - go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-generated -fmt=text -exclude-dir=node_modules -exclude-dir=frontend -exclude-dir=build/android -exclude-dir=build/ios -exclude-dir=vendor -exclude-dir=third_party ./...
     env:
-      GOFLAGS: "-mod=mod"
+      GOFLAGS: "-mod=vendor"
 
   test:
     desc: Run all tests
@@ -62,18 +68,16 @@ tasks:
   test:go:
     desc: Run Go unit tests
     cmds:
-      - bash build/scripts/patch-reticulum-txbytes.sh
       - go test ./...
     env:
-      GOFLAGS: "-mod=mod"
+      GOFLAGS: "-mod=vendor"
 
   test:go:race:
     desc: Run Go tests with race detector
     cmds:
-      - bash build/scripts/patch-reticulum-txbytes.sh
       - go test -race ./...
     env:
-      GOFLAGS: "-mod=mod"
+      GOFLAGS: "-mod=vendor"
 
   test:contract:
     desc: Verify Wails bindings match Go service methods
@@ -81,14 +85,14 @@ tasks:
       - bash build/scripts/ci-prep-go.sh
       - go test ./internal/contract/...
     env:
-      GOFLAGS: "-mod=mod"
+      GOFLAGS: "-mod=vendor"
 
   test:go:stress:
     desc: Concurrent stress tests with race detector (deadlock/race checks)
     cmds:
       - go test -race -tags=stress -timeout=5m ./internal/store/... ./internal/db/...
     env:
-      GOFLAGS: "-mod=mod"
+      GOFLAGS: "-mod=vendor"
 
   test:plugins:
     desc: Run plugin system unit tests
@@ -96,14 +100,14 @@ tasks:
       - go test ./internal/plugins/...
       - pnpm --dir frontend exec vitest run src/lib/plugins
     env:
-      GOFLAGS: "-mod=mod"
+      GOFLAGS: "-mod=vendor"
 
   test:go:leak:
     desc: Goroutine leak checks via goleak
     cmds:
       - go test -tags=leak ./internal/store/... ./internal/db/...
     env:
-      GOFLAGS: "-mod=mod"
+      GOFLAGS: "-mod=vendor"
 
   fuzz:go:
     desc: Run Go fuzz tests
@@ -113,7 +117,7 @@ tasks:
       - go test -fuzz='^FuzzResolveNavigation$' -fuzztime=30s ./internal/micron/...
       - go test -fuzz='^FuzzSanitizeHTML$' -fuzztime=30s ./internal/content/...
     env:
-      GOFLAGS: "-mod=mod"
+      GOFLAGS: "-mod=vendor"
 
   test:go:hard:
     desc: Race, leak, stress, and fuzz checks
@@ -128,7 +132,7 @@ tasks:
     cmds:
       - go test -tags=interop -timeout=5m ./internal/interop/...
     env:
-      GOFLAGS: "-mod=mod"
+      GOFLAGS: "-mod=vendor"
 
   frontend:check:
     desc: Typecheck, lint, format check, knip, and unit tests
@@ -164,9 +168,10 @@ tasks:
         vars: { SCRIPT: format }
 
   mod:tidy:
-    desc: Refresh go.mod and go.sum
+    desc: Refresh go.mod, go.sum, and vendor/
     cmds:
       - go mod tidy
+      - task: vendor:go
     env:
       GOFLAGS: "-mod=mod"
 
@@ -260,14 +265,14 @@ tasks:
     cmds:
       - go run . --assets-dir {{.ASSETS_DIR | default "frontend/dist"}}
     env:
-      GOFLAGS: "-mod=mod"
+      GOFLAGS: "-mod=vendor"
 
   run:assets-zip:
     desc: Run using frontend assets from a zip archive
     cmds:
       - go run . --assets-zip {{.ASSETS_ZIP}}
     env:
-      GOFLAGS: "-mod=mod"
+      GOFLAGS: "-mod=vendor"
 
   setup:docker:
     summary: Builds Docker image for cross-compilation (~800MB download)

@@ -56,7 +56,6 @@ tasks:
     internal: true
     timeout: 15m
     deps:
-      - task: common:reticulum:patch-txbytes
       - task: common:go:mod:tidy
       - task: common:build:frontend
         vars:

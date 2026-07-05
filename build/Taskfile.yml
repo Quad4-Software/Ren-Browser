@@ -33,11 +33,18 @@ tasks:
     cmds:
       - git diff --exit-code internal/brand/brand_gen.go frontend/src/lib/brand.gen.ts build/config.yml build/windows/msix/app_manifest.xml
   reticulum:patch-txbytes:
-    summary: Patch reticulum-go interface TX byte accounting
+    summary: Patch reticulum-go interface TX byte accounting (used by vendor:go)
     internal: true
     run: once
     cmds:
       - bash "{{.ROOT_DIR}}/build/scripts/patch-reticulum-txbytes.sh"
+
+  vendor:go:
+    summary: Refresh vendor/ from go.mod
+    cmds:
+      - bash "{{.ROOT_DIR}}/build/scripts/vendor-go.sh"
+    env:
+      GOFLAGS: "-mod=mod"
 
   go:mod:tidy:
     summary: Runs `go mod tidy`
@@ -48,6 +55,8 @@ tasks:
     timeout: 3m
     cmds:
       - '{{.WITH_TIMEOUT}} {{.TIMEOUT_GO_MOD}} go mod tidy'
+    env:
+      GOFLAGS: "-mod=mod"
 
   install:frontend:deps:
     summary: Install frontend dependencies
@@ -264,7 +273,7 @@ tasks:
       - go test ./internal/plugins/...
       - pnpm --dir frontend exec vitest run src/lib/plugins
     env:
-      GOFLAGS: "-mod=mod"
+      GOFLAGS: "-mod=vendor"
 
   generate:icons:
     summary: Generates Windows `.ico` and Mac `.icns` from an image; on macOS, `-iconcomposerinput appicon.icon -macassetdir darwin` also produces `Assets.car` from a `.icon` file (skipped on other platforms).
@@ -324,7 +333,6 @@ tasks:
         OBFUSCATED=true obfuscated build via garble (requires garble installed)
         EXTRA_TAGS      additional comma-separated build tags
     deps:
-      - task: reticulum:patch-txbytes
       - task: build:frontend
         vars:
           DEV:
