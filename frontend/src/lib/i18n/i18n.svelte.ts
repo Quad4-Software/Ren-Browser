@@ -2,16 +2,22 @@
 import { detectOSLocale, setCatalogLocale, translate, type TranslateParams } from "./catalog";
 import { type LocaleCode, resolveLocale } from "./locales";
 
-export let uiLocale = $state<LocaleCode>(resolveLocale(detectOSLocale()));
+const locale = $state<{ code: LocaleCode }>({
+  code: resolveLocale(detectOSLocale()),
+});
+
+export function getUILocale(): LocaleCode {
+  return locale.code;
+}
 
 export function t(key: string, params?: TranslateParams): string {
-  void uiLocale;
+  void locale.code;
   return translate(key, params);
 }
 
-export function setUILocale(locale: string): LocaleCode {
-  const resolved = setCatalogLocale(locale);
-  uiLocale = resolved;
+export function setUILocale(localeTag: string): LocaleCode {
+  const resolved = setCatalogLocale(localeTag);
+  locale.code = resolved;
   return resolved;
 }
 
