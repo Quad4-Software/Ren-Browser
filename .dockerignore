@@ -1,21 +1,29 @@
 .git
 .github
 .task
+.docker
 
 # Build artifacts
 bin/
 *.exe
 /renbrowser
+/renbrowser-server
 *.apk
 *.AppImage
 
-# Frontend dev trees (dist is produced before image build)
+# Frontend dev trees (dist must stay in context for go:embed)
 frontend/node_modules
 frontend/.svelte-kit
+frontend/src
+frontend/bindings
 node_modules/
 
 # Fetched at image build via fetch-micron-wasm.mjs / prebuild
 frontend/public/vendor/micron-parser-go/
+
+# Vendored deps: Dockerfile.server uses go mod download, not vendor/
+vendor/
+third_party/
 
 # Packaging and mobile trees not needed for server image
 build/linux/
@@ -32,17 +40,22 @@ build/packaging/
 coverage.out
 coverage.html
 *.test
+**/testdata/fuzz/
 
 # Editor / env
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
+.cursor/
 *.swp
 *~
 .env
 .env.*
 
-# Docs / notes
+# Docs / notes not needed in the minimal CI server image context
 TODO.md
 CHANGELOG.md
+CONTRIBUTING.md
+LEGAL.md
+SECURITY.md
