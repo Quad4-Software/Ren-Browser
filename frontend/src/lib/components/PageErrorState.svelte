@@ -67,7 +67,9 @@
       <button type="button" class="primary" onclick={onRetry}>{t("errors.tryAgain")}</button>
     {/if}
     {#if copy.showResetDatabase && onResetDatabase}
-      <button type="button" class="danger" onclick={onResetDatabase}>{t("errors.resetDatabase")}</button>
+      <button type="button" class="danger" onclick={onResetDatabase}
+        >{t("errors.resetDatabase")}</button
+      >
     {/if}
   </div>
 </div>

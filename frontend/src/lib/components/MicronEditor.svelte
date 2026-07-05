@@ -66,9 +66,7 @@
   function renderPreviewNow() {
     try {
       const renderURL =
-        currentURL === "editor:" || currentURL === "editor"
-          ? "editor:/page/editor.mu"
-          : currentURL;
+        currentURL === "editor:" || currentURL === "editor" ? "editor:/page/editor.mu" : currentURL;
       previewHtml = renderClientMicronPage(renderURL, source, "js");
       const colors = parseMicronHeaderColors(source);
       pageFg = colors.fg;

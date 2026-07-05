@@ -551,7 +551,14 @@
     }
     if (tabs.length === 1) {
       tabs = [
-        { ...tabs[0], id: tabs[0].id, title: t("tab.new"), url: "", active: true, page: emptyPage() },
+        {
+          ...tabs[0],
+          id: tabs[0].id,
+          title: t("tab.new"),
+          url: "",
+          active: true,
+          page: emptyPage(),
+        },
       ];
       url = "";
       clearPageState();
@@ -573,9 +580,7 @@
   }
 
   function resetToSingleTab() {
-    tabs = [
-      { id: randomId(), title: t("tab.new"), url: "", active: true, page: emptyPage() },
-    ];
+    tabs = [{ id: randomId(), title: t("tab.new"), url: "", active: true, page: emptyPage() }];
     url = "";
     closeSplitView();
     clearPageState();
@@ -829,9 +834,7 @@
       (existingTab.page?.lastRaw?.trim() ?? "").length > 0;
     const savedEditorSource = preserveEditorSource ? (existingTab?.page?.lastRaw ?? "") : "";
     const preserveConfigSource =
-      normalized === "config:" &&
-      existingTab?.url === "config:" &&
-      configText.trim().length > 0;
+      normalized === "config:" && existingTab?.url === "config:" && configText.trim().length > 0;
     const savedConfigSource = preserveConfigSource ? configText : "";
 
     const generation = (existingTab?.navGeneration ?? 0) + 1;

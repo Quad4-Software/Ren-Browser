@@ -57,9 +57,10 @@ describe("locale catalogs", () => {
   }
 
   it("_template.json mirrors base keys with empty placeholders", () => {
-    const template = JSON.parse(
-      readFileSync(join(localesDir, "_template.json"), "utf8"),
-    ) as Record<string, unknown>;
+    const template = JSON.parse(readFileSync(join(localesDir, "_template.json"), "utf8")) as Record<
+      string,
+      unknown
+    >;
     const templateKeys = flattenMessageKeys(template as never);
     expect(templateKeys).toEqual(baseKeys);
     for (const key of templateKeys) {

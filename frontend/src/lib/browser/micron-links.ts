@@ -59,7 +59,13 @@ export function resolveLinkURL(currentURL: string, href: string): string {
     return "";
   }
   const special = normalizeReticulumURL(trimmed);
-  if (special === "about:" || special === "license:" || special === "editor:" || special === "config:" || special.startsWith("docs")) {
+  if (
+    special === "about:" ||
+    special === "license:" ||
+    special === "editor:" ||
+    special === "config:" ||
+    special.startsWith("docs")
+  ) {
     return special.startsWith("docs") ? normalizeReticulumURL(trimmed) : special;
   }
   if (trimmed.includes(":/")) {

@@ -2,3 +2,4 @@ bindings/**
 dist/**
 node_modules/**
 public/vendor/**
+src/lib/i18n/sync-template.mjs

@@ -48,7 +48,8 @@
 </script>
 
 {#if open}
-  <button type="button" class="backdrop" aria-label={t("downloads.close")} onclick={onClose}></button>
+  <button type="button" class="backdrop" aria-label={t("downloads.close")} onclick={onClose}
+  ></button>
   <div class="menu" role="dialog" aria-label={t("downloads.title")}>
     <header>
       <h2>{t("downloads.title")}</h2>

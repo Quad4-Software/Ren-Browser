@@ -250,10 +250,7 @@
     </div>
   {:else}
     <div class="state">
-      <EmptyState
-        title={displayName}
-        description={t("content.emptyDescription")}
-      >
+      <EmptyState title={displayName} description={t("content.emptyDescription")}>
         <Globe size={22} />
       </EmptyState>
     </div>

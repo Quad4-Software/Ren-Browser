@@ -95,7 +95,9 @@
 <section class="extensions">
   <header>
     <h3>{t("extensions.title")}</h3>
-    <button type="button" onclick={() => void refresh()} disabled={loading}>{t("common.refresh")}</button>
+    <button type="button" onclick={() => void refresh()} disabled={loading}
+      >{t("common.refresh")}</button
+    >
   </header>
 
   {#if error}
@@ -113,7 +115,9 @@
         placeholder={t("extensions.installZipPlaceholder")}
       />
     </label>
-    <button type="button" onclick={() => void installZip()}>{t("extensions.installZipButton")}</button>
+    <button type="button" onclick={() => void installZip()}
+      >{t("extensions.installZipButton")}</button
+    >
     <label>
       {t("extensions.installFolder")}
       <input
@@ -122,7 +126,9 @@
         placeholder={t("extensions.installFolderPlaceholder")}
       />
     </label>
-    <button type="button" onclick={() => void installDir()}>{t("extensions.installFolderButton")}</button>
+    <button type="button" onclick={() => void installDir()}
+      >{t("extensions.installFolderButton")}</button
+    >
   </div>
 
   {#if loading}
@@ -144,7 +150,9 @@
               <p>{plugin.description}</p>
             {/if}
             {#if plugin.permissions?.length}
-              <p class="perms">{t("common.permissions", { list: plugin.permissions.join(", ") })}</p>
+              <p class="perms">
+                {t("common.permissions", { list: plugin.permissions.join(", ") })}
+              </p>
             {/if}
             {#if plugin.error}
               <p class="error">{plugin.error}</p>

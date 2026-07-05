@@ -238,10 +238,11 @@
     <span>{t("language.title")}</span>
     <select
       value={uiLanguage}
-      onchange={(event) =>
-        onChangeUILanguage((event.currentTarget as HTMLSelectElement).value)}
+      onchange={(event) => onChangeUILanguage((event.currentTarget as HTMLSelectElement).value)}
     >
-      <option value="">{t("language.system", { locale: localeLabel(resolveLocale(detectOSLocale())) })}</option>
+      <option value=""
+        >{t("language.system", { locale: localeLabel(resolveLocale(detectOSLocale())) })}</option
+      >
       {#each SUPPORTED_LOCALES as locale (locale.code)}
         <option value={locale.code}>{localeLabel(locale.code)}</option>
       {/each}
@@ -333,7 +334,8 @@
     {t("settings.pageCacheHint")}
   </p>
   <div class="cache-row">
-    <span class="meta">{t("common.entries", { current: pageCacheEntries, max: pageCacheMax })}</span>
+    <span class="meta">{t("common.entries", { current: pageCacheEntries, max: pageCacheMax })}</span
+    >
     <button type="button" class="reset-btn" disabled={pageCacheClearing} onclick={onClearPageCache}>
       {pageCacheClearing ? t("common.clearing") : t("settings.clearPageCache")}
     </button>
@@ -395,7 +397,9 @@
   {/if}
 
   <div class="reset-row">
-    <button type="button" class="reset-btn" onclick={onResetDefaults}>{t("settings.resetDefaults")}</button>
+    <button type="button" class="reset-btn" onclick={onResetDefaults}
+      >{t("settings.resetDefaults")}</button
+    >
   </div>
 
   <h3>{t("settings.downloads")}</h3>
@@ -431,7 +435,9 @@
             class:recording={recordingAction === action}
             onclick={() => startRecording(action)}
           >
-            {recordingAction === action ? t("common.pressKeys") : formatChord(keybinds.bindings[action])}
+            {recordingAction === action
+              ? t("common.pressKeys")
+              : formatChord(keybinds.bindings[action])}
           </button>
         </li>
       {/each}
@@ -487,10 +493,13 @@
             onchange={(value) => onToggleInterface(iface.name, value)}
           />
           <span class="meta">
-            {iface.type} · {iface.online ? t("common.online") : t("common.offline")} · {t("common.txRx", {
-              tx: formatBytes(iface.txBytes),
-              rx: formatBytes(iface.rxBytes),
-            })}
+            {iface.type} · {iface.online ? t("common.online") : t("common.offline")} · {t(
+              "common.txRx",
+              {
+                tx: formatBytes(iface.txBytes),
+                rx: formatBytes(iface.rxBytes),
+              },
+            )}
           </span>
         </li>
       {/each}

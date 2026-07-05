@@ -35,7 +35,11 @@
     <History size={18} />
     <span>{t("mobileNav.history")}</span>
   </button>
-  <button class:active={downloadsOpen} onclick={onToggleDownloads} aria-label={t("mobileNav.downloads")}>
+  <button
+    class:active={downloadsOpen}
+    onclick={onToggleDownloads}
+    aria-label={t("mobileNav.downloads")}
+  >
     <Download size={18} />
     <span>{t("mobileNav.downloads")}</span>
   </button>

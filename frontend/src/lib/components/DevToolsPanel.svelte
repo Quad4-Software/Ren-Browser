@@ -99,9 +99,14 @@
 <section class="devtools">
   <header>
     <div class="tabs">
-      <button class:active={tab === "console"} onclick={() => (tab = "console")}>{t("devtools.console")}</button>
-      <button class:active={tab === "network"} onclick={() => (tab = "network")}>{t("devtools.network")}</button>
-      <button class:active={tab === "raw"} onclick={() => (tab = "raw")}>{t("devtools.raw")}</button>
+      <button class:active={tab === "console"} onclick={() => (tab = "console")}
+        >{t("devtools.console")}</button
+      >
+      <button class:active={tab === "network"} onclick={() => (tab = "network")}
+        >{t("devtools.network")}</button
+      >
+      <button class:active={tab === "raw"} onclick={() => (tab = "raw")}>{t("devtools.raw")}</button
+      >
       {#each pluginTabs as pluginTab (pluginTab.pluginId + ":" + pluginTab.id)}
         <button
           class:active={tab === `plugin:${pluginTab.pluginId}:${pluginTab.id}`}
@@ -139,7 +144,11 @@
       <span>{durationMs} ms</span>
     {/if}
     {#if fromCache}
-      <span>{t("devtools.cached", { when: cachedAt > 0 ? new Date(cachedAt).toLocaleString() : "" })}</span>
+      <span
+        >{t("devtools.cached", {
+          when: cachedAt > 0 ? new Date(cachedAt).toLocaleString() : "",
+        })}</span
+      >
     {/if}
   </div>
 
@@ -221,8 +230,12 @@
   {:else if tab === "raw"}
     <div class="panel raw">
       <div class="raw-actions">
-        <button class:active={rawMode === "text"} onclick={() => (rawMode = "text")}>{t("devtools.text")}</button>
-        <button class:active={rawMode === "hex"} onclick={() => (rawMode = "hex")}>{t("devtools.hex")}</button>
+        <button class:active={rawMode === "text"} onclick={() => (rawMode = "text")}
+          >{t("devtools.text")}</button
+        >
+        <button class:active={rawMode === "hex"} onclick={() => (rawMode = "hex")}
+          >{t("devtools.hex")}</button
+        >
       </div>
       {#if raw.trim().length === 0}
         <EmptyState title={t("devtools.noRaw")} description={t("devtools.noRawDescription")}>

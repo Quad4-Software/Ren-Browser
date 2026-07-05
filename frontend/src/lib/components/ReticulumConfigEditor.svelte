@@ -59,7 +59,9 @@
 
   <div class="actions">
     <button type="button" onclick={onReload} disabled={saving}>{t("config.reload")}</button>
-    <button type="button" onclick={exportConfig} disabled={saving || !configText}>{t("config.export")}</button>
+    <button type="button" onclick={exportConfig} disabled={saving || !configText}
+      >{t("config.export")}</button
+    >
     <button type="button" class="primary" onclick={onSave} disabled={saving}>
       {saving ? t("common.saving") : t("config.save")}
     </button>

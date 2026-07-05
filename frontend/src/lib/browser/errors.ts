@@ -23,7 +23,13 @@ export type ErrorPageContent = {
 
 const PAGE_ERROR_KEYS: Record<
   PageErrorKind,
-  { title: string; description: string; showRetry: boolean; showResetDatabase: boolean; tone: "danger" | "warning" }
+  {
+    title: string;
+    description: string;
+    showRetry: boolean;
+    showResetDatabase: boolean;
+    tone: "danger" | "warning";
+  }
 > = {
   connection_failed: {
     title: "errors.connectionFailedTitle",

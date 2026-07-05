@@ -25,9 +25,9 @@ var (
 )
 
 type DocsRenderInput struct {
-	RawURL      string
-	SavedLang   string
-	SaveLang    func(lang string)
+	RawURL    string
+	SavedLang string
+	SaveLang  func(lang string)
 }
 
 type DocsRenderResult struct {

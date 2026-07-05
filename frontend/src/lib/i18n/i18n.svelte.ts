@@ -1,10 +1,5 @@
 // SPDX-License-Identifier: MIT
-import {
-  detectOSLocale,
-  setCatalogLocale,
-  translate,
-  type TranslateParams,
-} from "./catalog";
+import { detectOSLocale, setCatalogLocale, translate, type TranslateParams } from "./catalog";
 import { type LocaleCode, resolveLocale } from "./locales";
 
 export let uiLocale = $state<LocaleCode>(resolveLocale(detectOSLocale()));
@@ -26,4 +21,10 @@ export function initUILocale(saved?: string): LocaleCode {
 }
 
 export { detectOSLocale } from "./catalog";
-export { DEFAULT_LOCALE, SUPPORTED_LOCALES, localeLabel, resolveLocale, type LocaleCode } from "./locales";
+export {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  localeLabel,
+  resolveLocale,
+  type LocaleCode,
+} from "./locales";

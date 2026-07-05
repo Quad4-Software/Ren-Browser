@@ -79,10 +79,20 @@
 
 <header class="chrome">
   <div class="nav-cluster">
-    <button class="ren-icon-btn" aria-label={t("chrome.back")} disabled={!canGoBack} onclick={onBack}>
+    <button
+      class="ren-icon-btn"
+      aria-label={t("chrome.back")}
+      disabled={!canGoBack}
+      onclick={onBack}
+    >
       <ArrowLeft size={16} />
     </button>
-    <button class="ren-icon-btn" aria-label={t("chrome.forward")} disabled={!canGoForward} onclick={onForward}>
+    <button
+      class="ren-icon-btn"
+      aria-label={t("chrome.forward")}
+      disabled={!canGoForward}
+      onclick={onForward}
+    >
       <ArrowRight size={16} />
     </button>
     <button class="ren-icon-btn" aria-label={t("chrome.reload")} onclick={onReload}>
@@ -184,7 +194,11 @@
       {/if}
     </button>
     {#if activePanel !== "browser"}
-      <button class="ren-icon-btn" aria-label={t("chrome.closePanel")} onclick={() => onPanel("browser")}>
+      <button
+        class="ren-icon-btn"
+        aria-label={t("chrome.closePanel")}
+        onclick={() => onPanel("browser")}
+      >
         <X size={16} />
       </button>
     {/if}

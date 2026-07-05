@@ -11,7 +11,7 @@ func TestListInterfacesSortedByName(t *testing.T) {
 	stack := &Stack{
 		cfg: &common.ReticulumConfig{
 			Interfaces: map[string]*common.InterfaceConfig{
-				"Zulu": {Type: "TCPClientInterface", Enabled: true},
+				"Zulu":  {Type: "TCPClientInterface", Enabled: true},
 				"Alpha": {Type: "TCPClientInterface", Enabled: false},
 				"Mango": {Type: "AutoInterface", Enabled: true},
 			},

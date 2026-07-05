@@ -349,11 +349,12 @@
       <button role="menuitem" onclick={() => runAction("close")}>{t("tab.closeTab")}</button>
     {/if}
     {#if canCloseOthers}
-      <button role="menuitem" onclick={() => runAction("closeOthers")}>{t("tab.closeOthers")}</button>
+      <button role="menuitem" onclick={() => runAction("closeOthers")}
+        >{t("tab.closeOthers")}</button
+      >
     {/if}
     {#if canCloseRight}
-      <button role="menuitem" onclick={() => runAction("closeRight")}>{t("tab.closeRight")}</button
-      >
+      <button role="menuitem" onclick={() => runAction("closeRight")}>{t("tab.closeRight")}</button>
     {/if}
     <button role="menuitem" class="danger" onclick={() => runAction("closeAll")}
       >{t("tab.closeAll")}</button
