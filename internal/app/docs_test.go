@@ -7,19 +7,11 @@ import (
 
 	"renbrowser/internal/app"
 	"renbrowser/internal/plugins"
-	"renbrowser/internal/rns"
 )
 
 func setupDocsService(t *testing.T) *app.BrowserService {
 	t.Helper()
-	stack, err := rns.NewStack("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := app.NewBrowserService(stack, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc := newTestService(t)
 	svc.SetPluginManager(plugins.NewManager(svc.Store()))
 	return svc
 }
