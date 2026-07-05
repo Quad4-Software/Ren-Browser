@@ -52,6 +52,9 @@ jobs:
           install-wails: "false"
           install-linux-deps: ${{ matrix.os == 'ubuntu-latest' && 'true' || 'false' }}
 
+      - name: Verify vendored modules
+        run: go list -mod=vendor ./...
+
       - name: gofmt check
         shell: bash
         run: |
