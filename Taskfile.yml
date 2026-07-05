@@ -55,9 +55,7 @@ tasks:
   gosec:
     desc: Run gosec security scanner
     cmds:
-      - go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-generated -fmt=text -exclude-dir=node_modules -exclude-dir=frontend -exclude-dir=build/android -exclude-dir=build/ios -exclude-dir=vendor -exclude-dir=third_party ./...
-    env:
-      GOFLAGS: "-mod=vendor"
+      - bash "{{.ROOT_DIR}}/build/scripts/gosec.sh" ./...
 
   test:
     desc: Run all tests
