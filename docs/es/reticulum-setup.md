@@ -68,7 +68,7 @@ Recorre esta lista:
 
 ## Servidor y Docker
 
-Cuando ejecutas `renbrowser-server` en Docker, monta la configuración del host en solo lectura:
+Cuando ejecutas la imagen Docker `renbrowser`, monta la configuración del host en solo lectura:
 
 ```sh
 -v "$HOME/.reticulum-go:/root/.reticulum-go:ro"

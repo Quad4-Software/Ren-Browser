@@ -27,14 +27,14 @@ sha256sum -c SHA256SUMS.txt
 
 ## Docker или Podman (серверный режим)
 
-Официальный образ: `ghcr.io/quad4-software/renbrowser-server`
+Официальный образ: `ghcr.io/quad4-software/renbrowser`
 
 Смонтируйте конфиг Reticulum, чтобы контейнер мог войти в mesh:
 
 ```sh
 docker run --rm -p 8080:8080 \
   -v "$HOME/.reticulum-go:/root/.reticulum-go:ro" \
-  ghcr.io/quad4-software/renbrowser-server:latest
+  ghcr.io/quad4-software/renbrowser:latest
 ```
 
 Откройте `http://localhost:8080` в любом браузере на той же машине.

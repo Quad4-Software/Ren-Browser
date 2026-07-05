@@ -68,7 +68,7 @@ Work through this list:
 
 ## Server and Docker
 
-When you run `renbrowser-server` in Docker, mount the host config read-only:
+When you run the `renbrowser` Docker image, mount the host config read-only:
 
 ```sh
 -v "$HOME/.reticulum-go:/root/.reticulum-go:ro"

@@ -23,7 +23,7 @@ Abre `http://localhost:8080` (o la IP de tu host) en Firefox, Chromium o Safari.
 Imagen publicada:
 
 ```
-ghcr.io/quad4-software/renbrowser-server:latest
+ghcr.io/quad4-software/renbrowser:latest
 ```
 
 Ejemplo de ejecución:
@@ -31,7 +31,7 @@ Ejemplo de ejecución:
 ```sh
 docker run --rm -p 8080:8080 \
   -v "$HOME/.reticulum-go:/root/.reticulum-go:ro" \
-  ghcr.io/quad4-software/renbrowser-server:latest
+  ghcr.io/quad4-software/renbrowser:latest
 ```
 
 Compilar localmente:

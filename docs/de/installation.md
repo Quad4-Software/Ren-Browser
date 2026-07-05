@@ -27,14 +27,14 @@ Prüfen Sie nur die Datei, die Sie heruntergeladen haben, wenn die Summendatei v
 
 ## Docker oder Podman (Servermodus)
 
-Offizielles Image: `ghcr.io/quad4-software/renbrowser-server`
+Offizielles Image: `ghcr.io/quad4-software/renbrowser`
 
 Binden Sie Ihre Reticulum-Konfiguration ein, damit der Container dem Mesh beitreten kann:
 
 ```sh
 docker run --rm -p 8080:8080 \
   -v "$HOME/.reticulum-go:/root/.reticulum-go:ro" \
-  ghcr.io/quad4-software/renbrowser-server:latest
+  ghcr.io/quad4-software/renbrowser:latest
 ```
 
 Öffnen Sie `http://localhost:8080` in einem beliebigen Browser auf demselben Rechner.

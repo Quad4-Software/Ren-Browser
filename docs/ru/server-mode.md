@@ -23,7 +23,7 @@ task build:server
 Образ:
 
 ```
-ghcr.io/quad4-software/renbrowser-server:latest
+ghcr.io/quad4-software/renbrowser:latest
 ```
 
 Пример:
@@ -31,7 +31,7 @@ ghcr.io/quad4-software/renbrowser-server:latest
 ```sh
 docker run --rm -p 8080:8080 \
   -v "$HOME/.reticulum-go:/root/.reticulum-go:ro" \
-  ghcr.io/quad4-software/renbrowser-server:latest
+  ghcr.io/quad4-software/renbrowser:latest
 ```
 
 Локальная сборка:

@@ -68,7 +68,7 @@ Gehen Sie diese Liste durch:
 
 ## Server und Docker
 
-Wenn Sie `renbrowser-server` in Docker betreiben, binden Sie die Host-Konfiguration schreibgeschützt ein:
+Wenn Sie das Docker-Image `renbrowser` betreiben, binden Sie die Host-Konfiguration schreibgeschützt ein:
 
 ```sh
 -v "$HOME/.reticulum-go:/root/.reticulum-go:ro"
