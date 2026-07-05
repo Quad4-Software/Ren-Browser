@@ -1626,7 +1626,6 @@
             <MicronEditor
               source={lastRaw}
               currentURL={url}
-              micronEngine={effectiveMicronEngine}
               onSourceChange={updateEditorSource}
               onNavigate={openPage}
             />

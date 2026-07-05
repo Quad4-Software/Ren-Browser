@@ -1,39 +1,29 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   /* eslint-disable svelte/no-at-html-tags -- live micron preview */
-  import { RenderRaw } from "../../../bindings/renbrowser/internal/app/browserservice.js";
   import {
     resolveLinkURL,
     resolveMicronNavigation,
     resolveNomadDataURL,
   } from "$lib/browser/micron-links";
   import { micronShellStyle } from "$lib/browser/url";
-  import {
-    parseMicronHeaderColors,
-    renderClientMicronPage,
-    usesClientMicronRenderer,
-    type MicronEffectiveEngine,
-  } from "$lib/micron/render-page";
+  import { parseMicronHeaderColors, renderClientMicronPage } from "$lib/micron/render-page";
   import PageContextMenu from "$lib/components/PageContextMenu.svelte";
   import { downloadPageContent } from "$lib/browser/download";
 
   type Props = {
     source: string;
     currentURL: string;
-    micronEngine?: MicronEffectiveEngine;
-    micronWasmReady?: boolean;
     onSourceChange: (source: string) => void;
     onNavigate: (url: string) => void;
   };
 
-  let {
-    source,
-    currentURL,
-    micronEngine = "js",
-    micronWasmReady = false,
-    onSourceChange,
-    onNavigate,
-  }: Props = $props();
+  let { source, currentURL, onSourceChange, onNavigate }: Props = $props();
+
+  const SNAP_POINTS = [30, 40, 50, 60, 70];
+  const MIN_RATIO = 25;
+  const MAX_RATIO = 75;
+  const SNAP_THRESHOLD = 4;
 
   let previewHtml = $state("");
   let pageFg = $state("");
@@ -43,29 +33,46 @@
   let menu = $state<{ x: number; y: number } | null>(null);
   let renderTimer: ReturnType<typeof setTimeout> | undefined;
   let sourceInput: HTMLTextAreaElement | undefined = $state();
+  let splitEl = $state<HTMLDivElement | null>(null);
+  let dividerEl = $state<HTMLButtonElement | null>(null);
+  let sourceRatio = $state(50);
+  let dragging = $state(false);
+  let verticalLayout = $state(false);
 
   const shellStyle = $derived(micronShellStyle("micron", pageFg, pageBg));
 
-  async function renderPreview() {
-    if (usesClientMicronRenderer(micronEngine)) {
-      try {
-        previewHtml = renderClientMicronPage(currentURL, source, micronEngine);
-        const colors = parseMicronHeaderColors(source);
-        pageFg = colors.fg;
-        pageBg = colors.bg;
-        previewError = "";
-      } catch (err) {
-        previewError = err instanceof Error ? err.message : String(err);
-        previewHtml = "";
+  function snapRatio(value: number): number {
+    const clamped = Math.min(MAX_RATIO, Math.max(MIN_RATIO, value));
+    let closest = SNAP_POINTS[0];
+    let minDist = Math.abs(clamped - closest);
+    for (const point of SNAP_POINTS) {
+      const dist = Math.abs(clamped - point);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = point;
       }
-      return;
     }
+    if (minDist <= SNAP_THRESHOLD) {
+      return closest;
+    }
+    return clamped;
+  }
+
+  function updateLayoutMode() {
+    verticalLayout = (splitEl?.clientWidth ?? 0) <= 900;
+  }
+
+  function renderPreviewNow() {
     try {
-      const page = await RenderRaw("/page/editor.mu", source);
-      previewHtml = page.html ?? "";
-      pageFg = page.pageFg ?? "";
-      pageBg = page.pageBg ?? "";
-      previewError = page.error ?? "";
+      const renderURL =
+        currentURL === "editor:" || currentURL === "editor"
+          ? "editor:/page/editor.mu"
+          : currentURL;
+      previewHtml = renderClientMicronPage(renderURL, source, "js");
+      const colors = parseMicronHeaderColors(source);
+      pageFg = colors.fg;
+      pageBg = colors.bg;
+      previewError = "";
     } catch (err) {
       previewError = err instanceof Error ? err.message : String(err);
       previewHtml = "";
@@ -76,9 +83,7 @@
     if (renderTimer) {
       clearTimeout(renderTimer);
     }
-    renderTimer = setTimeout(() => {
-      void renderPreview();
-    }, 200);
+    renderTimer = setTimeout(renderPreviewNow, 200);
   }
 
   function onInput(event: Event) {
@@ -87,16 +92,53 @@
     scheduleRender();
   }
 
+  function onDividerPointerDown(event: PointerEvent) {
+    if (!dividerEl) {
+      return;
+    }
+    dragging = true;
+    dividerEl.setPointerCapture(event.pointerId);
+  }
+
+  function onDividerPointerMove(event: PointerEvent) {
+    if (!dragging || !splitEl) {
+      return;
+    }
+    const rect = splitEl.getBoundingClientRect();
+    const next = verticalLayout
+      ? ((event.clientY - rect.top) / rect.height) * 100
+      : ((event.clientX - rect.left) / rect.width) * 100;
+    sourceRatio = Math.min(MAX_RATIO, Math.max(MIN_RATIO, next));
+  }
+
+  function onDividerPointerUp(event: PointerEvent) {
+    if (dividerEl?.hasPointerCapture(event.pointerId)) {
+      dividerEl.releasePointerCapture(event.pointerId);
+    }
+    if (dragging) {
+      sourceRatio = snapRatio(sourceRatio);
+    }
+    dragging = false;
+  }
+
   $effect(() => {
     void source;
-    void micronEngine;
-    void micronWasmReady;
     scheduleRender();
     return () => {
       if (renderTimer) {
         clearTimeout(renderTimer);
       }
     };
+  });
+
+  $effect(() => {
+    if (!splitEl || typeof ResizeObserver === "undefined") {
+      return;
+    }
+    updateLayoutMode();
+    const observer = new ResizeObserver(() => updateLayoutMode());
+    observer.observe(splitEl);
+    return () => observer.disconnect();
   });
 
   function openMenu(event: MouseEvent) {
@@ -161,12 +203,13 @@
 </script>
 
 <section class="editor">
-  <div class="meta">
-    <span>micron editor</span>
-    <span>source + preview</span>
-  </div>
-
-  <div class="split">
+  <div
+    class="split"
+    class:vertical={verticalLayout}
+    class:dragging
+    bind:this={splitEl}
+    style:--source-ratio="{sourceRatio}%"
+  >
     <div class="pane source-pane">
       <label class="pane-label" for="micron-source">Source</label>
       <textarea
@@ -179,6 +222,18 @@
         oncontextmenu={openMenu}
       ></textarea>
     </div>
+
+    <button
+      type="button"
+      class="divider"
+      class:vertical={verticalLayout}
+      bind:this={dividerEl}
+      aria-label="Resize source and preview panes"
+      onpointerdown={onDividerPointerDown}
+      onpointermove={onDividerPointerMove}
+      onpointerup={onDividerPointerUp}
+      onpointercancel={onDividerPointerUp}
+    ></button>
 
     <div class="pane preview-pane">
       <div class="pane-label">Preview</div>
@@ -224,35 +279,83 @@
     background: var(--ren-content-bg);
   }
 
-  .meta {
-    display: flex;
-    gap: 0.75rem;
-    padding: 0.45rem 1rem;
-    color: var(--ren-muted);
-    border-bottom: 1px solid var(--ren-border);
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    background: var(--ren-chrome-bg);
-  }
-
   .split {
     flex: 1;
     min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    display: flex;
+    width: 100%;
+  }
+
+  .split.vertical {
+    flex-direction: column;
+  }
+
+  .split.dragging {
+    user-select: none;
+    cursor: col-resize;
+  }
+
+  .split.vertical.dragging {
+    cursor: row-resize;
   }
 
   .pane {
+    min-width: 0;
     min-height: 0;
     display: grid;
     grid-template-rows: auto 1fr;
-    border-right: 1px solid var(--ren-border);
+    overflow: hidden;
+  }
+
+  .source-pane {
+    flex: 0 0 var(--source-ratio);
   }
 
   .preview-pane {
-    border-right: none;
+    flex: 1;
     background: #000;
+  }
+
+  .split.vertical .source-pane {
+    flex: 0 0 var(--source-ratio);
+    width: 100%;
+  }
+
+  .split.vertical .preview-pane {
+    flex: 1;
+    width: 100%;
+  }
+
+  .divider {
+    flex: 0 0 5px;
+    cursor: col-resize;
+    background: transparent;
+    position: relative;
+    border: none;
+    padding: 0;
+    z-index: 1;
+  }
+
+  .divider.vertical {
+    width: 100%;
+    height: 5px;
+    cursor: row-resize;
+    flex: 0 0 5px;
+  }
+
+  .divider::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--ren-border);
+    opacity: 0.55;
+    transition: opacity 0.12s ease;
+  }
+
+  .divider:hover::after,
+  .split.dragging .divider::after {
+    opacity: 1;
+    background: var(--ren-accent);
   }
 
   .pane-label {
@@ -298,21 +401,5 @@
     color: var(--ren-danger);
     font-size: 0.85rem;
     border-bottom: 1px solid color-mix(in srgb, #ffffff 12%, transparent);
-  }
-
-  @media (max-width: 900px) {
-    .split {
-      grid-template-columns: 1fr;
-      grid-template-rows: minmax(180px, 0.9fr) minmax(220px, 1.1fr);
-    }
-
-    .pane {
-      border-right: none;
-      border-bottom: 1px solid var(--ren-border);
-    }
-
-    .preview-pane {
-      border-bottom: none;
-    }
   }
 </style>
