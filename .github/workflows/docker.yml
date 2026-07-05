@@ -66,7 +66,7 @@ jobs:
       - name: Image coordinates
         id: image
         shell: bash
-        run: echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/renbrowser-server" >> "$GITHUB_OUTPUT"
+        run: echo "name=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')/renbrowser" >> "$GITHUB_OUTPUT"
 
       - name: Docker meta
         id: meta
