@@ -3,23 +3,13 @@ package app_test
 
 import (
 	"testing"
-
-	"renbrowser/internal/app"
-	"renbrowser/internal/rns"
 )
 
 func TestHistoryNavigation(t *testing.T) {
-	stack, err := rns.NewStack("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := app.NewBrowserService(stack, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc := newTestService(t)
 
-	svc.Navigate("abb3ebcd03cb2388a838e70c001291f9:/page/a.mu")
-	svc.Navigate("abb3ebcd03cb2388a838e70c001291f9:/page/b.mu")
+	svc.Navigate("editor")
+	svc.Navigate("config")
 
 	state := svc.HistoryState()
 	if !state.CanGoBack {

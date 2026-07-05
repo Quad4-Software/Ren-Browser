@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"testing"
 
 	"quad4/reticulum-go/pkg/common"
 	"quad4/reticulum-go/pkg/reticulumconfig"
@@ -55,6 +56,9 @@ func applyRenBrowserDefaults(cfg *common.ReticulumConfig) {
 }
 
 func seedCommunityInterfaces(cfg *common.ReticulumConfig) {
+	if testing.Testing() {
+		return
+	}
 	if cfg == nil {
 		return
 	}
