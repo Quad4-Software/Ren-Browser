@@ -21,7 +21,7 @@
     "test:watch": "vitest --config vitest.config.ts"
   },
   "dependencies": {
-    "@lucide/svelte": "^0.511.0",
+    "@lucide/svelte": "^1.23.0",
     "@wailsio/runtime": "latest",
     "dompurify": "^3.4.11",
     "marked": "^15.0.12",
