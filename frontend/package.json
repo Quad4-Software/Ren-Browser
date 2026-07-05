@@ -24,7 +24,7 @@
     "@lucide/svelte": "^0.511.0",
     "@wailsio/runtime": "latest",
     "dompurify": "^3.4.11",
-    "marked": "^15.0.12",
+    "marked": "^18.0.5",
     "micron-parser": "github:RFnexus/micron-parser-js"
   },
   "devDependencies": {
