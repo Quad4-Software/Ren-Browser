@@ -41,6 +41,16 @@ runs:
       with:
         version: ${{ inputs.pnpm-version }}
 
+    - name: Configure pnpm
+      shell: bash
+      run: |
+        set -euo pipefail
+        for f in .npmrc frontend/.npmrc; do
+          if [[ -f "$f" ]] && ! grep -q '^strict-dep-builds=' "$f"; then
+            printf 'strict-dep-builds=false\n' >> "$f"
+          fi
+        done
+
     - name: Setup Go
       uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
       with:
@@ -59,13 +69,6 @@ runs:
       with:
         version: ${{ inputs.task-version }}
 
-    - name: Install wails3
-      if: inputs.install-wails == 'true'
-      shell: bash
-      env:
-        GOFLAGS: -mod=mod
-      run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{ inputs.wails-version }}
-
     - name: Install Linux desktop dependencies
       if: inputs.install-linux-deps == 'true'
       shell: bash
@@ -73,9 +76,19 @@ runs:
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends \
           pkg-config gcc libc6-dev \
+          libglib2.0-dev \
           libgtk-4-dev libwebkitgtk-6.0-dev \
           libgtk-3-dev libwebkit2gtk-4.1-dev \
           curl librsvg2-bin
+        pkg-config --modversion gtk4
+        pkg-config --modversion webkitgtk-6.0
+
+    - name: Install wails3
+      if: inputs.install-wails == 'true'
+      shell: bash
+      env:
+        GOFLAGS: -mod=mod
+      run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{ inputs.wails-version }}
 
     - name: Prepare Go build inputs
       shell: bash

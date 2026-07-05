@@ -5,24 +5,23 @@ mode="${1:-check}"
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "${root}"
 
-mapfile -t files < <(
-  find . -name '*.go' \
-    -not -path './vendor/*' \
-    -not -path './frontend/*' \
-    -not -path './node_modules/*' \
-    -not -path './third_party/*'
-)
-
-if ((${#files[@]} == 0)); then
-  exit 0
-fi
+unformatted="$(find . -name '*.go' \
+  -not -path './vendor/*' \
+  -not -path './frontend/*' \
+  -not -path './node_modules/*' \
+  -not -path './third_party/*' \
+  -print0 | xargs -0 gofmt -l)"
 
 case "${mode}" in
   write)
-    gofmt -w "${files[@]}"
+    find . -name '*.go' \
+      -not -path './vendor/*' \
+      -not -path './frontend/*' \
+      -not -path './node_modules/*' \
+      -not -path './third_party/*' \
+      -print0 | xargs -0 gofmt -w
     ;;
   check)
-    unformatted="$(gofmt -l "${files[@]}")"
     if [[ -n "${unformatted}" ]]; then
       echo "Unformatted Go files:"
       echo "${unformatted}"

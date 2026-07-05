@@ -50,6 +50,7 @@ jobs:
         run: go list -mod=vendor ./...
 
       - name: gofmt check
+        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: bash build/scripts/gofmt-project.sh check
 
@@ -79,6 +80,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           install-wails: "false"
+          install-linux-deps: "true"
 
       - name: Frontend quality gates
         run: task frontend:check

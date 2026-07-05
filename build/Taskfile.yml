@@ -54,7 +54,7 @@ tasks:
     run: once
     timeout: 3m
     cmds:
-      - '{{.WITH_TIMEOUT}} {{.TIMEOUT_GO_MOD}} go mod tidy'
+      - go mod tidy
     env:
       GOFLAGS: "-mod=mod"
 
@@ -102,7 +102,7 @@ tasks:
       - sh: pnpm --version | awk -F. '{ exit ($1 < 11) }'
         msg: "pnpm 11+ is required. Install with: corepack enable && corepack prepare pnpm@11.3.0 --activate"
     cmds:
-      - pnpm install --frozen-lockfile=false --config.strict-dep-builds=false
+      - pnpm install --frozen-lockfile=false
 
   install:frontend:deps:yarn:
     dir: frontend
@@ -260,11 +260,11 @@ tasks:
       - frontend/bindings/renbrowser/internal/app/browserservice.ts
       - frontend/bindings/renbrowser/internal/app/pluginhost.ts
     cmds:
-      - |
-        set -euo pipefail
-        {{.WITH_TIMEOUT}} {{.TIMEOUT_BINDINGS}} wails3 generate bindings \
-          -f '{{.BUILD_FLAGS}}' \
-          -clean=true{{if eq .OBFUSCATED "true"}} -obfuscated{{end}} -ts -i
+      - >-
+        wails3 generate bindings
+        -f "{{.BUILD_FLAGS}}"
+        -clean=true{{if eq .OBFUSCATED "true"}} -obfuscated{{end}}
+        -ts -i
 
   test:plugins:
     summary: Run plugin host unit tests
