@@ -28,7 +28,7 @@ export interface BrowserPrefs {
     "docsLanguage": string;
     "uiLanguage": string;
     "discoverySlowMode": boolean;
-    "settingsSectionsCollapsed": { [key: string]: boolean };
+    "settingsSectionsCollapsed": { [_ in string]?: boolean } | null;
 }
 
 export interface DevLogEntry {

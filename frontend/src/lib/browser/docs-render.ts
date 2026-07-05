@@ -1,34 +1,13 @@
 // SPDX-License-Identifier: MIT
-import DOMPurify from "dompurify";
 import { marked } from "marked";
 
 const SUPPORTED_LANGS = ["en", "ru", "es", "de"] as const;
 const PAGE_NAME_RE = /^[a-z0-9-]+$/;
 
-const FORBID_TAGS = [
-  "script",
-  "iframe",
-  "object",
-  "embed",
-  "link",
-  "base",
-  "meta",
-  "form",
-  "input",
-  "button",
-  "textarea",
-  "select",
-  "option",
-  "video",
-  "audio",
-  "source",
-  "track",
-  "picture",
-];
-
-marked.setOptions({
+marked.use({
   gfm: true,
   breaks: false,
+  async: false,
 });
 
 function normalizeMarkdownInput(md: string): string {
@@ -130,14 +109,7 @@ function isAllowedDocsHref(href: string | null): boolean {
   return h.startsWith("http://") || h.startsWith("https://");
 }
 
-function sanitizeDocsHtml(html: string): string {
-  return DOMPurify.sanitize(html, {
-    FORBID_TAGS,
-    ADD_ATTR: ["class", "id", "title", "colspan", "rowspan", "align", "start"],
-  });
-}
-
-export function renderDocsMarkdown(markdown: string, lang: string, currentPage: string): string {
+function parseMarkdownHtml(markdown: string, lang: string, currentPage: string): string {
   const renderer = new marked.Renderer();
   renderer.link = ({ href, title, text }) => {
     const target = rewriteDocsHref(href ?? "", lang, currentPage);
@@ -149,17 +121,17 @@ export function renderDocsMarkdown(markdown: string, lang: string, currentPage: 
     return `<a href="${escapedHref}"${titleAttr}>${text}</a>`;
   };
 
-  const parsed = marked.parse(normalizeMarkdownInput(markdown), {
-    renderer,
-    async: false,
-  });
-  const body = typeof parsed === "string" ? parsed : "";
-  return sanitizeDocsHtml(body);
+  const parsed = marked.parse(normalizeMarkdownInput(markdown), { renderer, async: false });
+  return typeof parsed === "string" ? parsed : "";
+}
+
+export function renderDocsMarkdown(markdown: string, lang: string, currentPage: string): string {
+  return parseMarkdownHtml(markdown, lang, currentPage);
 }
 
 export function renderDocsPage(markdown: string, currentURL: string): string {
   const { lang, page } = parseDocsURL(currentURL);
-  const body = renderDocsMarkdown(markdown, lang, page);
+  const body = parseMarkdownHtml(markdown, lang, page);
   const nav =
     `<nav class="docs-nav"><a href="${formatDocsURL(lang)}">Index</a>` +
     docsLangSwitcher(lang) +

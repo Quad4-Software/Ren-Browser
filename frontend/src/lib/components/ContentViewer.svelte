@@ -510,6 +510,66 @@
     font-size: 0.9rem;
   }
 
+  .content :global(.docs-nav a),
+  .content :global(.docs-lang-switch a) {
+    color: var(--ren-accent);
+    text-decoration: none;
+  }
+
+  .content :global(.docs-nav a:hover),
+  .content :global(.docs-lang-switch a:hover),
+  .content :global(.docs-body a:hover) {
+    text-decoration: underline;
+  }
+
+  .content :global(.docs-body a) {
+    color: var(--ren-accent);
+    text-decoration: none;
+  }
+
+  .content :global(.docs-body p) {
+    margin: 0.75rem 0;
+  }
+
+  .content :global(.docs-body ul),
+  .content :global(.docs-body ol) {
+    margin: 0.75rem 0;
+    padding-left: 1.5rem;
+  }
+
+  .content :global(.docs-body li) {
+    margin: 0.35rem 0;
+  }
+
+  .content :global(.docs-body code) {
+    font-family: var(--ren-mono, ui-monospace, monospace);
+    font-size: 0.9em;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--ren-chrome-bg) 80%, transparent);
+  }
+
+  .content :global(.docs-body table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+  }
+
+  .content :global(.docs-body th),
+  .content :global(.docs-body td) {
+    border: 1px solid var(--ren-border);
+    padding: 0.45rem 0.6rem;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .content :global(.docs-body blockquote) {
+    margin: 0.75rem 0;
+    padding-left: 1rem;
+    border-left: 3px solid var(--ren-border);
+    color: var(--ren-muted);
+  }
+
   .content :global(.docs-lang-list) {
     padding-left: 1.25rem;
   }
