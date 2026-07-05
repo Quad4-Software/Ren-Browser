@@ -27,7 +27,7 @@ Official release binaries and packages are built in **automation on GitHub**, no
 - **Installable files** (Linux AppImage and binary, Windows executable, macOS app bundle, headless server binary, and Android APK when the pipeline produces it) from that tag.
 - A **`SHA256SUMS.txt`** file listing checksums for release assets so you can verify downloads.
 
-**Docker images** for `renbrowser-server` published to GitHub Container Registry are built in CI with **build provenance and an SBOM** attached by Docker Buildx.
+**Docker images** for `renbrowser` published to GitHub Container Registry are built in CI with **build provenance and an SBOM** attached by Docker Buildx.
 
 ### Practical tips
 

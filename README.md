@@ -25,7 +25,7 @@ Grab the latest release for your system from [GitHub Releases](https://github.co
 
 ### Docker or Podman
 
-The published server image is `ghcr.io/quad4-software/renbrowser-server`.
+The published image is `ghcr.io/quad4-software/renbrowser`.
 
 Mount your Reticulum config so the container can join the mesh:
 
@@ -33,7 +33,7 @@ Mount your Reticulum config so the container can join the mesh:
 docker run --rm -p 8080:8080 \
   -v "$HOME/.reticulum-go:/data/reticulum" \
   -e REN_BROWSER_CONFIG=/data/reticulum/config \
-  ghcr.io/quad4-software/renbrowser-server:latest
+  ghcr.io/quad4-software/renbrowser:latest
 ```
 
 Then open `http://localhost:8080` in any browser on the same machine.
