@@ -102,7 +102,7 @@ jobs:
           GOFLAGS: -mod=mod
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: fs
           scan-ref: .
@@ -111,7 +111,7 @@ jobs:
           skip-dirs: frontend/node_modules,bin,build/android/.gradle,build/android/build,vendor,third_party
 
       - name: Trivy Dockerfile scan
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: config
           scan-ref: .
