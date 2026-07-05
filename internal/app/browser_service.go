@@ -426,6 +426,9 @@ func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) Pa
 		if isConfigURL(rawURL) {
 			return s.configPage(pushHistory)
 		}
+		if isSettingsURL(rawURL) {
+			return s.settingsPage(pushHistory)
+		}
 	} else if resp, ok := s.handlePluginScheme(rawURL, pushHistory); ok {
 		return resp
 	}

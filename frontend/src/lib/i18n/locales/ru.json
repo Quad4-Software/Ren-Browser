@@ -85,6 +85,7 @@
     "micronEditor": "Micron Editor",
     "reticulumConfig": "Reticulum Config",
     "documentation": "Документация",
+    "settings": "Настройки",
     "nomadNet": "NomadNet"
   },
   "settings": {
@@ -150,6 +151,9 @@
     "scanning": "{app} сканирует mesh. Сайты появятся здесь, когда узлы объявят о себе.",
     "noMatching": "Нет подходящих сайтов",
     "unnamedSite": "Безымянный сайт",
+    "slowMode": "Медленное обновление обнаружения",
+    "slowModeOn": "Медленный режим включён",
+    "slowModeOff": "Медленный режим выключен",
     "favoriteSite": "Добавить сайт в избранное"
   },
   "history": {
@@ -217,7 +221,8 @@
     "preview": "Предпросмотр",
     "resizePanes": "Изменить размер панелей исходного кода и предпросмотра",
     "loadingMicron": "Загрузка редактора Micron...",
-    "loadingConfig": "Загрузка конфигурации Reticulum..."
+    "loadingConfig": "Загрузка конфигурации Reticulum...",
+    "exportIndexMu": "Экспорт как index.mu"
   },
   "config": {
     "title": "Конфигурация Reticulum",
@@ -231,15 +236,16 @@
     "pluginsDir": "Каталог плагинов: {path}",
     "installZip": "Установить из zip",
     "installZipPlaceholder": "/путь/к/расширению.renplugin.zip",
-    "installZipButton": "Установить zip",
+    "installZipButton": "Выбрать .zip файл",
     "installFolder": "Установить из папки",
     "installFolderPlaceholder": "/путь/к/расширению",
-    "installFolderButton": "Установить папку",
+    "installFolderButton": "Выбрать папку",
     "loading": "Загрузка расширений...",
     "noExtensions": "Нет расширений",
     "noExtensionsDescription": "Установите .renplugin.zip или скопируйте папку в каталог плагинов.",
     "uninstall": "Удалить",
-    "uninstallConfirm": "Удалить расширение {id}?"
+    "uninstallConfirm": "Удалить расширение {id}?",
+    "pickerUnavailable": "Выбор файлов доступен только в настольном приложении."
   },
   "community": {
     "title": "Интерфейсы сообщества",

@@ -75,6 +75,14 @@ func (s *BrowserService) SetPluginManager(manager *plugins.Manager) {
 				HistoryTitle: rendered.HistoryTitle,
 			}, true
 		},
+		SettingsPage: func() (plugins.SchemeResult, bool) {
+			return plugins.SchemeResult{
+				URL:          "settings:",
+				Path:         "/settings",
+				ContentType:  "settings",
+				HistoryTitle: "Settings",
+			}, true
+		},
 	})
 }
 

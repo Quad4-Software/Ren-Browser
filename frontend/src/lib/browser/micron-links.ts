@@ -64,6 +64,7 @@ export function resolveLinkURL(currentURL: string, href: string): string {
     special === "license:" ||
     special === "editor:" ||
     special === "config:" ||
+    special === "settings:" ||
     special.startsWith("docs")
   ) {
     return special.startsWith("docs") ? normalizeReticulumURL(trimmed) : special;

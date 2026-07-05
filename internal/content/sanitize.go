@@ -3,16 +3,17 @@ package content
 
 import (
 	"regexp"
-	"strings"
 )
 
 var (
 	scriptBlockRe = regexp.MustCompile(`(?is)<script\b[^>]*>.*?</script>`)
+	scriptOpenRe  = regexp.MustCompile(`(?is)<script[^>]*>?`)
 	styleBlockRe  = regexp.MustCompile(`(?is)<style\b[^>]*>.*?</style>`)
 	onAttrRe      = regexp.MustCompile(`(?i)\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)`)
 	iframeRe      = regexp.MustCompile(`(?is)<iframe\b[^>]*>.*?</iframe>`)
 	objectRe      = regexp.MustCompile(`(?is)<object\b[^>]*>.*?</object>`)
 	embedRe       = regexp.MustCompile(`(?is)<embed\b[^>]*/?>`)
+	jsSchemeRe    = regexp.MustCompile(`(?i)javascript:`)
 )
 
 func SanitizeHTML(input string) string {
@@ -20,13 +21,16 @@ func SanitizeHTML(input string) string {
 		return input
 	}
 	out := input
-	out = scriptBlockRe.ReplaceAllString(out, "")
+	for pass := 0; pass < 3; pass++ {
+		out = scriptBlockRe.ReplaceAllString(out, "")
+		out = scriptOpenRe.ReplaceAllString(out, "")
+	}
 	out = styleBlockRe.ReplaceAllString(out, "")
 	out = iframeRe.ReplaceAllString(out, "")
 	out = objectRe.ReplaceAllString(out, "")
 	out = embedRe.ReplaceAllString(out, "")
 	out = onAttrRe.ReplaceAllString(out, "")
-	out = strings.ReplaceAll(out, "javascript:", "")
+	out = jsSchemeRe.ReplaceAllString(out, "")
 	return out
 }
 
@@ -67,15 +71,7 @@ func htmlTagAt(s string, i int, tag string) bool {
 			return false
 		}
 	}
-	if i+1+len(tag) == len(s) {
-		return true
-	}
-	switch s[i+1+len(tag)] {
-	case '>', ' ', '\t', '\n', '\r', '/':
-		return true
-	default:
-		return false
-	}
+	return true
 }
 
 func asciiEqualFold(a, b string) bool {

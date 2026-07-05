@@ -85,6 +85,7 @@
     "micronEditor": "",
     "reticulumConfig": "",
     "documentation": "",
+    "settings": "",
     "nomadNet": ""
   },
   "settings": {
@@ -150,6 +151,9 @@
     "scanning": "",
     "noMatching": "",
     "unnamedSite": "",
+    "slowMode": "",
+    "slowModeOn": "",
+    "slowModeOff": "",
     "favoriteSite": ""
   },
   "history": {
@@ -217,7 +221,8 @@
     "preview": "",
     "resizePanes": "",
     "loadingMicron": "",
-    "loadingConfig": ""
+    "loadingConfig": "",
+    "exportIndexMu": ""
   },
   "config": {
     "title": "",
@@ -235,6 +240,7 @@
     "installFolder": "",
     "installFolderPlaceholder": "",
     "installFolderButton": "",
+    "pickerUnavailable": "",
     "loading": "",
     "noExtensions": "",
     "noExtensionsDescription": "",

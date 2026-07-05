@@ -30,6 +30,7 @@ export { detectOSLocale } from "./catalog";
 export {
   DEFAULT_LOCALE,
   SUPPORTED_LOCALES,
+  localeNativeName,
   localeLabel,
   resolveLocale,
   type LocaleCode,

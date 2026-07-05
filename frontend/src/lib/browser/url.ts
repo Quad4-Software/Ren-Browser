@@ -139,6 +139,9 @@ export function normalizeReticulumURL(input: string): string {
   if (lower === "config" || lower === "config:") {
     return "config:";
   }
+  if (lower === "settings" || lower === "settings:") {
+    return "settings:";
+  }
   if (lower === "docs" || lower === "docs:") {
     return "docs:";
   }
@@ -175,6 +178,9 @@ export function tabTitleFromURL(url: string, nodes: DiscoveredNode[] = []): stri
   }
   if (url === "config:") {
     return translate("tab.reticulumConfig");
+  }
+  if (url === "settings:") {
+    return translate("tab.settings");
   }
   if (url.startsWith("docs")) {
     const query = url.includes("?") ? url.slice(url.indexOf("?") + 1) : "";

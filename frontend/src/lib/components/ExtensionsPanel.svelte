@@ -1,7 +1,13 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { FolderOpen, Package } from "@lucide/svelte";
+  import { System } from "@wailsio/runtime";
   import Toggle from "$lib/components/Toggle.svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
+  import {
+    PickPluginDir,
+    PickPluginZip,
+  } from "../../../bindings/renbrowser/internal/app/browserservice.js";
   import {
     disablePlugin,
     enablePlugin,
@@ -25,15 +31,17 @@
   type Props = {
     pluginsDir: string;
     onChanged?: () => void;
+    showTitle?: boolean;
   };
 
-  let { pluginsDir, onChanged }: Props = $props();
+  let { pluginsDir, onChanged, showTitle = true }: Props = $props();
+
+  const desktop = System.IsDesktop();
 
   let plugins = $state<PluginRow[]>([]);
   let loading = $state(false);
+  let picking = $state(false);
   let error = $state("");
-  let zipPath = $state("");
-  let dirPath = $state("");
 
   async function refresh() {
     loading = true;
@@ -67,24 +75,48 @@
     onChanged?.();
   }
 
-  async function installZip() {
-    if (!zipPath.trim()) {
+  async function pickAndInstallZip() {
+    if (!desktop) {
+      error = t("extensions.pickerUnavailable");
       return;
     }
-    await installFromZip(zipPath.trim());
-    zipPath = "";
-    await refresh();
-    onChanged?.();
+    picking = true;
+    error = "";
+    try {
+      const path = await PickPluginZip();
+      if (!path?.trim()) {
+        return;
+      }
+      await installFromZip(path.trim());
+      await refresh();
+      onChanged?.();
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+    } finally {
+      picking = false;
+    }
   }
 
-  async function installDir() {
-    if (!dirPath.trim()) {
+  async function pickAndInstallDir() {
+    if (!desktop) {
+      error = t("extensions.pickerUnavailable");
       return;
     }
-    await installFromDir(dirPath.trim());
-    dirPath = "";
-    await refresh();
-    onChanged?.();
+    picking = true;
+    error = "";
+    try {
+      const path = await PickPluginDir();
+      if (!path?.trim()) {
+        return;
+      }
+      await installFromDir(path.trim());
+      await refresh();
+      onChanged?.();
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+    } finally {
+      picking = false;
+    }
   }
 
   $effect(() => {
@@ -93,8 +125,10 @@
 </script>
 
 <section class="extensions">
-  <header>
-    <h3>{t("extensions.title")}</h3>
+  <header class:compact={!showTitle}>
+    {#if showTitle}
+      <h3>{t("extensions.title")}</h3>
+    {/if}
     <button type="button" onclick={() => void refresh()} disabled={loading}
       >{t("common.refresh")}</button
     >
@@ -107,28 +141,27 @@
   <p class="hint">{t("extensions.pluginsDir", { path: pluginsDir || "—" })}</p>
 
   <div class="install">
-    <label>
-      {t("extensions.installZip")}
-      <input
-        class="ren-input"
-        bind:value={zipPath}
-        placeholder={t("extensions.installZipPlaceholder")}
-      />
-    </label>
-    <button type="button" onclick={() => void installZip()}
-      >{t("extensions.installZipButton")}</button
+    <button
+      type="button"
+      class="pick-btn"
+      disabled={loading || picking || !desktop}
+      onclick={() => void pickAndInstallZip()}
     >
-    <label>
-      {t("extensions.installFolder")}
-      <input
-        class="ren-input"
-        bind:value={dirPath}
-        placeholder={t("extensions.installFolderPlaceholder")}
-      />
-    </label>
-    <button type="button" onclick={() => void installDir()}
-      >{t("extensions.installFolderButton")}</button
+      <Package size={16} />
+      <span>{t("extensions.installZipButton")}</span>
+    </button>
+    <button
+      type="button"
+      class="pick-btn"
+      disabled={loading || picking || !desktop}
+      onclick={() => void pickAndInstallDir()}
     >
+      <FolderOpen size={16} />
+      <span>{t("extensions.installFolderButton")}</span>
+    </button>
+    {#if !desktop}
+      <p class="muted">{t("extensions.pickerUnavailable")}</p>
+    {/if}
   </div>
 
   {#if loading}
@@ -187,6 +220,10 @@
     gap: 0.5rem;
   }
 
+  header.compact {
+    justify-content: flex-end;
+  }
+
   h3 {
     margin: 0;
     font-size: 1rem;
@@ -199,20 +236,34 @@
     font-size: 0.85rem;
   }
 
-  code {
-    font-family: var(--ren-mono, monospace);
-    font-size: 0.8rem;
-  }
-
   .install {
     display: grid;
     gap: 0.5rem;
   }
 
-  label {
-    display: grid;
-    gap: 0.25rem;
-    font-size: 0.85rem;
+  .pick-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--ren-border);
+    background: var(--ren-input-bg);
+    color: var(--ren-fg);
+    border-radius: calc(var(--ren-radius) + 2px);
+    padding: 0.55rem 0.75rem;
+    font: inherit;
+    font-size: 0.88rem;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .pick-btn:hover:not(:disabled) {
+    background: var(--ren-tab-hover);
+    border-color: var(--ren-border-strong);
+  }
+
+  .pick-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 
   .list {

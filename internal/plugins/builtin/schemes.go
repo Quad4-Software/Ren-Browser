@@ -8,11 +8,12 @@ import (
 )
 
 type SchemeDeps struct {
-	AboutHTML   func() string
-	EditorRaw   func() string
-	ConfigRaw   func() string
-	LicenseHTML func() string
-	DocsPage    func(rawURL string) (plugins.SchemeResult, bool)
+	AboutHTML    func() string
+	EditorRaw    func() string
+	ConfigRaw    func() string
+	LicenseHTML  func() string
+	DocsPage     func(rawURL string) (plugins.SchemeResult, bool)
+	SettingsPage func() (plugins.SchemeResult, bool)
 }
 
 func RegisterSchemes(reg *plugins.Registry, deps SchemeDeps) {
@@ -91,6 +92,15 @@ func RegisterSchemes(reg *plugins.Registry, deps SchemeDeps) {
 		}
 		return deps.DocsPage(rawURL)
 	})
+	reg.RegisterScheme("", plugins.URLSchemeContrib{Scheme: "settings"}, func(rawURL string) (plugins.SchemeResult, bool) {
+		if !matchSettings(rawURL) {
+			return plugins.SchemeResult{}, false
+		}
+		if deps.SettingsPage == nil {
+			return plugins.SchemeResult{}, false
+		}
+		return deps.SettingsPage()
+	})
 }
 
 func matchAbout(raw string) bool {
@@ -137,6 +147,15 @@ func matchDocs(raw string) bool {
 	case strings.HasPrefix(lower, "docs?"):
 		return true
 	case strings.HasPrefix(lower, "docs:?"):
+		return true
+	default:
+		return false
+	}
+}
+
+func matchSettings(raw string) bool {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "settings", "settings:":
 		return true
 	default:
 		return false

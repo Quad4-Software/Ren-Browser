@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Globe, RefreshCw } from "@lucide/svelte";
+  import { Check, Globe, RefreshCw } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
 
@@ -28,6 +28,7 @@
     onRefresh: () => void;
     onToggle: (id: number) => void;
     onImport: () => void;
+    showTitle?: boolean;
   };
 
   let {
@@ -41,6 +42,7 @@
     onRefresh,
     onToggle,
     onImport,
+    showTitle = true,
   }: Props = $props();
 
   const filtered = $derived.by(() => {
@@ -61,10 +63,12 @@
 </script>
 
 <section class="community">
-  <div class="header">
-    <h3>{t("community.title")}</h3>
-    <p class="hint">{t("community.hint")}</p>
-  </div>
+  {#if showTitle}
+    <div class="header">
+      <h3>{t("community.title")}</h3>
+      <p class="hint">{t("community.hint")}</p>
+    </div>
+  {/if}
 
   <div class="toolbar">
     <input
@@ -105,14 +109,14 @@
       </li>
     {:else}
       {#each filtered as item (item.id)}
-        <li class:installed={item.installed}>
-          <label>
-            <input
-              type="checkbox"
-              checked={selected.has(item.id)}
-              disabled={item.installed || importing}
-              onchange={() => onToggle(item.id)}
-            />
+        <li class:installed={item.installed} class:selected={selected.has(item.id)}>
+          <button
+            type="button"
+            class="iface-card"
+            disabled={item.installed || importing}
+            aria-pressed={selected.has(item.id)}
+            onclick={() => onToggle(item.id)}
+          >
             <span class="body">
               <span class="name">{item.name}</span>
               <span class="meta">
@@ -125,7 +129,12 @@
                 {/if}
               </span>
             </span>
-          </label>
+            {#if selected.has(item.id)}
+              <span class="selected-mark" aria-hidden="true">
+                <Check size={18} strokeWidth={2.5} />
+              </span>
+            {/if}
+          </button>
         </li>
       {/each}
     {/if}
@@ -228,24 +237,45 @@
     border: 1px solid var(--ren-border);
     border-radius: var(--ren-radius);
     background: var(--ren-surface-raised);
+    transition: border-color 0.15s ease;
+  }
+
+  .list li.selected {
+    border-color: color-mix(in srgb, var(--ren-accent) 50%, var(--ren-border));
   }
 
   .list li.installed {
     opacity: 0.72;
   }
 
-  label {
+  .iface-card {
+    width: 100%;
     display: flex;
-    gap: 0.55rem;
     align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.65rem;
     padding: 0.6rem 0.7rem;
+    border: none;
+    background: transparent;
+    color: inherit;
     cursor: pointer;
+    text-align: left;
+    font: inherit;
+  }
+
+  .iface-card:disabled {
+    cursor: not-allowed;
+  }
+
+  .iface-card:not(:disabled):hover {
+    background: var(--ren-tab-hover);
   }
 
   .body {
     display: grid;
     gap: 0.15rem;
     min-width: 0;
+    flex: 1;
   }
 
   .name {
@@ -257,6 +287,13 @@
     color: var(--ren-muted);
     font-size: 0.8rem;
     word-break: break-word;
+  }
+
+  .selected-mark {
+    flex-shrink: 0;
+    display: inline-flex;
+    color: var(--ren-accent);
+    margin-top: 0.1rem;
   }
 
   .empty {

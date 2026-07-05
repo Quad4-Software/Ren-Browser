@@ -31,6 +31,11 @@ export function resolveLocale(input: string): LocaleCode {
   return DEFAULT_LOCALE;
 }
 
+export function localeNativeName(code: string): string {
+  const entry = SUPPORTED_LOCALES.find((item) => item.code === code);
+  return entry?.nativeLabel ?? code;
+}
+
 export function localeLabel(code: string): string {
   const entry = SUPPORTED_LOCALES.find((item) => item.code === code);
   return entry ? `${entry.nativeLabel} (${entry.label})` : code;

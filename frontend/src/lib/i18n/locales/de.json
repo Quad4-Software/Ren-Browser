@@ -85,6 +85,7 @@
     "micronEditor": "Micron Editor",
     "reticulumConfig": "Reticulum Config",
     "documentation": "Dokumentation",
+    "settings": "Einstellungen",
     "nomadNet": "NomadNet"
   },
   "settings": {
@@ -150,6 +151,9 @@
     "scanning": "{app} durchsucht das Mesh. Seiten erscheinen hier, wenn Knoten sich ankündigen.",
     "noMatching": "Keine passenden Seiten",
     "unnamedSite": "Unbenannte Seite",
+    "slowMode": "Langsame Entdeckungsaktualisierung",
+    "slowModeOn": "Langsamer Modus ein",
+    "slowModeOff": "Langsamer Modus aus",
     "favoriteSite": "Seite favorisieren"
   },
   "history": {
@@ -217,7 +221,8 @@
     "preview": "Vorschau",
     "resizePanes": "Quelltext- und Vorschau-Bereiche in der Größe ändern",
     "loadingMicron": "Micron-Editor wird geladen...",
-    "loadingConfig": "Reticulum-Konfiguration wird geladen..."
+    "loadingConfig": "Reticulum-Konfiguration wird geladen...",
+    "exportIndexMu": "Als index.mu exportieren"
   },
   "config": {
     "title": "Reticulum-Konfiguration",
@@ -231,15 +236,16 @@
     "pluginsDir": "Plugin-Verzeichnis: {path}",
     "installZip": "Aus Zip installieren",
     "installZipPlaceholder": "/pfad/zur/erweiterung.renplugin.zip",
-    "installZipButton": "Zip installieren",
+    "installZipButton": ".zip-Datei wählen",
     "installFolder": "Aus Ordner installieren",
     "installFolderPlaceholder": "/pfad/zur/erweiterung",
-    "installFolderButton": "Ordner installieren",
+    "installFolderButton": "Ordner wählen",
     "loading": "Erweiterungen werden geladen...",
     "noExtensions": "Keine Erweiterungen",
     "noExtensionsDescription": "Installieren Sie eine .renplugin.zip oder kopieren Sie einen Ordner in das Plugin-Verzeichnis.",
     "uninstall": "Deinstallieren",
-    "uninstallConfirm": "Erweiterung {id} deinstallieren?"
+    "uninstallConfirm": "Erweiterung {id} deinstallieren?",
+    "pickerUnavailable": "Dateiauswahl ist nur in der Desktop-App verfügbar."
   },
   "community": {
     "title": "Community-Schnittstellen",

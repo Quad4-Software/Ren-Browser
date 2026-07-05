@@ -11,6 +11,7 @@
     onSave: () => void;
     onReload: () => void;
     onExport?: () => void;
+    showTitle?: boolean;
   };
 
   let {
@@ -22,6 +23,7 @@
     onSave,
     onReload,
     onExport,
+    showTitle = true,
   }: Props = $props();
 
   function exportConfig() {
@@ -40,10 +42,14 @@
 </script>
 
 <section class="config-editor">
-  <div class="header">
-    <h3>{t("config.title")}</h3>
-    <p class="hint">{configPath}</p>
-  </div>
+  {#if showTitle}
+    <div class="header">
+      <h3>{t("config.title")}</h3>
+      <p class="hint">{configPath}</p>
+    </div>
+  {:else if configPath}
+    <p class="hint path-only">{configPath}</p>
+  {/if}
 
   <textarea
     class="editor"
@@ -87,6 +93,10 @@
     color: var(--ren-muted);
     font-size: 0.82rem;
     word-break: break-all;
+  }
+
+  .path-only {
+    margin: 0;
   }
 
   .editor {

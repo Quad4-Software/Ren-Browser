@@ -85,6 +85,7 @@
     "micronEditor": "Micron Editor",
     "reticulumConfig": "Reticulum Config",
     "documentation": "Documentación",
+    "settings": "Configuración",
     "nomadNet": "NomadNet"
   },
   "settings": {
@@ -150,6 +151,9 @@
     "scanning": "{app} está explorando la malla. Los sitios aparecerán aquí cuando los nodos se anuncien.",
     "noMatching": "No hay sitios coincidentes",
     "unnamedSite": "Sitio sin nombre",
+    "slowMode": "Actualizaciones lentas de descubrimiento",
+    "slowModeOn": "Modo lento activado",
+    "slowModeOff": "Modo lento desactivado",
     "favoriteSite": "Marcar sitio como favorito"
   },
   "history": {
@@ -217,7 +221,8 @@
     "preview": "Vista previa",
     "resizePanes": "Redimensionar paneles de código y vista previa",
     "loadingMicron": "Cargando editor Micron...",
-    "loadingConfig": "Cargando configuración de Reticulum..."
+    "loadingConfig": "Cargando configuración de Reticulum...",
+    "exportIndexMu": "Exportar como index.mu"
   },
   "config": {
     "title": "Configuración de Reticulum",
@@ -231,15 +236,16 @@
     "pluginsDir": "Directorio de plugins: {path}",
     "installZip": "Instalar desde zip",
     "installZipPlaceholder": "/ruta/a/extension.renplugin.zip",
-    "installZipButton": "Instalar zip",
+    "installZipButton": "Elegir archivo .zip",
     "installFolder": "Instalar desde carpeta",
     "installFolderPlaceholder": "/ruta/a/extension",
-    "installFolderButton": "Instalar carpeta",
+    "installFolderButton": "Elegir carpeta",
     "loading": "Cargando extensiones...",
     "noExtensions": "Sin extensiones",
     "noExtensionsDescription": "Instala un .renplugin.zip o copia una carpeta en el directorio de plugins.",
     "uninstall": "Desinstalar",
-    "uninstallConfirm": "¿Desinstalar la extensión {id}?"
+    "uninstallConfirm": "¿Desinstalar la extensión {id}?",
+    "pickerUnavailable": "El selector de archivos solo está disponible en la aplicación de escritorio."
   },
   "community": {
     "title": "Interfaces de la comunidad",

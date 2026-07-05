@@ -27,6 +27,8 @@ export interface BrowserPrefs {
     "micronWasmParserId": string;
     "docsLanguage": string;
     "uiLanguage": string;
+    "discoverySlowMode": boolean;
+    "settingsSectionsCollapsed": { [key: string]: boolean };
 }
 
 export interface DevLogEntry {

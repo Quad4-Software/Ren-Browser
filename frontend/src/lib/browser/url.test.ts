@@ -39,6 +39,7 @@ describe("normalizeReticulumURL", () => {
     expect(normalizeReticulumURL("license")).toBe("license:");
     expect(normalizeReticulumURL("editor")).toBe("editor:");
     expect(normalizeReticulumURL("config")).toBe("config:");
+    expect(normalizeReticulumURL("settings")).toBe("settings:");
     expect(normalizeReticulumURL("docs")).toBe("docs:");
     expect(normalizeReticulumURL("docs?lang=en")).toBe("docs:?lang=en");
     expect(normalizeReticulumURL("docs:?lang=en&page=faq")).toBe("docs:?lang=en&page=faq");
@@ -68,6 +69,7 @@ describe("tabTitleFromURL", () => {
   it("labels special pages", () => {
     expect(tabTitleFromURL("editor:")).toBe("Micron Editor");
     expect(tabTitleFromURL("config:")).toBe("Reticulum Config");
+    expect(tabTitleFromURL("settings:")).toBe("Settings");
     expect(tabTitleFromURL("about:")).toBe("About");
     expect(tabTitleFromURL("license:")).toBe("License");
     expect(tabTitleFromURL("docs:")).toBe("Documentation");

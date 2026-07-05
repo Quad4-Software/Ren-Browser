@@ -1,15 +1,16 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   /* eslint-disable svelte/no-at-html-tags -- live micron preview */
+  import { Download } from "@lucide/svelte";
   import {
     resolveLinkURL,
     resolveMicronNavigation,
     resolveNomadDataURL,
   } from "$lib/browser/micron-links";
+  import { downloadPageContent, downloadText } from "$lib/browser/download";
   import { micronShellStyle } from "$lib/browser/url";
   import { parseMicronHeaderColors, renderClientMicronPage } from "$lib/micron/render-page";
   import PageContextMenu from "$lib/components/PageContextMenu.svelte";
-  import { downloadPageContent } from "$lib/browser/download";
   import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
@@ -150,6 +151,13 @@
     menu = null;
   }
 
+  function exportIndexMu() {
+    if (!source.trim()) {
+      return;
+    }
+    downloadText("index.mu", source, "text/plain");
+  }
+
   async function downloadPage() {
     closeMenu();
     await downloadPageContent(currentURL, "editor", source);
@@ -236,7 +244,19 @@
     ></button>
 
     <div class="pane preview-pane">
-      <div class="pane-label">{t("editor.preview")}</div>
+      <div class="pane-header">
+        <span class="pane-label">{t("editor.preview")}</span>
+        <button
+          type="button"
+          class="export-btn ren-icon-btn"
+          aria-label={t("editor.exportIndexMu")}
+          title={t("editor.exportIndexMu")}
+          disabled={!source.trim()}
+          onclick={exportIndexMu}
+        >
+          <Download size={14} />
+        </button>
+      </div>
       {#if previewError}
         <div class="preview-error">{previewError}</div>
       {/if}
@@ -368,10 +388,35 @@
     background: var(--ren-chrome-bg);
   }
 
-  .preview-pane .pane-label {
-    border-bottom-color: color-mix(in srgb, #ffffff 12%, transparent);
-    color: color-mix(in srgb, #ffffff 55%, transparent);
+  .pane-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    border-bottom: 1px solid color-mix(in srgb, #ffffff 12%, transparent);
     background: #09090b;
+  }
+
+  .pane-header .pane-label {
+    flex: 1;
+    border-bottom: none;
+    color: color-mix(in srgb, #ffffff 55%, transparent);
+    background: transparent;
+  }
+
+  .export-btn {
+    margin-right: 0.45rem;
+    color: color-mix(in srgb, #ffffff 70%, transparent);
+  }
+
+  .export-btn:hover:not(:disabled) {
+    color: #fff;
+    background: color-mix(in srgb, #ffffff 12%, transparent);
+  }
+
+  .export-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
   }
 
   .source-input {

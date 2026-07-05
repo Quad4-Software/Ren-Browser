@@ -288,6 +288,14 @@
   let communityError = $state("");
   let communityFilter = $state("");
   let communitySelected = new SvelteSet<number>();
+  let discoverySlowMode = $state(false);
+  let settingsSectionsCollapsed = $state<Record<string, boolean>>({});
+
+  const DISCOVERY_POLL_MS = 5000;
+  const DISCOVERY_POLL_SLOW_MS = 15000;
+  const DISCOVERY_EVENT_DEBOUNCE_MS = 5000;
+  let statusTimer: ReturnType<typeof setInterval> | undefined;
+  let nodeDiscoverTimer: ReturnType<typeof setTimeout> | undefined;
 
   let tabs = $state<Tab[]>([{ id: randomId(), title: "", url: "", active: true }]);
 
@@ -864,6 +872,9 @@
       if (normalized === "config:") {
         contentType = "config";
       }
+      if (normalized === "settings:") {
+        contentType = "settings";
+      }
     }
 
     try {
@@ -978,6 +989,34 @@
   async function loadNodes() {
     nodes = (await ListNodes()) as Node[];
     refreshTabTitles();
+  }
+
+  function discoveryPollInterval(): number {
+    return discoverySlowMode ? DISCOVERY_POLL_SLOW_MS : DISCOVERY_POLL_MS;
+  }
+
+  function restartStatusTimer() {
+    if (statusTimer !== undefined) {
+      clearInterval(statusTimer);
+    }
+    statusTimer = setInterval(() => {
+      void loadNodes();
+      void loadInterfaces();
+    }, discoveryPollInterval());
+  }
+
+  function scheduleLoadNodesFromEvent() {
+    if (!discoverySlowMode) {
+      void loadNodes();
+      return;
+    }
+    if (nodeDiscoverTimer !== undefined) {
+      return;
+    }
+    nodeDiscoverTimer = setTimeout(() => {
+      nodeDiscoverTimer = undefined;
+      void loadNodes();
+    }, DISCOVERY_EVENT_DEBOUNCE_MS);
   }
 
   async function loadLogs() {
@@ -1145,6 +1184,8 @@
     micronWasmAvailable = await isMicronWasmAvailable();
     micronWasmParserId = prefs.micronWasmParserId || BUNDLED_MICRON_WASM_PARSER_ID;
     micronRenderer = normalizeMicronRendererPreference(prefs.micronRenderer);
+    discoverySlowMode = !!prefs.discoverySlowMode;
+    settingsSectionsCollapsed = { ...(prefs.settingsSectionsCollapsed ?? {}) };
     await refreshMicronWasmState(micronWasmParserId);
   }
 
@@ -1158,6 +1199,8 @@
       micronWasmParserId,
       uiLanguage,
       docsLanguage,
+      discoverySlowMode,
+      settingsSectionsCollapsed,
     };
   }
 
@@ -1168,6 +1211,8 @@
     micronWasmEnabled?: boolean;
     micronWasmParserId?: string;
     uiLanguage?: string;
+    discoverySlowMode?: boolean;
+    settingsSectionsCollapsed?: Record<string, boolean>;
   }) {
     const prefs = await SetBrowserPrefs({
       ...currentBrowserPrefsPayload(),
@@ -1179,8 +1224,21 @@
     micronWasmAvailable = await isMicronWasmAvailable();
     micronWasmParserId = prefs.micronWasmParserId || BUNDLED_MICRON_WASM_PARSER_ID;
     micronRenderer = normalizeMicronRendererPreference(prefs.micronRenderer);
+    discoverySlowMode = !!prefs.discoverySlowMode;
+    settingsSectionsCollapsed = { ...(prefs.settingsSectionsCollapsed ?? {}) };
     await refreshMicronWasmState(micronWasmParserId);
     return prefs;
+  }
+
+  async function saveDiscoverySlowMode(value: boolean) {
+    discoverySlowMode = value;
+    restartStatusTimer();
+    await persistBrowserPrefs({ discoverySlowMode: value });
+  }
+
+  async function saveSettingsSectionsCollapsed(sections: Record<string, boolean>) {
+    settingsSectionsCollapsed = sections;
+    await persistBrowserPrefs({ settingsSectionsCollapsed: sections });
   }
 
   async function saveOpenLinksInNewTab(value: boolean) {
@@ -1501,10 +1559,7 @@
       }
     });
 
-    const statusTimer = setInterval(() => {
-      void loadNodes();
-      void loadInterfaces();
-    }, 5000);
+    restartStatusTimer();
 
     Events.On("rns:status", (event) => {
       const status = typeof event.data === "string" ? event.data : "";
@@ -1542,7 +1597,7 @@
     });
 
     Events.On("node:discovered", () => {
-      void loadNodes();
+      scheduleLoadNodesFromEvent();
     });
 
     Events.On("dev:log", (payload: { data: string }) => {
@@ -1575,7 +1630,12 @@
     window.addEventListener("keydown", onKeyDown);
 
     return () => {
-      clearInterval(statusTimer);
+      if (statusTimer !== undefined) {
+        clearInterval(statusTimer);
+      }
+      if (nodeDiscoverTimer !== undefined) {
+        clearTimeout(nodeDiscoverTimer);
+      }
       window.removeEventListener("keydown", onKeyDown);
       if (persistTimer) {
         clearTimeout(persistTimer);
@@ -1639,6 +1699,83 @@
   />
 
   <main class="workspace" class:split={activePanel !== "browser"}>
+    {#snippet settingsPane()}
+      <SettingsPanel
+        bind:theme
+        {systemFonts}
+        {keybinds}
+        {interfaces}
+        {configPath}
+        {pluginsDir}
+        bind:downloadDir
+        {uiLanguage}
+        onChangeUILanguage={saveUILanguage}
+        {openLinksInNewTab}
+        {nativeTitlebar}
+        {micronRenderer}
+        {micronWasmEnabled}
+        {micronWasmParserId}
+        {desktopChrome}
+        {mobileUI}
+        bind:configText
+        {configSaving}
+        {configError}
+        {communityItems}
+        {communityLoading}
+        {communityImporting}
+        {communityError}
+        bind:communityFilter
+        {communitySelected}
+        sectionsCollapsed={settingsSectionsCollapsed}
+        onChangeSectionsCollapsed={saveSettingsSectionsCollapsed}
+        onChange={saveTheme}
+        onChangeKeybinds={saveKeybinds}
+        onChangeDownloadDir={saveDownloadDir}
+        onPickDownloadDir={pickDownloadDir}
+        onChangeOpenLinksInNewTab={saveOpenLinksInNewTab}
+        onChangeNativeTitlebar={saveNativeTitlebar}
+        onChangeMicronRenderer={saveMicronRenderer}
+        onChangeMicronWasmEnabled={saveMicronWasmEnabled}
+        onChangeMicronWasmParser={saveMicronWasmParser}
+        onMicronWasmReadyChange={setMicronWasmReady}
+        onResetDefaults={resetDefaults}
+        onToggleInterface={async (name, enabled) => {
+          await SetInterfaceEnabled(name, enabled);
+          await loadInterfaces();
+        }}
+        onExportTheme={async () => {
+          const json = await ExportTheme();
+          const blob = new Blob([json], { type: "application/json" });
+          const href = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = href;
+          a.download = exportFilename("theme");
+          a.click();
+          URL.revokeObjectURL(href);
+        }}
+        onImportTheme={async (json) => {
+          theme = (await ImportTheme(json)) as ThemeSettings;
+          applyTheme(theme);
+          await syncMobileChromeTheme(theme);
+        }}
+        onConfigChange={(text) => {
+          configText = text;
+        }}
+        onConfigSave={() => void saveConfigText()}
+        onConfigReload={() => void reloadConfigFromDisk()}
+        onClearPageCache={() => void clearPageCache()}
+        {pageCacheEntries}
+        {pageCacheMax}
+        {pageCacheClearing}
+        onCommunityRefresh={() => void loadCommunityInterfaces()}
+        onCommunityFilter={(value) => {
+          communityFilter = value;
+        }}
+        onCommunityToggle={toggleCommunitySelection}
+        onCommunityImport={() => void importCommunitySelection()}
+        onPluginsChanged={() => void reloadPlugins()}
+      />
+    {/snippet}
     <section class="page-pane">
       {#snippet primaryPane()}
         {#if contentType === "editor"}
@@ -1669,6 +1806,14 @@
                 onReload={() => void reloadConfigFromDisk()}
               />
             </section>
+          {/if}
+        {:else if contentType === "settings"}
+          {#if loading}
+            <div class="editor-loading">{t("common.loading")}</div>
+          {:else}
+            <div class="settings-page">
+              {@render settingsPane()}
+            </div>
           {/if}
         {:else}
           <ContentViewer
@@ -1746,6 +1891,8 @@
         <DiscoveryPanel
           {nodes}
           {favorites}
+          slowMode={discoverySlowMode}
+          onSlowModeChange={saveDiscoverySlowMode}
           onOpen={browseURL}
           onFavorite={async (favUrl) => {
             favorites = (await AddFavorite(favUrl)) as string[];
@@ -1793,79 +1940,7 @@
       </aside>
     {:else if activePanel === "settings"}
       <aside class="side-pane">
-        <SettingsPanel
-          bind:theme
-          {systemFonts}
-          {keybinds}
-          {interfaces}
-          {configPath}
-          {pluginsDir}
-          bind:downloadDir
-          {uiLanguage}
-          onChangeUILanguage={saveUILanguage}
-          {openLinksInNewTab}
-          {nativeTitlebar}
-          {micronRenderer}
-          {micronWasmEnabled}
-          {micronWasmParserId}
-          {desktopChrome}
-          {mobileUI}
-          bind:configText
-          {configSaving}
-          {configError}
-          {communityItems}
-          {communityLoading}
-          {communityImporting}
-          {communityError}
-          bind:communityFilter
-          {communitySelected}
-          onChange={saveTheme}
-          onChangeKeybinds={saveKeybinds}
-          onChangeDownloadDir={saveDownloadDir}
-          onPickDownloadDir={pickDownloadDir}
-          onChangeOpenLinksInNewTab={saveOpenLinksInNewTab}
-          onChangeNativeTitlebar={saveNativeTitlebar}
-          onChangeMicronRenderer={saveMicronRenderer}
-          onChangeMicronWasmEnabled={saveMicronWasmEnabled}
-          onChangeMicronWasmParser={saveMicronWasmParser}
-          onMicronWasmReadyChange={setMicronWasmReady}
-          onResetDefaults={resetDefaults}
-          onToggleInterface={async (name, enabled) => {
-            await SetInterfaceEnabled(name, enabled);
-            await loadInterfaces();
-          }}
-          onExportTheme={async () => {
-            const json = await ExportTheme();
-            const blob = new Blob([json], { type: "application/json" });
-            const href = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = href;
-            a.download = exportFilename("theme");
-            a.click();
-            URL.revokeObjectURL(href);
-          }}
-          onImportTheme={async (json) => {
-            theme = (await ImportTheme(json)) as ThemeSettings;
-            applyTheme(theme);
-            await syncMobileChromeTheme(theme);
-          }}
-          onConfigChange={(text) => {
-            configText = text;
-          }}
-          onConfigSave={() => void saveConfigText()}
-          onConfigReload={() => void reloadConfigFromDisk()}
-          onClearPageCache={() => void clearPageCache()}
-          {pageCacheEntries}
-          {pageCacheMax}
-          {pageCacheClearing}
-          onCommunityRefresh={() => void loadCommunityInterfaces()}
-          onCommunityFilter={(value) => {
-            communityFilter = value;
-          }}
-          onCommunityToggle={toggleCommunitySelection}
-          onCommunityImport={() => void importCommunitySelection()}
-          onPluginsChanged={() => void reloadPlugins()}
-        />
+        {@render settingsPane()}
       </aside>
     {:else if activePluginPanel}
       <aside class="side-pane">
@@ -1988,6 +2063,11 @@
     overflow: auto;
     padding: 1rem;
     background: var(--ren-content-bg);
+  }
+
+  .settings-page {
+    height: 100%;
+    overflow: hidden;
   }
 
   .mobile-downloads :global(.menu) {

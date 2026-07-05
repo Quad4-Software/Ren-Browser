@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Compass, Star } from "@lucide/svelte";
+  import { Compass, Snail, Star } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { displayName } from "$lib/brand";
   import { t } from "$lib/i18n/i18n.svelte";
@@ -15,11 +15,13 @@
   type Props = {
     nodes: Node[];
     favorites: string[];
+    slowMode: boolean;
     onOpen: (url: string) => void;
     onFavorite: (url: string) => void;
+    onSlowModeChange: (value: boolean) => void;
   };
 
-  let { nodes, favorites, onOpen, onFavorite }: Props = $props();
+  let { nodes, favorites, slowMode, onOpen, onFavorite, onSlowModeChange }: Props = $props();
 
   let query = $state("");
 
@@ -61,8 +63,22 @@
 
 <section class="discovery">
   <header>
-    <h2>{t("discovery.title")}</h2>
-    <p>{t("discovery.subtitle")}</p>
+    <div class="title-row">
+      <div>
+        <h2>{t("discovery.title")}</h2>
+        <p>{t("discovery.subtitle")}</p>
+      </div>
+      <button
+        type="button"
+        class="ren-icon-btn slow-btn"
+        class:active={slowMode}
+        aria-label={slowMode ? t("discovery.slowModeOn") : t("discovery.slowModeOff")}
+        title={t("discovery.slowMode")}
+        onclick={() => onSlowModeChange(!slowMode)}
+      >
+        <Snail size={16} />
+      </button>
+    </div>
     <input
       class="search ren-input"
       type="search"
@@ -126,6 +142,14 @@
     background: var(--ren-content-bg);
   }
 
+  .title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.65rem;
+    margin-bottom: 0.75rem;
+  }
+
   header h2 {
     margin: 0 0 0.25rem;
     font-size: 1.05rem;
@@ -133,9 +157,14 @@
   }
 
   header p {
-    margin: 0 0 0.75rem;
+    margin: 0;
     color: var(--ren-muted);
     font-size: 0.88rem;
+  }
+
+  .slow-btn.active {
+    color: var(--ren-accent);
+    background: color-mix(in srgb, var(--ren-accent) 14%, var(--ren-chrome-bg));
   }
 
   .search {

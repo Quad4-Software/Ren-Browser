@@ -12,8 +12,10 @@ type BrowserPrefs struct {
 	MicronRenderer       string `json:"micronRenderer"`
 	MicronWasmEnabled    bool   `json:"micronWasmEnabled"`
 	MicronWasmParserID   string `json:"micronWasmParserId"`
-	DocsLanguage         string `json:"docsLanguage"`
-	UILanguage           string `json:"uiLanguage"`
+	DocsLanguage              string          `json:"docsLanguage"`
+	UILanguage                string          `json:"uiLanguage"`
+	DiscoverySlowMode         bool            `json:"discoverySlowMode"`
+	SettingsSectionsCollapsed map[string]bool `json:"settingsSectionsCollapsed"`
 }
 
 func DefaultBrowserPrefs() BrowserPrefs {
@@ -42,6 +44,10 @@ func mergeBrowserPrefs(saved BrowserPrefs) BrowserPrefs {
 	}
 	if saved.UILanguage != "" {
 		defaults.UILanguage = saved.UILanguage
+	}
+	defaults.DiscoverySlowMode = saved.DiscoverySlowMode
+	if len(saved.SettingsSectionsCollapsed) > 0 {
+		defaults.SettingsSectionsCollapsed = saved.SettingsSectionsCollapsed
 	}
 	return defaults
 }

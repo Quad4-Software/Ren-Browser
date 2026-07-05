@@ -9,6 +9,7 @@
     type CommunityInterface,
   } from "$lib/components/CommunityInterfaces.svelte";
   import ExtensionsPanel from "$lib/components/ExtensionsPanel.svelte";
+  import SettingsSection from "$lib/components/SettingsSection.svelte";
   import type { MicronRendererPreference } from "$lib/micron/render-page";
   import { isWebAssemblySupported } from "$lib/micron/wasm-loader";
   import type { ThemeSettings } from "$lib/theme/tokens";
@@ -23,6 +24,7 @@
   } from "$lib/browser/keybinds";
   import {
     detectOSLocale,
+    localeNativeName,
     localeLabel,
     resolveLocale,
     SUPPORTED_LOCALES,
@@ -88,6 +90,8 @@
     onCommunityToggle: (id: number) => void;
     onCommunityImport: () => void;
     onClearPageCache: () => void;
+    sectionsCollapsed: Record<string, boolean>;
+    onChangeSectionsCollapsed: (sections: Record<string, boolean>) => void;
     pluginsDir?: string;
     onPluginsChanged?: () => void;
   };
@@ -139,6 +143,8 @@
     onCommunityToggle,
     onCommunityImport,
     onClearPageCache,
+    sectionsCollapsed,
+    onChangeSectionsCollapsed,
     onPluginsChanged,
     pluginsDir = "",
     pageCacheEntries = 0,
@@ -227,284 +233,367 @@
     const rounded = value >= 10 || unit === 0 ? Math.round(value) : Math.round(value * 10) / 10;
     return `${rounded} ${units[unit]}`;
   }
+
+  function toggleSettingsSection(id: string) {
+    onChangeSectionsCollapsed({
+      ...sectionsCollapsed,
+      [id]: !sectionsCollapsed[id],
+    });
+  }
+
+  function sectionCollapsed(id: string): boolean {
+    return sectionsCollapsed[id] === true;
+  }
 </script>
 
 <svelte:window onkeydown={recordKeybind} />
 
 <section class="settings">
-  <h2>{t("settings.appearance")}</h2>
-
-  <label>
-    <span>{t("language.title")}</span>
-    <select
-      value={uiLanguage}
-      onchange={(event) => onChangeUILanguage((event.currentTarget as HTMLSelectElement).value)}
-    >
-      <option value=""
-        >{t("language.system", { locale: localeLabel(resolveLocale(detectOSLocale())) })}</option
+  <SettingsSection
+    id="appearance"
+    title={t("settings.appearance")}
+    heading="h2"
+    collapsed={sectionCollapsed("appearance")}
+    onToggle={toggleSettingsSection}
+  >
+    <label>
+      <span>{t("language.title")}</span>
+      <select
+        value={uiLanguage}
+        onchange={(event) => onChangeUILanguage((event.currentTarget as HTMLSelectElement).value)}
       >
-      {#each SUPPORTED_LOCALES as locale (locale.code)}
-        <option value={locale.code}>{localeLabel(locale.code)}</option>
-      {/each}
-    </select>
-  </label>
-  <p class="hint">{t("language.hint")}</p>
-
-  <label>
-    <span>{t("settings.themeMode")}</span>
-    <select
-      value={theme.mode}
-      onchange={(event) =>
-        update("mode", (event.currentTarget as HTMLSelectElement).value as ThemeSettings["mode"])}
-    >
-      <option value="dark">{t("settings.themeDark")}</option>
-      <option value="light">{t("settings.themeLight")}</option>
-      <option value="system">{t("settings.themeSystem")}</option>
-    </select>
-  </label>
-
-  <label class="accent-picker">
-    <span>{t("settings.accent")}</span>
-    <input
-      class="accent-swatch"
-      type="color"
-      value={theme.accent}
-      oninput={(event) => update("accent", (event.currentTarget as HTMLInputElement).value)}
-    />
-  </label>
-
-  <label>
-    <span>{t("settings.fontFamily")}</span>
-    <select
-      value={theme.fontFamily}
-      onchange={(event) => update("fontFamily", (event.currentTarget as HTMLSelectElement).value)}
-    >
-      {#each fontOptions as font (font)}
-        <option value={font}>{font}</option>
-      {/each}
-    </select>
-  </label>
-
-  <label>
-    <span>{t("settings.fontSize", { size: theme.fontSize })}</span>
-    <input
-      type="range"
-      min="12"
-      max="20"
-      value={theme.fontSize}
-      oninput={(event) =>
-        update("fontSize", Number((event.currentTarget as HTMLInputElement).value))}
-    />
-  </label>
-
-  <Toggle
-    label={t("settings.compactToolbar")}
-    checked={theme.compactToolbar}
-    onchange={(value) => update("compactToolbar", value)}
-  />
-
-  <h3>{t("settings.customTokens")}</h3>
-  <label>
-    <span>{t("settings.borderColor")}</span>
-    <input
-      type="text"
-      placeholder={t("settings.borderPlaceholder")}
-      value={theme.customTokens.border ?? ""}
-      oninput={(event) => updateToken("border", (event.currentTarget as HTMLInputElement).value)}
-    />
-  </label>
-
-  <div class="theme-io">
-    <button onclick={onExportTheme}>{t("settings.exportTheme")}</button>
-    <label class="file-btn">
-      {t("settings.importTheme")}
-      <input type="file" accept="application/json,.json" onchange={importThemeFile} />
+        <option value=""
+          >{t("language.system", {
+            locale: localeNativeName(resolveLocale(detectOSLocale())),
+          })}</option
+        >
+        {#each SUPPORTED_LOCALES as locale (locale.code)}
+          <option value={locale.code}>{localeLabel(locale.code)}</option>
+        {/each}
+      </select>
     </label>
-  </div>
+    <p class="hint">{t("language.hint")}</p>
 
-  <h3>{t("settings.browsing")}</h3>
-  <Toggle
-    label={t("settings.openLinksInNewTab")}
-    checked={openLinksInNewTab}
-    onchange={onChangeOpenLinksInNewTab}
-  />
+    <label>
+      <span>{t("settings.themeMode")}</span>
+      <select
+        value={theme.mode}
+        onchange={(event) =>
+          update("mode", (event.currentTarget as HTMLSelectElement).value as ThemeSettings["mode"])}
+      >
+        <option value="dark">{t("settings.themeDark")}</option>
+        <option value="light">{t("settings.themeLight")}</option>
+        <option value="system">{t("settings.themeSystem")}</option>
+      </select>
+    </label>
 
-  <h3>{t("settings.pageCache")}</h3>
-  <p class="hint">
-    {t("settings.pageCacheHint")}
-  </p>
-  <div class="cache-row">
-    <span class="meta">{t("common.entries", { current: pageCacheEntries, max: pageCacheMax })}</span
-    >
-    <button type="button" class="reset-btn" disabled={pageCacheClearing} onclick={onClearPageCache}>
-      {pageCacheClearing ? t("common.clearing") : t("settings.clearPageCache")}
-    </button>
-  </div>
+    <label class="accent-picker">
+      <span>{t("settings.accent")}</span>
+      <input
+        class="accent-swatch"
+        type="color"
+        value={theme.accent}
+        oninput={(event) => update("accent", (event.currentTarget as HTMLInputElement).value)}
+      />
+    </label>
 
-  {#if desktopChrome}
+    <label>
+      <span>{t("settings.fontFamily")}</span>
+      <select
+        value={theme.fontFamily}
+        onchange={(event) => update("fontFamily", (event.currentTarget as HTMLSelectElement).value)}
+      >
+        {#each fontOptions as font (font)}
+          <option value={font}>{font}</option>
+        {/each}
+      </select>
+    </label>
+
+    <label>
+      <span>{t("settings.fontSize", { size: theme.fontSize })}</span>
+      <input
+        type="range"
+        min="12"
+        max="20"
+        value={theme.fontSize}
+        oninput={(event) =>
+          update("fontSize", Number((event.currentTarget as HTMLInputElement).value))}
+      />
+    </label>
+
     <Toggle
-      label={t("settings.nativeTitlebar")}
-      checked={nativeTitlebar}
-      onchange={onChangeNativeTitlebar}
+      label={t("settings.compactToolbar")}
+      checked={theme.compactToolbar}
+      onchange={(value) => update("compactToolbar", value)}
     />
-  {/if}
+  </SettingsSection>
 
-  <h3>{t("settings.micronPages")}</h3>
-  <p class="hint">
-    {t("settings.micronHint")}
-  </p>
-
-  {#if !isWebAssemblySupported()}
-    <p class="warn">
-      {t("settings.wasmUnavailable")}
-    </p>
-  {/if}
-
-  {#if isWebAssemblySupported()}
-    <Toggle
-      label={t("settings.micronWasmEnabled")}
-      checked={micronWasmEnabled}
-      onchange={onChangeMicronWasmEnabled}
-    />
-  {/if}
-
-  <label>
-    <span>{t("settings.micronRenderer")}</span>
-    <select
-      value={micronRenderer}
-      onchange={(event) =>
-        onChangeMicronRenderer(
-          (event.currentTarget as HTMLSelectElement).value as MicronRendererPreference,
-        )}
-    >
-      <option value="auto">{t("settings.rendererAuto")}</option>
-      {#if isWebAssemblySupported() && micronWasmEnabled}
-        <option value="wasm">{t("settings.rendererWasm")}</option>
-      {/if}
-      <option value="go">{t("settings.rendererGo")}</option>
-      <option value="js">{t("settings.rendererJs")}</option>
-    </select>
-  </label>
-
-  {#if isWebAssemblySupported() && micronWasmEnabled}
-    <h3>{t("settings.wasmParsers")}</h3>
-    <MicronWasmManager
-      selectedParserId={micronWasmParserId}
-      wasmEnabled={micronWasmEnabled}
-      onSelectParser={onChangeMicronWasmParser}
-      onWasmReadyChange={onMicronWasmReadyChange}
-    />
-  {/if}
-
-  <div class="reset-row">
-    <button type="button" class="reset-btn" onclick={onResetDefaults}
-      >{t("settings.resetDefaults")}</button
-    >
-  </div>
-
-  <h3>{t("settings.downloads")}</h3>
-  <label>
-    <span>{t("settings.downloadFolder")}</span>
-    <div class="download-dir">
+  <SettingsSection
+    id="customTokens"
+    title={t("settings.customTokens")}
+    collapsed={sectionCollapsed("customTokens")}
+    onToggle={toggleSettingsSection}
+  >
+    <label>
+      <span>{t("settings.borderColor")}</span>
       <input
         type="text"
-        bind:value={downloadDir}
-        spellcheck="false"
-        onblur={() => onChangeDownloadDir(downloadDir)}
+        placeholder={t("settings.borderPlaceholder")}
+        value={theme.customTokens.border ?? ""}
+        oninput={(event) => updateToken("border", (event.currentTarget as HTMLInputElement).value)}
       />
-      <button
-        type="button"
-        class="folder-btn"
-        aria-label={t("settings.chooseDownloadFolder")}
-        onclick={onPickDownloadDir}
+    </label>
+
+    <div class="theme-io">
+      <button onclick={onExportTheme}>{t("settings.exportTheme")}</button>
+      <label class="file-btn">
+        {t("settings.importTheme")}
+        <input type="file" accept="application/json,.json" onchange={importThemeFile} />
+      </label>
+    </div>
+  </SettingsSection>
+
+  <SettingsSection
+    id="browsing"
+    title={t("settings.browsing")}
+    collapsed={sectionCollapsed("browsing")}
+    onToggle={toggleSettingsSection}
+  >
+    <Toggle
+      label={t("settings.openLinksInNewTab")}
+      checked={openLinksInNewTab}
+      onchange={onChangeOpenLinksInNewTab}
+    />
+
+    {#if desktopChrome}
+      <Toggle
+        label={t("settings.nativeTitlebar")}
+        checked={nativeTitlebar}
+        onchange={onChangeNativeTitlebar}
+      />
+    {/if}
+  </SettingsSection>
+
+  <SettingsSection
+    id="pageCache"
+    title={t("settings.pageCache")}
+    collapsed={sectionCollapsed("pageCache")}
+    onToggle={toggleSettingsSection}
+  >
+    <p class="hint">
+      {t("settings.pageCacheHint")}
+    </p>
+    <div class="cache-row">
+      <span class="meta">{t("common.entries", { current: pageCacheEntries, max: pageCacheMax })}</span
       >
-        <FolderOpen size={16} />
+      <button type="button" class="reset-btn" disabled={pageCacheClearing} onclick={onClearPageCache}>
+        {pageCacheClearing ? t("common.clearing") : t("settings.clearPageCache")}
       </button>
     </div>
-  </label>
+  </SettingsSection>
 
-  <h3>{t("settings.keyboardShortcuts")}</h3>
-  {#if !mobileUI}
-    <ul class="keybinds">
-      {#each keybindActions as action (action)}
-        <li>
-          <span>{keybindLabel(action)}</span>
-          <button
-            type="button"
-            class="keybind-btn"
-            class:recording={recordingAction === action}
-            onclick={() => startRecording(action)}
-          >
-            {recordingAction === action
-              ? t("common.pressKeys")
-              : formatChord(keybinds.bindings[action])}
-          </button>
-        </li>
-      {/each}
-    </ul>
-  {:else}
-    <p class="hint">{t("settings.keyboardShortcutsDesktopOnly")}</p>
-  {/if}
+  <SettingsSection
+    id="micron"
+    title={t("settings.micronPages")}
+    collapsed={sectionCollapsed("micron")}
+    onToggle={toggleSettingsSection}
+  >
+    <p class="hint">
+      {t("settings.micronHint")}
+    </p>
 
-  <ExtensionsPanel {pluginsDir} onChanged={onPluginsChanged} />
-
-  <CommunityInterfaces
-    items={communityItems}
-    loading={communityLoading}
-    importing={communityImporting}
-    error={communityError}
-    bind:filter={communityFilter}
-    selected={communitySelected}
-    onFilter={onCommunityFilter}
-    onRefresh={onCommunityRefresh}
-    onToggle={onCommunityToggle}
-    onImport={onCommunityImport}
-  />
-
-  <ReticulumConfigEditor
-    bind:configText
-    {configPath}
-    saving={configSaving}
-    error={configError}
-    onChange={onConfigChange}
-    onSave={onConfigSave}
-    onReload={onConfigReload}
-  />
-
-  <h3>{t("settings.reticulumInterfaces")}</h3>
-  <p class="hint">{t("settings.reticulumInterfacesHint")}</p>
-
-  <ul class="ifaces">
-    {#if interfaces.length === 0}
-      <li class="ifaces-empty">
-        <EmptyState
-          title={t("settings.noInterfaces")}
-          description={t("settings.noInterfacesDescription")}
-        >
-          <Network size={22} />
-        </EmptyState>
-      </li>
-    {:else}
-      {#each interfaces as iface (iface.name)}
-        <li>
-          <Toggle
-            label={iface.name}
-            checked={iface.enabled}
-            onchange={(value) => onToggleInterface(iface.name, value)}
-          />
-          <span class="meta">
-            {iface.type} · {iface.online ? t("common.online") : t("common.offline")} · {t(
-              "common.txRx",
-              {
-                tx: formatBytes(iface.txBytes),
-                rx: formatBytes(iface.rxBytes),
-              },
-            )}
-          </span>
-        </li>
-      {/each}
+    {#if !isWebAssemblySupported()}
+      <p class="warn">
+        {t("settings.wasmUnavailable")}
+      </p>
     {/if}
-  </ul>
+
+    {#if isWebAssemblySupported()}
+      <Toggle
+        label={t("settings.micronWasmEnabled")}
+        checked={micronWasmEnabled}
+        onchange={onChangeMicronWasmEnabled}
+      />
+    {/if}
+
+    <label>
+      <span>{t("settings.micronRenderer")}</span>
+      <select
+        value={micronRenderer}
+        onchange={(event) =>
+          onChangeMicronRenderer(
+            (event.currentTarget as HTMLSelectElement).value as MicronRendererPreference,
+          )}
+      >
+        <option value="auto">{t("settings.rendererAuto")}</option>
+        {#if isWebAssemblySupported() && micronWasmEnabled}
+          <option value="wasm">{t("settings.rendererWasm")}</option>
+        {/if}
+        <option value="go">{t("settings.rendererGo")}</option>
+        <option value="js">{t("settings.rendererJs")}</option>
+      </select>
+    </label>
+
+    {#if isWebAssemblySupported() && micronWasmEnabled}
+      <MicronWasmManager
+        selectedParserId={micronWasmParserId}
+        wasmEnabled={micronWasmEnabled}
+        onSelectParser={onChangeMicronWasmParser}
+        onWasmReadyChange={onMicronWasmReadyChange}
+      />
+    {/if}
+
+    <div class="reset-row">
+      <button type="button" class="reset-btn" onclick={onResetDefaults}
+        >{t("settings.resetDefaults")}</button
+      >
+    </div>
+  </SettingsSection>
+
+  <SettingsSection
+    id="downloads"
+    title={t("settings.downloads")}
+    collapsed={sectionCollapsed("downloads")}
+    onToggle={toggleSettingsSection}
+  >
+    <label>
+      <span>{t("settings.downloadFolder")}</span>
+      <div class="download-dir">
+        <input
+          type="text"
+          bind:value={downloadDir}
+          spellcheck="false"
+          onblur={() => onChangeDownloadDir(downloadDir)}
+        />
+        <button
+          type="button"
+          class="folder-btn"
+          aria-label={t("settings.chooseDownloadFolder")}
+          onclick={onPickDownloadDir}
+        >
+          <FolderOpen size={16} />
+        </button>
+      </div>
+    </label>
+  </SettingsSection>
+
+  <SettingsSection
+    id="keybinds"
+    title={t("settings.keyboardShortcuts")}
+    collapsed={sectionCollapsed("keybinds")}
+    onToggle={toggleSettingsSection}
+  >
+    {#if !mobileUI}
+      <ul class="keybinds">
+        {#each keybindActions as action (action)}
+          <li>
+            <span>{keybindLabel(action)}</span>
+            <button
+              type="button"
+              class="keybind-btn"
+              class:recording={recordingAction === action}
+              onclick={() => startRecording(action)}
+            >
+              {recordingAction === action
+                ? t("common.pressKeys")
+                : formatChord(keybinds.bindings[action])}
+            </button>
+          </li>
+        {/each}
+      </ul>
+    {:else}
+      <p class="hint">{t("settings.keyboardShortcutsDesktopOnly")}</p>
+    {/if}
+  </SettingsSection>
+
+  <SettingsSection
+    id="extensions"
+    title={t("extensions.title")}
+    collapsed={sectionCollapsed("extensions")}
+    onToggle={toggleSettingsSection}
+  >
+    <ExtensionsPanel {pluginsDir} showTitle={false} onChanged={onPluginsChanged} />
+  </SettingsSection>
+
+  <SettingsSection
+    id="community"
+    title={t("community.title")}
+    collapsed={sectionCollapsed("community")}
+    onToggle={toggleSettingsSection}
+  >
+    <CommunityInterfaces
+      showTitle={false}
+      items={communityItems}
+      loading={communityLoading}
+      importing={communityImporting}
+      error={communityError}
+      bind:filter={communityFilter}
+      selected={communitySelected}
+      onFilter={onCommunityFilter}
+      onRefresh={onCommunityRefresh}
+      onToggle={onCommunityToggle}
+      onImport={onCommunityImport}
+    />
+  </SettingsSection>
+
+  <SettingsSection
+    id="reticulumConfig"
+    title={t("config.title")}
+    collapsed={sectionCollapsed("reticulumConfig")}
+    onToggle={toggleSettingsSection}
+  >
+    <ReticulumConfigEditor
+      showTitle={false}
+      bind:configText
+      {configPath}
+      saving={configSaving}
+      error={configError}
+      onChange={onConfigChange}
+      onSave={onConfigSave}
+      onReload={onConfigReload}
+    />
+  </SettingsSection>
+
+  <SettingsSection
+    id="reticulumInterfaces"
+    title={t("settings.reticulumInterfaces")}
+    collapsed={sectionCollapsed("reticulumInterfaces")}
+    onToggle={toggleSettingsSection}
+  >
+    <p class="hint">{t("settings.reticulumInterfacesHint")}</p>
+
+    <ul class="ifaces">
+      {#if interfaces.length === 0}
+        <li class="ifaces-empty">
+          <EmptyState
+            title={t("settings.noInterfaces")}
+            description={t("settings.noInterfacesDescription")}
+          >
+            <Network size={22} />
+          </EmptyState>
+        </li>
+      {:else}
+        {#each interfaces as iface (iface.name)}
+          <li>
+            <Toggle
+              label={iface.name}
+              checked={iface.enabled}
+              onchange={(value) => onToggleInterface(iface.name, value)}
+            />
+            <span class="meta">
+              {iface.type} · {iface.online ? t("common.online") : t("common.offline")} · {t(
+                "common.txRx",
+                {
+                  tx: formatBytes(iface.txBytes),
+                  rx: formatBytes(iface.rxBytes),
+                },
+              )}
+            </span>
+          </li>
+        {/each}
+      {/if}
+    </ul>
+  </SettingsSection>
 </section>
 
 <style>
@@ -520,14 +609,6 @@
   h2,
   h3 {
     margin: 0;
-  }
-
-  h3 {
-    margin-top: 0.5rem;
-    color: var(--ren-muted);
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 
   label {

@@ -85,6 +85,7 @@
     "micronEditor": "Micron Editor",
     "reticulumConfig": "Reticulum Config",
     "documentation": "Documentation",
+    "settings": "Settings",
     "nomadNet": "NomadNet"
   },
   "settings": {
@@ -150,6 +151,9 @@
     "scanning": "{app} is scanning the mesh. Sites will appear here when nodes announce themselves.",
     "noMatching": "No matching sites",
     "unnamedSite": "Unnamed site",
+    "slowMode": "Slow discovery updates",
+    "slowModeOn": "Slow mode on",
+    "slowModeOff": "Slow mode off",
     "favoriteSite": "Favorite site"
   },
   "history": {
@@ -217,7 +221,8 @@
     "preview": "Preview",
     "resizePanes": "Resize source and preview panes",
     "loadingMicron": "Loading micron editor...",
-    "loadingConfig": "Loading Reticulum config..."
+    "loadingConfig": "Loading Reticulum config...",
+    "exportIndexMu": "Export as index.mu"
   },
   "config": {
     "title": "Reticulum config",
@@ -231,10 +236,11 @@
     "pluginsDir": "Plugins directory: {path}",
     "installZip": "Install from zip",
     "installZipPlaceholder": "/path/to/extension.renplugin.zip",
-    "installZipButton": "Install zip",
+    "installZipButton": "Choose .zip file",
     "installFolder": "Install from folder",
     "installFolderPlaceholder": "/path/to/extension",
-    "installFolderButton": "Install folder",
+    "installFolderButton": "Choose folder",
+    "pickerUnavailable": "File picker is only available in the desktop app.",
     "loading": "Loading extensions...",
     "noExtensions": "No extensions",
     "noExtensionsDescription": "Install a .renplugin.zip or copy a folder into the plugins directory.",

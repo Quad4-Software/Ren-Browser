@@ -19,6 +19,15 @@ func TestSanitizeHTMLRemovesScript(t *testing.T) {
 	}
 }
 
+func TestSanitizeHTMLRemovesPartialScriptTag(t *testing.T) {
+	for _, in := range []string{"<sCript0", "<SCript", "<SCRIPT>", "<SCri<SCript>pt"} {
+		out := content.SanitizeHTML(in)
+		if strings.Contains(strings.ToLower(out), "<script") {
+			t.Fatalf("partial script tag survived for %q: %q", in, out)
+		}
+	}
+}
+
 func TestSanitizeHTMLRemovesOnClick(t *testing.T) {
 	in := `<a href="/x" onclick="evil()">link</a>`
 	out := content.SanitizeHTML(in)

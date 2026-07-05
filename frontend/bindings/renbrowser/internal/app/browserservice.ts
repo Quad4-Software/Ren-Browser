@@ -240,6 +240,14 @@ export function PickDownloadDir(): $CancellablePromise<string> {
     return $Call.ByID(3989255669);
 }
 
+export function PickPluginDir(): $CancellablePromise<string> {
+    return $Call.ByID(1804809056);
+}
+
+export function PickPluginZip(): $CancellablePromise<string> {
+    return $Call.ByID(972349000);
+}
+
 export function PluginManager(): $CancellablePromise<plugins$0.Manager | null> {
     return $Call.ByID(1606493335);
 }

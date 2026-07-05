@@ -41,6 +41,7 @@ build/android/app/build
 coverage.out
 coverage.html
 *.test
+**/testdata/fuzz/
 third_party/reticulum-go/
 
 # OS
