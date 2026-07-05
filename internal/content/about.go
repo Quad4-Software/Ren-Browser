@@ -51,6 +51,6 @@ func RenderAbout(info AboutInfo) string {
 		`<p class="about-tagline">` + html.EscapeString(brand.Tagline) + `</p>` +
 		`<table class="about-table"><tbody>` + body + `</tbody></table>` +
 		`<p class="about-hint">Type a NomadNet URL in the address bar or open Discovery to browse the mesh. ` +
-		`<a href="license:">View license</a>.</p>` +
+		`<a href="docs:">Documentation</a> · <a href="license:">View license</a>.</p>` +
 		`</article>`
 }

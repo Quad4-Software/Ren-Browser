@@ -14,13 +14,16 @@ import (
 	"renbrowser/internal/brand"
 	"renbrowser/internal/config"
 	"renbrowser/internal/nomadnet"
+	"renbrowser/internal/plugins"
 	"renbrowser/internal/servermw"
 )
 
 type App struct {
-	Wails   *application.App
-	Service *app.BrowserService
-	Loader  *assets.Loader
+	Wails      *application.App
+	Service    *app.BrowserService
+	PluginHost *app.PluginHost
+	PluginMgr  *plugins.Manager
+	Loader     *assets.Loader
 }
 
 func openAssetsAndLoader(embedded embed.FS, cfg config.Runtime) (fs.FS, *assets.Loader, error) {
@@ -40,20 +43,29 @@ func openAssetsAndLoader(embedded embed.FS, cfg config.Runtime) (fs.FS, *assets.
 	return assetFS, loader, nil
 }
 
-func newWailsApp(browserSvc *app.BrowserService, loader *assets.Loader, cfg config.Runtime) *application.App {
+func newWailsApp(browserSvc *app.BrowserService, pluginHost *app.PluginHost, pluginMgr *plugins.Manager, loader *assets.Loader, cfg config.Runtime) *application.App {
 	registerEvents()
 
-	handler := servermw.Wrap(loader.Handler(), servermw.Options{
+	base := loader.Handler()
+	if pluginMgr != nil {
+		base = assets.PluginHandler(pluginMgr, base)
+	}
+	handler := servermw.Wrap(base, servermw.Options{
 		TrustProxy: cfg.TrustProxy,
 		BasePath:   cfg.BasePath,
 	})
 
+	services := []application.Service{
+		application.NewService(browserSvc),
+	}
+	if pluginHost != nil {
+		services = append(services, application.NewService(pluginHost))
+	}
+
 	return application.New(application.Options{
 		Name:        brand.DisplayName,
 		Description: brand.Description,
-		Services: []application.Service{
-			application.NewService(browserSvc),
-		},
+		Services:    services,
 		Assets: application.AssetOptions{
 			Handler: handler,
 		},
@@ -92,10 +104,17 @@ func registerEvents() {
 	application.RegisterEvent[app.WindowChrome]("window:chrome")
 	application.RegisterEvent[app.RuntimeConfig]("runtime:config")
 	application.RegisterEvent[app.StoreHealth]("store:health")
+	application.RegisterEvent[plugins.Manifest]("plugin:loaded")
+	application.RegisterEvent[plugins.Manifest]("plugin:unloaded")
+	application.RegisterEvent[map[string]string]("plugin:scheme")
 }
 
-func AssetHandlerForServer(loader *assets.Loader, cfg config.Runtime) http.Handler {
-	return servermw.Wrap(loader.Handler(), servermw.Options{
+func AssetHandlerForServer(loader *assets.Loader, pluginMgr *plugins.Manager, cfg config.Runtime) http.Handler {
+	base := loader.Handler()
+	if pluginMgr != nil {
+		base = assets.PluginHandler(pluginMgr, base)
+	}
+	return servermw.Wrap(base, servermw.Options{
 		TrustProxy: cfg.TrustProxy,
 		BasePath:   cfg.BasePath,
 	})

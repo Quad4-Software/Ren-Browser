@@ -14,6 +14,9 @@ func TestDownloadNameFromURL(t *testing.T) {
 	if got != "guide.zip" {
 		t.Fatalf("got %q", got)
 	}
+	if downloadNameFromURL("config:") != "reticulum.conf" {
+		t.Fatalf("config download name = %q", downloadNameFromURL("config:"))
+	}
 }
 
 func TestSanitizeDownloadFilename(t *testing.T) {

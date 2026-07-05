@@ -1,0 +1,29 @@
+{
+  "manifestVersion": 1,
+  "id": "renbrowser.hello",
+  "name": "Hello Extension",
+  "version": "1.0.0",
+  "description": "Demo URL scheme and sidebar panel",
+  "author": "Ren Browser",
+  "license": "MIT",
+  "engines": { "renbrowser": ">=0.2.0" },
+  "main": "main.js",
+  "permissions": ["storage.plugin", "events.emit"],
+  "contributes": {
+    "urlSchemes": [{
+      "scheme": "hello",
+      "handler": "handleScheme"
+    }],
+    "panels": [{
+      "id": "hello",
+      "title": "Hello",
+      "entry": "main.js",
+      "location": "sidebar"
+    }],
+    "commands": [{
+      "id": "greet",
+      "title": "Say hello",
+      "keybind": "mod+shift+h"
+    }]
+  }
+}

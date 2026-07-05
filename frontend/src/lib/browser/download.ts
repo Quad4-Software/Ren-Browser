@@ -30,6 +30,9 @@ export function pageDownloadName(url: string, contentType: string): string {
   if (url === "license:") {
     return "LICENSE";
   }
+  if (url === "config:") {
+    return "reticulum.conf";
+  }
   const barePath = meshBarePath(url);
   const leaf = barePath.split("/").filter(Boolean).at(-1);
   if (leaf) {
@@ -48,7 +51,7 @@ export function pageDownloadName(url: string, contentType: string): string {
 }
 
 export function isFileURL(url: string): boolean {
-  if (!url || url === "about:" || url === "license:" || url === "editor:") {
+  if (!url || url === "about:" || url === "license:" || url === "editor:" || url === "config:") {
     return false;
   }
   return meshBarePath(url).startsWith("/file/");

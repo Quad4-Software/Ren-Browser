@@ -1,3 +1,8 @@
+# Pinned third-party actions (bump tag and SHA together when upgrading):
+#   actions/checkout@v7.0.0                    9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+#   github/codeql-action/init@v4.31.6          fe4161a26a8629af62121b670040955b330f9af2
+#   github/codeql-action/analyze@v4.31.6       fe4161a26a8629af62121b670040955b330f9af2
+
 name: CodeQL Advanced
 
 on:
@@ -41,17 +46,17 @@ jobs:
             build-mode: none
     steps:
       - name: Checkout repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: RenBrowser
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@fb84f6228fd846d3c392887f22b18ce2d9139495
+        uses: github/codeql-action/init@fe4161a26a8629af62121b670040955b330f9af2
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@fb84f6228fd846d3c392887f22b18ce2d9139495
+        uses: github/codeql-action/analyze@fe4161a26a8629af62121b670040955b330f9af2
         with:
           category: "/language:${{matrix.language}}"

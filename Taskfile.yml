@@ -80,6 +80,14 @@ tasks:
     env:
       GOFLAGS: "-mod=mod"
 
+  test:plugins:
+    desc: Run plugin system unit tests
+    cmds:
+      - go test ./internal/plugins/...
+      - pnpm --dir frontend exec vitest run src/lib/plugins
+    env:
+      GOFLAGS: "-mod=mod"
+
   test:go:leak:
     desc: Goroutine leak checks via goleak
     cmds:

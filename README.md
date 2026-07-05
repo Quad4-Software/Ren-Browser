@@ -1,23 +1,126 @@
 # Ren Browser
 
-Desktop browser for [NomadNet](https://github.com/markqvist/NomadNet) pages over [Reticulum](https://reticulum.network/). Built with Wails v3, Go, and Svelte 5.
+A modern browser for Reticulum Network.
 
-## Requirements
+This project is under heavy active development, please wait until v1.0 for stability and to be more user friendly.
 
-- Go 1.26+
-- [pnpm](https://pnpm.io/) 11+
-- [Task](https://taskfile.dev/) (recommended)
-- Reticulum config at `~/.reticulum-go/`
+## Documentation
 
-Go dependencies (`quad4/reticulum-go`, `micron-parser-go`, and related Quad4 modules) resolve from [Quad4-Software](https://github.com/Quad4-Software) via `replace` directives in `go.mod`. No sibling-repo checkout is required.
+Guides by language in [docs/](docs/):
 
-To bump Quad4 deps to the latest `master` commits:
+| Language | Folder |
+|----------|--------|
+| English | [docs/en/](docs/en/) |
+| Russian | [docs/ru/](docs/ru/) |
+| Spanish | [docs/es/](docs/es/) |
+| German | [docs/de/](docs/de/) |
+
+Start with [Getting started](docs/en/getting-started.md) in your language.
+
+## Install
+
+### Pre-built downloads
+
+Grab the latest release for your system from [GitHub Releases](https://github.com/Quad4-Software/Ren-Browser/releases).
+
+### Docker or Podman
+
+The published server image is `ghcr.io/quad4-software/renbrowser-server`.
+
+Mount your Reticulum config so the container can join the mesh:
 
 ```sh
-go get github.com/Quad4-Software/Reticulum-Go@master
-go get github.com/Quad4-Software/Micron-Parser-Go@master
-go mod tidy
+docker run --rm -p 8080:8080 \
+  -v "$HOME/.reticulum-go:/data/reticulum" \
+  -e REN_BROWSER_CONFIG=/data/reticulum/config \
+  ghcr.io/quad4-software/renbrowser-server:latest
 ```
+
+Then open `http://localhost:8080` in any browser on the same machine.
+
+For a custom build from this repo:
+
+```sh
+task build:docker
+task run:docker
+```
+
+The server image currently has **no login screen**. Only expose it on networks you trust, or put it behind a reverse proxy with access controls. See [SECURITY.md](SECURITY.md).
+
+### Build from source
+
+For contributors or platforms without a pre-built package.
+
+**You will need:**
+
+- [Go](https://go.dev/) 1.26 or newer
+- [Node.js](https://nodejs.org/) 22+ and [pnpm](https://pnpm.io/) 11+
+- [Task](https://taskfile.dev/) (recommended)
+- Reticulum config at `~/.reticulum-go/` (or set `REN_BROWSER_CONFIG`)
+
+**Steps:**
+
+```sh
+git clone https://github.com/Quad4-Software/Ren-Browser.git
+cd Ren-Browser
+task build
+./bin/renbrowser
+```
+
+Go modules pull Quad4 dependencies from GitHub automatically; no extra repos to clone.
+
+Platform-specific builds:
+
+```sh
+task build:windows
+task build:darwin
+task build:android      # physical device (arm64)
+task build:android:emu  # emulator (host ABI)
+```
+
+Installers (AppImage, `.app` bundle, etc.):
+
+```sh
+task package
+```
+
+Android builds need the [Android SDK](https://developer.android.com/studio) (API 34, NDK r26+). Set `ANDROID_HOME` and run `task android:install:deps` if the build complains about missing tools.
+
+## Using the app
+
+- **Address bar** — enter a NomadNet destination or use built-in schemes (`about:`, `settings:`, etc.).
+- **Discovery** — find nodes announced on your Reticulum interfaces.
+- **Settings** — manage interfaces, themes, extensions, and profile data.
+- **Data** — bookmarks, history, and tabs are stored in `~/.renbrowser/renbrowser.db`. Older `state.json` files are migrated on first launch.
+
+Type `license` in the address bar to read the in-app license text.
+
+## Extensions
+
+Install extensions from **Settings → Extensions** (zip or folder), or unpack into `~/.renbrowser/plugins/<id>/` with a `renbrowser.plugin.json` manifest.
+
+An example extension lives in `extensions/hello-extension/`. Extension authors work with permissions (storage, navigation, network, and related caps) declared in the manifest. See `internal/plugins/manifest.go` for the full schema.
+
+## Server mode
+
+Run Ren Browser as a web app without the desktop shell — useful for homelab servers, Docker, or a machine that already runs Reticulum.
+
+```sh
+task build:server
+./bin/renbrowser-server --host 0.0.0.0 --port 8080
+```
+
+Common environment variables (also readable from a `.env` file in the working directory):
+
+| Variable | Purpose |
+|----------|---------|
+| `WAILS_SERVER_HOST` / `REN_BROWSER_HOST` | Bind address |
+| `WAILS_SERVER_PORT` / `REN_BROWSER_PORT` | Port (default `8080`) |
+| `REN_BROWSER_CONFIG` | Path to Reticulum config |
+| `REN_BROWSER_TRUST_PROXY` | Trust `X-Forwarded-*` from a reverse proxy |
+| `REN_BROWSER_BASE_PATH` | URL prefix when served under a subpath |
+
+Use `--public-mode` to keep favorites, history, and tabs in the browser (`localStorage`) instead of the server database.
 
 ## Development
 
@@ -25,78 +128,30 @@ go mod tidy
 task dev
 ```
 
-## Build
-
-```sh
-task build          # current platform
-task build:windows  # Windows
-task build:darwin   # macOS
-task build:android      # Android debug APK (arm64, physical devices)
-task build:android:emu  # Android debug APK (host ABI, emulator)
-```
-
-Package installers:
-
-```sh
-task package
-task package:windows
-task package:darwin
-task package:android   # signed release APK (arm64 + x86_64)
-```
-
-Android requires the [Android SDK](https://developer.android.com/studio) with platform-tools, platform API 34, build-tools, and NDK r26+. Set `ANDROID_HOME` (or `ANDROID_SDK_ROOT`). Install deps with `task android:install:deps` if needed.
-
-## Test
+Run the full quality gate before sending changes:
 
 ```sh
 task check
-task test:interop   # live Reticulum network test
+task test:interop   # optional; needs a live Reticulum network
 ```
 
-## Server mode
+## Project layout
 
-Headless HTTP server for Docker and reverse-proxy deployments:
+| Path | Contents |
+|------|----------|
+| `main_desktop.go` / `main_server.go` | Desktop and headless entry points |
+| `internal/` | Reticulum, NomadNet, rendering, SQLite store, plugins |
+| `frontend/` | Svelte 5 UI |
+| `build/` | Packaging and platform tooling |
 
-```sh
-task build:server
-./bin/renbrowser-server --host 0.0.0.0 --port 8080
-```
+## Contributing
 
-Environment variables (also loadable from `.env`):
+Patches and guidance: [CONTRIBUTING.md](CONTRIBUTING.md)
 
-- `WAILS_SERVER_HOST` / `REN_BROWSER_HOST`
-- `WAILS_SERVER_PORT` / `REN_BROWSER_PORT`
-- `REN_BROWSER_TRUST_PROXY` — trust `X-Forwarded-*` headers
-- `REN_BROWSER_BASE_PATH` — subpath prefix behind a reverse proxy
-- `REN_BROWSER_CONFIG` — Reticulum config path
+Security reports: [SECURITY.md](SECURITY.md)
 
-Docker:
-
-```sh
-task build:docker
-task run:docker
-```
-
-## Runtime data
-
-Application state is stored in `~/.renbrowser/renbrowser.db` (SQLite, WAL). Legacy `~/.renbrowser/state.json` is migrated on first run.
-
-## Flags
-
-- `--config` — Reticulum config file path
-- `--assets-dir` — serve frontend from a directory instead of embedded assets
-- `--assets-zip` — serve frontend from a zip archive
-- `--host` / `--port` — HTTP bind address (server mode)
-- `--trust-proxy` — honor reverse-proxy forwarded headers
-- `--base-path` — URL prefix when served behind a reverse proxy
-
-## Layout
-
-- `main_desktop.go` / `main_server.go` — Wails desktop and headless entry points
-- `internal/` — Reticulum, NomadNet, rendering, SQLite store
-- `frontend/` — Svelte UI
-- `build/` — platform packaging and Wails config
+Legal and licensing questions: [LEGAL.md](LEGAL.md)
 
 ## License
 
-Ren Browser is released under the [MIT License](LICENSE). Type `license` in the address bar to view the full license text in the app.
+Ren Browser is released under the [MIT License](LICENSE).

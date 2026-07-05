@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -55,4 +56,30 @@ func FetchCommunityInterfaces(installed map[string]bool) ([]CommunityInterface, 
 		out = append(out, item)
 	}
 	return out, nil
+}
+
+func FilterTCPClientInterfaces(items []CommunityInterface) []CommunityInterface {
+	out := make([]CommunityInterface, 0, len(items))
+	for _, item := range items {
+		if strings.TrimSpace(item.Config) == "" {
+			continue
+		}
+		if !IsTCPClientInterface(item) {
+			continue
+		}
+		out = append(out, item)
+	}
+	return out
+}
+
+func IsTCPClientInterface(item CommunityInterface) bool {
+	if strings.TrimSpace(item.Config) == "" {
+		return false
+	}
+	t := strings.ToLower(strings.TrimSpace(item.Type))
+	tn := strings.ToLower(strings.TrimSpace(item.TypeName))
+	if t == "tcpclientinterface" || strings.Contains(t, "tcpclient") {
+		return true
+	}
+	return strings.Contains(tn, "tcp") && strings.Contains(tn, "client")
 }

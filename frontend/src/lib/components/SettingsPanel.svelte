@@ -8,6 +8,7 @@
   import CommunityInterfaces, {
     type CommunityInterface,
   } from "$lib/components/CommunityInterfaces.svelte";
+  import ExtensionsPanel from "$lib/components/ExtensionsPanel.svelte";
   import type { MicronRendererPreference } from "$lib/micron/render-page";
   import { isWebAssemblySupported } from "$lib/micron/wasm-loader";
   import type { ThemeSettings } from "$lib/theme/tokens";
@@ -52,6 +53,9 @@
     communityError: string;
     communityFilter: string;
     communitySelected: Set<number>;
+    pageCacheEntries: number;
+    pageCacheMax: number;
+    pageCacheClearing: boolean;
     onChange: (theme: ThemeSettings) => void;
     onChangeKeybinds: (keybinds: KeybindSettings) => void;
     onChangeDownloadDir: (dir: string) => void;
@@ -73,6 +77,9 @@
     onCommunityFilter: (value: string) => void;
     onCommunityToggle: (id: number) => void;
     onCommunityImport: () => void;
+    onClearPageCache: () => void;
+    pluginsDir?: string;
+    onPluginsChanged?: () => void;
   };
 
   let {
@@ -119,6 +126,12 @@
     onCommunityFilter,
     onCommunityToggle,
     onCommunityImport,
+    onClearPageCache,
+    onPluginsChanged,
+    pluginsDir = "",
+    pageCacheEntries = 0,
+    pageCacheMax = 128,
+    pageCacheClearing = false,
   }: Props = $props();
 
   let recordingAction = $state<KeybindAction | null>(null);
@@ -288,6 +301,17 @@
     onchange={onChangeOpenLinksInNewTab}
   />
 
+  <h3>Page cache</h3>
+  <p class="hint">
+    Cached mesh pages load instantly. Clear the cache if you need fresh content from the network.
+  </p>
+  <div class="cache-row">
+    <span class="meta">{pageCacheEntries} / {pageCacheMax} entries</span>
+    <button type="button" class="reset-btn" disabled={pageCacheClearing} onclick={onClearPageCache}>
+      {pageCacheClearing ? "Clearing..." : "Clear page cache"}
+    </button>
+  </div>
+
   {#if desktopChrome}
     <Toggle
       label="Use native title bar"
@@ -390,6 +414,8 @@
   {:else}
     <p class="hint">Keyboard shortcuts are available on desktop builds.</p>
   {/if}
+
+  <ExtensionsPanel {pluginsDir} onChanged={onPluginsChanged} />
 
   <CommunityInterfaces
     items={communityItems}
@@ -565,6 +591,20 @@
 
   .reset-row {
     display: flex;
+  }
+
+  .cache-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .cache-row .reset-btn {
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 10rem;
   }
 
   .reset-btn {

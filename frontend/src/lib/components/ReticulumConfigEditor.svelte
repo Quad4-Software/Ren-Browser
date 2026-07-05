@@ -8,6 +8,7 @@
     onChange: (text: string) => void;
     onSave: () => void;
     onReload: () => void;
+    onExport?: () => void;
   };
 
   let {
@@ -18,7 +19,22 @@
     onChange,
     onSave,
     onReload,
+    onExport,
   }: Props = $props();
+
+  function exportConfig() {
+    if (onExport) {
+      onExport();
+      return;
+    }
+    const blob = new Blob([configText], { type: "text/plain;charset=utf-8" });
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = "reticulum.conf";
+    a.click();
+    URL.revokeObjectURL(href);
+  }
 </script>
 
 <section class="config-editor">
@@ -41,6 +57,7 @@
 
   <div class="actions">
     <button type="button" onclick={onReload} disabled={saving}>Reload</button>
+    <button type="button" onclick={exportConfig} disabled={saving || !configText}>Export</button>
     <button type="button" class="primary" onclick={onSave} disabled={saving}>
       {saving ? "Saving..." : "Save and restart interfaces"}
     </button>

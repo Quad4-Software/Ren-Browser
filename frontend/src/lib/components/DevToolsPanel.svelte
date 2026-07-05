@@ -2,6 +2,8 @@
 <script lang="ts">
   import { Activity, FileCode, Terminal } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
+  import PluginPanelHost from "$lib/components/PluginPanelHost.svelte";
+  import type { PluginDevToolsContribution } from "$lib/plugins/api-types.js";
   type LogEntry = {
     time: number;
     level: string;
@@ -32,6 +34,7 @@
     fromCache: boolean;
     cachedAt: number;
     micronRendererBadge?: string;
+    pluginTabs?: PluginDevToolsContribution[];
     onClear: () => void;
     onExport: () => void;
     onLogLevel: (level: number) => void;
@@ -48,12 +51,13 @@
     fromCache,
     cachedAt,
     micronRendererBadge = "",
+    pluginTabs = [],
     onClear,
     onExport,
     onLogLevel,
   }: Props = $props();
 
-  let tab = $state<"console" | "network" | "raw">("console");
+  let tab = $state<string>("console");
   let rawMode = $state<"text" | "hex">("text");
   let logQuery = $state("");
 
@@ -95,6 +99,14 @@
       <button class:active={tab === "console"} onclick={() => (tab = "console")}>Console</button>
       <button class:active={tab === "network"} onclick={() => (tab = "network")}>Network</button>
       <button class:active={tab === "raw"} onclick={() => (tab = "raw")}>Raw</button>
+      {#each pluginTabs as pluginTab (pluginTab.pluginId + ":" + pluginTab.id)}
+        <button
+          class:active={tab === `plugin:${pluginTab.pluginId}:${pluginTab.id}`}
+          onclick={() => (tab = `plugin:${pluginTab.pluginId}:${pluginTab.id}`)}
+        >
+          {pluginTab.title}
+        </button>
+      {/each}
     </div>
     <div class="actions">
       <label>
@@ -203,7 +215,7 @@
         </table>
       {/if}
     </div>
-  {:else}
+  {:else if tab === "raw"}
     <div class="panel raw">
       <div class="raw-actions">
         <button class:active={rawMode === "text"} onclick={() => (rawMode = "text")}>Text</button>
@@ -220,6 +232,17 @@
         <pre>{rawMode === "text" ? raw : toHex(raw)}</pre>
       {/if}
     </div>
+  {:else}
+    {#each pluginTabs as pluginTab (pluginTab.pluginId + ":" + pluginTab.id)}
+      {#if tab === `plugin:${pluginTab.pluginId}:${pluginTab.id}`}
+        <PluginPanelHost
+          pluginId={pluginTab.pluginId}
+          panelId={pluginTab.id}
+          title={pluginTab.title}
+          entry={pluginTab.entry}
+        />
+      {/if}
+    {/each}
   {/if}
 </section>
 

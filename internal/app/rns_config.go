@@ -48,6 +48,28 @@ func (s *BrowserService) FetchCommunityInterfaces() ([]rns.CommunityInterface, e
 	return rns.FetchCommunityInterfaces(installed)
 }
 
+func (s *BrowserService) ReloadReticulumConfig() (string, error) {
+	s.mu.RLock()
+	stack := s.stack
+	s.mu.RUnlock()
+	if stack == nil {
+		return "", fmt.Errorf("reticulum not initialized")
+	}
+	if err := stack.ReloadConfigFile(); err != nil {
+		return "", err
+	}
+	path := stack.ConfigPath()
+	text, err := rns.ReadConfigText(path)
+	if err != nil {
+		return "", err
+	}
+	s.log("info", "reticulum config reloaded", path)
+	if s.app != nil {
+		s.app.Event.Emit("rns:status", "reload")
+	}
+	return text, nil
+}
+
 func (s *BrowserService) ImportCommunityInterfaces(configs []string) ([]string, error) {
 	s.mu.RLock()
 	stack := s.stack

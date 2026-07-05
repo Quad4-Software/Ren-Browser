@@ -15,12 +15,15 @@
     X,
   } from "@lucide/svelte";
   import DownloadsMenu, { type DownloadRow } from "$lib/components/DownloadsMenu.svelte";
+  import type { ActivePanel, PluginPanelContribution } from "$lib/plugins/api-types.js";
+  import { panelKey } from "$lib/plugins/registry.js";
 
   type Props = {
     url: string;
     canGoBack: boolean;
     canGoForward: boolean;
-    activePanel: "browser" | "discovery" | "history" | "devtools" | "settings";
+    activePanel: ActivePanel;
+    pluginPanels?: PluginPanelContribution[];
     themeMode: "dark" | "light";
     downloadsOpen: boolean;
     downloads: DownloadRow[];
@@ -31,7 +34,7 @@
     onBack: () => void;
     onForward: () => void;
     onReload: () => void;
-    onPanel: (panel: Props["activePanel"]) => void;
+    onPanel: (panel: ActivePanel) => void;
     onToggleTheme: () => void;
     onDownloadPage: () => void;
     onToggleDownloads: () => void;
@@ -46,6 +49,7 @@
     canGoBack,
     canGoForward,
     activePanel,
+    pluginPanels = [],
     themeMode,
     downloadsOpen,
     downloads,
@@ -143,6 +147,18 @@
     >
       <Compass size={16} />
     </button>
+    {#each pluginPanels as panel (panel.pluginId + ":" + panel.id)}
+      {@const key = panelKey(panel.pluginId, panel.id)}
+      <button
+        class="ren-icon-btn"
+        class:active={activePanel === key}
+        aria-label={panel.title}
+        title={panel.title}
+        onclick={() => onPanel(key)}
+      >
+        <span class="plugin-icon">{panel.title.slice(0, 1)}</span>
+      </button>
+    {/each}
     <button
       class="ren-icon-btn"
       class:active={activePanel === "devtools"}
@@ -214,5 +230,10 @@
     .nav-cluster {
       display: none;
     }
+  }
+  .plugin-icon {
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
   }
 </style>

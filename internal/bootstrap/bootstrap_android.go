@@ -34,8 +34,17 @@ func New(embedded embed.FS, cfg config.Runtime) (*App, error) {
 		return nil, err
 	}
 
-	wailsApp := newWailsApp(browserSvc, loader, cfg)
+	pluginMgr, pluginHost, err := setupPlugins(browserSvc)
+	if err != nil {
+		_ = loader.Close()
+		return nil, err
+	}
+
+	wailsApp := newWailsApp(browserSvc, pluginHost, pluginMgr, loader, cfg)
 	browserSvc.SetApp(wailsApp)
+	if pluginMgr != nil {
+		pluginMgr.SetApp(wailsApp)
+	}
 
 	go func() {
 		stack, err := rns.NewStack(cfg.ReticulumConfig)
@@ -50,8 +59,10 @@ func New(embedded embed.FS, cfg config.Runtime) (*App, error) {
 	}()
 
 	return &App{
-		Wails:   wailsApp,
-		Service: browserSvc,
-		Loader:  loader,
+		Wails:      wailsApp,
+		Service:    browserSvc,
+		PluginHost: pluginHost,
+		PluginMgr:  pluginMgr,
+		Loader:     loader,
 	}, nil
 }

@@ -242,6 +242,9 @@ func downloadNameFromURL(rawURL string) string {
 	if rawURL == "editor:" {
 		return "editor.mu"
 	}
+	if rawURL == "config:" {
+		return "reticulum.conf"
+	}
 	if rawURL == "about:" {
 		return "about.html"
 	}

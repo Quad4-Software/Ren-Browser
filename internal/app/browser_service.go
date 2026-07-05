@@ -24,6 +24,7 @@ import (
 	"renbrowser/internal/micron"
 	"renbrowser/internal/micronwasm"
 	"renbrowser/internal/nomadnet"
+	"renbrowser/internal/plugins"
 	"renbrowser/internal/rns"
 	"renbrowser/internal/store"
 )
@@ -99,6 +100,7 @@ type BrowserService struct {
 	history     []string
 	histIdx     int
 	lastPage    PageResponse
+	plugins     *plugins.Manager
 }
 
 type ServiceOptions struct {
@@ -173,6 +175,16 @@ func (s *BrowserService) bindPersistence() {
 			s.app.Event.Emit("node:discovered", s.ListNodes())
 		}
 	})
+}
+
+func (s *BrowserService) Store() *store.Store {
+	return s.store
+}
+
+func (s *BrowserService) PluginManager() *plugins.Manager {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.plugins
 }
 
 func (s *BrowserService) SetApp(app *application.App) {
@@ -398,14 +410,24 @@ func (s *BrowserService) OpenFreshURL(rawURL string) PageResponse {
 }
 
 func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) PageResponse {
-	if isAboutURL(rawURL) {
-		return s.aboutPage(pushHistory)
-	}
-	if isLicenseURL(rawURL) {
-		return s.licensePage(pushHistory)
-	}
-	if isEditorURL(rawURL) {
-		return s.editorPage(pushHistory)
+	s.mu.RLock()
+	manager := s.plugins
+	s.mu.RUnlock()
+	if manager == nil {
+		if isAboutURL(rawURL) {
+			return s.aboutPage(pushHistory)
+		}
+		if isLicenseURL(rawURL) {
+			return s.licensePage(pushHistory)
+		}
+		if isEditorURL(rawURL) {
+			return s.editorPage(pushHistory)
+		}
+		if isConfigURL(rawURL) {
+			return s.configPage(pushHistory)
+		}
+	} else if resp, ok := s.handlePluginScheme(rawURL, pushHistory); ok {
+		return resp
 	}
 
 	parsed, err := nomadnet.ParseURL(rawURL)
@@ -461,7 +483,19 @@ func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) Pa
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
-	fetch := s.fetchWithRetry(ctx, parsed.NodeHash, parsed.Path, parsed.Request)
+	fetchPath, fetchReq, cancelled := s.runFetchHooks(parsed.NodeHash, parsed.Path, parsed.Request)
+	if cancelled {
+		resp := PageResponse{URL: url, NodeHash: parsed.NodeHash, Path: parsed.Path}
+		applyPageError(&resp, "fetch cancelled by extension", nil)
+		s.setLastPage(resp)
+		s.recordNetwork(resp)
+		if s.app != nil {
+			s.app.Event.Emit("page:error", resp)
+		}
+		return resp
+	}
+
+	fetch := s.fetchWithRetry(ctx, parsed.NodeHash, fetchPath, fetchReq)
 	resp := PageResponse{
 		URL:         url,
 		NodeHash:    fetch.NodeHash,
@@ -792,6 +826,7 @@ func (s *BrowserService) fetchWithRetry(ctx context.Context, nodeHash, path stri
 		}
 		last = stack.Browser().Fetch(ctx, nodeHash, path, req)
 		if last.Error == "" {
+			last.Body = s.runAfterFetchHooks(nodeHash, path, req, last.Body)
 			return last
 		}
 		if ctx.Err() != nil {
@@ -800,6 +835,59 @@ func (s *BrowserService) fetchWithRetry(ctx context.Context, nodeHash, path stri
 		}
 	}
 	return last
+}
+
+func (s *BrowserService) handlePluginScheme(rawURL string, pushHistory bool) (PageResponse, bool) {
+	s.mu.RLock()
+	manager := s.plugins
+	s.mu.RUnlock()
+	if manager == nil {
+		return PageResponse{}, false
+	}
+	scheme, ok := manager.Registry().HandleScheme(rawURL)
+	if !ok {
+		return PageResponse{}, false
+	}
+	if scheme.DelegateFrontend {
+		resp := PageResponse{
+			URL:         scheme.URL,
+			ContentType: "plugin-scheme",
+			Raw:         scheme.URL,
+		}
+		if pushHistory {
+			s.pushHistory(scheme.URL)
+		}
+		s.setLastPage(resp)
+		if s.app != nil {
+			s.app.Event.Emit("plugin:scheme", map[string]string{
+				"pluginId": scheme.PluginID,
+				"url":      scheme.URL,
+				"handler":  scheme.Handler,
+			})
+			s.app.Event.Emit("page:loaded", resp)
+		}
+		return resp, true
+	}
+	resp := PageResponse{
+		URL:         scheme.URL,
+		Path:        scheme.Path,
+		ContentType: scheme.ContentType,
+		HTML:        scheme.HTML,
+		Raw:         scheme.Raw,
+		PageFG:      scheme.PageFG,
+		PageBG:      scheme.PageBG,
+	}
+	if pushHistory {
+		s.pushHistory(scheme.URL)
+		if scheme.HistoryTitle != "" && !s.publicMode {
+			_ = s.store.AddHistory(scheme.URL, scheme.HistoryTitle, "")
+		}
+	}
+	s.setLastPage(resp)
+	if s.app != nil {
+		s.app.Event.Emit("page:loaded", resp)
+	}
+	return resp, true
 }
 
 func historyTitle(nodeHash string, handler *nomadnet.AnnounceHandler) string {

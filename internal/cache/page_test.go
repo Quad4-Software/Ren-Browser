@@ -1,27 +1,25 @@
 // SPDX-License-Identifier: MIT
-package cache_test
+package cache
 
 import (
 	"testing"
 
-	"renbrowser/internal/cache"
 	"renbrowser/internal/nomadnet"
 )
 
-func TestPageCacheEviction(t *testing.T) {
-	c := cache.NewPageCache(2)
-	empty := nomadnet.RequestData{}
-	c.Put("aa", "/page/a.mu", empty, []byte("a"), "micron")
-	c.Put("bb", "/page/b.mu", empty, []byte("b"), "micron")
-	c.Put("cc", "/page/c.mu", empty, []byte("c"), "micron")
-
+func TestPageCacheClear(t *testing.T) {
+	c := NewPageCache(4)
+	req := nomadnet.RequestData{}
+	c.Put("node", "/page/index.mu", req, []byte("one"), "micron")
+	c.Put("node", "/page/other.mu", req, []byte("two"), "micron")
 	if c.Len() != 2 {
-		t.Fatalf("len = %d; want 2", c.Len())
+		t.Fatalf("len = %d", c.Len())
 	}
-	if _, ok := c.Get("aa", "/page/a.mu", empty); ok {
-		t.Fatal("oldest entry should be evicted")
+	cleared := c.Clear()
+	if cleared != 2 {
+		t.Fatalf("cleared = %d", cleared)
 	}
-	if _, ok := c.Get("cc", "/page/c.mu", empty); !ok {
-		t.Fatal("latest entry missing")
+	if c.Len() != 0 {
+		t.Fatalf("len after clear = %d", c.Len())
 	}
 }

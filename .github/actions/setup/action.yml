@@ -1,3 +1,9 @@
+# Pinned third-party actions (bump tag and SHA together when upgrading):
+#   pnpm/action-setup@v6.0.9           0ebf47130e4866e96fce0953f49152a61190b271
+#   actions/setup-go@v6.5.0            924ae3a1cded613372ab5595356fb5720e22ba16
+#   actions/setup-node@v6.4.0          48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+#   arduino/setup-task@v3.0.0          c0bc642852239c2689f73f4ea6459c29405f3c52
+
 name: Setup Ren Browser
 description: Install Go, Node, Task, and optional Linux desktop build dependencies
 
@@ -31,25 +37,25 @@ runs:
   using: composite
   steps:
     - name: Setup pnpm
-      uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271
       with:
         version: ${{ inputs.pnpm-version }}
 
     - name: Setup Go
-      uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
+      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
       with:
         go-version: ${{ inputs.go-version }}
         cache-dependency-path: RenBrowser/go.sum
 
     - name: Setup Node.js
-      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
       with:
         node-version: "22"
         cache: pnpm
         cache-dependency-path: RenBrowser/frontend/pnpm-lock.yaml
 
     - name: Setup Task
-      uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611
+      uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52
       with:
         version: ${{ inputs.task-version }}
 

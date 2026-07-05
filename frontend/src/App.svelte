@@ -6,6 +6,7 @@
   import {
     AddFavorite,
     ClearDevLogs,
+    ClearPageCache,
     ConfigPath,
     ExportDevLogs,
     ExportTheme,
@@ -22,6 +23,7 @@
     GetTheme,
     GetWindowChrome,
     GetReticulumConfigText,
+    GetPageCacheStats,
     GoBack,
     GoForward,
     HistoryState,
@@ -40,6 +42,7 @@
     PickDownloadDir,
     ResetSettings,
     ResetDatabase,
+    ReloadReticulumConfig,
     SaveTabs,
     SaveReticulumConfigText,
     SetBrowserPrefs,
@@ -59,6 +62,7 @@
   import TabBar from "$lib/components/TabBar.svelte";
   import ContentViewer from "$lib/components/ContentViewer.svelte";
   import MicronEditor from "$lib/components/MicronEditor.svelte";
+  import ReticulumConfigEditor from "$lib/components/ReticulumConfigEditor.svelte";
   import DiscoveryPanel from "$lib/components/DiscoveryPanel.svelte";
   import HistoryPanel from "$lib/components/HistoryPanel.svelte";
   import DevToolsPanel from "$lib/components/DevToolsPanel.svelte";
@@ -86,6 +90,22 @@
     type KeybindAction,
     type KeybindSettings,
   } from "$lib/browser/keybinds";
+  import {
+    getContributionsSnapshot,
+    setContributions,
+    findPanel,
+    parsePanelKey,
+  } from "$lib/plugins/registry.js";
+  import { getContributions as fetchContributions } from "$lib/plugins/api.js";
+  import { PluginsDir } from "../bindings/renbrowser/internal/app/pluginhost.js";
+  import {
+    activateAllPlugins,
+    deactivateAllPlugins,
+    handlePluginScheme,
+  } from "$lib/plugins/lifecycle.js";
+  import { dispatchPluginCommand, matchPluginKeybind } from "$lib/plugins/command-dispatch.js";
+  import type { ActivePanel, ContributionsSnapshot } from "$lib/plugins/api-types.js";
+  import PluginPanelHost from "$lib/components/PluginPanelHost.svelte";
   import { downloadPageContent } from "$lib/browser/download";
   import {
     canOpenTab,
@@ -193,9 +213,15 @@
     visitedAt: number;
   };
 
-  let activePanel = $state<"browser" | "discovery" | "history" | "devtools" | "settings">(
-    "browser",
-  );
+  let activePanel = $state<ActivePanel>("browser");
+  let pluginContributions = $state<ContributionsSnapshot>({
+    panels: [],
+    commands: [],
+    devtools: [],
+    urlSchemes: [],
+  });
+  let pluginToast = $state("");
+  let pluginsDir = $state("");
   let url = $state("");
   let loading = $state(false);
   let html = $state("");
@@ -249,6 +275,9 @@
   let configText = $state("");
   let configSaving = $state(false);
   let configError = $state("");
+  let pageCacheEntries = $state(0);
+  let pageCacheMax = $state(128);
+  let pageCacheClearing = $state(false);
   let communityItems = $state<CommunityInterface[]>([]);
   let communityLoading = $state(false);
   let communityImporting = $state(false);
@@ -281,11 +310,48 @@
     splitTabId && splitTabId !== activeTabId ? tabs.find((tab) => tab.id === splitTabId) : null,
   );
   const storeErrorVisible = $derived(!storeHealth.ok && isStoreBlockingKind(storeHealth.kind));
+  const activePluginPanel = $derived.by(() => {
+    const parsed = parsePanelKey(activePanel);
+    if (!parsed) {
+      return null;
+    }
+    return findPanel(activePanel);
+  });
 
   let persistTimer: ReturnType<typeof setTimeout> | undefined;
 
-  function setPanel(panel: typeof activePanel) {
-    activePanel = activePanel === panel ? "browser" : panel;
+  function setPanel(panel: ActivePanel) {
+    const next = activePanel === panel ? "browser" : panel;
+    activePanel = next;
+    if (next === "settings") {
+      void loadPageCacheStats();
+    }
+  }
+
+  function showPluginToast(message: string) {
+    pluginToast = message;
+    setTimeout(() => {
+      if (pluginToast === message) {
+        pluginToast = "";
+      }
+    }, 2500);
+  }
+
+  async function bootPlugins() {
+    pluginsDir = (await PluginsDir()) ?? "";
+    const snapshot = await fetchContributions();
+    setContributions(snapshot);
+    pluginContributions = getContributionsSnapshot();
+    await activateAllPlugins({
+      getCurrentURL: () => url,
+      navigate: (next) => void browseURL(next),
+      showToast: showPluginToast,
+    });
+  }
+
+  async function reloadPlugins() {
+    await deactivateAllPlugins();
+    await bootPlugins();
   }
 
   function emptyPage(): TabPage {
@@ -758,6 +824,11 @@
       existingTab?.url === "editor:" &&
       (existingTab.page?.lastRaw?.trim() ?? "").length > 0;
     const savedEditorSource = preserveEditorSource ? (existingTab?.page?.lastRaw ?? "") : "";
+    const preserveConfigSource =
+      normalized === "config:" &&
+      existingTab?.url === "config:" &&
+      configText.trim().length > 0;
+    const savedConfigSource = preserveConfigSource ? configText : "";
 
     const generation = (existingTab?.navGeneration ?? 0) + 1;
     const isActiveView = tabs.find((tab) => tab.active)?.id === tabId;
@@ -783,6 +854,9 @@
       if (normalized === "editor:") {
         contentType = "editor";
       }
+      if (normalized === "config:") {
+        contentType = "config";
+      }
     }
 
     try {
@@ -806,6 +880,12 @@
       let tabPage = pageFromResponse(page);
       if (preserveEditorSource && savedEditorSource) {
         tabPage = { ...tabPage, lastRaw: savedEditorSource };
+      }
+      if (normalized === "config:") {
+        configText =
+          preserveConfigSource && savedConfigSource ? savedConfigSource : (page.raw ?? "");
+        configError = "";
+        tabPage = { ...tabPage, lastRaw: configText };
       }
 
       applyPageToTab(tabId, tabPage, normalized);
@@ -919,6 +999,41 @@
       configText = await GetReticulumConfigText();
     } catch (err) {
       configError = err instanceof Error ? err.message : String(err);
+    }
+  }
+
+  async function reloadConfigFromDisk() {
+    configSaving = true;
+    configError = "";
+    try {
+      configText = await ReloadReticulumConfig();
+      await loadInterfaces();
+      await loadCommunityInterfaces();
+    } catch (err) {
+      configError = err instanceof Error ? err.message : String(err);
+    } finally {
+      configSaving = false;
+    }
+  }
+
+  async function loadPageCacheStats() {
+    try {
+      const stats = await GetPageCacheStats();
+      pageCacheEntries = stats.entries ?? 0;
+      pageCacheMax = stats.max ?? 128;
+    } catch {
+      pageCacheEntries = 0;
+      pageCacheMax = 128;
+    }
+  }
+
+  async function clearPageCache() {
+    pageCacheClearing = true;
+    try {
+      await ClearPageCache();
+      await loadPageCacheStats();
+    } finally {
+      pageCacheClearing = false;
     }
   }
 
@@ -1286,6 +1401,12 @@
     if (findOpen && event.key === "Escape") {
       return;
     }
+    const pluginHit = matchPluginKeybind(event);
+    if (pluginHit) {
+      event.preventDefault();
+      void dispatchPluginCommand(pluginHit.pluginId, pluginHit.commandId);
+      return;
+    }
     const editing = isEditableTarget(event.target);
     for (const [action, chord] of Object.entries(keybinds.bindings) as [KeybindAction, string][]) {
       if (!matchKeybind(event, chord)) {
@@ -1332,9 +1453,31 @@
     void loadHistory();
     void loadInterfaces();
     void loadConfigText();
+    void loadPageCacheStats();
     void loadCommunityInterfaces();
     void refreshNetwork();
     void loadStoreHealth();
+    void bootPlugins();
+
+    Events.On("plugin:loaded", () => {
+      void reloadPlugins();
+    });
+    Events.On("plugin:unloaded", () => {
+      void reloadPlugins();
+    });
+    Events.On("plugin:scheme", async (event) => {
+      const data = event.data as { pluginId?: string; url?: string; handler?: string };
+      if (!data?.pluginId || !data.url) {
+        return;
+      }
+      const result = await handlePluginScheme(data.pluginId, data.handler ?? "", data.url);
+      if (result?.html) {
+        html = result.html;
+        contentType = result.contentType || "html";
+        error = "";
+        url = data.url;
+      }
+    });
 
     const statusTimer = setInterval(() => {
       void loadNodes();
@@ -1421,6 +1564,9 @@
 </script>
 
 <div class="app-shell">
+  {#if pluginToast}
+    <div class="plugin-toast" role="status">{pluginToast}</div>
+  {/if}
   <TabBar
     {tabs}
     {nativeTitlebar}
@@ -1449,6 +1595,7 @@
     {canGoBack}
     {canGoForward}
     {activePanel}
+    pluginPanels={pluginContributions.panels}
     themeMode={theme.mode === "light" ? "light" : "dark"}
     {downloadsOpen}
     {downloads}
@@ -1483,6 +1630,24 @@
               onSourceChange={updateEditorSource}
               onNavigate={openPage}
             />
+          {/if}
+        {:else if contentType === "config"}
+          {#if loading}
+            <div class="editor-loading">Loading Reticulum config...</div>
+          {:else}
+            <section class="config-page">
+              <ReticulumConfigEditor
+                bind:configText
+                {configPath}
+                saving={configSaving}
+                error={configError}
+                onChange={(text) => {
+                  configText = text;
+                }}
+                onSave={() => void saveConfigText()}
+                onReload={() => void reloadConfigFromDisk()}
+              />
+            </section>
           {/if}
         {:else}
           <ContentViewer
@@ -1583,6 +1748,7 @@
           {fromCache}
           {cachedAt}
           {micronRendererBadge}
+          pluginTabs={pluginContributions.devtools}
           onClear={() => {
             void ClearDevLogs();
             logs = [];
@@ -1612,6 +1778,7 @@
           {keybinds}
           {interfaces}
           {configPath}
+          {pluginsDir}
           bind:downloadDir
           {openLinksInNewTab}
           {nativeTitlebar}
@@ -1663,19 +1830,42 @@
             configText = text;
           }}
           onConfigSave={() => void saveConfigText()}
-          onConfigReload={() => void loadConfigText()}
+          onConfigReload={() => void reloadConfigFromDisk()}
+          onClearPageCache={() => void clearPageCache()}
+          {pageCacheEntries}
+          {pageCacheMax}
+          {pageCacheClearing}
           onCommunityRefresh={() => void loadCommunityInterfaces()}
           onCommunityFilter={(value) => {
             communityFilter = value;
           }}
           onCommunityToggle={toggleCommunitySelection}
           onCommunityImport={() => void importCommunitySelection()}
+          onPluginsChanged={() => void reloadPlugins()}
+        />
+      </aside>
+    {:else if activePluginPanel}
+      <aside class="side-pane">
+        <PluginPanelHost
+          pluginId={activePluginPanel.pluginId}
+          panelId={activePluginPanel.id}
+          title={activePluginPanel.title}
+          entry={activePluginPanel.entry}
+          getCurrentURL={() => url}
+          navigate={(next) => void browseURL(next)}
+          showToast={showPluginToast}
         />
       </aside>
     {/if}
   </main>
 
-  <MobileNav {activePanel} {downloadsOpen} onPanel={setPanel} onToggleDownloads={toggleDownloads} />
+  <MobileNav
+    {activePanel}
+    pluginPanels={pluginContributions.panels}
+    {downloadsOpen}
+    onPanel={setPanel}
+    onToggleDownloads={toggleDownloads}
+  />
 
   {#if mobileUI}
     <div class="mobile-downloads">
@@ -1770,6 +1960,13 @@
     color: var(--ren-muted);
   }
 
+  .config-page {
+    height: 100%;
+    overflow: auto;
+    padding: 1rem;
+    background: var(--ren-content-bg);
+  }
+
   .mobile-downloads :global(.menu) {
     position: fixed;
     left: 0.75rem;
@@ -1781,5 +1978,19 @@
 
   .mobile-downloads :global(.backdrop) {
     z-index: 35;
+  }
+
+  .plugin-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 1.25rem;
+    transform: translateX(-50%);
+    z-index: 60;
+    padding: 0.55rem 0.9rem;
+    border-radius: var(--ren-radius);
+    background: var(--ren-chrome-bg);
+    border: 1px solid var(--ren-border);
+    box-shadow: var(--ren-shadow);
+    font-size: 0.85rem;
   }
 </style>

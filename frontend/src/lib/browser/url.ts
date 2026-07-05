@@ -135,6 +135,18 @@ export function normalizeReticulumURL(input: string): string {
   if (lower === "editor" || lower === "editor:") {
     return "editor:";
   }
+  if (lower === "config" || lower === "config:") {
+    return "config:";
+  }
+  if (lower === "docs" || lower === "docs:") {
+    return "docs:";
+  }
+  if (lower.startsWith("docs?")) {
+    return `docs:?${trimmed.slice(trimmed.indexOf("?") + 1)}`;
+  }
+  if (lower.startsWith("docs:?")) {
+    return trimmed;
+  }
   if (trimmed.includes(":/")) {
     return trimmed;
   }
@@ -159,6 +171,21 @@ export function tabTitleFromURL(url: string, nodes: DiscoveredNode[] = []): stri
   }
   if (url === "editor:") {
     return "Micron Editor";
+  }
+  if (url === "config:") {
+    return "Reticulum Config";
+  }
+  if (url.startsWith("docs")) {
+    const query = url.includes("?") ? url.slice(url.indexOf("?") + 1) : "";
+    const page = new URLSearchParams(query).get("page");
+    if (page) {
+      const title = page
+        .split("-")
+        .map((part) => (part ? part[0].toUpperCase() + part.slice(1) : part))
+        .join(" ");
+      return title.length <= 40 ? title : `${title.slice(0, 39)}…`;
+    }
+    return "Documentation";
   }
   const hash = url.split(":/")[0]?.toLowerCase();
   const node = nodes.find((n) => n.hash.toLowerCase() === hash);

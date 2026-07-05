@@ -11,6 +11,10 @@ var (
 	anchorHref = regexp.MustCompile(`<a\s+([^>]*?)href="([^"]*)"([^>]*)>`)
 )
 
+func IsolateNomadLinks(html, nodeHash string) string {
+	return isolateNomadLinks(html, nodeHash)
+}
+
 func isolateNomadLinks(html, nodeHash string) string {
 	if html == "" || nodeHash == "" {
 		return html

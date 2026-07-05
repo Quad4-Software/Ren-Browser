@@ -3,6 +3,7 @@ package rns
 
 import (
 	"errors"
+	"sort"
 )
 
 var (
@@ -104,6 +105,9 @@ func (s *Stack) ListInterfaces() []InterfaceInfo {
 			RxBytes: st.rx,
 		})
 	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].Name < out[j].Name
+	})
 	return out
 }
 

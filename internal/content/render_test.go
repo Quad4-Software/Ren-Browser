@@ -2,11 +2,18 @@
 package content_test
 
 import (
+	"os"
 	"strings"
 	"testing"
 
 	"renbrowser/internal/content"
+	"renbrowser/internal/plugins/builtin"
 )
+
+func TestMain(m *testing.M) {
+	builtin.RegisterRenderers(content.RendererRegistry())
+	os.Exit(m.Run())
+}
 
 func TestRenderMicron(t *testing.T) {
 	out := content.Render("/page/index.mu", []byte("`>Title\nplain"), "")

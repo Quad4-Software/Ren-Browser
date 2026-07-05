@@ -2,8 +2,10 @@
 package rns
 
 import (
+	"math/rand"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"quad4/reticulum-go/pkg/common"
 	"quad4/reticulum-go/pkg/reticulumconfig"
@@ -11,7 +13,12 @@ import (
 	"renbrowser/internal/brand"
 )
 
+const defaultCommunityInterfaceCount = 4
+
 func ensureRenBrowserConfig(path string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err := reticulumconfig.CreateDefaultConfig(path); err != nil {
 			return err
@@ -21,6 +28,7 @@ func ensureRenBrowserConfig(path string) error {
 			return err
 		}
 		applyRenBrowserDefaults(cfg)
+		seedCommunityInterfaces(cfg)
 		return reticulumconfig.SaveConfig(cfg)
 	}
 	return nil
@@ -42,6 +50,44 @@ func applyRenBrowserDefaults(cfg *common.ReticulumConfig) {
 			TargetHost:  "rns.michmesh.net",
 			TargetPort:  7822,
 			I2PTunneled: false,
+		}
+	}
+}
+
+func seedCommunityInterfaces(cfg *common.ReticulumConfig) {
+	if cfg == nil {
+		return
+	}
+	items, err := FetchCommunityInterfaces(nil)
+	if err != nil {
+		return
+	}
+	tcp := FilterTCPClientInterfaces(items)
+	if len(tcp) == 0 {
+		return
+	}
+	rand.Shuffle(len(tcp), func(i, j int) { tcp[i], tcp[j] = tcp[j], tcp[i] })
+	if len(tcp) > defaultCommunityInterfaceCount {
+		tcp = tcp[:defaultCommunityInterfaceCount]
+	}
+	for _, item := range tcp {
+		if strings.TrimSpace(item.Config) == "" {
+			continue
+		}
+		ifaces, err := parseInterfaceFragment(item.Config)
+		if err != nil {
+			continue
+		}
+		for name, iface := range ifaces {
+			if iface == nil {
+				continue
+			}
+			if _, exists := cfg.Interfaces[name]; exists {
+				continue
+			}
+			iface.Name = name
+			iface.Enabled = true
+			cfg.Interfaces[name] = iface
 		}
 	}
 }

@@ -17,7 +17,7 @@ func ReadConfigText(path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("config path not set")
 	}
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304 -- reticulum config path from app settings
 	if err != nil {
 		return "", err
 	}
@@ -144,7 +144,7 @@ func loadConfigFromText(text string) (*common.ReticulumConfig, error) {
 	defer os.Remove(path)
 
 	if _, err := tmp.WriteString(text); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return nil, err
 	}
 	if err := tmp.Close(); err != nil {

@@ -35,7 +35,7 @@ func (s *BrowserService) SetNativeTitlebar(enabled bool) (BrowserPrefs, error) {
 
 func nodeHashFromURL(raw string) (string, error) {
 	trimmed := strings.TrimSpace(raw)
-	if trimmed == "" || trimmed == "about:" || trimmed == "license:" || trimmed == "editor:" {
+	if trimmed == "" || trimmed == "about:" || trimmed == "license:" || trimmed == "editor:" || trimmed == "config:" || strings.HasPrefix(strings.ToLower(trimmed), "docs") {
 		return "", errors.New("not a mesh page")
 	}
 	hash := trimmed

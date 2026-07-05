@@ -30,6 +30,28 @@ func TestEditorURL(t *testing.T) {
 	}
 }
 
+func TestConfigURL(t *testing.T) {
+	stack, err := rns.NewStack("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc, err := app.NewBrowserService(stack, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	page := svc.Navigate("config")
+	if page.URL != "config:" {
+		t.Fatalf("url = %q", page.URL)
+	}
+	if page.ContentType != "config" {
+		t.Fatalf("content type = %q", page.ContentType)
+	}
+	if page.Raw == "" {
+		t.Fatal("expected config text")
+	}
+}
+
 func TestAboutURL(t *testing.T) {
 	stack, err := rns.NewStack("")
 	if err != nil {

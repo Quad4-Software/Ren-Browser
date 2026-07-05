@@ -12,17 +12,18 @@ import (
 )
 
 type ProfileData struct {
-	Version      int             `json:"version"`
-	Profile      string          `json:"profile"`
-	Tabs         []TabSnapshot   `json:"tabs"`
-	Favorites    []string        `json:"favorites"`
-	History      []HistoryEntry  `json:"history"`
-	Keybinds     KeybindSettings `json:"keybinds"`
-	BrowserPrefs BrowserPrefs    `json:"browserPrefs"`
-	Theme        ThemeSettings   `json:"theme"`
-	DownloadDir  string          `json:"downloadDir,omitempty"`
-	Nodes        []nomadnet.Node `json:"nodes,omitempty"`
-	WindowState  WindowState     `json:"windowState,omitempty"`
+	Version        int             `json:"version"`
+	Profile        string          `json:"profile"`
+	Tabs           []TabSnapshot   `json:"tabs"`
+	Favorites      []string        `json:"favorites"`
+	History        []HistoryEntry  `json:"history"`
+	Keybinds       KeybindSettings `json:"keybinds"`
+	BrowserPrefs   BrowserPrefs    `json:"browserPrefs"`
+	Theme          ThemeSettings   `json:"theme"`
+	DownloadDir    string          `json:"downloadDir,omitempty"`
+	Nodes          []nomadnet.Node `json:"nodes,omitempty"`
+	WindowState    WindowState     `json:"windowState,omitempty"`
+	EnabledPlugins []string        `json:"enabledPlugins,omitempty"`
 }
 
 const profileDataVersion = 1
@@ -58,18 +59,23 @@ func (s *BrowserService) collectProfileData() (ProfileData, error) {
 	}
 	downloadDir := s.GetDownloadDir()
 	windowState, _ := s.loadWindowState()
+	enabledPlugins := []string{}
+	if mgr := s.PluginManager(); mgr != nil {
+		enabledPlugins = mgr.EnabledIDs()
+	}
 	return ProfileData{
-		Version:      profileDataVersion,
-		Profile:      s.ProfileName(),
-		Tabs:         s.store.Tabs(),
-		Favorites:    s.store.Favorites(),
-		History:      history,
-		Keybinds:     s.GetKeybinds(),
-		BrowserPrefs: s.GetBrowserPrefs(),
-		Theme:        s.GetTheme(),
-		DownloadDir:  downloadDir,
-		Nodes:        nodes,
-		WindowState:  windowState,
+		Version:        profileDataVersion,
+		Profile:        s.ProfileName(),
+		Tabs:           s.store.Tabs(),
+		Favorites:      s.store.Favorites(),
+		History:        history,
+		Keybinds:       s.GetKeybinds(),
+		BrowserPrefs:   s.GetBrowserPrefs(),
+		Theme:          s.GetTheme(),
+		DownloadDir:    downloadDir,
+		Nodes:          nodes,
+		WindowState:    windowState,
+		EnabledPlugins: enabledPlugins,
 	}, nil
 }
 

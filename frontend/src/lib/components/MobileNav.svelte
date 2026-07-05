@@ -1,17 +1,24 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Compass, Download, History, Home, Settings, Terminal } from "@lucide/svelte";
-
-  type Panel = "browser" | "discovery" | "history" | "devtools" | "settings";
+  import type { ActivePanel, PluginPanelContribution } from "$lib/plugins/api-types.js";
+  import { panelKey } from "$lib/plugins/registry.js";
 
   type Props = {
-    activePanel: Panel;
+    activePanel: ActivePanel;
+    pluginPanels?: PluginPanelContribution[];
     downloadsOpen: boolean;
-    onPanel: (panel: Panel) => void;
+    onPanel: (panel: ActivePanel) => void;
     onToggleDownloads: () => void;
   };
 
-  let { activePanel, downloadsOpen, onPanel, onToggleDownloads }: Props = $props();
+  let {
+    activePanel,
+    pluginPanels = [],
+    downloadsOpen,
+    onPanel,
+    onToggleDownloads,
+  }: Props = $props();
 </script>
 
 <nav class="mobile-nav" aria-label="Mobile navigation">
@@ -31,6 +38,13 @@
     <Download size={18} />
     <span>Downloads</span>
   </button>
+  {#each pluginPanels as panel (panel.pluginId + ":" + panel.id)}
+    {@const key = panelKey(panel.pluginId, panel.id)}
+    <button class:active={activePanel === key} onclick={() => onPanel(key)}>
+      <span class="plugin-dot">{panel.title.slice(0, 1)}</span>
+      <span>{panel.title}</span>
+    </button>
+  {/each}
   <button class:active={activePanel === "devtools"} onclick={() => onPanel("devtools")}>
     <Terminal size={18} />
     <span>Devtools</span>
@@ -46,7 +60,9 @@
     display: none;
     position: sticky;
     bottom: 0;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(3.5rem, 1fr);
+    overflow-x: auto;
     gap: 0.1rem;
     padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom));
     background: var(--ren-chrome-bg);
@@ -77,6 +93,21 @@
   button.active {
     color: #fff;
     background: var(--ren-accent);
+  }
+
+  .plugin-dot {
+    width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--ren-surface-raised);
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+
+  button.active .plugin-dot {
+    background: rgba(255, 255, 255, 0.2);
   }
 
   @media (max-width: 768px) {

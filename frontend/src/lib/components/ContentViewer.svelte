@@ -73,7 +73,8 @@
   const isMicron = $derived(contentType === "micron");
   const isAbout = $derived(contentType === "about");
   const isLicense = $derived(contentType === "license");
-  const isInternalPage = $derived(isAbout || isLicense);
+  const isDocs = $derived(contentType === "docs");
+  const isInternalPage = $derived(isAbout || isLicense || isDocs);
 
   const displayHtml = $derived.by(() => {
     if (showSource || !isMicron || !usesClientMicronRenderer(micronEngine) || !raw.trim()) {
@@ -489,6 +490,44 @@
   }
 
   .content :global(.about-hint) {
+    color: var(--ren-muted);
+    font-size: 0.9rem;
+  }
+
+  .content :global(.docs-page) {
+    max-width: 48rem;
+    margin: 0 auto;
+    line-height: 1.55;
+  }
+
+  .content :global(.docs-nav) {
+    margin-bottom: 1rem;
+    color: var(--ren-muted);
+    font-size: 0.9rem;
+  }
+
+  .content :global(.docs-lang-list) {
+    padding-left: 1.25rem;
+  }
+
+  .content :global(.docs-body h1) {
+    margin-top: 0;
+    font-size: 1.6rem;
+  }
+
+  .content :global(.docs-body h2) {
+    margin-top: 1.5rem;
+    font-size: 1.2rem;
+  }
+
+  .content :global(.docs-body pre) {
+    overflow-x: auto;
+    padding: 0.75rem;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--ren-bg) 85%, var(--ren-fg));
+  }
+
+  .content :global(.docs-hint) {
     color: var(--ren-muted);
     font-size: 0.9rem;
   }

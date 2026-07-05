@@ -19,6 +19,7 @@ describe("pageDownloadName", () => {
     expect(pageDownloadName("about:", "html")).toBe("about.html");
     expect(pageDownloadName("license:", "html")).toBe("LICENSE");
     expect(pageDownloadName("editor:", "editor")).toBe("editor.mu");
+    expect(pageDownloadName("config:", "config")).toBe("reticulum.conf");
   });
 
   it("falls back to content-type defaults when the path has no leaf", () => {
@@ -39,6 +40,7 @@ describe("isFileURL", () => {
     expect(isFileURL("about:")).toBe(false);
     expect(isFileURL("license:")).toBe(false);
     expect(isFileURL("editor:")).toBe(false);
+    expect(isFileURL("config:")).toBe(false);
     expect(isFileURL("")).toBe(false);
   });
 });

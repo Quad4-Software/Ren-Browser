@@ -79,3 +79,16 @@ func (c *PageCache) Len() int {
 	defer c.mu.RUnlock()
 	return len(c.entries)
 }
+
+func (c *PageCache) Max() int {
+	return c.max
+}
+
+func (c *PageCache) Clear() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	count := len(c.entries)
+	c.entries = make(map[string]Entry, c.max)
+	c.order = make([]string, 0, c.max)
+	return count
+}

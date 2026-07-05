@@ -249,12 +249,22 @@ tasks:
       - go.sum
     generates:
       - frontend/bindings/renbrowser/internal/app/browserservice.ts
+      - frontend/bindings/renbrowser/internal/app/pluginhost.ts
     cmds:
       - |
         set -euo pipefail
         {{.WITH_TIMEOUT}} {{.TIMEOUT_BINDINGS}} wails3 generate bindings \
           -f '{{.BUILD_FLAGS}}' \
           -clean=true{{if eq .OBFUSCATED "true"}} -obfuscated{{end}} -ts -i
+
+  test:plugins:
+    summary: Run plugin host unit tests
+    dir: "{{.ROOT_DIR}}"
+    cmds:
+      - go test ./internal/plugins/...
+      - pnpm --dir frontend exec vitest run src/lib/plugins
+    env:
+      GOFLAGS: "-mod=mod"
 
   generate:icons:
     summary: Generates Windows `.ico` and Mac `.icns` from an image; on macOS, `-iconcomposerinput appicon.icon -macassetdir darwin` also produces `Assets.car` from a `.icon` file (skipped on other platforms).

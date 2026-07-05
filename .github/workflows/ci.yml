@@ -1,3 +1,8 @@
+# Pinned third-party actions (bump tag and SHA together when upgrading):
+#   actions/checkout@v7.0.0                    9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+#   actions/upload-artifact@v7.0.1             043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+#   aquasecurity/trivy-action@0.35.0           57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+
 name: CI
 
 on:
@@ -37,7 +42,7 @@ jobs:
           - macos-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: RenBrowser
 
@@ -69,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: RenBrowser
 
@@ -86,7 +91,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: RenBrowser
 
@@ -98,12 +103,30 @@ jobs:
       - name: gosec
         run: task gosec
 
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: fs
+          scan-ref: RenBrowser
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          skip-dirs: frontend/node_modules,bin,build/android/.gradle,build/android/build,third_party
+
+      - name: Trivy Dockerfile scan
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: config
+          scan-ref: RenBrowser
+          severity: HIGH,CRITICAL
+          exit-code: 1
+          skip-files: build/docker/Dockerfile.cross
+
   server:
     name: Server build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: RenBrowser
 
@@ -116,7 +139,7 @@ jobs:
         run: task build:server
 
       - name: Upload server binary
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: renbrowser-server-linux-amd64
           path: RenBrowser/bin/renbrowser-server
@@ -128,7 +151,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: RenBrowser
 
@@ -141,7 +164,7 @@ jobs:
         run: task linux:build
 
       - name: Upload Linux binary
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: renbrowser-linux-amd64
           path: RenBrowser/bin/renbrowser
