@@ -6,7 +6,6 @@ require (
 	github.com/adrg/xdg v0.5.3
 	github.com/tetratelabs/wazero v1.9.0
 	github.com/wailsapp/wails/v3 v3.0.0-alpha2.111
-	github.com/yuin/goldmark v1.7.16
 	go.uber.org/goleak v1.3.0
 	micron-parser-go v0.0.0
 	modernc.org/sqlite v1.53.0

@@ -13,7 +13,10 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    environmentMatchGlobs: [["src/lib/browser/find-in-page.test.ts", "happy-dom"]],
+    environmentMatchGlobs: [
+      ["src/lib/browser/find-in-page.test.ts", "happy-dom"],
+      ["src/lib/browser/docs-render.test.ts", "happy-dom"],
+    ],
     include: ["src/**/*.test.ts"],
   },
 });

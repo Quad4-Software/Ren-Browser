@@ -8,6 +8,7 @@
     resolveNomadDataURL,
   } from "$lib/browser/micron-links";
   import { micronShellStyle } from "$lib/browser/url";
+  import { renderDocsPage } from "$lib/browser/docs-render";
   import {
     parseMicronHeaderColors,
     renderClientMicronPage,
@@ -78,6 +79,9 @@
   const isInternalPage = $derived(isAbout || isLicense || isDocs);
 
   const displayHtml = $derived.by(() => {
+    if (isDocs && raw.trim()) {
+      return renderDocsPage(raw, currentURL);
+    }
     if (showSource || !isMicron || !usesClientMicronRenderer(micronEngine) || !raw.trim()) {
       return html;
     }

@@ -3,7 +3,6 @@
 package content
 
 import (
-	"bytes"
 	"fmt"
 	"html"
 	"net/url"
@@ -11,16 +10,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/extension"
-	"github.com/yuin/goldmark/parser"
-
 	docassets "renbrowser/docs"
 )
 
 var (
 	supportedDocLangs = []string{"en", "ru", "es", "de"}
-	docsLinkRe        = regexp.MustCompile(`<a href="([^"]+)"`)
 	docsPageNameRe    = regexp.MustCompile(`^[a-z0-9-]+$`)
 )
 
@@ -33,6 +27,7 @@ type DocsRenderInput struct {
 type DocsRenderResult struct {
 	URL          string
 	HTML         string
+	Raw          string
 	HistoryTitle string
 }
 
@@ -64,23 +59,9 @@ func RenderDocs(in DocsRenderInput) (DocsRenderResult, bool) {
 		}, true
 	}
 
-	converted, err := markdownToHTML(body)
-	if err != nil {
-		return DocsRenderResult{
-			URL:          FormatDocsURL(lang, page),
-			HTML:         renderDocsError(err),
-			HistoryTitle: title,
-		}, true
-	}
-	converted = rewriteDocsLinks(converted, lang, page)
-
 	return DocsRenderResult{
-		URL: FormatDocsURL(lang, page),
-		HTML: `<article class="docs-page">` +
-			`<nav class="docs-nav"><a href="` + html.EscapeString(FormatDocsURL(lang, "")) + `">Index</a>` +
-			docsLangSwitcher(lang) + `</nav>` +
-			`<div class="docs-body">` + converted + `</div>` +
-			`</article>`,
+		URL:          FormatDocsURL(lang, page),
+		Raw:          body,
 		HistoryTitle: title,
 	}, true
 }
@@ -180,54 +161,6 @@ func docsTitleFromMarkdown(body, page string) string {
 	return "Documentation"
 }
 
-func markdownToHTML(source string) (string, error) {
-	md := goldmark.New(
-		goldmark.WithExtensions(extension.GFM),
-		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
-	)
-	var buf bytes.Buffer
-	if err := md.Convert([]byte(source), &buf); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-func rewriteDocsLinks(htmlBody, lang, currentPage string) string {
-	return docsLinkRe.ReplaceAllStringFunc(htmlBody, func(match string) string {
-		parts := docsLinkRe.FindStringSubmatch(match)
-		if len(parts) < 2 {
-			return match
-		}
-		href := strings.TrimSpace(parts[1])
-		if href == "" || strings.HasPrefix(href, "http://") || strings.HasPrefix(href, "https://") {
-			return match
-		}
-		if strings.HasPrefix(href, "#") {
-			target := FormatDocsURL(lang, currentPage) + href
-			return `<a href="` + html.EscapeString(target) + `"`
-		}
-		target := docsHrefToURL(lang, href)
-		return `<a href="` + html.EscapeString(target) + `"`
-	})
-}
-
-func docsHrefToURL(lang, href string) string {
-	href = strings.TrimSpace(href)
-	href = strings.TrimPrefix(href, "./")
-	if strings.Contains(href, "://") || strings.HasPrefix(href, "..") {
-		return FormatDocsURL(lang, "")
-	}
-	base := path.Base(href)
-	if base == "README.md" || base == "." || base == "/" {
-		return FormatDocsURL(lang, "")
-	}
-	page := SanitizeDocsPage(strings.TrimSuffix(base, ".md"))
-	if page == "" && strings.HasSuffix(strings.ToLower(href), ".md") {
-		page = SanitizeDocsPage(strings.TrimSuffix(path.Base(href), ".md"))
-	}
-	return FormatDocsURL(lang, page)
-}
-
 func renderDocsLanguagePicker() string {
 	var links strings.Builder
 	for _, lang := range supportedDocLangs {
@@ -244,20 +177,6 @@ func renderDocsLanguagePicker() string {
 		`<ul class="docs-lang-list">` + links.String() + `</ul>` +
 		`<p class="docs-hint">You can also open <code>docs:?lang=en</code> or <code>docs:?lang=ru&amp;page=faq</code> in the address bar.</p>` +
 		`</article>`
-}
-
-func docsLangSwitcher(current string) string {
-	var parts []string
-	for _, lang := range supportedDocLangs {
-		if lang == current {
-			continue
-		}
-		parts = append(parts, `<a href="`+html.EscapeString(FormatDocsURL(lang, ""))+`">`+html.EscapeString(docsLangLabel(lang))+`</a>`)
-	}
-	if len(parts) == 0 {
-		return ""
-	}
-	return `<span class="docs-lang-switch"> · ` + strings.Join(parts, " · ") + `</span>`
 }
 
 func docsLangLabel(lang string) string {

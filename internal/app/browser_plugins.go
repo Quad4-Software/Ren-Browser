@@ -71,7 +71,7 @@ func (s *BrowserService) SetPluginManager(manager *plugins.Manager) {
 				Path:         "/docs",
 				ContentType:  "docs",
 				HTML:         rendered.HTML,
-				Raw:          rendered.HTML,
+				Raw:          rendered.Raw,
 				HistoryTitle: rendered.HistoryTitle,
 			}, true
 		},

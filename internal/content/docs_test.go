@@ -72,8 +72,8 @@ func TestRenderDocsUsesSavedLanguage(t *testing.T) {
 	if res.URL != "docs:?lang=en" {
 		t.Fatalf("url=%q", res.URL)
 	}
-	if !strings.Contains(res.HTML, "Getting started") && !strings.Contains(res.HTML, "Ren Browser documentation") {
-		t.Fatalf("expected english index content, got snippet=%q", res.HTML[:min(200, len(res.HTML))])
+	if !strings.Contains(res.Raw, "Getting started") && !strings.Contains(res.Raw, "Table of contents") {
+		t.Fatalf("expected english index markdown, got snippet=%q", res.Raw[:min(200, len(res.Raw))])
 	}
 }
 
@@ -109,11 +109,14 @@ func TestRenderDocsPage(t *testing.T) {
 	if !ok {
 		t.Fatal("expected docs render")
 	}
-	if !strings.Contains(res.HTML, "FAQ") {
-		t.Fatalf("missing FAQ heading")
+	if res.Raw == "" {
+		t.Fatal("expected markdown body")
 	}
-	if !strings.Contains(res.HTML, `docs:?lang=en&amp;page=installation`) {
-		t.Fatalf("expected rewritten internal link")
+	if !strings.Contains(res.Raw, "# FAQ") && !strings.Contains(res.Raw, "FAQ") {
+		t.Fatalf("missing FAQ heading in raw markdown")
+	}
+	if !strings.Contains(res.Raw, "installation.md") {
+		t.Fatalf("expected relative markdown link in source")
 	}
 }
 

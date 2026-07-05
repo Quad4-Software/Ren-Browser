@@ -29,8 +29,8 @@ func TestDocsURL(t *testing.T) {
 		if page.ContentType != "docs" {
 			t.Fatalf("raw=%q content type = %q", raw, page.ContentType)
 		}
-		if page.HTML == "" {
-			t.Fatalf("raw=%q expected docs html", raw)
+		if page.Raw == "" && page.HTML == "" {
+			t.Fatalf("raw=%q expected docs content", raw)
 		}
 	}
 
@@ -43,7 +43,7 @@ func TestDocsURL(t *testing.T) {
 	if page.URL != "docs:?lang=en" {
 		t.Fatalf("remembered url=%q", page.URL)
 	}
-	if !strings.Contains(page.HTML, "Getting started") && !strings.Contains(page.HTML, "Table of contents") {
+	if !strings.Contains(page.Raw, "Getting started") && !strings.Contains(page.HTML, "Getting started") {
 		t.Fatal("expected remembered english docs index")
 	}
 }
