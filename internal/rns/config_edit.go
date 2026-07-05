@@ -9,6 +9,8 @@ import (
 
 	"quad4/reticulum-go/pkg/common"
 	"quad4/reticulum-go/pkg/reticulumconfig"
+
+	"renbrowser/internal/brand"
 )
 
 func ReadConfigText(path string) (string, error) {
@@ -134,7 +136,7 @@ func (s *Stack) installedInterfaceNames() map[string]bool {
 }
 
 func loadConfigFromText(text string) (*common.ReticulumConfig, error) {
-	tmp, err := os.CreateTemp("", "renbrowser-rns-*.conf")
+	tmp, err := os.CreateTemp("", brand.TempFilePrefix+"*.conf")
 	if err != nil {
 		return nil, err
 	}

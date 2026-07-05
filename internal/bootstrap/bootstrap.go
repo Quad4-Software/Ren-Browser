@@ -11,6 +11,7 @@ import (
 
 	"renbrowser/internal/app"
 	"renbrowser/internal/assets"
+	"renbrowser/internal/brand"
 	"renbrowser/internal/config"
 	"renbrowser/internal/nomadnet"
 	"renbrowser/internal/servermw"
@@ -48,8 +49,8 @@ func newWailsApp(browserSvc *app.BrowserService, loader *assets.Loader, cfg conf
 	})
 
 	return application.New(application.Options{
-		Name:        "Ren Browser",
-		Description: "Reticulum browser for NomadNet pages",
+		Name:        brand.DisplayName,
+		Description: brand.Description,
 		Services: []application.Service{
 			application.NewService(browserSvc),
 		},

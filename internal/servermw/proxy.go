@@ -4,6 +4,8 @@ package servermw
 import (
 	"net/http"
 	"strings"
+
+	"renbrowser/internal/brand"
 )
 
 type Options struct {
@@ -56,7 +58,7 @@ func trustForwardedHeaders(next http.Handler) http.Handler {
 			r.Host = host
 		}
 		if prefix := strings.TrimSpace(r.Header.Get("X-Forwarded-Prefix")); prefix != "" {
-			r.Header.Set("X-RenBrowser-Base-Path", normalizeBasePath(prefix))
+			r.Header.Set(brand.ProxyHeader, normalizeBasePath(prefix))
 		}
 		next.ServeHTTP(w, r)
 	})

@@ -18,6 +18,7 @@
   import PageContextMenu from "$lib/components/PageContextMenu.svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import PageErrorState from "$lib/components/PageErrorState.svelte";
+  import { displayName } from "$lib/brand";
   import { downloadPageContent, isFileURL } from "$lib/browser/download";
 
   type Props = {
@@ -227,7 +228,7 @@
     <div class="progress" aria-hidden="true"></div>
     <div class="state">Loading page...</div>
   {:else if error}
-    <PageErrorState {error} {errorKind} {currentURL} onRetry={onRetry} />
+    <PageErrorState {error} {errorKind} {currentURL} {onRetry} />
   {:else if displayHtml}
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -246,7 +247,7 @@
   {:else}
     <div class="state">
       <EmptyState
-        title="Ren Browser"
+        title={displayName}
         description="Enter an address in the bar above or open Discovery to browse the mesh."
       >
         <Globe size={22} />

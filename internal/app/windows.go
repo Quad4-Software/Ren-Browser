@@ -6,6 +6,8 @@ import (
 	"net/url"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+
+	"renbrowser/internal/brand"
 )
 
 func (s *BrowserService) OpenNewWindow(rawURL string) error {
@@ -21,7 +23,7 @@ func (s *BrowserService) OpenNewWindow(rawURL string) error {
 	}
 
 	opts := application.WebviewWindowOptions{
-		Title:            "Ren Browser",
+		Title:            brand.DisplayName,
 		Width:            1280,
 		Height:           800,
 		MinWidth:         360,

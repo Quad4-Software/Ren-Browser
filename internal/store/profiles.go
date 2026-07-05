@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"renbrowser/internal/paths"
+	"renbrowser/internal/brand"
 )
 
 var profileNamePattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$`)
@@ -25,14 +25,11 @@ func SanitizeProfileName(name string) string {
 
 func ProfilePath(name string) string {
 	name = SanitizeProfileName(name)
-	if name == "default" {
-		return DefaultPath()
-	}
-	return paths.Join(".renbrowser", "profiles", name, "renbrowser.db")
+	return brand.ProfileDBPath(name)
 }
 
 func ProfilesDir() string {
-	return paths.Join(".renbrowser", "profiles")
+	return brand.ProfilesDir()
 }
 
 func ListProfileNames() ([]string, error) {
@@ -54,7 +51,7 @@ func ListProfileNames() ([]string, error) {
 		if !profileNamePattern.MatchString(name) {
 			continue
 		}
-		dbPath := filepath.Join(dir, name, "renbrowser.db")
+		dbPath := filepath.Join(dir, name, brand.DBFileName)
 		if _, err := os.Stat(dbPath); err != nil {
 			continue
 		}

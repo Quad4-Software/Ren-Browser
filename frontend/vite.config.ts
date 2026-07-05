@@ -7,9 +7,19 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
 import wails from "@wailsio/runtime/plugins/vite";
 import { MICRON_PARSER_GO_RELEASE_TAG } from "../build/scripts/micron-parser-go-version.mjs";
+import { displayName } from "./src/lib/brand.gen.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, "..");
+
+function brandHtmlPlugin() {
+  return {
+    name: "brand-html",
+    transformIndexHtml(html: string) {
+      return html.replace(/<title>.*?<\/title>/, `<title>${displayName}</title>`);
+    },
+  };
+}
 
 function isMicronWasmBundled(): boolean {
   const wasmDir = path.join(repoRoot, "frontend", "public", "vendor", "micron-parser-go");
@@ -64,5 +74,5 @@ export default defineConfig({
     port: Number(process.env.WAILS_VITE_PORT) || 9245,
     strictPort: true,
   },
-  plugins: [tailwindcss(), svelte(), wails("./bindings")],
+  plugins: [brandHtmlPlugin(), tailwindcss(), svelte(), wails("./bindings")],
 });

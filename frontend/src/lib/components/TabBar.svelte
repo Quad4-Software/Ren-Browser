@@ -219,7 +219,12 @@
 
 <svelte:window onclick={closeMenu} />
 
-<div class="tabbar" class:native-titlebar={nativeTitlebar} class:mobile-ui={mobileUI} bind:this={tabbarEl}>
+<div
+  class="tabbar"
+  class:native-titlebar={nativeTitlebar}
+  class:mobile-ui={mobileUI}
+  bind:this={tabbarEl}
+>
   <div class="tabs-slot" bind:this={tabsSlotEl}>
     <div class="tabs-row" style:max-width="{tabsRowMaxWidth}px">
       <div

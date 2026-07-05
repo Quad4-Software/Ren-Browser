@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"strings"
 
+	"renbrowser/internal/brand"
 	"renbrowser/internal/buildinfo"
 	"renbrowser/internal/content"
 	"renbrowser/internal/store"
@@ -25,14 +26,14 @@ type AboutInfo struct {
 
 func (s *BrowserService) GetAboutInfo() AboutInfo {
 	return AboutInfo{
-		AppName:         "Ren Browser",
+		AppName:         brand.DisplayName,
 		Version:         buildinfo.Version,
 		Build:           buildinfo.BuildLabel(),
 		License:         content.ProjectLicense,
 		GoVersion:       runtime.Version(),
 		OS:              runtime.GOOS,
 		Arch:            runtime.GOARCH,
-		WailsVersion:    "v3.0.0-alpha2",
+		WailsVersion:    brand.WailsVersion,
 		ReticulumConfig: s.stack.ConfigPath(),
 		DataPath:        store.DefaultPath(),
 	}

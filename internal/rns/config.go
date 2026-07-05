@@ -7,6 +7,8 @@ import (
 
 	"quad4/reticulum-go/pkg/common"
 	"quad4/reticulum-go/pkg/reticulumconfig"
+
+	"renbrowser/internal/brand"
 )
 
 func ensureRenBrowserConfig(path string) error {
@@ -29,7 +31,7 @@ func applyRenBrowserDefaults(cfg *common.ReticulumConfig) {
 		return
 	}
 	if cfg.AppName == "" || cfg.AppName == "Go Client" {
-		cfg.AppName = "Ren Browser"
+		cfg.AppName = brand.DisplayName
 	}
 
 	if _, exists := cfg.Interfaces["RNS Testnet TCP"]; !exists {

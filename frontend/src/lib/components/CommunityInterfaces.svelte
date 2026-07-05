@@ -73,7 +73,13 @@
       bind:value={filter}
       oninput={() => onFilter(filter)}
     />
-    <button type="button" class="icon-btn" aria-label="Refresh directory" onclick={onRefresh} disabled={loading}>
+    <button
+      type="button"
+      class="icon-btn"
+      aria-label="Refresh directory"
+      onclick={onRefresh}
+      disabled={loading}
+    >
       <span class:spin={loading}>
         <RefreshCw size={16} />
       </span>
@@ -89,7 +95,10 @@
       <li class="empty">Loading directory...</li>
     {:else if filtered.length === 0}
       <li class="empty">
-        <EmptyState title="No interfaces found" description="Try another search or refresh the directory.">
+        <EmptyState
+          title="No interfaces found"
+          description="Try another search or refresh the directory."
+        >
           <Globe size={22} />
         </EmptyState>
       </li>
@@ -127,9 +136,7 @@
     onclick={onImport}
     disabled={importing || selectedCount === 0}
   >
-    {importing
-      ? "Adding interfaces..."
-      : `Add ${selectedCount || ""} selected and restart`.trim()}
+    {importing ? "Adding interfaces..." : `Add ${selectedCount || ""} selected and restart`.trim()}
   </button>
 </section>
 

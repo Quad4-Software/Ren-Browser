@@ -17,7 +17,7 @@ func isEditorURL(raw string) bool {
 }
 
 func (s *BrowserService) editorPage(pushHistory bool) PageResponse {
-	raw := content.DefaultEditorTemplate
+	raw := content.DefaultEditorTemplate()
 	resp := PageResponse{
 		URL:         "editor:",
 		Path:        "/page/editor.mu",

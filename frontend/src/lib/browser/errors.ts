@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MIT
+import { displayName } from "$lib/brand";
+
 export type PageErrorKind =
   | "connection_failed"
   | "connection_lost"
@@ -51,7 +53,7 @@ const PAGE_ERROR_COPY: Record<PageErrorKind, ErrorPageContent> = {
   storage_full: {
     title: "Storage unavailable",
     description:
-      "Ren Browser cannot write to disk. Free up space or fix permissions for your profile folder.",
+      `${displayName} cannot write to disk. Free up space or fix permissions for your profile folder.`,
     showRetry: true,
     showResetDatabase: false,
     tone: "danger",
@@ -78,7 +80,11 @@ export function normalizePageErrorKind(kind: string | undefined, error: string):
     return kind as PageErrorKind;
   }
   const msg = error.toLowerCase();
-  if (msg.includes("reticulum not ready") || msg.includes("no path") || msg.includes("link establish")) {
+  if (
+    msg.includes("reticulum not ready") ||
+    msg.includes("no path") ||
+    msg.includes("link establish")
+  ) {
     return "connection_failed";
   }
   if (msg.includes("context canceled") || msg.includes("connection lost")) {

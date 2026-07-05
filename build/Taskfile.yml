@@ -7,8 +7,29 @@ vars:
   TIMEOUT_GO_MOD: 3m
   TIMEOUT_WAILS: 5m
   WITH_TIMEOUT: '{{.ROOT_DIR}}/build/scripts/with-timeout.sh'
+  VERSION:
+    sh: grep '^version:' "{{.ROOT_DIR}}/build/brand.yml" | sed 's/version: *//' | tr -d '"'
 
 tasks:
+  gen:brand:
+    summary: Generate Go/TS brand constants from build/brand.yml
+    run: once
+    sources:
+      - brand.yml
+      - scripts/gen-brand.mjs
+    generates:
+      - ../internal/brand/brand_gen.go
+      - ../frontend/src/lib/brand.gen.ts
+    cmds:
+      - node "{{.ROOT_DIR}}/build/scripts/gen-brand.mjs"
+
+  check:brand:
+    summary: Verify generated brand files match build/brand.yml
+    dir: "{{.ROOT_DIR}}"
+    deps:
+      - gen:brand
+    cmds:
+      - git diff --exit-code internal/brand/brand_gen.go frontend/src/lib/brand.gen.ts build/config.yml build/windows/msix/app_manifest.xml
   reticulum:patch-txbytes:
     summary: Patch reticulum-go interface TX byte accounting
     internal: true
@@ -103,6 +124,8 @@ tasks:
       - "svelte.config.*"
       - "package.json"
       - "tsconfig*.json"
+      - "../build/brand.yml"
+      - "src/lib/brand.gen.ts"
       - exclude: node_modules/**/*
       - exclude: dist/**/*
       - exclude: .svelte-kit/**/*
@@ -111,6 +134,7 @@ tasks:
       - dist/index.html
     deps:
       - task: install:frontend:deps
+      - task: gen:brand
       - task: frontend:vendor:micron
       - task: generate:bindings
         vars:
@@ -325,7 +349,7 @@ tasks:
     cmds:
       - '{{if eq .OBFUSCATED "true"}}garble {{.GARBLE_ARGS}} build{{else}}go build{{end}} {{.BUILD_FLAGS}} -o "{{.BIN_DIR}}/{{.APP_NAME}}-server{{exeExt}}"'
     vars:
-      BUILD_FLAGS: '-tags server{{if eq .DEV "true"}}{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -buildvcs=false -gcflags=all="-l"{{else}},production{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -trimpath -buildvcs=false -ldflags="-w -s -X renbrowser/internal/buildinfo.Commit={{.GIT_COMMIT}}"{{end}}'
+      BUILD_FLAGS: '-tags server{{if eq .DEV "true"}}{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -buildvcs=false -gcflags=all="-l"{{else}},production{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -trimpath -buildvcs=false -ldflags="-w -s -X renbrowser/internal/buildinfo.Version={{.VERSION}} -X renbrowser/internal/buildinfo.Commit={{.GIT_COMMIT}}"{{end}}'
 
   run:server:
     summary: Builds and runs a development server (DEV=true)
@@ -345,7 +369,7 @@ tasks:
 
       Usage: task build:docker [TAG=myapp:latest] [CGO_ENABLED=1] [GO_IMAGE=...] [RUNTIME_IMAGE=...]
       For CGO apps, set CGO_ENABLED=1 with libc-compatible builder/runtime images, e.g.:
-        task build:docker CGO_ENABLED=1 GO_IMAGE=golang:bookworm RUNTIME_IMAGE=gcr.io/distroless/base-debian12
+        task build:docker CGO_ENABLED=1 GO_IMAGE=golang:bookworm@sha256:b305420a68d0f229d91eb3b3ed9e519fcf2cf5461da4bef997bf927e8c0bfd2b RUNTIME_IMAGE=gcr.io/distroless/base-debian12@sha256:e7e678c88c59e70e105a46549bb3fbfb3d732ee3b4afd3a19fdab2e15afaa6b3
     deps:
       # Build the production frontend so frontend/dist (embedded by the Go build
       # inside the image) is present and current in the Docker build context.
@@ -358,8 +382,8 @@ tasks:
       - >-
         docker build
         --build-arg CGO_ENABLED={{.CGO_ENABLED | default "0"}}
-        --build-arg GO_IMAGE={{.GO_IMAGE | default "golang:alpine"}}
-        --build-arg RUNTIME_IMAGE={{.RUNTIME_IMAGE | default "gcr.io/distroless/static-debian12"}}
+        --build-arg GO_IMAGE={{.GO_IMAGE | default "golang:alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648"}}
+        --build-arg RUNTIME_IMAGE={{.RUNTIME_IMAGE | default "gcr.io/distroless/static-debian12@sha256:9c346e4be81b5ca7ff31a0d89eaeade58b0f95cfd3baed1f36083ddb47ca3160"}}
         -t {{.TAG | default (printf "%s:latest" .APP_NAME)}}
         -f build/docker/Dockerfile.server .
     vars:

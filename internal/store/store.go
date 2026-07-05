@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"renbrowser/internal/apperrors"
+	"renbrowser/internal/brand"
 	"renbrowser/internal/db"
 	"renbrowser/internal/nomadnet"
-	"renbrowser/internal/paths"
 )
 
 type TabSnapshot struct {
@@ -48,7 +48,7 @@ func DefaultPath() string {
 }
 
 func legacyJSONPath() string {
-	return paths.Join(".renbrowser", "state.json")
+	return brand.LegacyStatePath()
 }
 
 func Open(path string) (*Store, error) {

@@ -7,6 +7,8 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
+
+	"renbrowser/internal/brand"
 )
 
 const windowStateKey = "windowState"
@@ -112,7 +114,7 @@ func (s *BrowserService) ToggleFullscreen() error {
 
 func (s *BrowserService) InitialWindowOptions(frameless bool, reset bool) application.WebviewWindowOptions {
 	opts := application.WebviewWindowOptions{
-		Title:            "Ren Browser",
+		Title:            brand.DisplayName,
 		Width:            1280,
 		Height:           800,
 		MinWidth:         360,

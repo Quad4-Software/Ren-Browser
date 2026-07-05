@@ -1,4 +1,5 @@
 //go:build stress
+
 // SPDX-License-Identifier: MIT
 
 package store_test

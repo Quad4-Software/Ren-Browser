@@ -1,4 +1,5 @@
 //go:build server
+
 // SPDX-License-Identifier: MIT
 
 package main
@@ -8,6 +9,7 @@ import (
 	"log"
 
 	"renbrowser/internal/bootstrap"
+	"renbrowser/internal/brand"
 	"renbrowser/internal/config"
 )
 
@@ -35,7 +37,7 @@ func main() {
 		}
 	}()
 
-	log.Printf("Ren Browser server listening on %s:%d", cfg.ServerHost, cfg.ServerPort)
+	log.Printf("%s server listening on %s:%d", brand.DisplayName, cfg.ServerHost, cfg.ServerPort)
 	if err := appBundle.Wails.Run(); err != nil {
 		log.Fatal(err)
 	}

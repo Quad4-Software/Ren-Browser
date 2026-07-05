@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { onMount } from "svelte";
+  import { SvelteSet } from "svelte/reactivity";
   import { Events, System } from "@wailsio/runtime";
   import {
     AddFavorite,
@@ -53,6 +54,7 @@
   } from "../bindings/renbrowser/internal/app/browserservice.js";
   import type { WindowChrome } from "../bindings/renbrowser/internal/app/models.js";
   import type { DownloadRow } from "$lib/components/DownloadsMenu.svelte";
+  import { exportFilename } from "$lib/brand";
   import BrowserChrome from "$lib/components/BrowserChrome.svelte";
   import TabBar from "$lib/components/TabBar.svelte";
   import ContentViewer from "$lib/components/ContentViewer.svelte";
@@ -68,7 +70,13 @@
   import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
   import AppStoreError from "$lib/components/AppStoreError.svelte";
   import { isStoreBlockingKind } from "$lib/browser/errors";
-  import { defaultTheme, applyTheme, mobileChromeBg, mobileChromeUsesLightIcons, type ThemeSettings } from "$lib/theme/tokens";
+  import {
+    defaultTheme,
+    applyTheme,
+    mobileChromeBg,
+    mobileChromeUsesLightIcons,
+    type ThemeSettings,
+  } from "$lib/theme/tokens";
   import type { CommunityInterface } from "$lib/components/CommunityInterfaces.svelte";
   import {
     defaultKeybinds,
@@ -246,7 +254,7 @@
   let communityImporting = $state(false);
   let communityError = $state("");
   let communityFilter = $state("");
-  let communitySelected = $state<Set<number>>(new Set());
+  let communitySelected = new SvelteSet<number>();
 
   let tabs = $state<Tab[]>([{ id: crypto.randomUUID(), title: "New Tab", url: "", active: true }]);
 
@@ -941,13 +949,11 @@
   }
 
   function toggleCommunitySelection(id: number) {
-    const next = new Set(communitySelected);
-    if (next.has(id)) {
-      next.delete(id);
+    if (communitySelected.has(id)) {
+      communitySelected.delete(id);
     } else {
-      next.add(id);
+      communitySelected.add(id);
     }
-    communitySelected = next;
   }
 
   async function importCommunitySelection() {
@@ -961,7 +967,7 @@
     communityError = "";
     try {
       await ImportCommunityInterfaces(configs);
-      communitySelected = new Set();
+      communitySelected.clear();
       await loadInterfaces();
       await loadCommunityInterfaces();
     } catch (err) {
@@ -1587,7 +1593,7 @@
             const href = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = href;
-            a.download = "renbrowser-devlogs.json";
+            a.download = exportFilename("devlogs");
             a.click();
             URL.revokeObjectURL(href);
           }}
@@ -1617,12 +1623,12 @@
           bind:configText
           {configSaving}
           {configError}
-          communityItems={communityItems}
+          {communityItems}
           {communityLoading}
           {communityImporting}
           {communityError}
           bind:communityFilter
-          communitySelected={communitySelected}
+          {communitySelected}
           onChange={saveTheme}
           onChangeKeybinds={saveKeybinds}
           onChangeDownloadDir={saveDownloadDir}
@@ -1644,7 +1650,7 @@
             const href = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = href;
-            a.download = "renbrowser-theme.json";
+            a.download = exportFilename("theme");
             a.click();
             URL.revokeObjectURL(href);
           }}

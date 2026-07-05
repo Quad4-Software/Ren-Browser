@@ -11,7 +11,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"renbrowser/internal/paths"
+	"renbrowser/internal/brand"
 )
 
 type DB struct {
@@ -19,7 +19,7 @@ type DB struct {
 }
 
 func DefaultPath() string {
-	return paths.Join(".renbrowser", "renbrowser.db")
+	return brand.DefaultDBPath()
 }
 
 func Open(path string) (*DB, error) {

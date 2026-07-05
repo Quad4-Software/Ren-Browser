@@ -8,15 +8,15 @@
   IgnorableNamespaces="uap3">
   
   <Identity 
-    Name="com.example.renbrowser"
+    Name="io.quad4.renbrowser"
     Publisher="CN=My Company"
     Version="0.1.0.0" 
     ProcessorArchitecture="x64" />
   
   <Properties>
-    <DisplayName>My Product</DisplayName>
-    <PublisherDisplayName>My Company</PublisherDisplayName>
-    <Description>A renbrowser application</Description>
+    <DisplayName>Ren Browser</DisplayName>
+    <PublisherDisplayName>Quad4</PublisherDisplayName>
+    <Description>Reticulum browser for NomadNet pages</Description>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   
@@ -29,9 +29,9 @@
   </Resources>
   
   <Applications>
-    <Application Id="com.example.renbrowser" Executable="renbrowser" EntryPoint="Windows.FullTrustApplication">
+    <Application Id="io.quad4.renbrowser" Executable="renbrowser" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
-        DisplayName="My Product"
+        DisplayName="Ren Browser"
         Description="A renbrowser application"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"

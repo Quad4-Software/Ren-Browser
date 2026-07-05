@@ -29,6 +29,7 @@ tasks:
       - fmt:go
       - test:go
       - gosec
+      - task: common:check:brand
       - frontend:check
 
   fmt:go:

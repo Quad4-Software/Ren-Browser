@@ -2,6 +2,7 @@
 <script lang="ts">
   import { Compass, Star } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
+  import { displayName } from "$lib/brand";
 
   type Node = {
     hash: string;
@@ -70,7 +71,7 @@
   {#if nodes.length === 0}
     <EmptyState
       title="No sites discovered yet"
-      description="Ren Browser is scanning the mesh. Sites will appear here when nodes announce themselves."
+      description="{displayName} is scanning the mesh. Sites will appear here when nodes announce themselves."
     >
       <Compass size={22} />
     </EmptyState>

@@ -4,9 +4,12 @@ package config
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
+
+	"renbrowser/internal/brand"
 )
 
 type Runtime struct {
@@ -33,7 +36,7 @@ func ParseFlags() Runtime {
 	flag.IntVar(&cfg.ServerPort, "port", 0, "HTTP server port (server mode)")
 	flag.BoolVar(&cfg.TrustProxy, "trust-proxy", false, "Trust X-Forwarded-* headers from reverse proxies")
 	flag.StringVar(&cfg.BasePath, "base-path", "", "URL prefix when served behind a reverse proxy subpath")
-	flag.StringVar(&cfg.Profile, "profile", "", "Browser profile name (default profile uses ~/.renbrowser/renbrowser.db)")
+	flag.StringVar(&cfg.Profile, "profile", "", fmt.Sprintf("Browser profile name (default profile uses ~/%s/%s)", brand.DataDirName, brand.DBFileName))
 	flag.StringVar(&cfg.ExportProfile, "export-profile", "", "Export the active profile to a JSON file at startup")
 	flag.StringVar(&cfg.ImportProfile, "import-profile", "", "Import profile data from a JSON file at startup")
 	flag.BoolVar(&cfg.PublicMode, "public-mode", false, "Store favorites, history, and tabs in the browser (localStorage) instead of the server database")

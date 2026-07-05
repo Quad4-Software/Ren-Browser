@@ -9,6 +9,7 @@ import {
   getMicronWasmParserWasm,
   hasStoredMicronWasmParsers,
 } from "./wasm-store";
+import { wasmExecDomId, wasmGlobalFlag } from "$lib/brand";
 
 declare const __MICRON_WASM_SRI_WASM__: string | undefined;
 declare const __MICRON_WASM_SRI_EXEC__: string | undefined;
@@ -172,7 +173,7 @@ async function verifySri(buf: ArrayBuffer, expectedHash: string, name: string): 
 }
 
 async function injectScript(src: string, expectedHash: string): Promise<void> {
-  const id = "renbrowser-micron-wasm-exec";
+  const id = wasmExecDomId;
   if (document.getElementById(id)) {
     return;
   }
@@ -201,18 +202,22 @@ async function injectScript(src: string, expectedHash: string): Promise<void> {
   });
 }
 
+function isWasmWrapped(fn: unknown): boolean {
+  return (
+    typeof fn === "function" &&
+    Boolean((fn as Record<string, boolean | undefined>)[wasmGlobalFlag])
+  );
+}
+
 function wrapMicronConvertForNarrowJsSurface(): void {
   const inner = globalThis.micronConvert;
-  if (
-    typeof inner !== "function" ||
-    (inner as { __renbrowserMicronWasmWrapped?: boolean }).__renbrowserMicronWasmWrapped
-  ) {
+  if (typeof inner !== "function" || isWasmWrapped(inner)) {
     return;
   }
   const wrapped = (markup: unknown, darkTheme: boolean, forceMonospace: boolean) =>
     inner(String(markup ?? ""), darkTheme === true, forceMonospace === true);
-  const tagged = wrapped as typeof wrapped & { __renbrowserMicronWasmWrapped?: boolean };
-  tagged.__renbrowserMicronWasmWrapped = true;
+  const tagged = wrapped as typeof wrapped & Record<string, boolean | undefined>;
+  tagged[wasmGlobalFlag] = true;
   globalThis.micronConvert = tagged as typeof globalThis.micronConvert;
 }
 
@@ -278,7 +283,7 @@ async function instantiateOnce(parserId: string): Promise<void> {
 }
 
 export function teardownNomadMicronWasmRuntime(): void {
-  document.getElementById("renbrowser-micron-wasm-exec")?.remove();
+  document.getElementById(wasmExecDomId)?.remove();
   globalThis.micronConvert = undefined;
   globalThis.Go = undefined;
   loadedParserId = null;

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 import type { ThemeSettings } from "$lib/theme/tokens";
 import type { KeybindSettings } from "$lib/browser/keybinds";
+import { localStorageKey } from "$lib/brand";
 
 export type LocalTabSnapshot = {
   id: string;
@@ -44,7 +45,7 @@ const dataVersion = 1;
 
 function storageKey(profile: string): string {
   const safe = profile.trim() || "default";
-  return `renbrowser:${safe}:v${dataVersion}`;
+  return localStorageKey(safe, dataVersion);
 }
 
 export function readLocalBrowserData(profile: string): LocalBrowserData | null {

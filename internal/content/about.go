@@ -4,6 +4,8 @@ package content
 import (
 	"fmt"
 	"html"
+
+	"renbrowser/internal/brand"
 )
 
 type AboutInfo struct {
@@ -46,7 +48,7 @@ func RenderAbout(info AboutInfo) string {
 
 	return `<article class="about-page">` +
 		`<h1>` + html.EscapeString(info.AppName) + `</h1>` +
-		`<p class="about-tagline">Reticulum browser for NomadNet pages.</p>` +
+		`<p class="about-tagline">` + html.EscapeString(brand.Tagline) + `</p>` +
 		`<table class="about-table"><tbody>` + body + `</tbody></table>` +
 		`<p class="about-hint">Type a NomadNet URL in the address bar or open Discovery to browse the mesh. ` +
 		`<a href="license:">View license</a>.</p>` +
