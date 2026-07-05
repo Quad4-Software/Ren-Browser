@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 package content
 
 import (
@@ -9,6 +10,7 @@ type AboutInfo struct {
 	AppName         string
 	Version         string
 	Build           string
+	License         string
 	GoVersion       string
 	OS              string
 	Arch            string
@@ -25,6 +27,7 @@ func RenderAbout(info AboutInfo) string {
 		{"Application", info.AppName},
 		{"Version", info.Version},
 		{"Build", info.Build},
+		{"License", info.License},
 		{"Go", info.GoVersion},
 		{"Platform", fmt.Sprintf("%s/%s", info.OS, info.Arch)},
 		{"Wails", info.WailsVersion},
@@ -45,6 +48,7 @@ func RenderAbout(info AboutInfo) string {
 		`<h1>` + html.EscapeString(info.AppName) + `</h1>` +
 		`<p class="about-tagline">Reticulum browser for NomadNet pages.</p>` +
 		`<table class="about-table"><tbody>` + body + `</tbody></table>` +
-		`<p class="about-hint">Type a NomadNet URL in the address bar or open Discovery to browse the mesh.</p>` +
+		`<p class="about-hint">Type a NomadNet URL in the address bar or open Discovery to browse the mesh. ` +
+		`<a href="license:">View license</a>.</p>` +
 		`</article>`
 }

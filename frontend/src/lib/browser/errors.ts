@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 export type PageErrorKind =
   | "connection_failed"
   | "connection_lost"

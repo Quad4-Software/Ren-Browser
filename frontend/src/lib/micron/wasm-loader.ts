@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * Lazy-load micron-parser-go WASM for in-browser Micron rendering.
  * Bundled artifacts live under /vendor/micron-parser-go/; additional modules in IndexedDB.

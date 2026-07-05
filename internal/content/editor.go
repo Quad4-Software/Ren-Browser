@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 package content
 
 const DefaultEditorTemplate = "#!fg=ffffff\n" +

@@ -96,3 +96,7 @@ Application state is stored in `~/.renbrowser/renbrowser.db` (SQLite, WAL). Lega
 - `internal/` — Reticulum, NomadNet, rendering, SQLite store
 - `frontend/` — Svelte UI
 - `build/` — platform packaging and Wails config
+
+## License
+
+Ren Browser is released under the [MIT License](LICENSE). Type `license` in the address bar to view the full license text in the app.

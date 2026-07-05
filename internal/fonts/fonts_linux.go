@@ -1,4 +1,5 @@
 //go:build linux && !android
+// SPDX-License-Identifier: MIT
 
 package fonts
 

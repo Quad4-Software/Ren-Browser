@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { ResolveMicronLink } from "../../../bindings/renbrowser/internal/app/browserservice.js";
 import { normalizeReticulumURL } from "./url";
 
@@ -56,6 +57,10 @@ export function resolveLinkURL(currentURL: string, href: string): string {
   const trimmed = href.trim();
   if (!trimmed) {
     return "";
+  }
+  const special = normalizeReticulumURL(trimmed);
+  if (special === "about:" || special === "license:" || special === "editor:") {
+    return special;
   }
   if (trimmed.includes(":/")) {
     return normalizeReticulumURL(trimmed);

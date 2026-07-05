@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   /* eslint-disable svelte/no-at-html-tags -- live micron preview */
   import { RenderRaw } from "../../../bindings/renbrowser/internal/app/browserservice.js";

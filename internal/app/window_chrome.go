@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 package app
 
 import (
@@ -34,7 +35,7 @@ func (s *BrowserService) SetNativeTitlebar(enabled bool) (BrowserPrefs, error) {
 
 func nodeHashFromURL(raw string) (string, error) {
 	trimmed := strings.TrimSpace(raw)
-	if trimmed == "" || trimmed == "about:" || trimmed == "editor:" {
+	if trimmed == "" || trimmed == "about:" || trimmed == "license:" || trimmed == "editor:" {
 		return "", errors.New("not a mesh page")
 	}
 	hash := trimmed

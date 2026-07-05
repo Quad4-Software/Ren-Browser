@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { FolderOpen, Network } from "@lucide/svelte";
   import Toggle from "$lib/components/Toggle.svelte";

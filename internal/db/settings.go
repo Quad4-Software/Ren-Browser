@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 package db
 
 func (d *DB) GetSetting(key string) (string, error) {

@@ -1,4 +1,5 @@
 //go:build leak
+// SPDX-License-Identifier: MIT
 
 package db_test
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import {
   DownloadToDir,
   SaveTextToDownloadDir,
@@ -26,6 +27,9 @@ export function pageDownloadName(url: string, contentType: string): string {
   if (url === "about:") {
     return "about.html";
   }
+  if (url === "license:") {
+    return "LICENSE";
+  }
   const barePath = meshBarePath(url);
   const leaf = barePath.split("/").filter(Boolean).at(-1);
   if (leaf) {
@@ -44,7 +48,7 @@ export function pageDownloadName(url: string, contentType: string): string {
 }
 
 export function isFileURL(url: string): boolean {
-  if (!url || url === "about:" || url === "editor:") {
+  if (!url || url === "about:" || url === "license:" || url === "editor:") {
     return false;
   }
   return meshBarePath(url).startsWith("/file/");

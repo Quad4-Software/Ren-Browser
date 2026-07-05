@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 package app
 
 import (
@@ -399,6 +400,9 @@ func (s *BrowserService) OpenFreshURL(rawURL string) PageResponse {
 func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) PageResponse {
 	if isAboutURL(rawURL) {
 		return s.aboutPage(pushHistory)
+	}
+	if isLicenseURL(rawURL) {
+		return s.licensePage(pushHistory)
 	}
 	if isEditorURL(rawURL) {
 		return s.editorPage(pushHistory)

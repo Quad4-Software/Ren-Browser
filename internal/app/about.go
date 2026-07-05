@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 package app
 
 import (
@@ -13,6 +14,7 @@ type AboutInfo struct {
 	AppName         string `json:"appName"`
 	Version         string `json:"version"`
 	Build           string `json:"build"`
+	License         string `json:"license"`
 	GoVersion       string `json:"goVersion"`
 	OS              string `json:"os"`
 	Arch            string `json:"arch"`
@@ -26,6 +28,7 @@ func (s *BrowserService) GetAboutInfo() AboutInfo {
 		AppName:         "Ren Browser",
 		Version:         buildinfo.Version,
 		Build:           buildinfo.BuildLabel(),
+		License:         content.ProjectLicense,
 		GoVersion:       runtime.Version(),
 		OS:              runtime.GOOS,
 		Arch:            runtime.GOARCH,
@@ -50,6 +53,7 @@ func (s *BrowserService) aboutPage(pushHistory bool) PageResponse {
 		AppName:         info.AppName,
 		Version:         info.Version,
 		Build:           info.Build,
+		License:         info.License,
 		GoVersion:       info.GoVersion,
 		OS:              info.OS,
 		Arch:            info.Arch,

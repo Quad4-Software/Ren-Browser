@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 package app_test
 
 import (

@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Compass, Download, History, Home, Settings, Terminal } from "@lucide/svelte";
 

@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Compass, Star } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";

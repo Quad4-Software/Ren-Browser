@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 package app_test
 
 import (
@@ -49,6 +50,30 @@ func TestAboutURL(t *testing.T) {
 		}
 		if page.HTML == "" {
 			t.Fatal("expected about html")
+		}
+	}
+}
+
+func TestLicenseURL(t *testing.T) {
+	stack, err := rns.NewStack("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc, err := app.NewBrowserService(stack, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, raw := range []string{"license", "license:", "  License  "} {
+		page := svc.Navigate(raw)
+		if page.URL != "license:" {
+			t.Fatalf("url = %q", page.URL)
+		}
+		if page.ContentType != "license" {
+			t.Fatalf("content type = %q", page.ContentType)
+		}
+		if page.HTML == "" {
+			t.Fatal("expected license html")
 		}
 	}
 }

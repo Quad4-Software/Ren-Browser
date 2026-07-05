@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Globe, RefreshCw } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";

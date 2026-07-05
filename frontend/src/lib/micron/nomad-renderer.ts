@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // @ts-nocheck
 import DOMPurify from "dompurify";
 import { marked } from "marked";

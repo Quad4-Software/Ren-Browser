@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 export function clearFindHighlights(root: HTMLElement): void {
   root.querySelectorAll("mark.ren-find-hit").forEach((mark) => {
     const parent = mark.parentNode;

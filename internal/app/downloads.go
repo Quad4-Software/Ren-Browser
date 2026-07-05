@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 package app
 
 import (
@@ -243,6 +244,9 @@ func downloadNameFromURL(rawURL string) string {
 	}
 	if rawURL == "about:" {
 		return "about.html"
+	}
+	if rawURL == "license:" {
+		return "LICENSE"
 	}
 	path := rawURL
 	if idx := strings.Index(rawURL, ":/"); idx >= 0 {

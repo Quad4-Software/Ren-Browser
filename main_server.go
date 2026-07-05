@@ -1,4 +1,5 @@
 //go:build server
+// SPDX-License-Identifier: MIT
 
 package main
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { describe, expect, it } from "vitest";
 import {
   MAX_TABS,
@@ -33,8 +34,9 @@ describe("normalizeReticulumURL", () => {
     expect(normalizeReticulumURL(url)).toBe(url);
   });
 
-  it("normalizes about and editor urls", () => {
+  it("normalizes about, license, and editor urls", () => {
     expect(normalizeReticulumURL("about")).toBe("about:");
+    expect(normalizeReticulumURL("license")).toBe("license:");
     expect(normalizeReticulumURL("editor")).toBe("editor:");
   });
 
@@ -62,6 +64,7 @@ describe("tabTitleFromURL", () => {
   it("labels special pages", () => {
     expect(tabTitleFromURL("editor:")).toBe("Micron Editor");
     expect(tabTitleFromURL("about:")).toBe("About");
+    expect(tabTitleFromURL("license:")).toBe("License");
   });
 
   it("truncates very long leaf names", () => {

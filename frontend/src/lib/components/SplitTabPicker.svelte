@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Columns2, X } from "@lucide/svelte";
   import type { Tab } from "$lib/browser/url";

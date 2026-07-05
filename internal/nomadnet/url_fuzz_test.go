@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 package nomadnet_test
 
 import (

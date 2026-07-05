@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import type {} from "vite/client";
 
 declare global {

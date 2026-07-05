@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import { describe, expect, it } from "vitest";
 import { isFileURL, pageDownloadName } from "./download";
 
@@ -16,6 +17,7 @@ describe("pageDownloadName", () => {
 
   it("labels special pages", () => {
     expect(pageDownloadName("about:", "html")).toBe("about.html");
+    expect(pageDownloadName("license:", "html")).toBe("LICENSE");
     expect(pageDownloadName("editor:", "editor")).toBe("editor.mu");
   });
 
@@ -35,6 +37,7 @@ describe("isFileURL", () => {
   it("rejects page and special urls", () => {
     expect(isFileURL("abb3ebcd03cb2388a838e70c001291f9:/page/index.mu")).toBe(false);
     expect(isFileURL("about:")).toBe(false);
+    expect(isFileURL("license:")).toBe(false);
     expect(isFileURL("editor:")).toBe(false);
     expect(isFileURL("")).toBe(false);
   });

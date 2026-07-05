@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import MicronParser, { parseMicronHeaderTagColors } from "./parser";
 import { renderNomadPageByPath } from "./nomad-renderer";
 import {

@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Clock, History } from "@lucide/svelte";
   import { SvelteDate } from "svelte/reactivity";

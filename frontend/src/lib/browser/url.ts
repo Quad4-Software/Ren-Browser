@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 export type TabPage = {
   html: string;
   contentType: string;
@@ -128,6 +129,9 @@ export function normalizeReticulumURL(input: string): string {
   if (lower === "about" || lower === "about:") {
     return "about:";
   }
+  if (lower === "license" || lower === "license:") {
+    return "license:";
+  }
   if (lower === "editor" || lower === "editor:") {
     return "editor:";
   }
@@ -149,6 +153,9 @@ export function tabTitleFromURL(url: string, nodes: DiscoveredNode[] = []): stri
   }
   if (url === "about:") {
     return "About";
+  }
+  if (url === "license:") {
+    return "License";
   }
   if (url === "editor:") {
     return "Micron Editor";

@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import PageErrorState from "$lib/components/PageErrorState.svelte";
   import { isStoreBlockingKind, pageErrorContent, type StoreErrorKind } from "$lib/browser/errors";

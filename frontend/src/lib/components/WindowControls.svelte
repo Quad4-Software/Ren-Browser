@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Minus, Square, X } from "@lucide/svelte";
   import { System, Window } from "@wailsio/runtime";

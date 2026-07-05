@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 #!/usr/bin/env node
 /**
  * Downloads micron-parser-go WASM release assets and matching wasm_exec.js for Vite public/.

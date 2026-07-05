@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import type { ThemeSettings } from "$lib/theme/tokens";
 import type { KeybindSettings } from "$lib/browser/keybinds";
 

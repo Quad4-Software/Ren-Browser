@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 export type ThemeMode = "dark" | "light" | "system";
 
 export type ThemeSettings = {

@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   /* eslint-disable svelte/no-at-html-tags -- renders trusted mesh page content */
   import { ArrowLeft, FileCode, Globe, X } from "@lucide/svelte";
@@ -70,6 +71,8 @@
   const cacheBannerKey = $derived(`${fromCache}:${cachedAt}`);
   const isMicron = $derived(contentType === "micron");
   const isAbout = $derived(contentType === "about");
+  const isLicense = $derived(contentType === "license");
+  const isInternalPage = $derived(isAbout || isLicense);
 
   const displayHtml = $derived.by(() => {
     if (showSource || !isMicron || !usesClientMicronRenderer(micronEngine) || !raw.trim()) {
@@ -188,7 +191,7 @@
   }
 </script>
 
-<section class="viewer" class:micron={isMicron && !showSource} class:about={isAbout}>
+<section class="viewer" class:micron={isMicron && !showSource} class:about={isInternalPage}>
   <PageFindBar open={findOpen && !showSource} onClose={onFindClose} contentRoot={contentEl} />
 
   {#if showCacheBanner}
@@ -487,5 +490,40 @@
   .content :global(.about-hint) {
     color: var(--ren-muted);
     font-size: 0.9rem;
+  }
+
+  .content :global(.license-page) {
+    max-width: 48rem;
+    margin: 0 auto;
+  }
+
+  .content :global(.license-page h1) {
+    margin: 0 0 0.35rem;
+    font-size: 1.6rem;
+  }
+
+  .content :global(.license-spdx) {
+    color: var(--ren-muted);
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+  }
+
+  .content :global(.license-text) {
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--ren-mono, ui-monospace, monospace);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    padding: 1rem;
+    border: 1px solid var(--ren-border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--ren-chrome-bg) 70%, transparent);
+    overflow-x: auto;
+  }
+
+  .content :global(.license-hint) {
+    color: var(--ren-muted);
+    font-size: 0.9rem;
+    margin-top: 1rem;
   }
 </style>

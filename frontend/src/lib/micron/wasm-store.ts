@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 /**
  * IndexedDB store for multiple micron-parser-go WASM modules (uploads and verified GitHub releases).
  */

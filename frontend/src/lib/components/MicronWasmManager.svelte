@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { onMount } from "svelte";
   import { Plus, Trash2 } from "@lucide/svelte";
