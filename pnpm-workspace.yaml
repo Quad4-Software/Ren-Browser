@@ -7,5 +7,5 @@ pnpm:
   trustPolicyIgnoreAfter: 525600
   blockExoticSubdeps: true
   strictDepBuilds: false
-  onlyBuiltDependencies:
-    - esbuild
+  allowBuilds:
+    esbuild: true

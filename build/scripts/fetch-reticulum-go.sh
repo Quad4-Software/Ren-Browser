@@ -3,11 +3,12 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 vendor_dir="${root}/third_party/reticulum-go"
+mod_go="${vendor_dir}/go.mod"
 iface_go="${vendor_dir}/pkg/interfaces/interface.go"
 version_file="${root}/build/scripts/reticulum-go-version"
 repo="${RETICULUM_GO_REPO:-https://github.com/Quad4-Software/Reticulum-Go.git}"
 
-if [[ -f "${iface_go}" ]]; then
+if [[ -f "${mod_go}" && -f "${iface_go}" ]]; then
   exit 0
 fi
 
@@ -46,6 +47,11 @@ if command -v rsync >/dev/null 2>&1; then
 else
   cp -a "${tmpdir}/." "${vendor_dir}/"
   rm -rf "${vendor_dir}/.git"
+fi
+
+if [[ ! -f "${mod_go}" ]]; then
+  echo "fetch-reticulum-go: ${mod_go} not found after checkout ${ref}" >&2
+  exit 1
 fi
 
 if [[ ! -f "${iface_go}" ]]; then

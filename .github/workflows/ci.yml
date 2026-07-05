@@ -24,6 +24,7 @@ permissions:
 
 env:
   GOFLAGS: -mod=vendor
+  PNPM_CONFIG_STRICT_DEP_BUILDS: "false"
 
 jobs:
   go:

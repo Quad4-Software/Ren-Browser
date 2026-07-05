@@ -4,23 +4,10 @@ package app
 import (
 	"path/filepath"
 	"testing"
-
-	"renbrowser/internal/rns"
 )
 
 func TestThemeDefaults(t *testing.T) {
-	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "profile.db")
-	cfgPath := filepath.Join(dir, "config")
-
-	stack, err := rns.NewStack(cfgPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := NewBrowserServiceWithOptions(stack, nil, ServiceOptions{ProfilePath: dbPath})
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc, _ := newTestBrowserServiceIn(t, t.TempDir())
 
 	theme := svc.GetTheme()
 	if theme.Accent != "#60a5fa" {
@@ -36,14 +23,7 @@ func TestThemeSettingsPersist(t *testing.T) {
 	dbPath := filepath.Join(dir, "profile.db")
 	cfgPath := filepath.Join(dir, "config")
 
-	stack, err := rns.NewStack(cfgPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := NewBrowserServiceWithOptions(stack, nil, ServiceOptions{ProfilePath: dbPath})
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc, release := newTestBrowserServiceIn(t, dir)
 
 	want := ThemeSettings{
 		Mode:           "light",
@@ -54,15 +34,9 @@ func TestThemeSettingsPersist(t *testing.T) {
 		CompactToolbar: true,
 	}
 	svc.SetTheme(want)
+	release()
 
-	stack2, err := rns.NewStack(cfgPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	reloaded, err := NewBrowserServiceWithOptions(stack2, nil, ServiceOptions{ProfilePath: dbPath})
-	if err != nil {
-		t.Fatal(err)
-	}
+	reloaded := reopenTestBrowserService(t, dbPath, cfgPath)
 
 	got := reloaded.GetTheme()
 	if got.Accent != want.Accent {
@@ -90,14 +64,7 @@ func TestResetSettingsTheme(t *testing.T) {
 	dbPath := filepath.Join(dir, "profile.db")
 	cfgPath := filepath.Join(dir, "config")
 
-	stack, err := rns.NewStack(cfgPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := NewBrowserServiceWithOptions(stack, nil, ServiceOptions{ProfilePath: dbPath})
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc, release := newTestBrowserServiceIn(t, dir)
 
 	svc.SetTheme(ThemeSettings{Mode: "light", Accent: "#ff0000", FontSize: 18})
 	reset := svc.ResetSettings()
@@ -107,15 +74,9 @@ func TestResetSettingsTheme(t *testing.T) {
 	if reset.Theme.Mode != "dark" {
 		t.Fatalf("reset mode = %q", reset.Theme.Mode)
 	}
+	release()
 
-	stack2, err := rns.NewStack(cfgPath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	reloaded, err := NewBrowserServiceWithOptions(stack2, nil, ServiceOptions{ProfilePath: dbPath})
-	if err != nil {
-		t.Fatal(err)
-	}
+	reloaded := reopenTestBrowserService(t, dbPath, cfgPath)
 	got := reloaded.GetTheme()
 	if got.Accent != "#60a5fa" {
 		t.Fatalf("reloaded accent = %q", got.Accent)

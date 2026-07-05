@@ -45,11 +45,8 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        for f in .npmrc frontend/.npmrc; do
-          if [[ -f "$f" ]] && ! grep -q '^strict-dep-builds=' "$f"; then
-            printf 'strict-dep-builds=false\n' >> "$f"
-          fi
-        done
+        pnpm config set strict-dep-builds false
+        pnpm config set --location project strict-dep-builds false
 
     - name: Setup Go
       uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
@@ -62,7 +59,7 @@ runs:
       with:
         node-version: "22"
         cache: pnpm
-        cache-dependency-path: frontend/pnpm-lock.yaml
+        cache-dependency-path: pnpm-lock.yaml
 
     - name: Setup Task
       uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52

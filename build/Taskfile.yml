@@ -54,6 +54,7 @@ tasks:
     run: once
     timeout: 3m
     cmds:
+      - bash "{{.ROOT_DIR}}/build/scripts/patch-reticulum-txbytes.sh"
       - go mod tidy
     env:
       GOFLAGS: "-mod=mod"
@@ -92,12 +93,15 @@ tasks:
       - bun install
 
   install:frontend:deps:pnpm:
-    dir: frontend
+    dir: "{{.ROOT_DIR}}"
     sources:
       - package.json
       - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - frontend/package.json
+      - frontend/pnpm-lock.yaml
     generates:
-      - node_modules
+      - frontend/node_modules
     preconditions:
       - sh: pnpm --version | awk -F. '{ exit ($1 < 11) }'
         msg: "pnpm 11+ is required. Install with: corepack enable && corepack prepare pnpm@11.3.0 --activate"
@@ -260,11 +264,10 @@ tasks:
       - frontend/bindings/renbrowser/internal/app/browserservice.ts
       - frontend/bindings/renbrowser/internal/app/pluginhost.ts
     cmds:
-      - >-
-        wails3 generate bindings
-        -f "{{.BUILD_FLAGS}}"
-        -clean=true{{if eq .OBFUSCATED "true"}} -obfuscated{{end}}
-        -ts -i
+      - bash "{{.ROOT_DIR}}/build/scripts/generate-bindings.sh"
+    env:
+      BUILD_FLAGS: "{{.BUILD_FLAGS}}"
+      OBFUSCATED: "{{.OBFUSCATED}}"
 
   test:plugins:
     summary: Run plugin host unit tests

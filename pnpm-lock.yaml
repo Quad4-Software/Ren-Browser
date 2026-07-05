@@ -6,6 +6,8 @@ settings:
 
 importers:
 
+  .: {}
+
   frontend:
     dependencies:
       '@lucide/svelte':

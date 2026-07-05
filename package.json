@@ -1,0 +1,5 @@
+{
+  "name": "renbrowser-workspace",
+  "private": true,
+  "packageManager": "pnpm@11.3.0"
+}
