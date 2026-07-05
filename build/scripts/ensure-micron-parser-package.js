@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-#!/usr/bin/env node
 
 const fs = require("fs");
 const path = require("path");

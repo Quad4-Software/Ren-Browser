@@ -9,6 +9,7 @@ export interface AboutInfo {
     "appName": string;
     "version": string;
     "build": string;
+    "license": string;
     "goVersion": string;
     "os": string;
     "arch": string;
