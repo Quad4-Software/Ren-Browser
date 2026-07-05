@@ -25,7 +25,10 @@ describe("docs URL helpers", () => {
       "docs:?lang=en&page=getting-started",
     );
     expect(rewriteDocsHref("#section", "en", "faq")).toBe("docs:?lang=en&page=faq#section");
-    expect(rewriteDocsHref("https://example.com", "en", "")).toBe("https://example.com");
+  });
+
+  it("drops external markdown links", () => {
+    expect(rewriteDocsHref("https://example.com", "en", "")).toBe("");
   });
 });
 
@@ -44,9 +47,11 @@ describe("renderDocsMarkdown", () => {
     expect(html).toContain("Install");
   });
 
-  it("keeps external https links", () => {
+  it("renders external references without navigable links", () => {
     const html = renderDocsMarkdown("[Reticulum](https://reticulum.network/)", "en", "");
-    expect(html).toContain('href="https://reticulum.network/"');
+    expect(html).not.toMatch(/<a[^>]+href="https:\/\/reticulum\.network\/"/);
+    expect(html).toContain('class="docs-external-ref"');
+    expect(html).toContain("Reticulum");
   });
 });
 

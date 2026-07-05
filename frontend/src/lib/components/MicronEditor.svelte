@@ -2,11 +2,7 @@
 <script lang="ts">
   /* eslint-disable svelte/no-at-html-tags -- live micron preview */
   import { Download } from "@lucide/svelte";
-  import {
-    resolveLinkURL,
-    resolveMicronNavigation,
-    resolveNomadDataURL,
-  } from "$lib/browser/micron-links";
+  import { handlePageLinkClick } from "$lib/browser/page-links";
   import { downloadPageContent, downloadText } from "$lib/browser/download";
   import { micronShellStyle } from "$lib/browser/url";
   import { parseMicronHeaderColors, renderClientMicronPage } from "$lib/micron/render-page";
@@ -164,49 +160,10 @@
   }
 
   async function handlePreviewClick(event: MouseEvent) {
-    const target = event.target as HTMLElement | null;
-    if (!target || !previewEl) {
+    if (!previewEl) {
       return;
     }
-
-    const nodeLink = target.closest("[data-action='openNode']");
-    if (nodeLink) {
-      event.preventDefault();
-      const destination = nodeLink.getAttribute("data-destination");
-      if (!destination) {
-        return;
-      }
-      const fieldsSpec = nodeLink.getAttribute("data-fields");
-      const next = await resolveMicronNavigation(previewEl, currentURL, destination, fieldsSpec);
-      if (next) {
-        onNavigate(next);
-      }
-      return;
-    }
-
-    const nomadAnchor = target.closest("a[data-nomad-url]");
-    if (nomadAnchor) {
-      event.preventDefault();
-      const dataUrl = nomadAnchor.getAttribute("data-nomad-url");
-      if (dataUrl) {
-        onNavigate(resolveNomadDataURL(currentURL, dataUrl));
-      }
-      return;
-    }
-
-    const anchor = target.closest("a");
-    if (!anchor) {
-      return;
-    }
-    const href = anchor.getAttribute("href");
-    if (!href || href.startsWith("http://") || href.startsWith("https://")) {
-      return;
-    }
-    event.preventDefault();
-    const next = resolveLinkURL(currentURL, href);
-    if (next) {
-      onNavigate(next);
-    }
+    await handlePageLinkClick(event, previewEl, currentURL, onNavigate);
   }
 </script>
 

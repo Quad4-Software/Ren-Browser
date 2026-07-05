@@ -14,6 +14,8 @@ var (
 	objectRe      = regexp.MustCompile(`(?is)<object\b[^>]*>.*?</object>`)
 	embedRe       = regexp.MustCompile(`(?is)<embed\b[^>]*/?>`)
 	jsSchemeRe    = regexp.MustCompile(`(?i)javascript:`)
+	metaRefreshRe = regexp.MustCompile(`(?is)<meta\b[^>]*http-equiv\s*=\s*["']?refresh["']?[^>]*>`)
+	baseHrefRe    = regexp.MustCompile(`(?is)<base\b[^>]*>`)
 )
 
 func SanitizeHTML(input string) string {
@@ -29,6 +31,8 @@ func SanitizeHTML(input string) string {
 	out = iframeRe.ReplaceAllString(out, "")
 	out = objectRe.ReplaceAllString(out, "")
 	out = embedRe.ReplaceAllString(out, "")
+	out = metaRefreshRe.ReplaceAllString(out, "")
+	out = baseHrefRe.ReplaceAllString(out, "")
 	out = onAttrRe.ReplaceAllString(out, "")
 	out = jsSchemeRe.ReplaceAllString(out, "")
 	return out
@@ -47,7 +51,9 @@ func needsHTMLSanitize(s string) bool {
 				htmlTagAt(s, i, "style") ||
 				htmlTagAt(s, i, "iframe") ||
 				htmlTagAt(s, i, "object") ||
-				htmlTagAt(s, i, "embed") {
+				htmlTagAt(s, i, "embed") ||
+				htmlTagAt(s, i, "meta") ||
+				htmlTagAt(s, i, "base") {
 				return true
 			}
 		case ' ', '\t', '\n', '\r':

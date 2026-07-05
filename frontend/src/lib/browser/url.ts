@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { translate } from "$lib/i18n/catalog";
+import { isBlockedNavigationURL } from "./navigation-guard";
 export type TabPage = {
   html: string;
   contentType: string;
@@ -124,6 +125,9 @@ export type DiscoveredNode = {
 export function normalizeReticulumURL(input: string): string {
   const trimmed = input.trim();
   if (!trimmed) {
+    return "";
+  }
+  if (isBlockedNavigationURL(trimmed)) {
     return "";
   }
   const lower = trimmed.toLowerCase();

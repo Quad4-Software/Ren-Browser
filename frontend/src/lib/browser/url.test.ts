@@ -51,6 +51,12 @@ describe("normalizeReticulumURL", () => {
     const backtick = "abb3ebcd03cb2388a838e70c001291f9:/page/form.mu`user=alice|action=go";
     expect(normalizeReticulumURL(backtick)).toBe(backtick);
   });
+
+  it("rejects external internet urls", () => {
+    expect(normalizeReticulumURL("https://example.com")).toBe("");
+    expect(normalizeReticulumURL("http://example.com/path")).toBe("");
+    expect(normalizeReticulumURL("//cdn.example.com")).toBe("");
+  });
 });
 
 describe("tabTitleFromURL", () => {

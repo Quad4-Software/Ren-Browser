@@ -13,3 +13,14 @@ func TestIsolateNomadLinksRewritesRelative(t *testing.T) {
 		t.Fatalf("link not rewritten: %s", out)
 	}
 }
+
+func TestIsolateNomadLinksNeutralizesExternal(t *testing.T) {
+	in := `<a href="https://example.com" target="_blank">off mesh</a>`
+	out := isolateNomadLinks(in, "abb3ebcd03cb2388a838e70c001291f9")
+	if strings.Contains(out, `href="https://example.com"`) {
+		t.Fatalf("external href not neutralized: %s", out)
+	}
+	if !strings.Contains(out, `href="#"`) {
+		t.Fatalf("expected neutralized anchor: %s", out)
+	}
+}

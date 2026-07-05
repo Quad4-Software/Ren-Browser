@@ -43,3 +43,14 @@ func TestSanitizeHTMLCleanFastPath(t *testing.T) {
 		t.Fatalf("clean html changed: %q", out)
 	}
 }
+
+func TestSanitizeHTMLRemovesMetaRefresh(t *testing.T) {
+	in := `<html><head><meta http-equiv="refresh" content="0;url=https://example.com"></head><body>ok</body></html>`
+	out := content.SanitizeHTML(in)
+	if strings.Contains(strings.ToLower(out), "refresh") {
+		t.Fatalf("meta refresh not removed: %s", out)
+	}
+	if !strings.Contains(out, "ok") {
+		t.Fatalf("content stripped: %s", out)
+	}
+}

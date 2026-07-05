@@ -2,11 +2,7 @@
 <script lang="ts">
   /* eslint-disable svelte/no-at-html-tags -- renders trusted mesh page content */
   import { ArrowLeft, FileCode, Globe, X } from "@lucide/svelte";
-  import {
-    resolveLinkURL,
-    resolveMicronNavigation,
-    resolveNomadDataURL,
-  } from "$lib/browser/micron-links";
+  import { handlePageLinkClick } from "$lib/browser/page-links";
   import { micronShellStyle } from "$lib/browser/url";
   import { renderDocsPage } from "$lib/browser/docs-render";
   import {
@@ -146,57 +142,16 @@
   }
 
   async function handleClick(event: MouseEvent) {
-    if (showSource) {
+    if (showSource || !contentEl) {
       return;
     }
-    const target = event.target as HTMLElement | null;
-    if (!target || !contentEl) {
-      return;
-    }
-
-    const nodeLink = target.closest("[data-action='openNode']");
-    if (nodeLink) {
-      event.preventDefault();
-      const destination = nodeLink.getAttribute("data-destination");
-      if (!destination) {
+    await handlePageLinkClick(event, contentEl, currentURL, async (next) => {
+      if (isFileURL(next)) {
+        await downloadPageContent(next, "file", "");
         return;
       }
-      const fieldsSpec = nodeLink.getAttribute("data-fields");
-      const next = await resolveMicronNavigation(contentEl, currentURL, destination, fieldsSpec);
-      if (next) {
-        onNavigate(next);
-      }
-      return;
-    }
-
-    const nomadAnchor = target.closest("a[data-nomad-url]");
-    if (nomadAnchor) {
-      event.preventDefault();
-      const dataUrl = nomadAnchor.getAttribute("data-nomad-url");
-      if (dataUrl) {
-        onNavigate(resolveNomadDataURL(currentURL, dataUrl));
-      }
-      return;
-    }
-
-    const anchor = target.closest("a");
-    if (!anchor) {
-      return;
-    }
-    const href = anchor.getAttribute("href");
-    if (!href || href.startsWith("http://") || href.startsWith("https://")) {
-      return;
-    }
-    event.preventDefault();
-    const next = resolveLinkURL(currentURL, href);
-    if (!next) {
-      return;
-    }
-    if (isFileURL(next)) {
-      await downloadPageContent(next, "file", "");
-      return;
-    }
-    onNavigate(next);
+      onNavigate(next);
+    });
   }
 </script>
 
@@ -525,6 +480,12 @@
   .content :global(.docs-body a) {
     color: var(--ren-accent);
     text-decoration: none;
+  }
+
+  .content :global(.docs-body .docs-external-ref) {
+    color: var(--ren-muted);
+    cursor: default;
+    text-decoration: underline dotted;
   }
 
   .content :global(.docs-body p) {

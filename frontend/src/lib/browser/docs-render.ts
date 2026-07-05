@@ -56,7 +56,7 @@ export function rewriteDocsHref(href: string, lang: string, currentPage: string)
     return formatDocsURL(lang, currentPage) + trimmed;
   }
   if (/^https?:\/\//i.test(trimmed)) {
-    return trimmed;
+    return "";
   }
   let path = trimmed.replace(/^\.\//, "");
   if (path.includes("://") || path.startsWith("..")) {
@@ -103,17 +103,19 @@ function isAllowedDocsHref(href: string | null): boolean {
   if (h.startsWith("#")) {
     return true;
   }
-  if (h.startsWith("docs:") || h.startsWith("docs?")) {
-    return true;
-  }
-  return h.startsWith("http://") || h.startsWith("https://");
+  return h.startsWith("docs:") || h.startsWith("docs?");
 }
 
 function parseMarkdownHtml(markdown: string, lang: string, currentPage: string): string {
   const renderer = new marked.Renderer();
   renderer.link = ({ href, title, text }) => {
-    const target = rewriteDocsHref(href ?? "", lang, currentPage);
+    const raw = (href ?? "").trim();
     const titleAttr = title ? ` title="${title.replace(/"/g, "&quot;")}"` : "";
+    if (/^https?:\/\//i.test(raw)) {
+      const escapedHref = raw.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+      return `<span class="docs-external-ref"${titleAttr} data-href="${escapedHref}">${text}</span>`;
+    }
+    const target = rewriteDocsHref(raw, lang, currentPage);
     if (!isAllowedDocsHref(target)) {
       return text;
     }

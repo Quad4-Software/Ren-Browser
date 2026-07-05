@@ -11,6 +11,36 @@ var (
 	anchorHref = regexp.MustCompile(`<a\s+([^>]*?)href="([^"]*)"([^>]*)>`)
 )
 
+func isBlockedExternalHref(href string) bool {
+	href = strings.TrimSpace(href)
+	if href == "" {
+		return false
+	}
+	lower := strings.ToLower(href)
+	if strings.HasPrefix(lower, "//") {
+		return true
+	}
+	for _, prefix := range []string{
+		"http:", "https:", "ftp:", "file:", "javascript:", "data:",
+		"mailto:", "tel:", "blob:", "vbscript:", "ws:", "wss:",
+	} {
+		if strings.HasPrefix(lower, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func writeNeutralizedAnchor(b *strings.Builder, openAttrs, closeAttrs string) {
+	b.WriteString(`<a href="#"`)
+	if openAttrs != "" {
+		b.WriteByte(' ')
+		b.WriteString(openAttrs)
+	}
+	b.WriteString(closeAttrs)
+	b.WriteByte('>')
+}
+
 func IsolateNomadLinks(html, nodeHash string) string {
 	return isolateNomadLinks(html, nodeHash)
 }
@@ -39,8 +69,8 @@ func isolateNomadLinks(html, nodeHash string) string {
 			last = m[1]
 			continue
 		}
-		if strings.HasPrefix(href, "http://") || strings.HasPrefix(href, "https://") {
-			b.WriteString(html[m[0]:m[1]])
+		if isBlockedExternalHref(href) {
+			writeNeutralizedAnchor(&b, html[m[2]:m[3]], html[m[6]:m[7]])
 			last = m[1]
 			continue
 		}

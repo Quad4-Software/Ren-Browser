@@ -107,6 +107,7 @@
   import type { ActivePanel, ContributionsSnapshot } from "$lib/plugins/api-types.js";
   import PluginPanelHost from "$lib/components/PluginPanelHost.svelte";
   import { downloadPageContent } from "$lib/browser/download";
+  import { blockExternalLinkPointerEvent } from "$lib/browser/navigation-guard";
   import {
     canOpenTab,
     normalizeReticulumURL,
@@ -1627,7 +1628,12 @@
     const onKeyDown = (event: KeyboardEvent) => {
       handleGlobalKeyDown(event);
     };
+    const blockExternalLink = (event: Event) => {
+      blockExternalLinkPointerEvent(event);
+    };
     window.addEventListener("keydown", onKeyDown);
+    document.addEventListener("click", blockExternalLink, true);
+    document.addEventListener("auxclick", blockExternalLink, true);
 
     return () => {
       if (statusTimer !== undefined) {
@@ -1637,6 +1643,8 @@
         clearTimeout(nodeDiscoverTimer);
       }
       window.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("click", blockExternalLink, true);
+      document.removeEventListener("auxclick", blockExternalLink, true);
       if (persistTimer) {
         clearTimeout(persistTimer);
       }
