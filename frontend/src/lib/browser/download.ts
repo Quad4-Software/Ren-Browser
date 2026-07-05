@@ -54,7 +54,14 @@ export function pageDownloadName(url: string, contentType: string): string {
 }
 
 export function isFileURL(url: string): boolean {
-  if (!url || url === "about:" || url === "license:" || url === "editor:" || url === "config:" || url === "settings:") {
+  if (
+    !url ||
+    url === "about:" ||
+    url === "license:" ||
+    url === "editor:" ||
+    url === "config:" ||
+    url === "settings:"
+  ) {
     return false;
   }
   return meshBarePath(url).startsWith("/file/");

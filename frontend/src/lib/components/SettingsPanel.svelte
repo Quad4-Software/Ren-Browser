@@ -384,9 +384,15 @@
       {t("settings.pageCacheHint")}
     </p>
     <div class="cache-row">
-      <span class="meta">{t("common.entries", { current: pageCacheEntries, max: pageCacheMax })}</span
+      <span class="meta"
+        >{t("common.entries", { current: pageCacheEntries, max: pageCacheMax })}</span
       >
-      <button type="button" class="reset-btn" disabled={pageCacheClearing} onclick={onClearPageCache}>
+      <button
+        type="button"
+        class="reset-btn"
+        disabled={pageCacheClearing}
+        onclick={onClearPageCache}
+      >
         {pageCacheClearing ? t("common.clearing") : t("settings.clearPageCache")}
       </button>
     </div>
