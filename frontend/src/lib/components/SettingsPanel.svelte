@@ -612,11 +612,6 @@
     background: var(--ren-content-bg);
   }
 
-  h2,
-  h3 {
-    margin: 0;
-  }
-
   label {
     display: grid;
     gap: 0.35rem;

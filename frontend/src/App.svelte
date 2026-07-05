@@ -1174,6 +1174,16 @@
     }
   }
 
+  function normalizeSettingsSectionsCollapsed(
+    sections: { [_ in string]?: boolean } | null | undefined,
+  ): Record<string, boolean> {
+    const out: Record<string, boolean> = {};
+    for (const [key, value] of Object.entries(sections ?? {})) {
+      out[key] = !!value;
+    }
+    return out;
+  }
+
   async function loadBrowserPrefs() {
     const prefs = await GetBrowserPrefs();
     openLinksInNewTab = !!prefs.openLinksInNewTab;
@@ -1186,7 +1196,7 @@
     micronWasmParserId = prefs.micronWasmParserId || BUNDLED_MICRON_WASM_PARSER_ID;
     micronRenderer = normalizeMicronRendererPreference(prefs.micronRenderer);
     discoverySlowMode = !!prefs.discoverySlowMode;
-    settingsSectionsCollapsed = { ...(prefs.settingsSectionsCollapsed ?? {}) };
+    settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
     await refreshMicronWasmState(micronWasmParserId);
   }
 
@@ -1226,7 +1236,7 @@
     micronWasmParserId = prefs.micronWasmParserId || BUNDLED_MICRON_WASM_PARSER_ID;
     micronRenderer = normalizeMicronRendererPreference(prefs.micronRenderer);
     discoverySlowMode = !!prefs.discoverySlowMode;
-    settingsSectionsCollapsed = { ...(prefs.settingsSectionsCollapsed ?? {}) };
+    settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
     await refreshMicronWasmState(micronWasmParserId);
     return prefs;
   }
