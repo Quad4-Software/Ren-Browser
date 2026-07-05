@@ -13,13 +13,21 @@
   import { isWebAssemblySupported } from "$lib/micron/wasm-loader";
   import type { ThemeSettings } from "$lib/theme/tokens";
   import {
-    KEYBIND_LABELS,
+    KEYBIND_ACTIONS,
     chordFromEvent,
     formatChord,
+    keybindLabel,
     setKeybindRecording,
     type KeybindAction,
     type KeybindSettings,
   } from "$lib/browser/keybinds";
+  import {
+    detectOSLocale,
+    localeLabel,
+    resolveLocale,
+    SUPPORTED_LOCALES,
+    t,
+  } from "$lib/i18n/i18n.svelte";
 
   type InterfaceRow = {
     name: string;
@@ -34,6 +42,7 @@
     theme: ThemeSettings;
     systemFonts: string[];
     keybinds: KeybindSettings;
+    uiLanguage: string;
     interfaces: InterfaceRow[];
     configPath: string;
     downloadDir: string;
@@ -58,6 +67,7 @@
     pageCacheClearing: boolean;
     onChange: (theme: ThemeSettings) => void;
     onChangeKeybinds: (keybinds: KeybindSettings) => void;
+    onChangeUILanguage: (value: string) => void;
     onChangeDownloadDir: (dir: string) => void;
     onPickDownloadDir: () => void;
     onChangeOpenLinksInNewTab: (value: boolean) => void;
@@ -86,6 +96,7 @@
     theme = $bindable(),
     systemFonts,
     keybinds,
+    uiLanguage,
     interfaces,
     configPath,
     downloadDir = $bindable(),
@@ -107,6 +118,7 @@
     communitySelected,
     onChange,
     onChangeKeybinds,
+    onChangeUILanguage,
     onChangeDownloadDir,
     onPickDownloadDir,
     onChangeOpenLinksInNewTab,
@@ -136,7 +148,7 @@
 
   let recordingAction = $state<KeybindAction | null>(null);
 
-  const keybindActions = Object.keys(KEYBIND_LABELS) as KeybindAction[];
+  const keybindActions = KEYBIND_ACTIONS;
 
   function update<K extends keyof ThemeSettings>(key: K, value: ThemeSettings[K]) {
     theme = { ...theme, [key]: value };
@@ -220,23 +232,38 @@
 <svelte:window onkeydown={recordKeybind} />
 
 <section class="settings">
-  <h2>Appearance</h2>
+  <h2>{t("settings.appearance")}</h2>
 
   <label>
-    <span>Theme mode</span>
+    <span>{t("language.title")}</span>
+    <select
+      value={uiLanguage}
+      onchange={(event) =>
+        onChangeUILanguage((event.currentTarget as HTMLSelectElement).value)}
+    >
+      <option value="">{t("language.system", { locale: localeLabel(resolveLocale(detectOSLocale())) })}</option>
+      {#each SUPPORTED_LOCALES as locale (locale.code)}
+        <option value={locale.code}>{localeLabel(locale.code)}</option>
+      {/each}
+    </select>
+  </label>
+  <p class="hint">{t("language.hint")}</p>
+
+  <label>
+    <span>{t("settings.themeMode")}</span>
     <select
       value={theme.mode}
       onchange={(event) =>
         update("mode", (event.currentTarget as HTMLSelectElement).value as ThemeSettings["mode"])}
     >
-      <option value="dark">Dark</option>
-      <option value="light">Light</option>
-      <option value="system">System</option>
+      <option value="dark">{t("settings.themeDark")}</option>
+      <option value="light">{t("settings.themeLight")}</option>
+      <option value="system">{t("settings.themeSystem")}</option>
     </select>
   </label>
 
   <label class="accent-picker">
-    <span>Accent</span>
+    <span>{t("settings.accent")}</span>
     <input
       class="accent-swatch"
       type="color"
@@ -246,7 +273,7 @@
   </label>
 
   <label>
-    <span>Font family</span>
+    <span>{t("settings.fontFamily")}</span>
     <select
       value={theme.fontFamily}
       onchange={(event) => update("fontFamily", (event.currentTarget as HTMLSelectElement).value)}
@@ -258,7 +285,7 @@
   </label>
 
   <label>
-    <span>Font size ({theme.fontSize}px)</span>
+    <span>{t("settings.fontSize", { size: theme.fontSize })}</span>
     <input
       type="range"
       min="12"
@@ -270,79 +297,77 @@
   </label>
 
   <Toggle
-    label="Compact toolbar"
+    label={t("settings.compactToolbar")}
     checked={theme.compactToolbar}
     onchange={(value) => update("compactToolbar", value)}
   />
 
-  <h3>Custom tokens</h3>
+  <h3>{t("settings.customTokens")}</h3>
   <label>
-    <span>Border color</span>
+    <span>{t("settings.borderColor")}</span>
     <input
       type="text"
-      placeholder="#2a3140"
+      placeholder={t("settings.borderPlaceholder")}
       value={theme.customTokens.border ?? ""}
       oninput={(event) => updateToken("border", (event.currentTarget as HTMLInputElement).value)}
     />
   </label>
 
   <div class="theme-io">
-    <button onclick={onExportTheme}>Export theme JSON</button>
+    <button onclick={onExportTheme}>{t("settings.exportTheme")}</button>
     <label class="file-btn">
-      Import theme
+      {t("settings.importTheme")}
       <input type="file" accept="application/json,.json" onchange={importThemeFile} />
     </label>
   </div>
 
-  <h3>Browsing</h3>
+  <h3>{t("settings.browsing")}</h3>
   <Toggle
-    label="Open sites in a new tab"
+    label={t("settings.openLinksInNewTab")}
     checked={openLinksInNewTab}
     onchange={onChangeOpenLinksInNewTab}
   />
 
-  <h3>Page cache</h3>
+  <h3>{t("settings.pageCache")}</h3>
   <p class="hint">
-    Cached mesh pages load instantly. Clear the cache if you need fresh content from the network.
+    {t("settings.pageCacheHint")}
   </p>
   <div class="cache-row">
-    <span class="meta">{pageCacheEntries} / {pageCacheMax} entries</span>
+    <span class="meta">{t("common.entries", { current: pageCacheEntries, max: pageCacheMax })}</span>
     <button type="button" class="reset-btn" disabled={pageCacheClearing} onclick={onClearPageCache}>
-      {pageCacheClearing ? "Clearing..." : "Clear page cache"}
+      {pageCacheClearing ? t("common.clearing") : t("settings.clearPageCache")}
     </button>
   </div>
 
   {#if desktopChrome}
     <Toggle
-      label="Use native title bar"
+      label={t("settings.nativeTitlebar")}
       checked={nativeTitlebar}
       onchange={onChangeNativeTitlebar}
     />
   {/if}
 
-  <h3>Micron pages</h3>
+  <h3>{t("settings.micronPages")}</h3>
   <p class="hint">
-    JavaScript uses micron-parser-js in the browser. WebAssembly uses micron-parser-go modules you
-    select below. Go uses the server renderer. If WASM is unavailable or fails to load, pages fall
-    back to JavaScript automatically.
+    {t("settings.micronHint")}
   </p>
 
   {#if !isWebAssemblySupported()}
     <p class="warn">
-      WebAssembly is not available in this webview. Only JavaScript and Go renderers can be used.
+      {t("settings.wasmUnavailable")}
     </p>
   {/if}
 
   {#if isWebAssemblySupported()}
     <Toggle
-      label="Enable Micron WebAssembly engine"
+      label={t("settings.micronWasmEnabled")}
       checked={micronWasmEnabled}
       onchange={onChangeMicronWasmEnabled}
     />
   {/if}
 
   <label>
-    <span>Micron renderer (.mu)</span>
+    <span>{t("settings.micronRenderer")}</span>
     <select
       value={micronRenderer}
       onchange={(event) =>
@@ -350,17 +375,17 @@
           (event.currentTarget as HTMLSelectElement).value as MicronRendererPreference,
         )}
     >
-      <option value="auto">Auto (WASM, then Go, then JS)</option>
+      <option value="auto">{t("settings.rendererAuto")}</option>
       {#if isWebAssemblySupported() && micronWasmEnabled}
-        <option value="wasm">WebAssembly (micron-parser-go)</option>
+        <option value="wasm">{t("settings.rendererWasm")}</option>
       {/if}
-      <option value="go">Go (micron-parser-go server)</option>
-      <option value="js">JavaScript (micron-parser-js)</option>
+      <option value="go">{t("settings.rendererGo")}</option>
+      <option value="js">{t("settings.rendererJs")}</option>
     </select>
   </label>
 
   {#if isWebAssemblySupported() && micronWasmEnabled}
-    <h3>WASM parsers</h3>
+    <h3>{t("settings.wasmParsers")}</h3>
     <MicronWasmManager
       selectedParserId={micronWasmParserId}
       wasmEnabled={micronWasmEnabled}
@@ -370,12 +395,12 @@
   {/if}
 
   <div class="reset-row">
-    <button type="button" class="reset-btn" onclick={onResetDefaults}>Reset to defaults</button>
+    <button type="button" class="reset-btn" onclick={onResetDefaults}>{t("settings.resetDefaults")}</button>
   </div>
 
-  <h3>Downloads</h3>
+  <h3>{t("settings.downloads")}</h3>
   <label>
-    <span>Download folder</span>
+    <span>{t("settings.downloadFolder")}</span>
     <div class="download-dir">
       <input
         type="text"
@@ -386,7 +411,7 @@
       <button
         type="button"
         class="folder-btn"
-        aria-label="Choose download folder"
+        aria-label={t("settings.chooseDownloadFolder")}
         onclick={onPickDownloadDir}
       >
         <FolderOpen size={16} />
@@ -394,25 +419,25 @@
     </div>
   </label>
 
-  <h3>Keyboard shortcuts</h3>
+  <h3>{t("settings.keyboardShortcuts")}</h3>
   {#if !mobileUI}
     <ul class="keybinds">
       {#each keybindActions as action (action)}
         <li>
-          <span>{KEYBIND_LABELS[action]}</span>
+          <span>{keybindLabel(action)}</span>
           <button
             type="button"
             class="keybind-btn"
             class:recording={recordingAction === action}
             onclick={() => startRecording(action)}
           >
-            {recordingAction === action ? "Press keys..." : formatChord(keybinds.bindings[action])}
+            {recordingAction === action ? t("common.pressKeys") : formatChord(keybinds.bindings[action])}
           </button>
         </li>
       {/each}
     </ul>
   {:else}
-    <p class="hint">Keyboard shortcuts are available on desktop builds.</p>
+    <p class="hint">{t("settings.keyboardShortcutsDesktopOnly")}</p>
   {/if}
 
   <ExtensionsPanel {pluginsDir} onChanged={onPluginsChanged} />
@@ -440,15 +465,15 @@
     onReload={onConfigReload}
   />
 
-  <h3>Reticulum interfaces</h3>
-  <p class="hint">Toggle interfaces configured above or imported from the directory.</p>
+  <h3>{t("settings.reticulumInterfaces")}</h3>
+  <p class="hint">{t("settings.reticulumInterfacesHint")}</p>
 
   <ul class="ifaces">
     {#if interfaces.length === 0}
       <li class="ifaces-empty">
         <EmptyState
-          title="No interfaces configured"
-          description="Add Reticulum interfaces in your config file to connect to the mesh."
+          title={t("settings.noInterfaces")}
+          description={t("settings.noInterfacesDescription")}
         >
           <Network size={22} />
         </EmptyState>
@@ -462,8 +487,10 @@
             onchange={(value) => onToggleInterface(iface.name, value)}
           />
           <span class="meta">
-            {iface.type} · {iface.online ? "online" : "offline"} · tx {formatBytes(iface.txBytes)} · rx
-            {formatBytes(iface.rxBytes)}
+            {iface.type} · {iface.online ? t("common.online") : t("common.offline")} · {t("common.txRx", {
+              tx: formatBytes(iface.txBytes),
+              rx: formatBytes(iface.rxBytes),
+            })}
           </span>
         </li>
       {/each}

@@ -3,6 +3,7 @@
   import { Pin, Plus, X } from "@lucide/svelte";
   import { MAX_TABS, TAB_GAP_PX, type Tab, tabsAreaWidth, tabWidthForTab } from "$lib/browser/url";
   import WindowControls from "$lib/components/WindowControls.svelte";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   type MenuAction =
     | "reload"
@@ -267,7 +268,7 @@
                 class="close"
                 role="button"
                 tabindex="0"
-                aria-label="Close tab"
+                aria-label={t("tab.close")}
                 onclick={(event) => {
                   event.stopPropagation();
                   onClose(tab.id);
@@ -289,9 +290,9 @@
       <button
         class="new-tab ren-icon-btn"
         bind:this={newTabEl}
-        aria-label="New tab"
+        aria-label={t("tab.newTab")}
         disabled={atTabLimit}
-        title={atTabLimit ? `Tab limit (${MAX_TABS}) reached` : "New tab"}
+        title={atTabLimit ? t("tab.limitReached", { max: MAX_TABS }) : t("tab.newTab")}
         onclick={onNew}
         style:--wails-draggable="no-drag"
       >
@@ -329,34 +330,33 @@
       }
     }}
   >
-    <button role="menuitem" onclick={() => runAction("reload")}>Reload</button>
-    <button role="menuitem" onclick={() => runAction("duplicate")}>Duplicate</button>
-    <button role="menuitem" onclick={() => runAction("favorite")}>Favorite</button>
+    <button role="menuitem" onclick={() => runAction("reload")}>{t("tab.reload")}</button>
+    <button role="menuitem" onclick={() => runAction("duplicate")}>{t("tab.duplicate")}</button>
+    <button role="menuitem" onclick={() => runAction("favorite")}>{t("tab.favorite")}</button>
     {#if menuTab?.pinned}
-      <button role="menuitem" onclick={() => runAction("unpin")}>Unpin tab</button>
+      <button role="menuitem" onclick={() => runAction("unpin")}>{t("tab.unpin")}</button>
     {:else}
-      <button role="menuitem" onclick={() => runAction("pin")}>Pin tab</button>
+      <button role="menuitem" onclick={() => runAction("pin")}>{t("tab.pin")}</button>
     {/if}
-    <button role="menuitem" onclick={() => runAction("viewSource")}>View source</button>
-    <button role="menuitem" onclick={() => runAction("download")}>Download page</button>
-    <button role="menuitem" onclick={() => runAction("split")}>Split tab</button>
+    <button role="menuitem" onclick={() => runAction("viewSource")}>{t("tab.viewSource")}</button>
+    <button role="menuitem" onclick={() => runAction("download")}>{t("tab.downloadPage")}</button>
+    <button role="menuitem" onclick={() => runAction("split")}>{t("tab.split")}</button>
     {#if showCloseSplit}
-      <button role="menuitem" onclick={() => runAction("closeSplit")}>Close split</button>
+      <button role="menuitem" onclick={() => runAction("closeSplit")}>{t("tab.closeSplit")}</button>
     {/if}
     <hr />
     {#if !menuTab?.pinned}
-      <button role="menuitem" onclick={() => runAction("close")}>Close tab</button>
+      <button role="menuitem" onclick={() => runAction("close")}>{t("tab.closeTab")}</button>
     {/if}
     {#if canCloseOthers}
-      <button role="menuitem" onclick={() => runAction("closeOthers")}>Close other tabs</button>
+      <button role="menuitem" onclick={() => runAction("closeOthers")}>{t("tab.closeOthers")}</button>
     {/if}
     {#if canCloseRight}
-      <button role="menuitem" onclick={() => runAction("closeRight")}
-        >Close tabs to the right</button
+      <button role="menuitem" onclick={() => runAction("closeRight")}>{t("tab.closeRight")}</button
       >
     {/if}
     <button role="menuitem" class="danger" onclick={() => runAction("closeAll")}
-      >Close all tabs</button
+      >{t("tab.closeAll")}</button
     >
   </div>
 {/if}

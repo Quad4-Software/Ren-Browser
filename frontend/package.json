@@ -18,7 +18,8 @@
     "knip": "knip",
     "audit": "pnpm audit --audit-level=moderate",
     "test": "vitest run --config vitest.config.ts",
-    "test:watch": "vitest --config vitest.config.ts"
+    "test:watch": "vitest --config vitest.config.ts",
+    "i18n:template": "node src/lib/i18n/sync-template.mjs"
   },
   "dependencies": {
     "@lucide/svelte": "^1.23.0",
@@ -37,6 +38,7 @@
     "eslint": "^10.6.0",
     "eslint-plugin-svelte": "^3.20.0",
     "globals": "^16.2.0",
+    "happy-dom": "^20.0.10",
     "knip": "^6.24.0",
     "prettier": "^3.5.3",
     "prettier-plugin-svelte": "^3.4.0",

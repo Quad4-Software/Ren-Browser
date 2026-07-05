@@ -3,6 +3,7 @@
   import { Compass, Download, History, Home, Settings, Terminal } from "@lucide/svelte";
   import type { ActivePanel, PluginPanelContribution } from "$lib/plugins/api-types.js";
   import { panelKey } from "$lib/plugins/registry.js";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
     activePanel: ActivePanel;
@@ -21,22 +22,22 @@
   }: Props = $props();
 </script>
 
-<nav class="mobile-nav" aria-label="Mobile navigation">
+<nav class="mobile-nav" aria-label={t("mobileNav.label")}>
   <button class:active={activePanel === "browser"} onclick={() => onPanel("browser")}>
     <Home size={18} />
-    <span>Browse</span>
+    <span>{t("mobileNav.browse")}</span>
   </button>
   <button class:active={activePanel === "discovery"} onclick={() => onPanel("discovery")}>
     <Compass size={18} />
-    <span>Discover</span>
+    <span>{t("mobileNav.discover")}</span>
   </button>
   <button class:active={activePanel === "history"} onclick={() => onPanel("history")}>
     <History size={18} />
-    <span>History</span>
+    <span>{t("mobileNav.history")}</span>
   </button>
-  <button class:active={downloadsOpen} onclick={onToggleDownloads} aria-label="Downloads">
+  <button class:active={downloadsOpen} onclick={onToggleDownloads} aria-label={t("mobileNav.downloads")}>
     <Download size={18} />
-    <span>Downloads</span>
+    <span>{t("mobileNav.downloads")}</span>
   </button>
   {#each pluginPanels as panel (panel.pluginId + ":" + panel.id)}
     {@const key = panelKey(panel.pluginId, panel.id)}
@@ -47,11 +48,11 @@
   {/each}
   <button class:active={activePanel === "devtools"} onclick={() => onPanel("devtools")}>
     <Terminal size={18} />
-    <span>Devtools</span>
+    <span>{t("mobileNav.devtools")}</span>
   </button>
   <button class:active={activePanel === "settings"} onclick={() => onPanel("settings")}>
     <Settings size={18} />
-    <span>Settings</span>
+    <span>{t("mobileNav.settings")}</span>
   </button>
 </nav>
 

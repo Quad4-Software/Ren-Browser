@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
     ratio: number;
@@ -48,7 +49,7 @@
     type="button"
     class="divider"
     bind:this={dividerEl}
-    aria-label="Resize split panes"
+    aria-label={t("split.resize")}
     onpointerdown={onPointerDown}
     onpointermove={onPointerMove}
     onpointerup={onPointerUp}

@@ -1,5 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { t } from "$lib/i18n/i18n.svelte";
+
   type Props = {
     open: boolean;
     title: string;
@@ -14,8 +16,8 @@
     open,
     title,
     message,
-    confirmLabel = "OK",
-    cancelLabel = "Cancel",
+    confirmLabel = t("common.ok"),
+    cancelLabel = t("common.cancel"),
     onConfirm,
     onCancel,
   }: Props = $props();
@@ -30,7 +32,7 @@
 <svelte:window onkeydown={open ? handleKeyDown : undefined} />
 
 {#if open}
-  <button type="button" class="backdrop" aria-label="Close dialog" onclick={onCancel}></button>
+  <button type="button" class="backdrop" aria-label={t("dialog.close")} onclick={onCancel}></button>
   <div
     class="dialog"
     role="alertdialog"

@@ -10,6 +10,7 @@
     listPlugins,
     uninstallPlugin,
   } from "$lib/plugins/api.js";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   type PluginRow = {
     id: string;
@@ -58,7 +59,7 @@
   }
 
   async function remove(id: string) {
-    if (!confirm(`Uninstall extension ${id}?`)) {
+    if (!confirm(t("extensions.uninstallConfirm", { id }))) {
       return;
     }
     await uninstallPlugin(id);
@@ -93,39 +94,43 @@
 
 <section class="extensions">
   <header>
-    <h3>Extensions</h3>
-    <button type="button" onclick={() => void refresh()} disabled={loading}>Refresh</button>
+    <h3>{t("extensions.title")}</h3>
+    <button type="button" onclick={() => void refresh()} disabled={loading}>{t("common.refresh")}</button>
   </header>
 
   {#if error}
     <p class="error">{error}</p>
   {/if}
 
-  <p class="hint">Plugins directory: <code>{pluginsDir || "—"}</code></p>
+  <p class="hint">{t("extensions.pluginsDir", { path: pluginsDir || "—" })}</p>
 
   <div class="install">
     <label>
-      Install from zip
+      {t("extensions.installZip")}
       <input
         class="ren-input"
         bind:value={zipPath}
-        placeholder="/path/to/extension.renplugin.zip"
+        placeholder={t("extensions.installZipPlaceholder")}
       />
     </label>
-    <button type="button" onclick={() => void installZip()}>Install zip</button>
+    <button type="button" onclick={() => void installZip()}>{t("extensions.installZipButton")}</button>
     <label>
-      Install from folder
-      <input class="ren-input" bind:value={dirPath} placeholder="/path/to/extension" />
+      {t("extensions.installFolder")}
+      <input
+        class="ren-input"
+        bind:value={dirPath}
+        placeholder={t("extensions.installFolderPlaceholder")}
+      />
     </label>
-    <button type="button" onclick={() => void installDir()}>Install folder</button>
+    <button type="button" onclick={() => void installDir()}>{t("extensions.installFolderButton")}</button>
   </div>
 
   {#if loading}
-    <p class="muted">Loading extensions...</p>
+    <p class="muted">{t("extensions.loading")}</p>
   {:else if plugins.length === 0}
     <EmptyState
-      title="No extensions"
-      description="Install a .renplugin.zip or copy a folder into the plugins directory."
+      title={t("extensions.noExtensions")}
+      description={t("extensions.noExtensionsDescription")}
     />
   {:else}
     <ul class="list">
@@ -139,7 +144,7 @@
               <p>{plugin.description}</p>
             {/if}
             {#if plugin.permissions?.length}
-              <p class="perms">Permissions: {plugin.permissions.join(", ")}</p>
+              <p class="perms">{t("common.permissions", { list: plugin.permissions.join(", ") })}</p>
             {/if}
             {#if plugin.error}
               <p class="error">{plugin.error}</p>
@@ -147,12 +152,12 @@
           </div>
           <div class="actions">
             <Toggle
-              label="Enabled"
+              label={t("common.enabled")}
               checked={plugin.enabled}
               onchange={(value) => void toggleEnabled(plugin.id, value)}
             />
             <button type="button" class="danger" onclick={() => void remove(plugin.id)}
-              >Uninstall</button
+              >{t("extensions.uninstall")}</button
             >
           </div>
         </li>

@@ -14,20 +14,17 @@ import type * as nomadnet$0 from "../../../../../renbrowser/internal/nomadnet/mo
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import type * as plugins$0 from "../../../../../renbrowser/internal/plugins/models.js";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore: Unused imports
-import type * as store$0 from "../../../../../renbrowser/internal/store/models.js";
 
 declare module "@wailsio/runtime" {
     namespace Events {
         interface CustomEvents {
             "dev:log": string;
             "network:entry": app$0.NetworkEntry;
-            "node:discovered": nomadnet$0.Node[];
+            "node:discovered": nomadnet$0.Node[] | null;
             "page:error": app$0.PageResponse;
             "page:loaded": app$0.PageResponse;
             "plugin:loaded": plugins$0.Manifest;
-            "plugin:scheme": { [_ in string]?: string };
+            "plugin:scheme": { [_ in string]?: string } | null;
             "plugin:unloaded": plugins$0.Manifest;
             "rns:status": string;
             "runtime:config": app$0.RuntimeConfig;

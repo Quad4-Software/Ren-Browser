@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import { translate } from "$lib/i18n/catalog";
 export type TabPage = {
   html: string;
   contentType: string;
@@ -161,19 +162,19 @@ export function normalizeReticulumURL(input: string): string {
 
 export function tabTitleFromURL(url: string, nodes: DiscoveredNode[] = []): string {
   if (!url) {
-    return "New Tab";
+    return translate("tab.new");
   }
   if (url === "about:") {
-    return "About";
+    return translate("tab.about");
   }
   if (url === "license:") {
-    return "License";
+    return translate("tab.license");
   }
   if (url === "editor:") {
-    return "Micron Editor";
+    return translate("tab.micronEditor");
   }
   if (url === "config:") {
-    return "Reticulum Config";
+    return translate("tab.reticulumConfig");
   }
   if (url.startsWith("docs")) {
     const query = url.includes("?") ? url.slice(url.indexOf("?") + 1) : "";
@@ -185,7 +186,7 @@ export function tabTitleFromURL(url: string, nodes: DiscoveredNode[] = []): stri
         .join(" ");
       return title.length <= 40 ? title : `${title.slice(0, 39)}…`;
     }
-    return "Documentation";
+    return translate("tab.documentation");
   }
   const hash = url.split(":/")[0]?.toLowerCase();
   const node = nodes.find((n) => n.hash.toLowerCase() === hash);
@@ -198,7 +199,7 @@ export function tabTitleFromURL(url: string, nodes: DiscoveredNode[] = []): stri
   }
   const path = url.split(":/").at(1) ?? url;
   const leaf = path.split("/").filter(Boolean).at(-1);
-  const raw = leaf || "NomadNet";
+  const raw = leaf || translate("tab.nomadNet");
   if (raw.length <= 40) {
     return raw;
   }

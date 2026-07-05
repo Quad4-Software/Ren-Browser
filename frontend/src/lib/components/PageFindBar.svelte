@@ -6,6 +6,7 @@
     highlightFindMatches,
     scrollToFindMatch,
   } from "$lib/browser/find-in-page";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
     open: boolean;
@@ -73,23 +74,25 @@
     <input
       class="find-input"
       type="search"
-      placeholder="Find in page"
+      placeholder={t("find.placeholder")}
       value={query}
       oninput={onInput}
       onkeydown={onKeyDown}
     />
     <span class="count">
       {#if query}
-        {matchCount > 0 ? `${activeIndex + 1} / ${matchCount}` : "No matches"}
+        {matchCount > 0
+          ? t("common.matchCount", { current: activeIndex + 1, total: matchCount })
+          : t("common.noMatches")}
       {/if}
     </span>
-    <button class="ren-icon-btn" aria-label="Previous match" onclick={() => nextMatch(false)}>
+    <button class="ren-icon-btn" aria-label={t("find.previous")} onclick={() => nextMatch(false)}>
       ↑
     </button>
-    <button class="ren-icon-btn" aria-label="Next match" onclick={() => nextMatch(true)}>
+    <button class="ren-icon-btn" aria-label={t("find.next")} onclick={() => nextMatch(true)}>
       ↓
     </button>
-    <button class="ren-icon-btn" aria-label="Close find bar" onclick={onClose}>
+    <button class="ren-icon-btn" aria-label={t("find.close")} onclick={onClose}>
       <X size={14} />
     </button>
   </div>

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { displayName } from "$lib/brand";
+import { translate } from "$lib/i18n/catalog";
 
 export type PageErrorKind =
   | "connection_failed"
@@ -20,54 +21,55 @@ export type ErrorPageContent = {
   tone: "danger" | "warning";
 };
 
-const PAGE_ERROR_COPY: Record<PageErrorKind, ErrorPageContent> = {
+const PAGE_ERROR_KEYS: Record<
+  PageErrorKind,
+  { title: string; description: string; showRetry: boolean; showResetDatabase: boolean; tone: "danger" | "warning" }
+> = {
   connection_failed: {
-    title: "Connection to server failed",
-    description:
-      "Could not reach this node. Check that Reticulum interfaces are online and the destination is available on the mesh.",
+    title: "errors.connectionFailedTitle",
+    description: "errors.connectionFailedDescription",
     showRetry: true,
     showResetDatabase: false,
     tone: "warning",
   },
   connection_lost: {
-    title: "Connection lost",
-    description: "The link to the server was interrupted before the page finished loading.",
+    title: "errors.connectionLostTitle",
+    description: "errors.connectionLostDescription",
     showRetry: true,
     showResetDatabase: false,
     tone: "warning",
   },
   not_found: {
-    title: "404 — Page not found",
-    description: "The server does not have a page at this address.",
+    title: "errors.notFoundTitle",
+    description: "errors.notFoundDescription",
     showRetry: true,
     showResetDatabase: false,
     tone: "danger",
   },
   internal: {
-    title: "500 — Internal server error",
+    title: "errors.internalTitle",
     description: "",
     showRetry: true,
     showResetDatabase: false,
     tone: "danger",
   },
   storage_full: {
-    title: "Storage unavailable",
-    description: `${displayName} cannot write to disk. Free up space or fix permissions for your profile folder.`,
+    title: "errors.storageFullTitle",
+    description: "errors.storageFullDescription",
     showRetry: true,
     showResetDatabase: false,
     tone: "danger",
   },
   database_corrupt: {
-    title: "Database corrupted",
-    description:
-      "Your local profile data could not be read. Resetting the database removes saved tabs, history, favorites, and settings.",
+    title: "errors.databaseCorruptTitle",
+    description: "errors.databaseCorruptDescription",
     showRetry: false,
     showResetDatabase: true,
     tone: "danger",
   },
   unknown: {
-    title: "Could not open page",
-    description: "Something went wrong while loading this page.",
+    title: "errors.unknownTitle",
+    description: "errors.unknownDescription",
     showRetry: true,
     showResetDatabase: false,
     tone: "danger",
@@ -75,7 +77,7 @@ const PAGE_ERROR_COPY: Record<PageErrorKind, ErrorPageContent> = {
 };
 
 export function normalizePageErrorKind(kind: string | undefined, error: string): PageErrorKind {
-  if (kind && kind in PAGE_ERROR_COPY) {
+  if (kind && kind in PAGE_ERROR_KEYS) {
     return kind as PageErrorKind;
   }
   const msg = error.toLowerCase();
@@ -99,20 +101,22 @@ export function normalizePageErrorKind(kind: string | undefined, error: string):
 }
 
 export function pageErrorContent(kind: PageErrorKind, detail: string): ErrorPageContent {
-  const base = PAGE_ERROR_COPY[kind];
+  const base = PAGE_ERROR_KEYS[kind];
+  const title = translate(base.title);
+  let description = base.description ? translate(base.description, { app: displayName }) : "";
   if (kind === "internal" && detail.trim()) {
-    return {
-      ...base,
-      description: detail.trim(),
-    };
+    description = detail.trim();
   }
   if (kind === "unknown" && detail.trim()) {
-    return {
-      ...base,
-      description: detail.trim(),
-    };
+    description = detail.trim();
   }
-  return base;
+  return {
+    title,
+    description,
+    showRetry: base.showRetry,
+    showResetDatabase: base.showResetDatabase,
+    tone: base.tone,
+  };
 }
 
 export function isStoreBlockingKind(kind: string | undefined): kind is StoreErrorKind {

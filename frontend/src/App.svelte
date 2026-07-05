@@ -129,6 +129,8 @@
     type MicronRendererPreference,
   } from "$lib/micron/render-page";
   import { isMicronWasmAvailable } from "$lib/micron/wasm-loader";
+  import { randomId } from "$lib/browser/id";
+  import { initUILocale, setUILocale, t, detectOSLocale } from "$lib/i18n/i18n.svelte";
 
   type Node = {
     hash: string;
@@ -255,6 +257,8 @@
   let showSource = $state(false);
   let openLinksInNewTab = $state(true);
   let nativeTitlebar = $state(false);
+  let uiLanguage = $state("");
+  let docsLanguage = $state("");
   let micronRenderer = $state<MicronRendererPreference>("auto");
   let micronWasmEnabled = $state(true);
   let micronWasmReady = $state(false);
@@ -285,7 +289,7 @@
   let communityFilter = $state("");
   let communitySelected = new SvelteSet<number>();
 
-  let tabs = $state<Tab[]>([{ id: crypto.randomUUID(), title: "New Tab", url: "", active: true }]);
+  let tabs = $state<Tab[]>([{ id: randomId(), title: "", url: "", active: true }]);
 
   const effectiveMicronEngine = $derived(
     resolveEffectiveMicronEngine(micronRenderer, {
@@ -473,7 +477,7 @@
     }
     tabs = orderTabsPinnedFirst(
       saved.map((tab) => ({
-        id: tab.id || crypto.randomUUID(),
+        id: tab.id || randomId(),
         title: tab.title || tabTitleFromURL(tab.url, nodes),
         url: tab.url ?? "",
         active: tab.active,
@@ -505,7 +509,7 @@
   function refreshTabTitles() {
     tabs = tabs.map((tab) => ({
       ...tab,
-      title: tab.url ? tabTitleFromURL(tab.url, nodes) : "New Tab",
+      title: tab.url ? tabTitleFromURL(tab.url, nodes) : t("tab.new"),
     }));
   }
 
@@ -547,7 +551,7 @@
     }
     if (tabs.length === 1) {
       tabs = [
-        { ...tabs[0], id: tabs[0].id, title: "New Tab", url: "", active: true, page: emptyPage() },
+        { ...tabs[0], id: tabs[0].id, title: t("tab.new"), url: "", active: true, page: emptyPage() },
       ];
       url = "";
       clearPageState();
@@ -570,7 +574,7 @@
 
   function resetToSingleTab() {
     tabs = [
-      { id: crypto.randomUUID(), title: "New Tab", url: "", active: true, page: emptyPage() },
+      { id: randomId(), title: t("tab.new"), url: "", active: true, page: emptyPage() },
     ];
     url = "";
     closeSplitView();
@@ -721,8 +725,8 @@
     syncActiveTabPage();
     tabs = tabs.map((tab) => ({ ...tab, active: false }));
     const tab: Tab = {
-      id: crypto.randomUUID(),
-      title: "New Tab",
+      id: randomId(),
+      title: t("tab.new"),
       url: "",
       active: true,
       page: emptyPage(),
@@ -760,7 +764,7 @@
       return;
     }
     const dup: Tab = {
-      id: crypto.randomUUID(),
+      id: randomId(),
       title: tab.title,
       url: tab.url,
       active: true,
@@ -926,7 +930,7 @@
         return;
       }
       const tab: Tab = {
-        id: crypto.randomUUID(),
+        id: randomId(),
         title: tabTitleFromURL(normalized, nodes),
         url: normalized,
         active: true,
@@ -1131,6 +1135,9 @@
     const prefs = await GetBrowserPrefs();
     openLinksInNewTab = !!prefs.openLinksInNewTab;
     nativeTitlebar = !!prefs.nativeTitlebar;
+    uiLanguage = prefs.uiLanguage ?? "";
+    docsLanguage = prefs.docsLanguage ?? "";
+    initUILocale(uiLanguage);
     micronWasmEnabled = prefs.micronWasmEnabled ?? true;
     micronWasmAvailable = await isMicronWasmAvailable();
     micronWasmParserId = prefs.micronWasmParserId || BUNDLED_MICRON_WASM_PARSER_ID;
@@ -1146,6 +1153,8 @@
       micronRenderer,
       micronWasmEnabled,
       micronWasmParserId,
+      uiLanguage,
+      docsLanguage,
     };
   }
 
@@ -1155,6 +1164,7 @@
     micronRenderer?: MicronRendererPreference;
     micronWasmEnabled?: boolean;
     micronWasmParserId?: string;
+    uiLanguage?: string;
   }) {
     const prefs = await SetBrowserPrefs({
       ...currentBrowserPrefsPayload(),
@@ -1172,6 +1182,12 @@
 
   async function saveOpenLinksInNewTab(value: boolean) {
     await persistBrowserPrefs({ openLinksInNewTab: value });
+  }
+
+  async function saveUILanguage(value: string) {
+    uiLanguage = value;
+    setUILocale(value.trim() ? value : detectOSLocale());
+    await persistBrowserPrefs({ uiLanguage: value });
   }
 
   async function saveNativeTitlebar(value: boolean) {
@@ -1259,7 +1275,7 @@
       await loadStoreHealth();
       await loadFavorites();
       await loadHistory();
-      tabs = [{ id: crypto.randomUUID(), title: "New Tab", url: "", active: true }];
+      tabs = [{ id: randomId(), title: t("tab.new"), url: "", active: true }];
       clearPageState();
       url = "";
     } catch (err) {
@@ -1283,7 +1299,7 @@
   }
 
   async function resetDefaults() {
-    if (!confirm("Reset appearance, browsing preferences, and keyboard shortcuts to defaults?")) {
+    if (!confirm(t("settings.resetConfirm"))) {
       return;
     }
     const reset = await ResetSettings();
@@ -1292,6 +1308,9 @@
     keybinds = mergeKeybinds(reset.keybinds);
     openLinksInNewTab = !!reset.browserPrefs.openLinksInNewTab;
     nativeTitlebar = !!reset.browserPrefs.nativeTitlebar;
+    uiLanguage = reset.browserPrefs.uiLanguage ?? "";
+    docsLanguage = reset.browserPrefs.docsLanguage ?? "";
+    initUILocale(uiLanguage);
     micronWasmEnabled = reset.browserPrefs.micronWasmEnabled ?? true;
     micronWasmParserId = reset.browserPrefs.micronWasmParserId || BUNDLED_MICRON_WASM_PARSER_ID;
     micronWasmAvailable = await isMicronWasmAvailable();
@@ -1492,7 +1511,7 @@
       if (wasOnline && !meshOnline && loading) {
         const lost = {
           ...emptyPage(),
-          error: "Connection lost",
+          error: t("errors.connectionLostEvent"),
           errorKind: "connection_lost",
         };
         const tabId = tabs.find((tab) => tab.active)?.id;
@@ -1621,7 +1640,7 @@
       {#snippet primaryPane()}
         {#if contentType === "editor"}
           {#if loading}
-            <div class="editor-loading">Loading micron editor...</div>
+            <div class="editor-loading">{t("editor.loadingMicron")}</div>
           {:else}
             <MicronEditor
               source={lastRaw}
@@ -1632,7 +1651,7 @@
           {/if}
         {:else if contentType === "config"}
           {#if loading}
-            <div class="editor-loading">Loading Reticulum config...</div>
+            <div class="editor-loading">{t("editor.loadingConfig")}</div>
           {:else}
             <section class="config-page">
               <ReticulumConfigEditor
@@ -1779,6 +1798,8 @@
           {configPath}
           {pluginsDir}
           bind:downloadDir
+          {uiLanguage}
+          onChangeUILanguage={saveUILanguage}
           {openLinksInNewTab}
           {nativeTitlebar}
           {micronRenderer}
@@ -1882,18 +1903,18 @@
 
   <ConfirmDialog
     open={identifyConfirmOpen}
-    title="Identify to node"
-    message="Identify yourself to this node? The page will reload afterward."
-    confirmLabel="Identify"
+    title={t("dialog.identifyTitle")}
+    message={t("dialog.identifyMessage")}
+    confirmLabel={t("common.identify")}
     onConfirm={confirmIdentify}
     onCancel={() => (identifyConfirmOpen = false)}
   />
 
   <ConfirmDialog
     open={resetDbConfirmOpen}
-    title="Reset database"
-    message="This permanently deletes saved tabs, history, favorites, and settings. Continue?"
-    confirmLabel="Reset database"
+    title={t("dialog.resetDbTitle")}
+    message={t("dialog.resetDbMessage")}
+    confirmLabel={t("dialog.resetDbConfirm")}
     onConfirm={confirmResetDatabase}
     onCancel={() => (resetDbConfirmOpen = false)}
   />

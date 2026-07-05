@@ -18,6 +18,7 @@
     preloadNomadMicronWasm,
     probeBundledMicronWasmByteLength,
   } from "$lib/micron/wasm-loader";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
     selectedParserId: string;
@@ -57,14 +58,14 @@
     const ready = await preloadNomadMicronWasm(parserId);
     onWasmReadyChange(ready);
     if (!ready && parserId !== BUNDLED_MICRON_WASM_PARSER_ID) {
-      error = "Parser failed to load. Micron pages will fall back to JavaScript.";
+      error = t("wasm.loadFailed");
     }
   }
 
   async function fetchFromGitHub() {
     const tag = releaseTag.trim();
     if (!tag) {
-      error = "Enter a release tag (for example v1.0.6).";
+      error = t("wasm.tagRequired");
       return;
     }
     busy = true;
@@ -101,7 +102,7 @@
   }
 
   async function removeParser(parserId: string) {
-    if (!confirm("Remove this WASM parser from local storage?")) {
+    if (!confirm(t("wasm.removeConfirm"))) {
       return;
     }
     busy = true;
@@ -144,12 +145,11 @@
 <div class="wasm-manager">
   {#if !wasmSupported}
     <p class="warn">
-      This webview does not support WebAssembly. Micron pages use the JavaScript parser instead.
+      {t("wasm.noSupport")}
     </p>
   {:else if !wasmBundled}
     <p class="hint">
-      No bundled micron-parser-go.wasm in this build. Fetch a release below, upload a .wasm file, or
-      run the vendor fetch script to install the default parser and wasm_exec.js.
+      {t("wasm.noBundled")}
     </p>
   {/if}
 
@@ -183,7 +183,7 @@
             <button
               type="button"
               class="remove-btn"
-              aria-label="Remove parser"
+              aria-label={t("wasm.removeParser")}
               disabled={busy}
               onclick={() => void removeParser(parser.id)}
             >
@@ -205,7 +205,7 @@
       autocomplete="off"
     />
     <button type="button" disabled={busy || !wasmSupported} onclick={() => void fetchFromGitHub()}>
-      Fetch release
+      {t("wasm.fetchRelease")}
     </button>
   </div>
 
@@ -225,13 +225,12 @@
       onclick={() => uploadInput?.click()}
     >
       <Plus size={15} />
-      Upload .wasm
+      {t("wasm.uploadWasm")}
     </button>
   </div>
 
   <p class="hint">
-    Custom WASM modules are stored locally. Only install parsers you trust. Failed WASM loads fall
-    back to micron-parser-js automatically.
+    {t("wasm.storageHint")}
   </p>
 
   {#if error}

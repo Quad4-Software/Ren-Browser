@@ -1,5 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { t } from "$lib/i18n/i18n.svelte";
+
   type Props = {
     configText: string;
     configPath: string;
@@ -39,7 +41,7 @@
 
 <section class="config-editor">
   <div class="header">
-    <h3>Reticulum config</h3>
+    <h3>{t("config.title")}</h3>
     <p class="hint">{configPath}</p>
   </div>
 
@@ -48,7 +50,7 @@
     bind:value={configText}
     spellcheck="false"
     oninput={() => onChange(configText)}
-    aria-label="Reticulum configuration file"
+    aria-label={t("config.ariaLabel")}
   ></textarea>
 
   {#if error}
@@ -56,10 +58,10 @@
   {/if}
 
   <div class="actions">
-    <button type="button" onclick={onReload} disabled={saving}>Reload</button>
-    <button type="button" onclick={exportConfig} disabled={saving || !configText}>Export</button>
+    <button type="button" onclick={onReload} disabled={saving}>{t("config.reload")}</button>
+    <button type="button" onclick={exportConfig} disabled={saving || !configText}>{t("config.export")}</button>
     <button type="button" class="primary" onclick={onSave} disabled={saving}>
-      {saving ? "Saving..." : "Save and restart interfaces"}
+      {saving ? t("common.saving") : t("config.save")}
     </button>
   </div>
 </section>

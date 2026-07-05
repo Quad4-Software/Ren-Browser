@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MIT
+import { translate } from "$lib/i18n/catalog";
+
 export type KeybindAction =
   | "focusUrl"
   | "reload"
@@ -27,18 +29,22 @@ export function isKeybindRecording(): boolean {
   return recordingKeybind;
 }
 
-export const KEYBIND_LABELS: Record<KeybindAction, string> = {
-  focusUrl: "Focus address bar",
-  reload: "Reload page",
-  devtools: "Developer tools",
-  findInPage: "Find in page",
-  discovery: "Discovery panel",
-  settings: "Settings panel",
-  newTab: "New tab",
-  newWindow: "New window",
-  closeTab: "Close tab",
-  fullscreen: "Toggle fullscreen",
-};
+export function keybindLabel(action: KeybindAction): string {
+  return translate(`keybinds.${action}`);
+}
+
+export const KEYBIND_ACTIONS: KeybindAction[] = [
+  "focusUrl",
+  "reload",
+  "devtools",
+  "findInPage",
+  "discovery",
+  "settings",
+  "newTab",
+  "newWindow",
+  "closeTab",
+  "fullscreen",
+];
 
 export function defaultKeybinds(): KeybindSettings {
   return {

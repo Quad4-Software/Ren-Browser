@@ -14,6 +14,7 @@
     pageErrorContent,
     type PageErrorKind,
   } from "$lib/browser/errors";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
     error: string;
@@ -63,10 +64,10 @@
   {/if}
   <div class="actions">
     {#if copy.showRetry && onRetry}
-      <button type="button" class="primary" onclick={onRetry}>Try again</button>
+      <button type="button" class="primary" onclick={onRetry}>{t("errors.tryAgain")}</button>
     {/if}
     {#if copy.showResetDatabase && onResetDatabase}
-      <button type="button" class="danger" onclick={onResetDatabase}>Reset database</button>
+      <button type="button" class="danger" onclick={onResetDatabase}>{t("errors.resetDatabase")}</button>
     {/if}
   </div>
 </div>

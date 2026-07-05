@@ -2,6 +2,7 @@
 <script lang="ts">
   import { Columns2, X } from "@lucide/svelte";
   import type { Tab } from "$lib/browser/url";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
     tabs: Tab[];
@@ -19,29 +20,29 @@
   <header>
     <div class="heading">
       <Columns2 size={18} />
-      <h2>Split view</h2>
+      <h2>{t("split.title")}</h2>
     </div>
     <button
       type="button"
       class="close-btn ren-icon-btn"
-      aria-label="Close split view"
+      aria-label={t("split.close")}
       onclick={onClose}
     >
       <X size={16} />
     </button>
   </header>
 
-  <p class="hint">Choose a tab to show beside the active tab.</p>
+  <p class="hint">{t("split.hint")}</p>
 
   {#if candidates.length === 0}
-    <p class="empty">Open another tab to split with.</p>
+    <p class="empty">{t("split.noOtherTab")}</p>
   {:else}
     <ul class="tab-list">
       {#each candidates as tab (tab.id)}
         <li>
           <button type="button" class="tab-choice" onclick={() => onSelect(tab.id)}>
             <span class="title">{tab.title}</span>
-            <span class="url">{tab.url || "New tab"}</span>
+            <span class="url">{tab.url || t("tab.newTab")}</span>
           </button>
         </li>
       {/each}

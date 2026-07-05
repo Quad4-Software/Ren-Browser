@@ -15,6 +15,7 @@
     X,
   } from "@lucide/svelte";
   import DownloadsMenu, { type DownloadRow } from "$lib/components/DownloadsMenu.svelte";
+  import { t } from "$lib/i18n/i18n.svelte";
   import type { ActivePanel, PluginPanelContribution } from "$lib/plugins/api-types.js";
   import { panelKey } from "$lib/plugins/registry.js";
 
@@ -78,13 +79,13 @@
 
 <header class="chrome">
   <div class="nav-cluster">
-    <button class="ren-icon-btn" aria-label="Back" disabled={!canGoBack} onclick={onBack}>
+    <button class="ren-icon-btn" aria-label={t("chrome.back")} disabled={!canGoBack} onclick={onBack}>
       <ArrowLeft size={16} />
     </button>
-    <button class="ren-icon-btn" aria-label="Forward" disabled={!canGoForward} onclick={onForward}>
+    <button class="ren-icon-btn" aria-label={t("chrome.forward")} disabled={!canGoForward} onclick={onForward}>
       <ArrowRight size={16} />
     </button>
-    <button class="ren-icon-btn" aria-label="Reload" onclick={onReload}>
+    <button class="ren-icon-btn" aria-label={t("chrome.reload")} onclick={onReload}>
       <RefreshCw size={16} />
     </button>
   </div>
@@ -93,7 +94,7 @@
     <input
       class="url-input ren-input"
       bind:value={url}
-      placeholder="nodehash:/page/index.mu"
+      placeholder={t("chrome.urlPlaceholder")}
       spellcheck="false"
       autocomplete="off"
     />
@@ -103,8 +104,8 @@
     {#if canIdentify}
       <button
         class="ren-icon-btn"
-        aria-label="Identify to node"
-        title="Identify yourself to this node"
+        aria-label={t("chrome.identify")}
+        title={t("chrome.identifyTitle")}
         disabled={identifying}
         onclick={onIdentify}
       >
@@ -115,7 +116,7 @@
       <button
         class="ren-icon-btn"
         class:active={downloadsOpen}
-        aria-label="Downloads"
+        aria-label={t("chrome.downloads")}
         aria-expanded={downloadsOpen}
         onclick={onToggleDownloads}
       >
@@ -134,7 +135,7 @@
     <button
       class="ren-icon-btn"
       class:active={activePanel === "history"}
-      aria-label="History"
+      aria-label={t("chrome.history")}
       onclick={() => onPanel("history")}
     >
       <History size={16} />
@@ -142,7 +143,7 @@
     <button
       class="ren-icon-btn"
       class:active={activePanel === "discovery"}
-      aria-label="Discovery"
+      aria-label={t("chrome.discovery")}
       onclick={() => onPanel("discovery")}
     >
       <Compass size={16} />
@@ -162,7 +163,7 @@
     <button
       class="ren-icon-btn"
       class:active={activePanel === "devtools"}
-      aria-label="Developer tools"
+      aria-label={t("chrome.devtools")}
       onclick={() => onPanel("devtools")}
     >
       <Terminal size={16} />
@@ -170,12 +171,12 @@
     <button
       class="ren-icon-btn"
       class:active={activePanel === "settings"}
-      aria-label="Settings"
+      aria-label={t("chrome.settings")}
       onclick={() => onPanel("settings")}
     >
       <Settings size={16} />
     </button>
-    <button class="ren-icon-btn" aria-label="Toggle theme" onclick={onToggleTheme}>
+    <button class="ren-icon-btn" aria-label={t("chrome.toggleTheme")} onclick={onToggleTheme}>
       {#if themeMode === "dark"}
         <Sun size={16} />
       {:else}
@@ -183,7 +184,7 @@
       {/if}
     </button>
     {#if activePanel !== "browser"}
-      <button class="ren-icon-btn" aria-label="Close panel" onclick={() => onPanel("browser")}>
+      <button class="ren-icon-btn" aria-label={t("chrome.closePanel")} onclick={() => onPanel("browser")}>
         <X size={16} />
       </button>
     {/if}

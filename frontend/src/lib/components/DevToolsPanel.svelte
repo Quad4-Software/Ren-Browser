@@ -3,6 +3,7 @@
   import { Activity, FileCode, Terminal } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import PluginPanelHost from "$lib/components/PluginPanelHost.svelte";
+  import { t } from "$lib/i18n/i18n.svelte";
   import type { PluginDevToolsContribution } from "$lib/plugins/api-types.js";
   type LogEntry = {
     time: number;
@@ -89,16 +90,18 @@
     if (value < 0) {
       return "—";
     }
-    return String(value);
+    return value === 1
+      ? t("devtools.hopsCount", { count: value })
+      : t("devtools.hopsCountPlural", { count: value });
   }
 </script>
 
 <section class="devtools">
   <header>
     <div class="tabs">
-      <button class:active={tab === "console"} onclick={() => (tab = "console")}>Console</button>
-      <button class:active={tab === "network"} onclick={() => (tab = "network")}>Network</button>
-      <button class:active={tab === "raw"} onclick={() => (tab = "raw")}>Raw</button>
+      <button class:active={tab === "console"} onclick={() => (tab = "console")}>{t("devtools.console")}</button>
+      <button class:active={tab === "network"} onclick={() => (tab = "network")}>{t("devtools.network")}</button>
+      <button class:active={tab === "raw"} onclick={() => (tab = "raw")}>{t("devtools.raw")}</button>
       {#each pluginTabs as pluginTab (pluginTab.pluginId + ":" + pluginTab.id)}
         <button
           class:active={tab === `plugin:${pluginTab.pluginId}:${pluginTab.id}`}
@@ -110,7 +113,7 @@
     </div>
     <div class="actions">
       <label>
-        Log
+        {t("devtools.log")}
         <input
           type="range"
           min="1"
@@ -119,24 +122,24 @@
           oninput={(event) => onLogLevel(Number((event.currentTarget as HTMLInputElement).value))}
         />
       </label>
-      <button onclick={onExport}>Export</button>
-      <button onclick={onClear}>Clear</button>
+      <button onclick={onExport}>{t("devtools.export")}</button>
+      <button onclick={onClear}>{t("devtools.clear")}</button>
     </div>
   </header>
 
   <div class="page-info">
-    <span>{contentType || "unknown"}</span>
+    <span>{contentType || t("common.unknown")}</span>
     {#if micronRendererBadge}
       <span class="renderer-badge">{micronRendererBadge}</span>
     {/if}
     {#if hops >= 0}
-      <span>{hops} hop{hops === 1 ? "" : "s"}</span>
+      <span>{formatHops(hops)}</span>
     {/if}
     {#if durationMs > 0}
       <span>{durationMs} ms</span>
     {/if}
     {#if fromCache}
-      <span>cached {cachedAt > 0 ? new Date(cachedAt).toLocaleString() : ""}</span>
+      <span>{t("devtools.cached", { when: cachedAt > 0 ? new Date(cachedAt).toLocaleString() : "" })}</span>
     {/if}
   </div>
 
@@ -146,21 +149,21 @@
         class="search ren-input"
         type="search"
         bind:value={logQuery}
-        placeholder="Search logs..."
+        placeholder={t("devtools.searchLogs")}
         spellcheck="false"
         autocomplete="off"
       />
       {#if logs.length === 0}
         <EmptyState
-          title="Console is empty"
-          description="Application logs from Reticulum and the browser shell will show up here."
+          title={t("devtools.consoleEmpty")}
+          description={t("devtools.consoleEmptyDescription")}
         >
           <Terminal size={22} />
         </EmptyState>
       {:else if filteredLogs.length === 0}
         <EmptyState
-          title="No matching logs"
-          description={'Nothing matches "' + logQuery.trim() + '".'}
+          title={t("devtools.noMatchingLogs")}
+          description={t("common.nothingMatches", { query: logQuery.trim() })}
         >
           <Terminal size={22} />
         </EmptyState>
@@ -181,8 +184,8 @@
     <div class="panel network">
       {#if network.length === 0}
         <EmptyState
-          title="No network activity"
-          description="Mesh page requests and their timing will be recorded here."
+          title={t("devtools.noNetwork")}
+          description={t("devtools.noNetworkDescription")}
         >
           <Activity size={22} />
         </EmptyState>
@@ -190,13 +193,13 @@
         <table>
           <thead>
             <tr>
-              <th>Time</th>
-              <th>Path</th>
-              <th>Hops</th>
+              <th>{t("devtools.time")}</th>
+              <th>{t("devtools.path")}</th>
+              <th>{t("devtools.hops")}</th>
               <th>ms</th>
-              <th>Bytes</th>
-              <th>Cache</th>
-              <th>Error</th>
+              <th>{t("devtools.bytes")}</th>
+              <th>{t("devtools.cache")}</th>
+              <th>{t("devtools.error")}</th>
             </tr>
           </thead>
           <tbody>
@@ -207,7 +210,7 @@
                 <td>{formatHops(row.hops ?? -1)}</td>
                 <td>{row.durationMs}</td>
                 <td>{row.bytes}</td>
-                <td>{row.fromCache ? "yes" : "no"}</td>
+                <td>{row.fromCache ? t("common.yes") : t("common.no")}</td>
                 <td>{row.error ?? ""}</td>
               </tr>
             {/each}
@@ -218,14 +221,11 @@
   {:else if tab === "raw"}
     <div class="panel raw">
       <div class="raw-actions">
-        <button class:active={rawMode === "text"} onclick={() => (rawMode = "text")}>Text</button>
-        <button class:active={rawMode === "hex"} onclick={() => (rawMode = "hex")}>Hex</button>
+        <button class:active={rawMode === "text"} onclick={() => (rawMode = "text")}>{t("devtools.text")}</button>
+        <button class:active={rawMode === "hex"} onclick={() => (rawMode = "hex")}>{t("devtools.hex")}</button>
       </div>
       {#if raw.trim().length === 0}
-        <EmptyState
-          title="No raw page data"
-          description="Open a mesh page to inspect its source bytes here."
-        >
+        <EmptyState title={t("devtools.noRaw")} description={t("devtools.noRawDescription")}>
           <FileCode size={22} />
         </EmptyState>
       {:else}

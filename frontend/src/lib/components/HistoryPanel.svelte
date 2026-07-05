@@ -3,6 +3,8 @@
   import { Clock, History } from "@lucide/svelte";
   import { SvelteDate } from "svelte/reactivity";
   import EmptyState from "$lib/components/EmptyState.svelte";
+  import { t } from "$lib/i18n/i18n.svelte";
+
   type HistoryEntry = {
     id: number;
     url: string;
@@ -62,7 +64,9 @@
   });
 
   const placeholder = $derived(
-    history.length > 0 ? `Search ${history.length} pages...` : "Search history...",
+    history.length > 0
+      ? t("common.searchCount", { count: history.length, noun: t("history.pages") })
+      : t("common.search", { noun: t("history.pages") }),
   );
 
   function sameDay(a: Date, b: Date): boolean {
@@ -75,7 +79,7 @@
 
   function humanDate(ts: number): string {
     if (!ts) {
-      return "Unknown date";
+      return t("common.unknownDate");
     }
     const date = new Date(ts * 1000);
     const today = new SvelteDate();
@@ -83,10 +87,10 @@
     yesterday.setDate(today.getDate() - 1);
 
     if (sameDay(date, today)) {
-      return "Today";
+      return t("common.today");
     }
     if (sameDay(date, yesterday)) {
-      return "Yesterday";
+      return t("common.yesterday");
     }
 
     return date.toLocaleDateString(undefined, {
@@ -99,7 +103,7 @@
 
   function formatTime(ts: number): string {
     if (!ts) {
-      return "unknown";
+      return t("common.unknown");
     }
     return new Date(ts * 1000).toLocaleTimeString(undefined, {
       hour: "numeric",
@@ -121,8 +125,8 @@
 
 <section class="history-panel">
   <header>
-    <h2>History</h2>
-    <p>Pages you visited recently on the mesh.</p>
+    <h2>{t("history.title")}</h2>
+    <p>{t("history.subtitle")}</p>
     <input
       class="search ren-input"
       type="search"
@@ -134,14 +138,14 @@
   </header>
 
   {#if history.length === 0}
-    <EmptyState
-      title="No browsing history"
-      description="Pages you visit on the mesh will be listed here, grouped by date."
-    >
+    <EmptyState title={t("history.noHistory")} description={t("history.noHistoryDescription")}>
       <History size={22} />
     </EmptyState>
   {:else if filtered.length === 0}
-    <EmptyState title="No matching pages" description={'Nothing matches "' + query.trim() + '".'}>
+    <EmptyState
+      title={t("history.noMatching")}
+      description={t("common.nothingMatches", { query: query.trim() })}
+    >
       <Clock size={22} />
     </EmptyState>
   {:else}

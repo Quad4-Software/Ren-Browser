@@ -2,6 +2,7 @@
 <script lang="ts">
   import { Globe, RefreshCw } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   export type CommunityInterface = {
     id: number;
@@ -61,22 +62,22 @@
 
 <section class="community">
   <div class="header">
-    <h3>Community interfaces</h3>
-    <p class="hint">Online entries from directory.rns.recipes</p>
+    <h3>{t("community.title")}</h3>
+    <p class="hint">{t("community.hint")}</p>
   </div>
 
   <div class="toolbar">
     <input
       class="search"
       type="search"
-      placeholder="Search name, network, host..."
+      placeholder={t("community.searchPlaceholder")}
       bind:value={filter}
       oninput={() => onFilter(filter)}
     />
     <button
       type="button"
       class="icon-btn"
-      aria-label="Refresh directory"
+      aria-label={t("community.refresh")}
       onclick={onRefresh}
       disabled={loading}
     >
@@ -92,12 +93,12 @@
 
   <ul class="list">
     {#if loading && items.length === 0}
-      <li class="empty">Loading directory...</li>
+      <li class="empty">{t("community.loading")}</li>
     {:else if filtered.length === 0}
       <li class="empty">
         <EmptyState
-          title="No interfaces found"
-          description="Try another search or refresh the directory."
+          title={t("community.noInterfaces")}
+          description={t("community.noInterfacesDescription")}
         >
           <Globe size={22} />
         </EmptyState>
@@ -120,7 +121,7 @@
                   · {item.host}{#if item.port}:{item.port}{/if}
                 {/if}
                 {#if item.installed}
-                  · installed
+                  · {t("common.installed")}
                 {/if}
               </span>
             </span>
@@ -136,7 +137,11 @@
     onclick={onImport}
     disabled={importing || selectedCount === 0}
   >
-    {importing ? "Adding interfaces..." : `Add ${selectedCount || ""} selected and restart`.trim()}
+    {importing
+      ? t("community.adding")
+      : selectedCount > 0
+        ? t("community.addSelected", { count: selectedCount })
+        : t("community.addSelectedEmpty")}
   </button>
 </section>
 

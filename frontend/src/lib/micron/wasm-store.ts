@@ -4,6 +4,7 @@
  */
 
 import { FetchMicronParserGoRelease } from "../../../bindings/renbrowser/internal/app/browserservice.js";
+import { randomId } from "$lib/browser/id";
 import { indexedDbName } from "$lib/brand";
 
 export const BUNDLED_MICRON_WASM_PARSER_ID = "bundled";
@@ -129,13 +130,6 @@ function decodeBase64Wasm(base64: string): ArrayBuffer {
     bytes[i] = binary.charCodeAt(i);
   }
   return bytes.buffer;
-}
-
-function newParserId(): string {
-  if (typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return `wasm-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 async function readMeta(id: string): Promise<MicronWasmParserMeta | null> {
@@ -307,7 +301,7 @@ async function storeWasmParser(
     throw new Error("Micron WASM file is too small");
   }
   const wasmSri = await computeWasmSriSha384(wasmBytes);
-  const id = newParserId();
+  const id = randomId();
   await writeParser({
     id,
     label,

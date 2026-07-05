@@ -19,6 +19,7 @@
   import EmptyState from "$lib/components/EmptyState.svelte";
   import PageErrorState from "$lib/components/PageErrorState.svelte";
   import { displayName } from "$lib/brand";
+  import { t } from "$lib/i18n/i18n.svelte";
   import { downloadPageContent, isFileURL } from "$lib/browser/download";
 
   type Props = {
@@ -118,7 +119,9 @@
       (displayHtml || showSource),
   );
   const canViewSource = $derived(raw.trim().length > 0);
-  const cacheLabel = $derived(cachedAt > 0 ? new Date(cachedAt).toLocaleString() : "earlier");
+  const cacheLabel = $derived(
+    cachedAt > 0 ? new Date(cachedAt).toLocaleString() : t("common.recently"),
+  );
 
   function openMenu(event: MouseEvent) {
     event.preventDefault();
@@ -198,13 +201,13 @@
 
   {#if showCacheBanner}
     <div class="cache-banner">
-      <span>Viewing cached page from {cacheLabel}</span>
+      <span>{t("content.cachedBanner", { when: cacheLabel })}</span>
       <div class="cache-actions">
-        <button type="button" onclick={onReloadFresh}>Load fresh copy</button>
+        <button type="button" onclick={onReloadFresh}>{t("content.loadFresh")}</button>
         <button
           type="button"
           class="cache-dismiss"
-          aria-label="Dismiss cached notice"
+          aria-label={t("content.dismissCache")}
           onclick={() => (dismissedCacheKey = cacheBannerKey)}
         >
           <X size={17} />
@@ -217,17 +220,17 @@
     <div class="source-bar">
       <button type="button" class="back-btn" onclick={() => onShowSourceChange(false)}>
         <ArrowLeft size={14} />
-        <span>Back to page</span>
+        <span>{t("content.backToPage")}</span>
       </button>
       <span class="source-label">
         <FileCode size={14} />
-        Page source
+        {t("content.pageSource")}
       </span>
     </div>
     <pre class="source-view" oncontextmenu={openMenu}>{raw}</pre>
   {:else if loading}
     <div class="progress" aria-hidden="true"></div>
-    <div class="state">Loading page...</div>
+    <div class="state">{t("content.loadingPage")}</div>
   {:else if error}
     <PageErrorState {error} {errorKind} {currentURL} {onRetry} />
   {:else if displayHtml}
@@ -249,7 +252,7 @@
     <div class="state">
       <EmptyState
         title={displayName}
-        description="Enter an address in the bar above or open Discovery to browse the mesh."
+        description={t("content.emptyDescription")}
       >
         <Globe size={22} />
       </EmptyState>

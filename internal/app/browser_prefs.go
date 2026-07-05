@@ -13,6 +13,7 @@ type BrowserPrefs struct {
 	MicronWasmEnabled    bool   `json:"micronWasmEnabled"`
 	MicronWasmParserID   string `json:"micronWasmParserId"`
 	DocsLanguage         string `json:"docsLanguage"`
+	UILanguage           string `json:"uiLanguage"`
 }
 
 func DefaultBrowserPrefs() BrowserPrefs {
@@ -38,6 +39,9 @@ func mergeBrowserPrefs(saved BrowserPrefs) BrowserPrefs {
 	}
 	if saved.DocsLanguage != "" {
 		defaults.DocsLanguage = saved.DocsLanguage
+	}
+	if saved.UILanguage != "" {
+		defaults.UILanguage = saved.UILanguage
 	}
 	return defaults
 }

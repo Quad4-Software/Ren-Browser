@@ -2,6 +2,7 @@
 <script lang="ts">
   import { Download, FolderOpen } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   export type DownloadRow = {
     name: string;
@@ -47,21 +48,21 @@
 </script>
 
 {#if open}
-  <button type="button" class="backdrop" aria-label="Close downloads" onclick={onClose}></button>
-  <div class="menu" role="dialog" aria-label="Downloads">
+  <button type="button" class="backdrop" aria-label={t("downloads.close")} onclick={onClose}></button>
+  <div class="menu" role="dialog" aria-label={t("downloads.title")}>
     <header>
-      <h2>Downloads</h2>
+      <h2>{t("downloads.title")}</h2>
       <button type="button" class="page-btn" onclick={onDownloadPage}>
         <Download size={14} />
-        <span>Save current page</span>
+        <span>{t("downloads.saveCurrentPage")}</span>
       </button>
     </header>
 
     <div class="list">
       {#if downloads.length === 0}
         <EmptyState
-          title="No downloads yet"
-          description="Pages and mesh files you save will appear here."
+          title={t("downloads.noDownloads")}
+          description={t("downloads.noDownloadsDescription")}
         >
           <Download size={22} />
         </EmptyState>
@@ -82,7 +83,7 @@
     <footer>
       <button type="button" class="folder-btn" onclick={onOpenFolder}>
         <FolderOpen size={14} />
-        <span class="folder-label">{downloadDir || "Downloads folder"}</span>
+        <span class="folder-label">{downloadDir || t("downloads.downloadsFolder")}</span>
       </button>
     </footer>
   </div>

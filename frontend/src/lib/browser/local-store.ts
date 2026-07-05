@@ -30,6 +30,7 @@ export type LocalBrowserPrefs = {
   openLinksInNewTab: boolean;
   openLinksInNewWindow: boolean;
   nativeTitlebar: boolean;
+  uiLanguage?: string;
 };
 
 export type LocalBrowserData = {

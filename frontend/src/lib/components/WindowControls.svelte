@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Minus, Square, X } from "@lucide/svelte";
+  import { t } from "$lib/i18n/i18n.svelte";
   import { System, Window } from "@wailsio/runtime";
 
   const desktop = System.IsDesktop();
@@ -20,13 +21,13 @@
 
 {#if desktop}
   <div class="window-controls" style:--wails-draggable="no-drag">
-    <button type="button" class="win-btn" aria-label="Minimize" onclick={minimize}>
+    <button type="button" class="win-btn" aria-label={t("window.minimize")} onclick={minimize}>
       <Minus size={14} />
     </button>
-    <button type="button" class="win-btn" aria-label="Maximize" onclick={maximize}>
+    <button type="button" class="win-btn" aria-label={t("window.maximize")} onclick={maximize}>
       <Square size={12} />
     </button>
-    <button type="button" class="win-btn close" aria-label="Close" onclick={close}>
+    <button type="button" class="win-btn close" aria-label={t("window.close")} onclick={close}>
       <X size={14} />
     </button>
   </div>

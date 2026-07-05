@@ -3,6 +3,7 @@
   import { Compass, Star } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { displayName } from "$lib/brand";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   type Node = {
     hash: string;
@@ -34,7 +35,9 @@
   });
 
   const placeholder = $derived(
-    nodes.length > 0 ? `Search ${nodes.length} sites...` : "Search sites...",
+    nodes.length > 0
+      ? t("common.searchCount", { count: nodes.length, noun: t("discovery.sites") })
+      : t("common.search", { noun: t("discovery.sites") }),
   );
 
   function openNode(node: Node) {
@@ -43,14 +46,12 @@
 
   function formatSeen(ts: number): string {
     if (!ts) {
-      return "recently";
+      return t("common.recently");
     }
     return new Date(ts * 1000).toLocaleString();
   }
 
-  const scanningDescription = $derived(
-    `${displayName} is scanning the mesh. Sites will appear here when nodes announce themselves.`,
-  );
+  const scanningDescription = $derived(t("discovery.scanning", { app: displayName }));
 
   function isFavorite(hash: string): boolean {
     const url = `${hash}:/page/index.mu`;
@@ -60,8 +61,8 @@
 
 <section class="discovery">
   <header>
-    <h2>Discovery</h2>
-    <p>Browse sites on the mesh network.</p>
+    <h2>{t("discovery.title")}</h2>
+    <p>{t("discovery.subtitle")}</p>
     <input
       class="search ren-input"
       type="search"
@@ -73,11 +74,14 @@
   </header>
 
   {#if nodes.length === 0}
-    <EmptyState title="No sites discovered yet" description={scanningDescription}>
+    <EmptyState title={t("discovery.noSites")} description={scanningDescription}>
       <Compass size={22} />
     </EmptyState>
   {:else if filtered().length === 0}
-    <EmptyState title="No matching sites" description={'Nothing matches "' + query.trim() + '".'}>
+    <EmptyState
+      title={t("discovery.noMatching")}
+      description={t("common.nothingMatches", { query: query.trim() })}
+    >
       <Compass size={22} />
     </EmptyState>
   {:else}
@@ -86,12 +90,12 @@
         <li>
           <button onclick={() => openNode(node)}>
             <span class="row">
-              <span class="name">{node.name || "Unnamed site"}</span>
+              <span class="name">{node.name || t("discovery.unnamedSite")}</span>
               <span
                 class="fav"
                 role="button"
                 tabindex="0"
-                aria-label="Favorite site"
+                aria-label={t("discovery.favoriteSite")}
                 onclick={(event) => {
                   event.stopPropagation();
                   onFavorite(`${node.hash}:/page/index.mu`);
@@ -106,7 +110,7 @@
                 <Star size={14} fill={isFavorite(node.hash) ? "currentColor" : "none"} />
               </span>
             </span>
-            <span class="meta">Last seen {formatSeen(node.lastSeen)}</span>
+            <span class="meta">{t("common.lastSeen", { when: formatSeen(node.lastSeen) })}</span>
           </button>
         </li>
       {/each}

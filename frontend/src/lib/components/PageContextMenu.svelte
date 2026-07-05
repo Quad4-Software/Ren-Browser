@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { FileCode, Download } from "@lucide/svelte";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
     x: number;
@@ -32,12 +33,12 @@
   {#if canViewSource}
     <button role="menuitem" onclick={onViewSource}>
       <FileCode size={14} />
-      <span>View Source</span>
+      <span>{t("content.viewSource")}</span>
     </button>
   {/if}
   <button role="menuitem" onclick={onDownload}>
     <Download size={14} />
-    <span>Download Page</span>
+    <span>{t("content.downloadPage")}</span>
   </button>
 </div>
 

@@ -10,6 +10,7 @@
   import { parseMicronHeaderColors, renderClientMicronPage } from "$lib/micron/render-page";
   import PageContextMenu from "$lib/components/PageContextMenu.svelte";
   import { downloadPageContent } from "$lib/browser/download";
+  import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
     source: string;
@@ -212,7 +213,7 @@
     style:--source-ratio="{sourceRatio}%"
   >
     <div class="pane source-pane">
-      <label class="pane-label" for="micron-source">Source</label>
+      <label class="pane-label" for="micron-source">{t("editor.source")}</label>
       <textarea
         id="micron-source"
         class="source-input"
@@ -229,7 +230,7 @@
       class="divider"
       class:vertical={verticalLayout}
       bind:this={dividerEl}
-      aria-label="Resize source and preview panes"
+      aria-label={t("editor.resizePanes")}
       onpointerdown={onDividerPointerDown}
       onpointermove={onDividerPointerMove}
       onpointerup={onDividerPointerUp}
@@ -237,7 +238,7 @@
     ></button>
 
     <div class="pane preview-pane">
-      <div class="pane-label">Preview</div>
+      <div class="pane-label">{t("editor.preview")}</div>
       {#if previewError}
         <div class="preview-error">{previewError}</div>
       {/if}
