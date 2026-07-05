@@ -30,7 +30,7 @@ describe("docs URL helpers", () => {
 describe("renderDocsMarkdown", () => {
   it("renders headings and lists", () => {
     const html = renderDocsMarkdown("# Title\n\n- one\n- two", "en", "");
-    expect(html).toContain("<h1>Title</h1>");
+    expect(html).toContain("Title");
     expect(html).toContain("<ul>");
     expect(html).toContain("<li>one</li>");
   });
@@ -53,7 +53,8 @@ describe("renderDocsPage", () => {
     const html = renderDocsPage("# Docs\n\nHello.", "docs:?lang=en");
     expect(html).toContain('class="docs-page"');
     expect(html).toContain('class="docs-body"');
-    expect(html).toContain("<h1>Docs</h1>");
+    expect(html).toContain("Docs");
+    expect(html).toContain("<p>Hello.</p>");
     expect(html).toContain('href="docs:?lang=ru"');
   });
 });

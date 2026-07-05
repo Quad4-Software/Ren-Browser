@@ -62,6 +62,8 @@ runs:
     - name: Install wails3
       if: inputs.install-wails == 'true'
       shell: bash
+      env:
+        GOFLAGS: -mod=mod
       run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{ inputs.wails-version }}
 
     - name: Install Linux desktop dependencies

@@ -35,7 +35,7 @@ tasks:
   fmt:go:
     desc: Format Go sources
     cmds:
-      - gofmt -w $(go list -mod=vendor -f '{{.Dir}}' ./...)
+      - bash build/scripts/gofmt-project.sh write
     env:
       GOFLAGS: "-mod=vendor"
 
@@ -57,7 +57,7 @@ tasks:
     cmds:
       - go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-generated -fmt=text -exclude-dir=node_modules -exclude-dir=frontend -exclude-dir=build/android -exclude-dir=build/ios -exclude-dir=vendor -exclude-dir=third_party ./...
     env:
-      GOFLAGS: "-mod=vendor"
+      GOFLAGS: "-mod=mod"
 
   test:
     desc: Run all tests

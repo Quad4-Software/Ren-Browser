@@ -51,15 +51,7 @@ jobs:
 
       - name: gofmt check
         shell: bash
-        run: |
-          set -euo pipefail
-          dirs="$(go list -mod=vendor -f '{{.Dir}}' ./...)"
-          unformatted="$(gofmt -l ${dirs})"
-          if [ -n "$unformatted" ]; then
-            echo "Unformatted Go files:"
-            echo "$unformatted"
-            exit 1
-          fi
+        run: bash build/scripts/gofmt-project.sh check
 
       - name: Go tests
         run: task test:go
@@ -106,6 +98,8 @@ jobs:
 
       - name: gosec
         run: task gosec
+        env:
+          GOFLAGS: -mod=mod
 
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1

@@ -102,7 +102,7 @@ tasks:
       - sh: pnpm --version | awk -F. '{ exit ($1 < 11) }'
         msg: "pnpm 11+ is required. Install with: corepack enable && corepack prepare pnpm@11.3.0 --activate"
     cmds:
-      - pnpm install --frozen-lockfile=false
+      - pnpm install --frozen-lockfile=false --config.strict-dep-builds=false
 
   install:frontend:deps:yarn:
     dir: frontend

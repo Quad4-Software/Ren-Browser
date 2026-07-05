@@ -6,12 +6,12 @@ import "encoding/json"
 const browserPrefsKey = "browserPrefs"
 
 type BrowserPrefs struct {
-	OpenLinksInNewTab    bool   `json:"openLinksInNewTab"`
-	OpenLinksInNewWindow bool   `json:"openLinksInNewWindow"`
-	NativeTitlebar       bool   `json:"nativeTitlebar"`
-	MicronRenderer       string `json:"micronRenderer"`
-	MicronWasmEnabled    bool   `json:"micronWasmEnabled"`
-	MicronWasmParserID   string `json:"micronWasmParserId"`
+	OpenLinksInNewTab         bool            `json:"openLinksInNewTab"`
+	OpenLinksInNewWindow      bool            `json:"openLinksInNewWindow"`
+	NativeTitlebar            bool            `json:"nativeTitlebar"`
+	MicronRenderer            string          `json:"micronRenderer"`
+	MicronWasmEnabled         bool            `json:"micronWasmEnabled"`
+	MicronWasmParserID        string          `json:"micronWasmParserId"`
 	DocsLanguage              string          `json:"docsLanguage"`
 	UILanguage                string          `json:"uiLanguage"`
 	DiscoverySlowMode         bool            `json:"discoverySlowMode"`

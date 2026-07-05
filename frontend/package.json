@@ -28,6 +28,11 @@
     "marked": "^18.0.5",
     "micron-parser": "github:RFnexus/micron-parser-js"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
