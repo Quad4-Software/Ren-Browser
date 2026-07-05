@@ -30,8 +30,7 @@ func main() {
 	frameless := !prefs.NativeTitlebar
 	windowOpts := appBundle.Service.InitialWindowOptions(frameless, cfg.ResetWindow)
 
-	win := appBundle.Wails.Window.NewWithOptions(windowOpts)
-	appBundle.Service.AttachWindowPersistence(win)
+	_ = appBundle.Wails.Window.NewWithOptions(windowOpts)
 
 	go func() {
 		if err := appBundle.Service.StartReticulum(); err != nil {

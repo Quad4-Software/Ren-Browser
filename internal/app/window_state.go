@@ -2,6 +2,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
@@ -149,7 +150,15 @@ func (s *BrowserService) InitialWindowOptions(frameless bool, reset bool) applic
 	return opts
 }
 
-func (s *BrowserService) AttachWindowPersistence(window application.Window) {
+func (s *BrowserService) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
+	if s.app == nil {
+		return nil
+	}
+	s.attachWindowPersistence(s.app.Window.Current())
+	return nil
+}
+
+func (s *BrowserService) attachWindowPersistence(window application.Window) {
 	if window == nil || s.resetWindow {
 		return
 	}

@@ -1290,8 +1290,6 @@ export interface WebviewWindowOptions {
     "UseApplicationMenu": boolean;
 }
 
-export type Window = any;
-
 /**
  * WindowManager manages all window-related operations
  */

@@ -52,7 +52,6 @@ export type {
     TextTheme,
     ThemeSettings,
     WebviewWindowOptions,
-    Window,
     WindowManager,
     WindowTheme,
     WindowsWindow

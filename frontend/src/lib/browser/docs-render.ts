@@ -58,7 +58,7 @@ export function rewriteDocsHref(href: string, lang: string, currentPage: string)
   if (/^https?:\/\//i.test(trimmed)) {
     return "";
   }
-  let path = trimmed.replace(/^\.\//, "");
+  const path = trimmed.replace(/^\.\//, "");
   if (path.includes("://") || path.startsWith("..")) {
     return formatDocsURL(lang, "");
   }

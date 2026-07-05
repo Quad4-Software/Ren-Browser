@@ -59,7 +59,9 @@ runs:
       with:
         node-version: "22"
         cache: pnpm
-        cache-dependency-path: pnpm-lock.yaml
+        cache-dependency-path: |
+          pnpm-lock.yaml
+          frontend/pnpm-lock.yaml
 
     - name: Setup Task
       uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52

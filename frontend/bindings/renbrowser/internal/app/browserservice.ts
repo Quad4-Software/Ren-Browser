@@ -36,10 +36,6 @@ export function AttachStack(stack: rns$0.Stack | null): $CancellablePromise<void
     return $Call.ByID(1182225214, stack);
 }
 
-export function AttachWindowPersistence(window: application$0.Window): $CancellablePromise<void> {
-    return $Call.ByID(3944025841, window);
-}
-
 export function CaptureWindowState(): $CancellablePromise<$models.WindowState> {
     return $Call.ByID(2070387988);
 }
