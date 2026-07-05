@@ -74,3 +74,8 @@ runs:
           libgtk-4-dev libwebkitgtk-6.0-dev \
           libgtk-3-dev libwebkit2gtk-4.1-dev \
           curl rsvg-convert
+
+    - name: Prepare Go build inputs
+      shell: bash
+      working-directory: RenBrowser
+      run: bash build/scripts/ci-prep-go.sh

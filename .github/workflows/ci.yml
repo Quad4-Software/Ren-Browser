@@ -50,6 +50,7 @@ jobs:
         uses: ./RenBrowser/.github/actions/setup
         with:
           install-wails: "false"
+          install-linux-deps: ${{ matrix.os == 'ubuntu-latest' && 'true' || 'false' }}
 
       - name: gofmt check
         shell: bash
@@ -68,6 +69,14 @@ jobs:
       - name: Go race tests
         if: matrix.os == 'ubuntu-latest'
         run: task test:go:race
+
+      - name: Contract drift tests
+        if: matrix.os == 'ubuntu-latest'
+        run: task test:contract
+
+      - name: Go fuzz tests
+        if: matrix.os == 'ubuntu-latest'
+        run: task fuzz:go
 
   frontend:
     name: Frontend
@@ -99,6 +108,7 @@ jobs:
         uses: ./RenBrowser/.github/actions/setup
         with:
           install-wails: "false"
+          install-linux-deps: "true"
 
       - name: gosec
         run: task gosec
@@ -134,6 +144,7 @@ jobs:
         uses: ./RenBrowser/.github/actions/setup
         with:
           install-wails: "true"
+          install-linux-deps: "true"
 
       - name: Build headless server
         run: task build:server
