@@ -4,7 +4,7 @@ import DOMPurify from "dompurify";
 import BaseMicronParser from "micron-parser";
 
 const ALLOWED_URI_REGEXP =
-  /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp|nomadnetwork|lxmf):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i;
+  /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|cid|xmpp|nomadnetwork|lxmf):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i;
 
 function escapeHtmlForFallback(text) {
   if (text == null) return "";

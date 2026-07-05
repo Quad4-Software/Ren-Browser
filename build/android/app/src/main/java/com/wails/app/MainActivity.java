@@ -469,6 +469,22 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
+    /** Sanitize a content-provider display name for writing under a cache directory. */
+    private static String safePickerFileName(String raw) {
+        if (raw == null || raw.trim().isEmpty()) {
+            return "document";
+        }
+        String base = new File(raw).getName();
+        if (base.isEmpty() || ".".equals(base) || "..".equals(base)) {
+            return "document";
+        }
+        base = base.replace('/', '_').replace('\\', '_');
+        if (base.isEmpty() || ".".equals(base) || "..".equals(base)) {
+            return "document";
+        }
+        return base;
+    }
+
     /**
      * Copy a content URI into the app cache and return its filesystem path.
      */
@@ -479,7 +495,7 @@ public class MainActivity extends AppCompatActivity {
             if (cursor != null && cursor.moveToFirst()) {
                 int idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
                 if (idx >= 0 && cursor.getString(idx) != null) {
-                    name = new File(cursor.getString(idx)).getName();
+                    name = safePickerFileName(cursor.getString(idx));
                 }
             }
         } catch (Exception ignored) {
@@ -491,6 +507,11 @@ public class MainActivity extends AppCompatActivity {
                 return null;
             }
             File out = new File(dir, name);
+            String canonicalDir = dir.getCanonicalPath();
+            String canonicalOut = out.getCanonicalPath();
+            if (!canonicalOut.startsWith(canonicalDir + File.separator)) {
+                return null;
+            }
             try (InputStream in = getContentResolver().openInputStream(uri);
                  OutputStream os = new FileOutputStream(out)) {
                 if (in == null) {

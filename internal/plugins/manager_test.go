@@ -38,6 +38,42 @@ func TestInstallFromZip(t *testing.T) {
 	}
 }
 
+func TestInstallFromZipRejectsPathTraversal(t *testing.T) {
+	tmp := t.TempDir()
+	dbPath := filepath.Join(tmp, "test.db")
+	database, err := db.Open(dbPath)
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	t.Cleanup(func() { _ = database.Close() })
+
+	zipPath := filepath.Join(tmp, "evil.renplugin.zip")
+	f, err := os.Create(zipPath)
+	if err != nil {
+		t.Fatalf("create zip: %v", err)
+	}
+	w := zip.NewWriter(f)
+	entry, err := w.Create("../renbrowser.plugin.json")
+	if err != nil {
+		t.Fatalf("create entry: %v", err)
+	}
+	if _, err := entry.Write([]byte(`{"id":"evil"}`)); err != nil {
+		t.Fatalf("write entry: %v", err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("close writer: %v", err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatalf("close zip: %v", err)
+	}
+
+	manager := plugins.NewManager(database)
+	manager.SetPluginsDirForTest(filepath.Join(tmp, "plugins"))
+	if _, err := manager.InstallFromZip(zipPath); err == nil {
+		t.Fatal("expected path traversal zip to be rejected")
+	}
+}
+
 func packHelloZip(dest string) error {
 	f, err := os.Create(dest)
 	if err != nil {

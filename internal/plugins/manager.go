@@ -269,11 +269,14 @@ func (m *Manager) InstallFromZip(zipPath string) (InstalledPlugin, error) {
 		if total > maxZipUncompressed {
 			return InstalledPlugin{}, fmt.Errorf("zip uncompressed size too large")
 		}
-		clean := filepath.Clean(f.Name)
-		if strings.HasPrefix(clean, "..") || filepath.IsAbs(clean) {
-			return InstalledPlugin{}, fmt.Errorf("zip path traversal: %s", f.Name)
+		clean := filepath.Clean(strings.ReplaceAll(f.Name, `\`, "/"))
+		if clean == "" || clean == "." {
+			continue
 		}
-		dest := filepath.Join(tmpDir, clean)
+		dest, err := safeZipJoin(tmpDir, clean)
+		if err != nil {
+			return InstalledPlugin{}, err
+		}
 		if f.FileInfo().IsDir() {
 			if err := os.MkdirAll(dest, 0o750); err != nil {
 				return InstalledPlugin{}, err
@@ -416,6 +419,23 @@ func (m *Manager) EmitEvent(pluginID, event string, data any) {
 	if app != nil {
 		app.Event.Emit("plugin:"+pluginID+":"+event, data)
 	}
+}
+
+func safeZipJoin(root, name string) (string, error) {
+	rootClean := filepath.Clean(root)
+	clean := filepath.Clean(strings.ReplaceAll(name, `\`, "/"))
+	if clean == "" || clean == "." {
+		return rootClean, nil
+	}
+	if filepath.IsAbs(clean) || strings.HasPrefix(clean, "..") {
+		return "", fmt.Errorf("zip path traversal: %s", name)
+	}
+	target := filepath.Join(rootClean, clean)
+	rel, err := filepath.Rel(rootClean, target)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return "", fmt.Errorf("zip path traversal: %s", name)
+	}
+	return target, nil
 }
 
 func extractZipFile(f *zip.File, dest string) error {
