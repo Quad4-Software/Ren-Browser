@@ -43,7 +43,7 @@ jobs:
       tag: ${{ steps.meta.outputs.tag }}
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: RenBrowser
           fetch-depth: 0
@@ -104,7 +104,7 @@ jobs:
             runner: ubuntu-24.04-arm
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: RenBrowser
 
@@ -134,7 +134,7 @@ jobs:
           cp bin/renbrowser "dist/release/renbrowser-linux-${{ matrix.arch }}"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: linux-${{ matrix.arch }}
           path: RenBrowser/dist/release/*
@@ -146,7 +146,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: RenBrowser
 
@@ -163,7 +163,7 @@ jobs:
           Copy-Item bin/renbrowser.exe dist/release/renbrowser-windows-amd64.exe
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: windows-amd64
           path: RenBrowser/dist/release/*
@@ -175,7 +175,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: RenBrowser
 
@@ -195,7 +195,7 @@ jobs:
           ditto -c -k --sequesterRsrc --keepParent "bin/renbrowser.app" "dist/release/renbrowser-macos-universal.zip"
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: macos-universal
           path: RenBrowser/dist/release/*
@@ -207,7 +207,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: RenBrowser
 
@@ -224,7 +224,7 @@ jobs:
           cp bin/renbrowser-server dist/release/renbrowser-server-linux-amd64
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: server-linux-amd64
           path: RenBrowser/dist/release/*
@@ -241,13 +241,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           path: RenBrowser
           fetch-depth: 0
 
       - name: Download artifacts
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           path: artifacts
           merge-multiple: true
@@ -284,7 +284,7 @@ jobs:
           EOF
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b
         with:
           tag_name: ${{ needs.version.outputs.tag }}
           name: Ren Browser ${{ needs.version.outputs.version }}
