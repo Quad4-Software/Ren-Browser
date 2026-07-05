@@ -276,7 +276,7 @@ jobs:
           EOF
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b
         with:
           tag_name: ${{ needs.version.outputs.tag }}
           name: Ren Browser ${{ needs.version.outputs.version }}
