@@ -37,7 +37,7 @@ jobs:
           - macos-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           path: RenBrowser
 
@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           path: RenBrowser
 
@@ -86,7 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           path: RenBrowser
 
@@ -103,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           path: RenBrowser
 
@@ -116,7 +116,7 @@ jobs:
         run: task build:server
 
       - name: Upload server binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: renbrowser-server-linux-amd64
           path: RenBrowser/bin/renbrowser-server
@@ -128,7 +128,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           path: RenBrowser
 
@@ -141,7 +141,7 @@ jobs:
         run: task linux:build
 
       - name: Upload Linux binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: renbrowser-linux-amd64
           path: RenBrowser/bin/renbrowser

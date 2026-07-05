@@ -30,26 +30,26 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Setup pnpm
+      uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+      with:
+        version: ${{ inputs.pnpm-version }}
+
     - name: Setup Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff
       with:
         go-version: ${{ inputs.go-version }}
         cache-dependency-path: RenBrowser/go.sum
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
       with:
         node-version: "22"
         cache: pnpm
         cache-dependency-path: RenBrowser/frontend/pnpm-lock.yaml
 
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: ${{ inputs.pnpm-version }}
-
     - name: Setup Task
-      uses: arduino/setup-task@v2
+      uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611
       with:
         version: ${{ inputs.task-version }}
 
