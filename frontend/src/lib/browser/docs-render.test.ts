@@ -21,7 +21,9 @@ describe("docs URL helpers", () => {
   });
 
   it("rewrites internal markdown links", () => {
-    expect(rewriteDocsHref("getting-started.md", "en", "")).toBe("docs:?lang=en&page=getting-started");
+    expect(rewriteDocsHref("getting-started.md", "en", "")).toBe(
+      "docs:?lang=en&page=getting-started",
+    );
     expect(rewriteDocsHref("#section", "en", "faq")).toBe("docs:?lang=en&page=faq#section");
     expect(rewriteDocsHref("https://example.com", "en", "")).toBe("https://example.com");
   });

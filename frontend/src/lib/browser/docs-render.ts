@@ -145,9 +145,7 @@ export function renderDocsMarkdown(markdown: string, lang: string, currentPage: 
     if (!isAllowedDocsHref(target)) {
       return text;
     }
-    const escapedHref = target
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;");
+    const escapedHref = target.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
     return `<a href="${escapedHref}"${titleAttr}>${text}</a>`;
   };
 
