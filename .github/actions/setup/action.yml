@@ -1,0 +1,70 @@
+name: Setup Ren Browser
+description: Install Go, Node, Task, and optional Linux desktop build dependencies
+
+inputs:
+  install-linux-deps:
+    description: Install GTK/WebKit packages for Linux desktop builds
+    required: false
+    default: "false"
+  install-wails:
+    description: Install the wails3 CLI
+    required: false
+    default: "true"
+  go-version:
+    description: Go toolchain version
+    required: false
+    default: "1.26.4"
+  pnpm-version:
+    description: pnpm version
+    required: false
+    default: "11.3.0"
+  task-version:
+    description: Task version
+    required: false
+    default: "3.49.1"
+  wails-version:
+    description: wails3 module version tag
+    required: false
+    default: "v3.0.0-alpha2.111"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+        cache-dependency-path: RenBrowser/go.sum
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+        cache: pnpm
+        cache-dependency-path: RenBrowser/frontend/pnpm-lock.yaml
+
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: ${{ inputs.pnpm-version }}
+
+    - name: Setup Task
+      uses: arduino/setup-task@v2
+      with:
+        version: ${{ inputs.task-version }}
+
+    - name: Install wails3
+      if: inputs.install-wails == 'true'
+      shell: bash
+      run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{ inputs.wails-version }}
+
+    - name: Install Linux desktop dependencies
+      if: inputs.install-linux-deps == 'true'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          pkg-config gcc libc6-dev \
+          libgtk-4-dev libwebkitgtk-6.0-dev \
+          libgtk-3-dev libwebkit2gtk-4.1-dev \
+          curl rsvg-convert

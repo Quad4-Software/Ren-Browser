@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Ren Browser
+Comment=Reticulum browser for NomadNet pages
+Exec=renbrowser
+Icon=renbrowser-256
+Terminal=false
+Categories=Network;Utility;
+StartupWMClass=renbrowser

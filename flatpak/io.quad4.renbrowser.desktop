@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Ren Browser
+Comment=Reticulum browser for NomadNet pages
+Exec=renbrowser
+Icon=io.quad4.renbrowser
+Terminal=false
+Categories=Network;Utility;

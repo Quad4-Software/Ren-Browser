@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Ren Browser">
+  <rect width="128" height="128" rx="28" fill="rgb(9 9 11)"/>
+  <g fill="rgb(96 165 250)">
+    <rect x="32" y="24" width="8" height="8"/>
+    <rect x="40" y="24" width="8" height="8"/>
+    <rect x="48" y="24" width="8" height="8"/>
+    <rect x="56" y="24" width="8" height="8"/>
+    <rect x="64" y="24" width="8" height="8"/>
+    <rect x="72" y="24" width="8" height="8"/>
+    <rect x="80" y="24" width="8" height="8"/>
+    <rect x="32" y="32" width="8" height="8"/>
+    <rect x="40" y="32" width="8" height="8"/>
+    <rect x="80" y="32" width="8" height="8"/>
+    <rect x="88" y="32" width="8" height="8"/>
+    <rect x="32" y="40" width="8" height="8"/>
+    <rect x="40" y="40" width="8" height="8"/>
+    <rect x="80" y="40" width="8" height="8"/>
+    <rect x="88" y="40" width="8" height="8"/>
+    <rect x="32" y="48" width="8" height="8"/>
+    <rect x="40" y="48" width="8" height="8"/>
+    <rect x="80" y="48" width="8" height="8"/>
+    <rect x="88" y="48" width="8" height="8"/>
+    <rect x="32" y="56" width="8" height="8"/>
+    <rect x="40" y="56" width="8" height="8"/>
+    <rect x="48" y="56" width="8" height="8"/>
+    <rect x="56" y="56" width="8" height="8"/>
+    <rect x="64" y="56" width="8" height="8"/>
+    <rect x="72" y="56" width="8" height="8"/>
+    <rect x="80" y="56" width="8" height="8"/>
+    <rect x="32" y="64" width="8" height="8"/>
+    <rect x="40" y="64" width="8" height="8"/>
+    <rect x="56" y="64" width="8" height="8"/>
+    <rect x="64" y="64" width="8" height="8"/>
+    <rect x="32" y="72" width="8" height="8"/>
+    <rect x="40" y="72" width="8" height="8"/>
+    <rect x="64" y="72" width="8" height="8"/>
+    <rect x="72" y="72" width="8" height="8"/>
+    <rect x="32" y="80" width="8" height="8"/>
+    <rect x="40" y="80" width="8" height="8"/>
+    <rect x="72" y="80" width="8" height="8"/>
+    <rect x="80" y="80" width="8" height="8"/>
+    <rect x="32" y="88" width="8" height="8"/>
+    <rect x="40" y="88" width="8" height="8"/>
+    <rect x="80" y="88" width="8" height="8"/>
+    <rect x="88" y="88" width="8" height="8"/>
+    <rect x="32" y="96" width="8" height="8"/>
+    <rect x="40" y="96" width="8" height="8"/>
+    <rect x="88" y="96" width="8" height="8"/>
+    <rect x="96" y="96" width="8" height="8"/>
+  </g>
+</svg>

@@ -1,0 +1,48 @@
+.git
+.github
+.task
+
+# Build artifacts
+bin/
+*.exe
+/renbrowser
+*.apk
+*.AppImage
+
+# Frontend dev trees (dist is produced before image build)
+frontend/node_modules
+frontend/.svelte-kit
+node_modules/
+
+# Fetched at image build via fetch-micron-wasm.mjs / prebuild
+frontend/public/vendor/micron-parser-go/
+
+# Packaging and mobile trees not needed for server image
+build/linux/
+build/windows/
+build/darwin/
+build/ios/
+build/android/
+build/flatpak/
+.flatpak-builder
+build/tools/
+build/packaging/
+
+# Tests and local tooling
+coverage.out
+coverage.html
+*.test
+
+# Editor / env
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+.env
+.env.*
+
+# Docs / notes
+TODO.md
+CHANGELOG.md

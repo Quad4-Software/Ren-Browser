@@ -1,0 +1,15 @@
+{
+	"fixed": {
+		"file_version": "0.1.0"
+	},
+	"info": {
+		"0000": {
+			"ProductVersion": "0.1.0",
+			"CompanyName": "Quad4",
+			"FileDescription": "Reticulum browser for NomadNet pages",
+			"LegalCopyright": "(c) 2026 Quad4",
+			"ProductName": "Ren Browser",
+			"Comments": "Micron-first mesh browser for NomadNet"
+		}
+	}
+}

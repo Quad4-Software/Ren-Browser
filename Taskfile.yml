@@ -1,0 +1,265 @@
+version: '3'
+
+vars:
+  APP_NAME: "renbrowser"
+  BIN_DIR: "bin"
+  PACKAGE_MANAGER: '{{.PACKAGE_MANAGER | default "pnpm"}}'
+  VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
+  GOOS: '{{.GOOS | default OS}}'
+  RETICULUM_GO: '{{.RETICULUM_GO | default "../Reticulum/Reticulum-Go"}}'
+  GIT_COMMIT:
+    sh: git rev-parse --short HEAD 2>/dev/null || echo dev
+
+includes:
+  common: ./build/Taskfile.yml
+  windows: ./build/windows/Taskfile.yml
+  darwin: ./build/darwin/Taskfile.yml
+  linux: ./build/linux/Taskfile.yml
+  ios: ./build/ios/Taskfile.yml
+  android: ./build/android/Taskfile.yml
+
+tasks:
+  default:
+    cmds:
+      - task: check
+
+  check:
+    desc: Run Go and frontend quality gates
+    deps:
+      - fmt:go
+      - test:go
+      - gosec
+      - frontend:check
+
+  fmt:go:
+    desc: Format Go sources
+    cmds:
+      - gofmt -w .
+    env:
+      GOFLAGS: "-mod=mod"
+
+  gosec:
+    desc: Run gosec security scanner
+    cmds:
+      - go run github.com/securego/gosec/v2/cmd/gosec@latest -exclude-generated -fmt=text -exclude-dir=node_modules -exclude-dir=frontend -exclude-dir=build/android -exclude-dir=build/ios -exclude-dir=third_party ./...
+    env:
+      GOFLAGS: "-mod=mod"
+
+  test:
+    desc: Run all tests
+    deps:
+      - test:go
+      - frontend:test
+
+  test:go:
+    desc: Run Go unit tests
+    cmds:
+      - bash build/scripts/patch-reticulum-txbytes.sh
+      - go test ./...
+    env:
+      GOFLAGS: "-mod=mod"
+
+  test:go:race:
+    desc: Run Go tests with race detector
+    cmds:
+      - go test -race ./...
+    env:
+      GOFLAGS: "-mod=mod"
+
+  test:go:stress:
+    desc: Concurrent stress tests with race detector (deadlock/race checks)
+    cmds:
+      - go test -race -tags=stress -timeout=5m ./internal/store/... ./internal/db/...
+    env:
+      GOFLAGS: "-mod=mod"
+
+  test:go:leak:
+    desc: Goroutine leak checks via goleak
+    cmds:
+      - go test -tags=leak ./internal/store/... ./internal/db/...
+    env:
+      GOFLAGS: "-mod=mod"
+
+  fuzz:go:
+    desc: Run Go fuzz tests
+    cmds:
+      - go test -fuzz=Fuzz -fuzztime=30s ./internal/nomadnet/...
+      - go test -fuzz=Fuzz -fuzztime=30s ./internal/micron/...
+    env:
+      GOFLAGS: "-mod=mod"
+
+  test:go:hard:
+    desc: Race, leak, stress, and fuzz checks
+    deps:
+      - test:go:race
+      - test:go:leak
+      - test:go:stress
+      - fuzz:go
+
+  test:interop:
+    desc: Live Reticulum interop tests (requires network)
+    cmds:
+      - go test -tags=interop -timeout=5m ./internal/interop/...
+    env:
+      GOFLAGS: "-mod=mod"
+
+  frontend:check:
+    desc: Typecheck, lint, format check, knip, and unit tests
+    deps:
+      - common:install:frontend:deps
+    cmds:
+      - task: common:frontend:run
+        vars: { SCRIPT: check }
+      - task: common:frontend:run
+        vars: { SCRIPT: lint }
+      - task: common:frontend:run
+        vars: { SCRIPT: format:check }
+      - task: common:frontend:run
+        vars: { SCRIPT: knip }
+      - task: common:frontend:run
+        vars: { SCRIPT: audit }
+      - task: common:frontend:run
+        vars: { SCRIPT: test }
+
+  frontend:test:
+    deps:
+      - common:install:frontend:deps
+    cmds:
+      - task: common:frontend:run
+        vars: { SCRIPT: test }
+
+  frontend:fmt:
+    cmds:
+      - task: common:frontend:run
+        vars: { SCRIPT: format }
+
+  mod:tidy:
+    desc: Refresh go.mod and go.sum
+    cmds:
+      - go mod tidy
+    env:
+      GOFLAGS: "-mod=mod"
+
+  build:
+    summary: Builds the application
+    timeout: 20m
+    cmds:
+      - task: "{{.GOOS}}:build"
+
+  package:
+    summary: Packages a production build of the application
+    cmds:
+      - task: "{{.GOOS}}:package"
+
+  package:windows:
+    desc: Package Ren Browser for Windows (NSIS installer)
+    cmds:
+      - task: windows:package
+
+  package:darwin:
+    desc: Package Ren Browser for macOS (.app bundle)
+    cmds:
+      - task: darwin:package
+
+  package:darwin:universal:
+    desc: Package universal macOS binary
+    cmds:
+      - task: darwin:package:universal
+
+  package:linux:appimage:
+    desc: Build a fuse3-compatible AppImage
+    cmds:
+      - task: linux:create:appimage
+
+  package:linux:flatpak:install:
+    desc: Build and install the Flatpak locally
+    cmds:
+      - task: linux:flatpak:install
+
+  package:linux:flatpak:bundle:
+    desc: Build a single-file Flatpak bundle
+    cmds:
+      - task: linux:flatpak:bundle
+
+  build:windows:
+    desc: Cross-compile for Windows
+    cmds:
+      - task: windows:build
+
+  build:darwin:
+    desc: Build for macOS
+    cmds:
+      - task: darwin:build
+
+  build:android:
+    desc: Build debug APK for Android (arm64 for physical devices)
+    cmds:
+      - task: android:build
+        vars:
+          ARCH: arm64
+      - task: android:assemble:apk
+
+  build:android:emu:
+    desc: Build debug APK for the Android emulator (host ABI)
+    cmds:
+      - task: android:build
+      - task: android:assemble:apk
+
+  package:android:
+    desc: Package production APK for Android (arm64 + x86_64)
+    cmds:
+      - task: android:package:fat
+
+  run:android:
+    desc: Build, install, and launch on Android emulator
+    cmds:
+      - task: android:run
+
+  run:
+    summary: Runs the application
+    cmds:
+      - task: "{{.GOOS}}:run"
+
+  dev:
+    summary: Runs the application in development mode
+    cmds:
+      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
+
+  run:assets-dir:
+    desc: Run using frontend assets from a directory
+    cmds:
+      - go run . --assets-dir {{.ASSETS_DIR | default "frontend/dist"}}
+    env:
+      GOFLAGS: "-mod=mod"
+
+  run:assets-zip:
+    desc: Run using frontend assets from a zip archive
+    cmds:
+      - go run . --assets-zip {{.ASSETS_ZIP}}
+    env:
+      GOFLAGS: "-mod=mod"
+
+  setup:docker:
+    summary: Builds Docker image for cross-compilation (~800MB download)
+    cmds:
+      - task: common:setup:docker
+
+  build:server:
+    summary: Builds the application in server mode (no GUI, HTTP server only)
+    cmds:
+      - task: common:build:server
+
+  run:server:
+    summary: Runs the application in server mode
+    cmds:
+      - task: common:run:server
+
+  build:docker:
+    summary: Builds a Docker image for server mode deployment
+    cmds:
+      - task: common:build:docker
+
+  run:docker:
+    summary: Builds and runs the Docker image
+    cmds:
+      - task: common:run:docker

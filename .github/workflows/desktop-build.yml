@@ -1,0 +1,297 @@
+name: Desktop build
+
+on:
+  workflow_call:
+    inputs:
+      channel:
+        description: Release channel (nightly, beta, release)
+        required: true
+        type: string
+      prerelease:
+        description: Mark the GitHub release as a prerelease
+        required: true
+        type: boolean
+      tag:
+        description: Git tag to create or update (empty = compute)
+        required: false
+        type: string
+        default: ""
+    outputs:
+      version:
+        description: Resolved release version
+        value: ${{ jobs.version.outputs.version }}
+      tag:
+        description: Resolved release tag
+        value: ${{ jobs.version.outputs.tag }}
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    working-directory: RenBrowser
+
+env:
+  GOFLAGS: -mod=mod
+
+jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@v4
+        with:
+          path: RenBrowser
+          fetch-depth: 0
+
+      - name: Resolve version
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$(sed -n 's/^  version: "\(.*\)".*/\1/p' RenBrowser/build/config.yml)"
+          sha="$(git -C RenBrowser rev-parse --short HEAD)"
+          date="$(date -u +%Y.%m.%d)"
+          channel="${{ inputs.channel }}"
+          tag="${{ inputs.tag }}"
+
+          if [ -z "$tag" ]; then
+            case "$channel" in
+              nightly)
+                tag="nightly-${date}"
+                version="${base}-nightly.${date}+${sha}"
+                ;;
+              beta)
+                tag="v${base}-beta.${date}.${sha}"
+                version="${base}-beta.${date}+${sha}"
+                ;;
+              release)
+                if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+                  tag="${GITHUB_REF#refs/tags/}"
+                  version="${tag#v}"
+                else
+                  echo "Release channel requires a v* tag push or an explicit tag input." >&2
+                  exit 1
+                fi
+                ;;
+              *)
+                echo "Unknown channel: $channel" >&2
+                exit 1
+                ;;
+            esac
+          else
+            version="${tag#v}"
+          fi
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+  build-linux:
+    name: Linux (${{ matrix.arch }})
+    needs: version
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@v4
+        with:
+          path: RenBrowser
+
+      - name: Setup dependencies
+        uses: ./RenBrowser/.github/actions/setup
+        with:
+          install-linux-deps: "true"
+
+      - name: Build
+        run: task linux:build ARCH=${{ matrix.arch }}
+
+      - name: Package AppImage
+        run: task linux:create:appimage ARCH=${{ matrix.arch }}
+
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          pkg_version="$(sed -n 's/^  version: "\(.*\)".*/\1/p' build/config.yml)"
+          case "${{ matrix.arch }}" in
+            amd64) img_arch=x86_64 ;;
+            arm64) img_arch=aarch64 ;;
+            *) echo "Unknown arch: ${{ matrix.arch }}" >&2; exit 1 ;;
+          esac
+          mkdir -p dist/release
+          cp "bin/renbrowser-${pkg_version}-${img_arch}.AppImage" "dist/release/renbrowser-linux-${{ matrix.arch }}.AppImage"
+          cp bin/renbrowser "dist/release/renbrowser-linux-${{ matrix.arch }}"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: RenBrowser/dist/release/*
+          if-no-files-found: error
+
+  build-windows:
+    name: Windows (amd64)
+    needs: version
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@v4
+        with:
+          path: RenBrowser
+
+      - name: Setup dependencies
+        uses: ./RenBrowser/.github/actions/setup
+
+      - name: Build
+        run: task windows:build ARCH=amd64
+
+      - name: Stage artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/release | Out-Null
+          Copy-Item bin/renbrowser.exe dist/release/renbrowser-windows-amd64.exe
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-amd64
+          path: RenBrowser/dist/release/*
+          if-no-files-found: error
+
+  build-macos:
+    name: macOS (universal)
+    needs: version
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@v4
+        with:
+          path: RenBrowser
+
+      - name: Setup dependencies
+        uses: ./RenBrowser/.github/actions/setup
+        with:
+          install-linux-deps: "false"
+
+      - name: Build universal app bundle
+        run: task darwin:package:universal
+
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release
+          ditto -c -k --sequesterRsrc --keepParent "bin/renbrowser.app" "dist/release/renbrowser-macos-universal.zip"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-universal
+          path: RenBrowser/dist/release/*
+          if-no-files-found: error
+
+  build-server:
+    name: Server (linux amd64)
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@v4
+        with:
+          path: RenBrowser
+
+      - name: Setup dependencies
+        uses: ./RenBrowser/.github/actions/setup
+
+      - name: Build server
+        run: task build:server
+
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          mkdir -p dist/release
+          cp bin/renbrowser-server dist/release/renbrowser-server-linux-amd64
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-linux-amd64
+          path: RenBrowser/dist/release/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    needs:
+      - version
+      - build-linux
+      - build-windows
+      - build-macos
+      - build-server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@v4
+        with:
+          path: RenBrowser
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          find artifacts -type f -exec cp {} release/ \;
+          cd release
+          sha256sum * > SHA256SUMS.txt
+
+      - name: Release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ needs.version.outputs.version }}"
+          tag="${{ needs.version.outputs.tag }}"
+          channel="${{ inputs.channel }}"
+          cat > release-notes.md <<EOF
+          ## Ren Browser ${version}
+
+          Channel: **${channel}**
+          Commit: \`${{ github.sha }}\`
+
+          ### Assets
+          - Linux amd64/arm64 AppImage and binary
+          - Windows amd64 portable executable
+          - macOS universal .app (zip)
+          - Headless server binary (linux amd64)
+
+          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${tag}/CHANGELOG.md) for details.
+          EOF
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version.outputs.tag }}
+          name: Ren Browser ${{ needs.version.outputs.version }}
+          body_path: release-notes.md
+          prerelease: ${{ inputs.prerelease }}
+          make_latest: ${{ inputs.channel == 'release' }}
+          files: |
+            release/*
+            release/SHA256SUMS.txt
+          generate_release_notes: ${{ inputs.channel == 'release' }}

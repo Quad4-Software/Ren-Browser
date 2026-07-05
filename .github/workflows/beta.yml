@@ -1,0 +1,25 @@
+name: Beta
+
+on:
+  push:
+    branches:
+      - beta
+    tags:
+      - "v*-beta*"
+      - "v*-rc*"
+  workflow_dispatch:
+
+concurrency:
+  group: beta-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/desktop-build.yml
+    with:
+      channel: beta
+      prerelease: true
+      tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}

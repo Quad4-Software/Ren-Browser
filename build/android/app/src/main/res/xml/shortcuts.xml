@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="open_browser"
+        android:shortcutLongLabel="@string/shortcut_open_browser_long"
+        android:shortcutShortLabel="@string/shortcut_open_browser">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetClass="com.wails.app.MainActivity"
+            android:targetPackage="io.quad4.renbrowser" />
+    </shortcut>
+</shortcuts>

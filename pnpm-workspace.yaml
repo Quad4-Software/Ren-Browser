@@ -1,0 +1,8 @@
+packages:
+  - frontend
+
+pnpm:
+  minimumReleaseAge: 1440
+  trustPolicy: no-downgrade
+  trustPolicyIgnoreAfter: 525600
+  blockExoticSubdeps: true

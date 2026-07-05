@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ren Browser</string>
+    <string name="app_description">Reticulum browser for NomadNet pages</string>
+    <string name="notification_channel_name">Background work</string>
+    <string name="notification_channel_description">Keeps Ren Browser running while syncing mesh data</string>
+    <string name="notification_default_title">Ren Browser</string>
+    <string name="notification_default_text">Running in the background</string>
+    <string name="shortcut_open_browser">Open browser</string>
+    <string name="shortcut_open_browser_long">Open Ren Browser</string>
+</resources>

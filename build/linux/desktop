@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Ren Browser
+Comment=Reticulum browser for NomadNet pages
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/renbrowser %u
+Terminal=false
+Type=Application
+Icon=renbrowser
+Categories=Utility;
+StartupWMClass=renbrowser
+
+ 

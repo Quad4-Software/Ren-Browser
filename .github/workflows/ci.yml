@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - beta
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: RenBrowser
+
+env:
+  GOFLAGS: -mod=mod
+
+jobs:
+  go:
+    name: Go (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@v4
+        with:
+          path: RenBrowser
+
+      - name: Setup dependencies
+        uses: ./RenBrowser/.github/actions/setup
+        with:
+          install-wails: "false"
+
+      - name: gofmt check
+        shell: bash
+        run: |
+          set -euo pipefail
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "Unformatted Go files:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Go tests
+        run: task test:go
+
+      - name: Go race tests
+        if: matrix.os == 'ubuntu-latest'
+        run: task test:go:race
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@v4
+        with:
+          path: RenBrowser
+
+      - name: Setup dependencies
+        uses: ./RenBrowser/.github/actions/setup
+        with:
+          install-wails: "false"
+
+      - name: Frontend quality gates
+        run: task frontend:check
+
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@v4
+        with:
+          path: RenBrowser
+
+      - name: Setup dependencies
+        uses: ./RenBrowser/.github/actions/setup
+        with:
+          install-wails: "false"
+
+      - name: gosec
+        run: task gosec
+
+  server:
+    name: Server build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@v4
+        with:
+          path: RenBrowser
+
+      - name: Setup dependencies
+        uses: ./RenBrowser/.github/actions/setup
+        with:
+          install-wails: "true"
+
+      - name: Build headless server
+        run: task build:server
+
+      - name: Upload server binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: renbrowser-server-linux-amd64
+          path: RenBrowser/bin/renbrowser-server
+          if-no-files-found: error
+          retention-days: 7
+
+  linux-desktop:
+    name: Linux desktop build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@v4
+        with:
+          path: RenBrowser
+
+      - name: Setup dependencies
+        uses: ./RenBrowser/.github/actions/setup
+        with:
+          install-linux-deps: "true"
+
+      - name: Build Linux binary
+        run: task linux:build
+
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: renbrowser-linux-amd64
+          path: RenBrowser/bin/renbrowser
+          if-no-files-found: error
+          retention-days: 7

@@ -1,0 +1,52 @@
+{
+  "name": "renbrowser-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@11.3.0",
+  "scripts": {
+    "dev": "vite",
+    "prebuild": "node ../build/scripts/fetch-micron-wasm.mjs",
+    "postinstall": "node ../build/scripts/ensure-micron-parser-package.js",
+    "build:dev": "vite build --minify false --mode development",
+    "build": "vite build --mode production",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "lint": "eslint src",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "knip": "knip",
+    "audit": "pnpm audit --audit-level=moderate",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts"
+  },
+  "dependencies": {
+    "@lucide/svelte": "^0.511.0",
+    "@wailsio/runtime": "latest",
+    "dompurify": "^3.4.11",
+    "marked": "^15.0.12",
+    "micron-parser": "github:RFnexus/micron-parser-js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.28.0",
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@tailwindcss/vite": "^4.1.8",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/dompurify": "^3.2.0",
+    "@types/node": "^22.15.29",
+    "eslint": "^9.28.0",
+    "eslint-plugin-svelte": "^3.9.0",
+    "globals": "^16.2.0",
+    "knip": "^5.60.0",
+    "prettier": "^3.5.3",
+    "prettier-plugin-svelte": "^3.4.0",
+    "svelte": "^5.46.4",
+    "svelte-check": "^4.4.8",
+    "tailwindcss": "^4.1.8",
+    "tslib": "^2.8.1",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.1",
+    "vite": "^8.0.5",
+    "vitest": "^3.2.1"
+  }
+}

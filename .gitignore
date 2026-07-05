@@ -1,0 +1,58 @@
+# Task
+.task
+
+# Build output
+bin/
+*.exe
+/renbrowser
+*.apk
+*.AppImage
+
+# Frontend
+frontend/dist
+frontend/node_modules
+frontend/.svelte-kit
+frontend/public/vendor/micron-parser-go/
+
+# Root workspace (pnpm hoists tooling here)
+node_modules/
+
+# Linux packaging
+build/linux/appimage/build
+build/linux/appimage/AppDir
+build/flatpak/
+.flatpak-builder
+build/tools/
+build/packaging/
+
+# Windows packaging
+build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+
+# Mobile generated (per-machine; overlays hold absolute paths)
+build/ios/xcode/overlay.json
+build/ios/xcode/gen/
+build/ios/DerivedData
+build/android/overlay.json
+build/android/gen/
+build/android/.gradle
+build/android/app/build
+
+# Go
+coverage.out
+coverage.html
+*.test
+third_party/reticulum-go/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*~
+
+# Env
+.env
+.env.*
