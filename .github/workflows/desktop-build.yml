@@ -33,10 +33,6 @@ on:
 permissions:
   contents: write
 
-defaults:
-  run:
-    working-directory: RenBrowser
-
 env:
   GOFLAGS: -mod=vendor
 
@@ -51,7 +47,6 @@ jobs:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
-          path: RenBrowser
           fetch-depth: 0
 
       - name: Resolve version
@@ -59,8 +54,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base="$(sed -n 's/^  version: "\(.*\)".*/\1/p' RenBrowser/build/config.yml)"
-          sha="$(git -C RenBrowser rev-parse --short HEAD)"
+          base="$(sed -n 's/^  version: "\(.*\)".*/\1/p' build/config.yml)"
+          sha="$(git rev-parse --short HEAD)"
           date="$(date -u +%Y.%m.%d)"
           channel="${{ inputs.channel }}"
           tag="${{ inputs.tag }}"
@@ -111,11 +106,9 @@ jobs:
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-        with:
-          path: RenBrowser
 
       - name: Setup dependencies
-        uses: ./RenBrowser/.github/actions/setup
+        uses: ./.github/actions/setup
         with:
           install-linux-deps: "true"
 
@@ -143,7 +136,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: linux-${{ matrix.arch }}
-          path: RenBrowser/dist/release/*
+          path: dist/release/*
           if-no-files-found: error
 
   build-windows:
@@ -153,11 +146,9 @@ jobs:
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-        with:
-          path: RenBrowser
 
       - name: Setup dependencies
-        uses: ./RenBrowser/.github/actions/setup
+        uses: ./.github/actions/setup
 
       - name: Build
         run: task windows:build ARCH=amd64
@@ -172,7 +163,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: windows-amd64
-          path: RenBrowser/dist/release/*
+          path: dist/release/*
           if-no-files-found: error
 
   build-macos:
@@ -182,11 +173,9 @@ jobs:
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-        with:
-          path: RenBrowser
 
       - name: Setup dependencies
-        uses: ./RenBrowser/.github/actions/setup
+        uses: ./.github/actions/setup
         with:
           install-linux-deps: "false"
 
@@ -204,7 +193,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: macos-universal
-          path: RenBrowser/dist/release/*
+          path: dist/release/*
           if-no-files-found: error
 
   build-server:
@@ -214,11 +203,9 @@ jobs:
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-        with:
-          path: RenBrowser
 
       - name: Setup dependencies
-        uses: ./RenBrowser/.github/actions/setup
+        uses: ./.github/actions/setup
 
       - name: Build server
         run: task build:server
@@ -233,7 +220,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: server-linux-amd64
-          path: RenBrowser/dist/release/*
+          path: dist/release/*
           if-no-files-found: error
 
   publish:
@@ -249,7 +236,6 @@ jobs:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
-          path: RenBrowser
           fetch-depth: 0
 
       - name: Download artifacts

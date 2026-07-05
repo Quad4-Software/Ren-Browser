@@ -17,10 +17,6 @@ on:
   schedule:
     - cron: "19 20 * * 6"
 
-defaults:
-  run:
-    working-directory: RenBrowser
-
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
@@ -47,12 +43,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-        with:
-          path: RenBrowser
 
       - name: Setup dependencies
         if: matrix.language == 'go'
-        uses: ./RenBrowser/.github/actions/setup
+        uses: ./.github/actions/setup
         with:
           install-wails: "false"
           install-linux-deps: "true"

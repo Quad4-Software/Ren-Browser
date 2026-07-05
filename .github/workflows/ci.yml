@@ -22,10 +22,6 @@ concurrency:
 permissions:
   contents: read
 
-defaults:
-  run:
-    working-directory: RenBrowser
-
 env:
   GOFLAGS: -mod=vendor
 
@@ -43,11 +39,9 @@ jobs:
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-        with:
-          path: RenBrowser
 
       - name: Setup dependencies
-        uses: ./RenBrowser/.github/actions/setup
+        uses: ./.github/actions/setup
         with:
           install-wails: "false"
           install-linux-deps: ${{ matrix.os == 'ubuntu-latest' && 'true' || 'false' }}
@@ -88,11 +82,9 @@ jobs:
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-        with:
-          path: RenBrowser
 
       - name: Setup dependencies
-        uses: ./RenBrowser/.github/actions/setup
+        uses: ./.github/actions/setup
         with:
           install-wails: "false"
 
@@ -105,11 +97,9 @@ jobs:
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-        with:
-          path: RenBrowser
 
       - name: Setup dependencies
-        uses: ./RenBrowser/.github/actions/setup
+        uses: ./.github/actions/setup
         with:
           install-wails: "false"
           install-linux-deps: "true"
@@ -121,7 +111,7 @@ jobs:
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           scan-type: fs
-          scan-ref: RenBrowser
+          scan-ref: .
           severity: HIGH,CRITICAL
           exit-code: 1
           skip-dirs: frontend/node_modules,bin,build/android/.gradle,build/android/build,vendor,third_party
@@ -130,7 +120,7 @@ jobs:
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
         with:
           scan-type: config
-          scan-ref: RenBrowser
+          scan-ref: .
           severity: HIGH,CRITICAL
           exit-code: 1
           skip-files: build/docker/Dockerfile.cross
@@ -169,11 +159,9 @@ jobs:
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-        with:
-          path: RenBrowser
 
       - name: Setup dependencies
-        uses: ./RenBrowser/.github/actions/setup
+        uses: ./.github/actions/setup
         with:
           install-linux-deps: ${{ matrix.install_linux_deps }}
 
@@ -184,7 +172,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: ${{ matrix.artifact_name }}
-          path: RenBrowser/${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
           if-no-files-found: error
           retention-days: 7
 
