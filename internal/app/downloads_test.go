@@ -38,14 +38,7 @@ func TestIsTempDownloadDir(t *testing.T) {
 }
 
 func TestGetDownloadDirDefaultsAndPersists(t *testing.T) {
-	stack, err := rns.NewStack("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := NewBrowserService(stack, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc := newTestBrowserService(t)
 	dir := svc.GetDownloadDir()
 	if isTempDownloadDir(dir) {
 		t.Fatalf("default download dir must not be temp: %q", dir)
@@ -78,16 +71,19 @@ func TestListDownloads(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(dir) })
 
-	dbPath := filepath.Join(t.TempDir(), "profile.db")
+	root := t.TempDir()
+	dbPath := filepath.Join(root, "profile.db")
 
-	stack, err := rns.NewStack("")
+	stack, err := rns.NewStack(filepath.Join(root, "config"))
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = stack.Stop() })
 	svc, err := NewBrowserServiceWithOptions(stack, nil, ServiceOptions{ProfilePath: dbPath})
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() { _ = svc.Store().Close() })
 	svc.SetDownloadDir(dir)
 
 	if _, err := svc.SaveTextToDownloadDir("page.mu", "hello"); err != nil {

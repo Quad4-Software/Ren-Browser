@@ -11,8 +11,9 @@ import (
 func TestThemeDefaults(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "profile.db")
+	cfgPath := filepath.Join(dir, "config")
 
-	stack, err := rns.NewStack("")
+	stack, err := rns.NewStack(cfgPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,8 +34,9 @@ func TestThemeDefaults(t *testing.T) {
 func TestThemeSettingsPersist(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "profile.db")
+	cfgPath := filepath.Join(dir, "config")
 
-	stack, err := rns.NewStack("")
+	stack, err := rns.NewStack(cfgPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +55,7 @@ func TestThemeSettingsPersist(t *testing.T) {
 	}
 	svc.SetTheme(want)
 
-	stack2, err := rns.NewStack("")
+	stack2, err := rns.NewStack(cfgPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,8 +88,9 @@ func TestThemeSettingsPersist(t *testing.T) {
 func TestResetSettingsTheme(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "profile.db")
+	cfgPath := filepath.Join(dir, "config")
 
-	stack, err := rns.NewStack("")
+	stack, err := rns.NewStack(cfgPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,7 +108,7 @@ func TestResetSettingsTheme(t *testing.T) {
 		t.Fatalf("reset mode = %q", reset.Theme.Mode)
 	}
 
-	stack2, err := rns.NewStack("")
+	stack2, err := rns.NewStack(cfgPath)
 	if err != nil {
 		t.Fatal(err)
 	}

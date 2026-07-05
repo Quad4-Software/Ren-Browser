@@ -1,39 +1,20 @@
 // SPDX-License-Identifier: MIT
-package app
+package app_test
 
 import (
-	"path/filepath"
 	"testing"
-
-	"renbrowser/internal/rns"
 )
 
 func TestBrowserPrefsUILanguagePersist(t *testing.T) {
-	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "profile.db")
-
-	stack, err := rns.NewStack("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := NewBrowserServiceWithOptions(stack, nil, ServiceOptions{ProfilePath: dbPath})
-	if err != nil {
-		t.Fatal(err)
-	}
+	root := t.TempDir()
+	svc := newTestServiceIn(t, root)
 
 	want := svc.GetBrowserPrefs()
 	want.UILanguage = "de"
 	svc.SetBrowserPrefs(want)
+	_ = svc.Store().Close()
 
-	stack2, err := rns.NewStack("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	reloaded, err := NewBrowserServiceWithOptions(stack2, nil, ServiceOptions{ProfilePath: dbPath})
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	reloaded := newTestServiceIn(t, root)
 	got := reloaded.GetBrowserPrefs()
 	if got.UILanguage != "de" {
 		t.Fatalf("uiLanguage = %q, want de", got.UILanguage)
@@ -41,17 +22,7 @@ func TestBrowserPrefsUILanguagePersist(t *testing.T) {
 }
 
 func TestBrowserPrefsUILanguageDefaultsEmpty(t *testing.T) {
-	dir := t.TempDir()
-	dbPath := filepath.Join(dir, "profile.db")
-
-	stack, err := rns.NewStack("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := NewBrowserServiceWithOptions(stack, nil, ServiceOptions{ProfilePath: dbPath})
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc := newTestService(t)
 
 	got := svc.GetBrowserPrefs()
 	if got.UILanguage != "" {

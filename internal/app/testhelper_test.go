@@ -11,8 +11,12 @@ import (
 
 func newTestService(t *testing.T) *app.BrowserService {
 	t.Helper()
+	return newTestServiceIn(t, t.TempDir())
+}
 
-	root := t.TempDir()
+func newTestServiceIn(t *testing.T, root string) *app.BrowserService {
+	t.Helper()
+
 	stack, err := rns.NewStack(filepath.Join(root, "config"))
 	if err != nil {
 		t.Fatal(err)

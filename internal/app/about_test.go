@@ -5,18 +5,10 @@ import (
 	"testing"
 
 	"renbrowser/internal/app"
-	"renbrowser/internal/rns"
 )
 
 func TestEditorURL(t *testing.T) {
-	stack, err := rns.NewStack("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := app.NewBrowserService(stack, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc := newTestService(t)
 
 	page := svc.Navigate("editor")
 	if page.URL != "editor:" {
@@ -31,14 +23,7 @@ func TestEditorURL(t *testing.T) {
 }
 
 func TestConfigURL(t *testing.T) {
-	stack, err := rns.NewStack("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := app.NewBrowserService(stack, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc := newTestService(t)
 
 	page := svc.Navigate("config")
 	if page.URL != "config:" {
@@ -53,14 +38,7 @@ func TestConfigURL(t *testing.T) {
 }
 
 func TestAboutURL(t *testing.T) {
-	stack, err := rns.NewStack("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := app.NewBrowserService(stack, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc := newTestService(t)
 
 	for _, raw := range []string{"about", "about:", "  About  "} {
 		page := svc.Navigate(raw)
@@ -77,14 +55,7 @@ func TestAboutURL(t *testing.T) {
 }
 
 func TestLicenseURL(t *testing.T) {
-	stack, err := rns.NewStack("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := app.NewBrowserService(stack, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc := newTestService(t)
 
 	for _, raw := range []string{"license", "license:", "  License  "} {
 		page := svc.Navigate(raw)
@@ -101,14 +72,7 @@ func TestLicenseURL(t *testing.T) {
 }
 
 func TestKeybindDefaults(t *testing.T) {
-	stack, err := rns.NewStack("")
-	if err != nil {
-		t.Fatal(err)
-	}
-	svc, err := app.NewBrowserService(stack, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	svc := newTestService(t)
 
 	binds := svc.GetKeybinds()
 	if binds.Bindings["focusUrl"] != "mod+l" {
