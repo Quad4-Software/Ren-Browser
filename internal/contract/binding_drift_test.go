@@ -16,6 +16,12 @@ import (
 
 var exportFnRe = regexp.MustCompile(`(?m)^export function (\w+)\(`)
 
+// Wails excludes these lifecycle hooks from generated bindings.
+var wailsBindingExcluded = map[string]struct{}{
+	"ServiceStartup":  {},
+	"ServiceShutdown": {},
+}
+
 func repoRoot(t *testing.T) string {
 	t.Helper()
 	_, file, _, ok := runtime.Caller(0)
@@ -46,6 +52,9 @@ func exportedMethods(t *testing.T, ptr any) map[string]struct{} {
 	for i := 0; i < rt.NumMethod(); i++ {
 		name := rt.Method(i).Name
 		if name == "" || name[0] < 'A' || name[0] > 'Z' {
+			continue
+		}
+		if _, skip := wailsBindingExcluded[name]; skip {
 			continue
 		}
 		out[name] = struct{}{}

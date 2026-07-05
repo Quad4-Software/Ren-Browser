@@ -18,9 +18,7 @@ describe("isBlockedExternalHref", () => {
   it("allows mesh and fragment links", () => {
     expect(isBlockedExternalHref("#section")).toBe(false);
     expect(isBlockedExternalHref("/page/index.mu")).toBe(false);
-    expect(
-      isBlockedExternalHref("abb3ebcd03cb2388a838e70c001291f9:/page/index.mu"),
-    ).toBe(false);
+    expect(isBlockedExternalHref("abb3ebcd03cb2388a838e70c001291f9:/page/index.mu")).toBe(false);
     expect(isBlockedExternalHref("hello:world")).toBe(false);
   });
 });
@@ -34,9 +32,7 @@ describe("isBlockedNavigationURL", () => {
   it("allows app and mesh urls", () => {
     expect(isBlockedNavigationURL("about:")).toBe(false);
     expect(isBlockedNavigationURL("docs:?lang=en")).toBe(false);
-    expect(
-      isBlockedNavigationURL("abb3ebcd03cb2388a838e70c001291f9:/page/index.mu"),
-    ).toBe(false);
+    expect(isBlockedNavigationURL("abb3ebcd03cb2388a838e70c001291f9:/page/index.mu")).toBe(false);
     expect(isBlockedNavigationURL("rns://abb3ebcd03cb2388a838e70c001291f9/page/index.mu")).toBe(
       false,
     );

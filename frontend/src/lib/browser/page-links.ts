@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: MIT
-import {
-  resolveLinkURL,
-  resolveMicronNavigation,
-  resolveNomadDataURL,
-} from "./micron-links";
+import { resolveLinkURL, resolveMicronNavigation, resolveNomadDataURL } from "./micron-links";
 import { isBlockedExternalHref } from "./navigation-guard";
 
 export async function handlePageLinkClick(
