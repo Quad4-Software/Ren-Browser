@@ -48,6 +48,10 @@
     return new Date(ts * 1000).toLocaleString();
   }
 
+  const scanningDescription = $derived(
+    `${displayName} is scanning the mesh. Sites will appear here when nodes announce themselves.`,
+  );
+
   function isFavorite(hash: string): boolean {
     const url = `${hash}:/page/index.mu`;
     return favorites.some((f) => f.startsWith(hash) || f === url);
@@ -69,10 +73,7 @@
   </header>
 
   {#if nodes.length === 0}
-    <EmptyState
-      title="No sites discovered yet"
-      description="{displayName} is scanning the mesh. Sites will appear here when nodes announce themselves."
-    >
+    <EmptyState title="No sites discovered yet" description={scanningDescription}>
       <Compass size={22} />
     </EmptyState>
   {:else if filtered().length === 0}

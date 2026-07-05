@@ -52,8 +52,7 @@ const PAGE_ERROR_COPY: Record<PageErrorKind, ErrorPageContent> = {
   },
   storage_full: {
     title: "Storage unavailable",
-    description:
-      `${displayName} cannot write to disk. Free up space or fix permissions for your profile folder.`,
+    description: `${displayName} cannot write to disk. Free up space or fix permissions for your profile folder.`,
     showRetry: true,
     showResetDatabase: false,
     tone: "danger",

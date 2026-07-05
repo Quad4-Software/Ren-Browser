@@ -205,7 +205,7 @@ async function injectScript(src: string, expectedHash: string): Promise<void> {
 function isWasmWrapped(fn: unknown): boolean {
   return (
     typeof fn === "function" &&
-    Boolean((fn as Record<string, boolean | undefined>)[wasmGlobalFlag])
+    Boolean((fn as unknown as Record<string, boolean | undefined>)[wasmGlobalFlag])
   );
 }
 

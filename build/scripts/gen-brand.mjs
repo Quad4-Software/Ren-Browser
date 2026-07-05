@@ -238,6 +238,10 @@ function syncMsixManifest(brand) {
   );
   text = text.replace(/<Application Id="[^"]+"/, `<Application Id="${brand.bundleId}"`);
   text = text.replace(/Executable="[^"]+"/g, `Executable="${brand.slug}"`);
+  text = text.replace(
+    /Description="A renbrowser application"/,
+    `Description="${brand.description}"`,
+  );
   text = text.replace(/<uap:VisualElements[\s\S]*?DisplayName="[^"]+"/, (block) =>
     block.replace(/DisplayName="[^"]+"/, `DisplayName="${brand.displayName}"`),
   );

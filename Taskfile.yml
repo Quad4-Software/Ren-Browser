@@ -39,6 +39,12 @@ tasks:
     env:
       GOFLAGS: "-mod=mod"
 
+  format:
+    desc: Format Go and frontend sources
+    deps:
+      - fmt:go
+      - frontend:fmt
+
   gosec:
     desc: Run gosec security scanner
     cmds:
@@ -130,6 +136,9 @@ tasks:
         vars: { SCRIPT: test }
 
   frontend:fmt:
+    desc: Format frontend sources with Prettier
+    deps:
+      - common:install:frontend:deps
     cmds:
       - task: common:frontend:run
         vars: { SCRIPT: format }

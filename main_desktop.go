@@ -1,4 +1,5 @@
 //go:build !server && !android
+
 // SPDX-License-Identifier: MIT
 
 package main

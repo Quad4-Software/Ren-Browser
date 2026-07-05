@@ -32,7 +32,7 @@
     <Application Id="io.quad4.renbrowser" Executable="renbrowser" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements
         DisplayName="Ren Browser"
-        Description="A renbrowser application"
+        Description="Reticulum browser for NomadNet pages"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">

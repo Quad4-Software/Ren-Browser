@@ -8,7 +8,8 @@ vars:
   TIMEOUT_WAILS: 5m
   WITH_TIMEOUT: '{{.ROOT_DIR}}/build/scripts/with-timeout.sh'
   VERSION:
-    sh: grep '^version:' "{{.ROOT_DIR}}/build/brand.yml" | sed 's/version: *//' | tr -d '"'
+    sh: |
+      grep '^version:' "{{.ROOT_DIR}}/build/brand.yml" | sed 's/version: *//' | tr -d '"'
 
 tasks:
   gen:brand:
@@ -22,6 +23,7 @@ tasks:
       - ../frontend/src/lib/brand.gen.ts
     cmds:
       - node "{{.ROOT_DIR}}/build/scripts/gen-brand.mjs"
+      - gofmt -w "{{.ROOT_DIR}}/internal/brand/brand_gen.go"
 
   check:brand:
     summary: Verify generated brand files match build/brand.yml
@@ -258,8 +260,6 @@ tasks:
     summary: Generates Windows `.ico` and Mac `.icns` from an image; on macOS, `-iconcomposerinput appicon.icon -macassetdir darwin` also produces `Assets.car` from a `.icon` file (skipped on other platforms).
     run: once
     dir: build
-    deps:
-      - task: generate:appicon
     sources:
       - "appicon.png"
       - "appicon.icon"
@@ -268,26 +268,6 @@ tasks:
       - "windows/icon.ico"
     cmds:
       - wails3 generate icons -input appicon.png -macfilename darwin/icons.icns -windowsfilename windows/icon.ico -iconcomposerinput appicon.icon -macassetdir darwin
-
-  generate:appicon:
-    summary: Regenerate pixel app icon SVG and raster assets from build/scripts/generate-icon.py
-    run: once
-    dir: build
-    sources:
-      - "scripts/generate-icon.py"
-    generates:
-      - "appicon.svg"
-      - "appicon.png"
-      - "../frontend/public/favicon.svg"
-      - "appicon.icon/Assets/ren_icon.svg"
-      - "../flatpak/io.quad4.renbrowser.svg"
-      - "packaging/renbrowser-256.png"
-      - "android/app/src/main/res/mipmap-mdpi/ic_launcher.png"
-      - "android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml"
-      - "android/app/src/main/res/drawable/ic_launcher_foreground.xml"
-      - "android/app/src/main/res/drawable/ic_notification.xml"
-    cmds:
-      - python3 scripts/generate-icon.py
 
   dev:frontend:
     summary: Runs the frontend in development mode
