@@ -5,18 +5,7 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 vendor_dir="${root}/third_party/reticulum-go"
 iface_go="${vendor_dir}/pkg/interfaces/interface.go"
 
-go mod download quad4/reticulum-go >/dev/null 2>&1 || true
-mod_dir="$(cd "${root}" && go list -m -f '{{.Dir}}' quad4/reticulum-go 2>/dev/null || true)"
-
-if [[ -z "${mod_dir}" || ! -d "${mod_dir}" ]]; then
-  echo "patch-reticulum-txbytes: quad4/reticulum-go module not found" >&2
-  exit 1
-fi
-
-if [[ ! -f "${iface_go}" ]]; then
-  mkdir -p "${vendor_dir}"
-  rsync -a --delete "${mod_dir}/" "${vendor_dir}/"
-fi
+bash "${root}/build/scripts/fetch-reticulum-go.sh"
 
 if [[ ! -f "${iface_go}" ]]; then
   echo "patch-reticulum-txbytes: ${iface_go} not found" >&2

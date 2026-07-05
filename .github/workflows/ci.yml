@@ -131,9 +131,37 @@ jobs:
           exit-code: 1
           skip-files: build/docker/Dockerfile.cross
 
-  server:
-    name: Server build
-    runs-on: ubuntu-latest
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-amd64
+            os: ubuntu-latest
+            task: linux:build
+            artifact: bin/renbrowser
+            artifact_name: renbrowser-linux-amd64
+            install_linux_deps: "true"
+          - target: windows-amd64
+            os: windows-latest
+            task: windows:build ARCH=amd64
+            artifact: bin/renbrowser.exe
+            artifact_name: renbrowser-windows-amd64
+            install_linux_deps: "false"
+          - target: macos-arm64
+            os: macos-latest
+            task: darwin:build ARCH=arm64
+            artifact: bin/renbrowser
+            artifact_name: renbrowser-macos-arm64
+            install_linux_deps: "false"
+          - target: server-linux-amd64
+            os: ubuntu-latest
+            task: build:server
+            artifact: bin/renbrowser-server
+            artifact_name: renbrowser-server-linux-amd64
+            install_linux_deps: "true"
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -143,41 +171,40 @@ jobs:
       - name: Setup dependencies
         uses: ./RenBrowser/.github/actions/setup
         with:
-          install-wails: "true"
-          install-linux-deps: "true"
+          install-linux-deps: ${{ matrix.install_linux_deps }}
 
-      - name: Build headless server
-        run: task build:server
+      - name: Build
+        run: task ${{ matrix.task }}
 
-      - name: Upload server binary
+      - name: Upload binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: renbrowser-server-linux-amd64
-          path: RenBrowser/bin/renbrowser-server
+          name: ${{ matrix.artifact_name }}
+          path: RenBrowser/${{ matrix.artifact }}
           if-no-files-found: error
           retention-days: 7
 
-  linux-desktop:
-    name: Linux desktop build
+  ci-ok:
+    name: CI
+    if: always()
+    needs:
+      - go
+      - frontend
+      - security
+      - build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-        with:
-          path: RenBrowser
-
-      - name: Setup dependencies
-        uses: ./RenBrowser/.github/actions/setup
-        with:
-          install-linux-deps: "true"
-
-      - name: Build Linux binary
-        run: task linux:build
-
-      - name: Upload Linux binary
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: renbrowser-linux-amd64
-          path: RenBrowser/bin/renbrowser
-          if-no-files-found: error
-          retention-days: 7
+      - name: Check required jobs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for result in \
+            "${{ needs.go.result }}" \
+            "${{ needs.frontend.result }}" \
+            "${{ needs.security.result }}" \
+            "${{ needs.build.result }}"; do
+            case "$result" in
+              success|skipped) ;;
+              *) echo "One or more required CI jobs failed." >&2; exit 1 ;;
+            esac
+          done

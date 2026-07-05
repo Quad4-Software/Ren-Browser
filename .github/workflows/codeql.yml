@@ -50,6 +50,13 @@ jobs:
         with:
           path: RenBrowser
 
+      - name: Setup dependencies
+        if: matrix.language == 'go'
+        uses: ./RenBrowser/.github/actions/setup
+        with:
+          install-wails: "false"
+          install-linux-deps: "true"
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@fe4161a26a8629af62121b670040955b330f9af2
         with:
