@@ -123,6 +123,7 @@
 
   $effect(() => {
     void source;
+    void currentURL;
     scheduleRender();
     return () => {
       if (renderTimer) {
