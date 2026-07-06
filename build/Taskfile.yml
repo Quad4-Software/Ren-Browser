@@ -39,6 +39,13 @@ tasks:
     cmds:
       - bash "{{.ROOT_DIR}}/build/scripts/patch-reticulum-txbytes.sh"
 
+  reticulum:patch-nomadnet:
+    summary: Patch reticulum-go request-parameter and file-download-metadata handling (used by vendor:go)
+    internal: true
+    run: once
+    cmds:
+      - bash "{{.ROOT_DIR}}/build/scripts/patch-reticulum-nomadnet.sh"
+
   vendor:go:
     summary: Refresh vendor/ from go.mod
     cmds:
@@ -55,6 +62,7 @@ tasks:
     timeout: 3m
     cmds:
       - bash "{{.ROOT_DIR}}/build/scripts/patch-reticulum-txbytes.sh"
+      - bash "{{.ROOT_DIR}}/build/scripts/patch-reticulum-nomadnet.sh"
       - go mod tidy
     env:
       GOFLAGS: "-mod=mod"
