@@ -275,7 +275,7 @@
   let splitTabId = $state<string | null>(null);
   let splitRatio = $state(52);
   const desktopChrome = System.IsDesktop();
-  const mobileUI = !desktopChrome;
+  const mobileUI = System.IsMobile();
 
   let configText = $state("");
   let configSaving = $state(false);
@@ -1716,7 +1716,7 @@
     onToggleTheme={toggleTheme}
   />
 
-  <main class="workspace" class:split={activePanel !== "browser"}>
+  <main class="workspace" class:split={activePanel !== "browser" && !mobileUI} class:mobile-panel={mobileUI && activePanel !== "browser"}>
     {#snippet settingsPane()}
       <SettingsPanel
         bind:theme
@@ -2042,6 +2042,22 @@
 
   .workspace.split {
     grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  }
+
+  .workspace.mobile-panel {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+
+  .workspace.mobile-panel .page-pane {
+    display: none;
+  }
+
+  .workspace.mobile-panel .side-pane {
+    max-height: none;
+    height: 100%;
+    border-left: none;
+    box-shadow: none;
   }
 
   .page-pane,

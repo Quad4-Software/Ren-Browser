@@ -25,6 +25,7 @@ jobs:
       channel: release
       prerelease: false
       tag: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+      android_sign_release: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     secrets:
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

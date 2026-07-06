@@ -56,6 +56,14 @@ tasks:
 
   compile:go:shared:
     summary: Compile Go code to shared library (.so)
+    sources:
+      - "../../frontend/dist/**/*"
+      - "../../main_android.go"
+      - "../../internal/**/*"
+      - "../../go.mod"
+      - "../../go.sum"
+      - "overlay.json"
+      - "gen/**/*"
     cmds:
       - |
         # Locate the NDK: $ANDROID_NDK_HOME, or the newest installed NDK

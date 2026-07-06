@@ -22,6 +22,11 @@ on:
         required: false
         type: string
         default: ""
+      android_sign_release:
+        description: Build a signed release APK (requires keystore secrets)
+        required: false
+        type: boolean
+        default: false
     outputs:
       version:
         description: Resolved release version
@@ -256,18 +261,18 @@ jobs:
         run: task build:android
 
       - name: Skip Android release build
-        if: inputs.channel == 'release' && secrets.ANDROID_KEYSTORE_BASE64 == ''
+        if: inputs.channel == 'release' && !inputs.android_sign_release
         run: echo "Skipping Android APK on release (ANDROID_KEYSTORE_* secrets not configured)."
 
       - name: Decode release keystore
-        if: inputs.channel == 'release' && secrets.ANDROID_KEYSTORE_BASE64 != ''
+        if: inputs.channel == 'release' && inputs.android_sign_release
         shell: bash
         run: |
           set -euo pipefail
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "${RUNNER_TEMP}/release.keystore"
 
       - name: Build signed release APK
-        if: inputs.channel == 'release' && secrets.ANDROID_KEYSTORE_BASE64 != ''
+        if: inputs.channel == 'release' && inputs.android_sign_release
         env:
           ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -276,7 +281,7 @@ jobs:
         run: task package:android
 
       - name: Stage artifacts
-        if: inputs.channel != 'release' || secrets.ANDROID_KEYSTORE_BASE64 != ''
+        if: inputs.channel != 'release' || inputs.android_sign_release
         shell: bash
         run: |
           set -euo pipefail
@@ -284,7 +289,7 @@ jobs:
           cp bin/renbrowser.apk dist/release/renbrowser-android.apk
 
       - name: Upload artifacts
-        if: inputs.channel != 'release' || secrets.ANDROID_KEYSTORE_BASE64 != ''
+        if: inputs.channel != 'release' || inputs.android_sign_release
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: android-apk

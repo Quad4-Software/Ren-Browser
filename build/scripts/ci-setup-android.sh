@@ -32,8 +32,13 @@ else
 fi
 
 export PATH="$(dirname "${sdkmanager_bin}"):${root}/platform-tools:${PATH}"
-yes | "${sdkmanager_bin}" --licenses >/dev/null
-"${sdkmanager_bin}" \
+
+# yes exits 141 (SIGPIPE) when sdkmanager closes stdin; pipefail treats that as failure.
+set +o pipefail
+yes | "${sdkmanager_bin}" --sdk_root="${root}" --licenses >/dev/null
+set -o pipefail
+
+"${sdkmanager_bin}" --sdk_root="${root}" \
   "platform-tools" \
   "platforms;android-34" \
   "build-tools;34.0.0" \
