@@ -59,3 +59,12 @@ Thumbs.db
 # Env
 .env
 .env.*
+
+# Android release signing (private keys; never commit)
+*.keystore
+*.jks
+*.p12
+release.keystore
+android-release.keystore
+build/android/*.keystore
+build/android/*.jks
