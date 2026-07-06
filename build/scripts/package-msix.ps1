@@ -7,8 +7,18 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$root = Resolve-Path (Join-Path $PSScriptRoot "../..")
+$root = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 Set-Location $root
+
+function Resolve-ProjectPath([string]$path) {
+    if ([string]::IsNullOrWhiteSpace($path)) {
+        throw "Path must not be empty."
+    }
+    if ([System.IO.Path]::IsPathRooted($path)) {
+        return (Resolve-Path $path).Path
+    }
+    return (Join-Path $root $path)
+}
 
 function Find-MakeAppx {
     $kitsRoot = Join-Path ${env:ProgramFiles(x86)} "Windows Kits\10\bin"
@@ -33,10 +43,10 @@ function Find-MakeAppx {
     throw "MakeAppx.exe not found. Install the Windows SDK (App Certification Kit)."
 }
 
-$exePath = Join-Path $root $Exe
-$manifestPath = Join-Path $root $Manifest
-$iconPath = Join-Path $root $Icon
-$outPath = Join-Path $root $Out
+$exePath = Resolve-ProjectPath $Exe
+$manifestPath = Resolve-ProjectPath $Manifest
+$iconPath = Resolve-ProjectPath $Icon
+$outPath = Resolve-ProjectPath $Out
 
 if (-not (Test-Path $exePath)) {
     throw "Executable not found: $exePath"
