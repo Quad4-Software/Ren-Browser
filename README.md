@@ -4,6 +4,8 @@ A modern browser for Reticulum Network using Reticulum-Go and Micron-Parser-Go.
 
 This project is under heavy active development, please wait until v1.0 for stability and to be more user friendly.
 
+<p align="center"><img src="screenshots/desktop/dark/home.png" alt="Ren Browser" width="720" /></p>
+
 ## Documentation
 
 Guides by language in [docs/](docs/):
@@ -71,16 +73,19 @@ For contributors or platforms without a pre-built package.
 **You will need:**
 
 - [Go](https://go.dev/) 1.26 or newer
+- WebKitGTK-6.0 (for wails desktop apps)
 - [Node.js](https://nodejs.org/) 22+ and [pnpm](https://pnpm.io/) 11+
-- [Task](https://taskfile.dev/) (recommended)
+- [Task](https://taskfile.dev/) (optional, recommended)
 - Reticulum config at `~/.reticulum-go/` (or set `REN_BROWSER_CONFIG`)
 
 **Steps:**
 
 ```sh
 git clone https://github.com/Quad4-Software/Ren-Browser.git
+# or via rngit: git clone rns://06a54b505bb67b25ef3f8097e8001edc/public/ren-browser
 cd Ren-Browser
 task build
+# or make build
 ./bin/renbrowser
 ```
 
@@ -102,6 +107,23 @@ task package
 ```
 
 Android builds need the [Android SDK](https://developer.android.com/studio) (API 34, NDK r26+). Set `ANDROID_HOME` and run `task android:install:deps` if the build complains about missing tools.
+
+Release APK signing uses a Java keystore (`.jks` or `.keystore`), not a public certificate file. A `.p12` (PKCS#12) bundle also contains the **private** key and must be kept secret. Generate a release keystore locally (never commit it):
+
+```sh
+keytool -genkeypair -v -keystore release.keystore -alias renbrowser \
+  -keyalg RSA -keysize 4096 -validity 10000
+```
+
+Point Gradle at it when packaging:
+
+```sh
+export ANDROID_KEYSTORE_FILE="$PWD/release.keystore"
+export ANDROID_KEYSTORE_PASSWORD='your-store-password'
+export ANDROID_KEY_ALIAS=renbrowser
+export ANDROID_KEY_PASSWORD='your-key-password'
+task package:android
+```
 
 #### Android memory tagging (GrapheneOS)
 
@@ -163,12 +185,15 @@ Use `--public-mode` to keep favorites, history, and tabs in the browser (`localS
 task dev
 ```
 
-Run the full quality gate before sending changes:
+Run the full quality gate before sending changes (`make check` or `task check`):
 
 ```sh
-task check
+make check
 task test:interop   # optional; needs a live Reticulum network
+make screenshots    # optional; refresh README preview images
 ```
+
+Prefer [Task](https://taskfile.dev/)? The same targets exist as `task check`, `task screenshots`, and so on. This repo also ships a [Makefile](Makefile) if you do not want Task installed.
 
 ## Project layout
 
@@ -178,6 +203,60 @@ task test:interop   # optional; needs a live Reticulum network
 | `internal/` | Reticulum, NomadNet, rendering, SQLite store, plugins |
 | `frontend/` | Svelte 5 UI |
 | `build/` | Packaging and platform tooling |
+
+
+## Screenshots
+
+<details>
+<summary>Desktop (dark and light)</summary>
+
+<p align="center">
+  <img src="screenshots/desktop/dark/home.png" alt="Desktop home (dark)" width="720" />
+  <img src="screenshots/desktop/light/home.png" alt="Desktop home (light)" width="720" />
+</p>
+
+<p align="center">
+  <img src="screenshots/desktop/dark/about.png" alt="About page (dark)" width="720" />
+  <img src="screenshots/desktop/light/about.png" alt="About page (light)" width="720" />
+</p>
+
+<p align="center">
+  <img src="screenshots/desktop/dark/settings.png" alt="Settings sidebar (dark)" width="720" />
+  <img src="screenshots/desktop/light/settings.png" alt="Settings sidebar (light)" width="720" />
+</p>
+
+<p align="center">
+  <img src="screenshots/desktop/dark/editor.png" alt="Micron editor (dark)" width="720" />
+  <img src="screenshots/desktop/light/editor.png" alt="Micron editor (light)" width="720" />
+</p>
+
+<p align="center">
+  <img src="screenshots/desktop/dark/discovery.png" alt="Discovery panel (dark)" width="720" />
+  <img src="screenshots/desktop/light/discovery.png" alt="Discovery panel (light)" width="720" />
+</p>
+
+</details>
+
+<details>
+<summary>Mobile (dark and light)</summary>
+
+<p align="center">
+  <img src="screenshots/mobile/dark/home.png" alt="Mobile home (dark)" width="360" />
+  <img src="screenshots/mobile/light/home.png" alt="Mobile home (light)" width="360" />
+</p>
+
+<p align="center">
+  <img src="screenshots/mobile/dark/settings.png" alt="Mobile settings (dark)" width="360" />
+  <img src="screenshots/mobile/light/settings.png" alt="Mobile settings (light)" width="360" />
+</p>
+
+</details>
+
+Regenerate with `make screenshots` or `task screenshots`. Images are written under `screenshots/desktop/` and `screenshots/mobile/` in `dark/` and `light/` subfolders. On Linux you can also capture the native window after launch:
+
+```sh
+REN_BROWSER_SCREENSHOT_DIR=screenshots/desktop REN_BROWSER_SCREENSHOT_THEME=dark ./bin/renbrowser
+```
 
 ## Contributing
 
