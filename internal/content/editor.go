@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: MIT
 package content
 
-import "renbrowser/internal/brand"
+import _ "embed"
+
+//go:embed editor_template.mu
+var defaultEditorTemplate string
 
 func DefaultEditorTemplate() string {
-	return "#!fg=ffffff\n" +
-		"#!bg=000000\n" +
-		"\n" +
-		"`=Micron Editor`\n" +
-		"\n" +
-		"Write micron markup in the source pane. Preview updates as you type.\n" +
-		"\n" +
-		"`_bold_` *italic* __underline__\n" +
-		"\n" +
-		"> " + brand.DisplayName + "\n"
+	return defaultEditorTemplate
 }
