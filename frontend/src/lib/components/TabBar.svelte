@@ -442,8 +442,8 @@
     padding-top: env(safe-area-inset-top);
   }
 
-  .tabbar.mobile-ui .tabs-slot {
-    grid-template-columns: minmax(0, 1fr);
+  .tabbar.mobile-ui .drag-strip {
+    display: none;
   }
 
   .controls-slot {
@@ -453,10 +453,8 @@
 
   .tabs-slot {
     min-width: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(4.5rem, 5.5rem);
+    display: flex;
     align-items: flex-end;
-    gap: 0;
     overflow: hidden;
   }
 
@@ -464,6 +462,7 @@
     display: flex;
     align-items: flex-end;
     gap: 0.35rem;
+    flex: 0 1 auto;
     min-width: 0;
     overflow: hidden;
   }
@@ -601,7 +600,8 @@
   }
 
   .drag-strip {
-    min-width: 0;
+    flex: 1 1 0;
+    min-width: 5.5rem;
     align-self: stretch;
     margin-bottom: 0.15rem;
   }
