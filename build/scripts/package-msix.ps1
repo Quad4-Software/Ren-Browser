@@ -10,14 +10,16 @@ $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 Set-Location $root
 
-function Resolve-ProjectPath([string]$path) {
+function Resolve-ProjectPath([string]$path, [switch]$MustExist) {
     if ([string]::IsNullOrWhiteSpace($path)) {
         throw "Path must not be empty."
     }
-    if ([System.IO.Path]::IsPathRooted($path)) {
-        return (Resolve-Path $path).Path
+    $full = if ([System.IO.Path]::IsPathRooted($path)) { $path } else { Join-Path $root $path }
+    $full = [System.IO.Path]::GetFullPath($full)
+    if ($MustExist -and -not (Test-Path $full)) {
+        throw "Path not found: $full"
     }
-    return (Join-Path $root $path)
+    return $full
 }
 
 function Find-MakeAppx {
@@ -43,9 +45,9 @@ function Find-MakeAppx {
     throw "MakeAppx.exe not found. Install the Windows SDK (App Certification Kit)."
 }
 
-$exePath = Resolve-ProjectPath $Exe
-$manifestPath = Resolve-ProjectPath $Manifest
-$iconPath = Resolve-ProjectPath $Icon
+$exePath = Resolve-ProjectPath $Exe -MustExist
+$manifestPath = Resolve-ProjectPath $Manifest -MustExist
+$iconPath = Resolve-ProjectPath $Icon -MustExist
 $outPath = Resolve-ProjectPath $Out
 
 if (-not (Test-Path $exePath)) {
