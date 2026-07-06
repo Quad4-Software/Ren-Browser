@@ -35,6 +35,37 @@ func requestTimeouts(path string) (request, receipt time.Duration) {
 	return defaultRequestTimeout, defaultReceiptTimeout
 }
 
+// FetchProgress reports how much of a /file/ resource transfer has arrived
+// so far. Total is 0 until the resource advertisement carrying the transfer
+// size has been received.
+type FetchProgress struct {
+	Received int64
+	Total    int64
+}
+
+// FetchHooks lets callers observe the stages of a Fetch call without
+// changing its return type. Both fields are optional; nil hooks (or a nil
+// *FetchHooks) disable all observability with no extra cost. OnStage fires
+// once per named stage transition (e.g. "path", "link", "request",
+// "waiting"). OnProgress fires whenever the receiving byte count changes
+// while waiting on a resource-backed response (large /file/ downloads).
+type FetchHooks struct {
+	OnStage    func(stage, detail string)
+	OnProgress func(FetchProgress)
+}
+
+func (h *FetchHooks) stage(stage, detail string) {
+	if h != nil && h.OnStage != nil {
+		h.OnStage(stage, detail)
+	}
+}
+
+func (h *FetchHooks) progress(p FetchProgress) {
+	if h != nil && h.OnProgress != nil {
+		h.OnProgress(p)
+	}
+}
+
 type FetchResult struct {
 	NodeHash    string `json:"nodeHash"`
 	Path        string `json:"path"`
@@ -70,6 +101,12 @@ func NewBrowser(tr *transport.Transport, handler *AnnounceHandler) *Browser {
 }
 
 func (b *Browser) Fetch(ctx context.Context, nodeHash string, path string, req RequestData) FetchResult {
+	return b.FetchWithHooks(ctx, nodeHash, path, req, nil)
+}
+
+// FetchWithHooks is Fetch with optional stage/progress observability. See
+// FetchHooks for details; pass nil for the same behavior as Fetch.
+func (b *Browser) FetchWithHooks(ctx context.Context, nodeHash string, path string, req RequestData, hooks *FetchHooks) FetchResult {
 	start := time.Now()
 	res := FetchResult{
 		NodeHash: normalizeHash(nodeHash),
@@ -89,48 +126,61 @@ func (b *Browser) Fetch(ctx context.Context, nodeHash string, path string, req R
 	// path request (and its poll/nudge wait) on every subsequent page load
 	// to a node the user is already connected to.
 	lnk := b.cachedLink(destHash)
-	if lnk == nil {
+	if lnk != nil {
+		hooks.stage("link", "reusing cached active link")
+	} else {
+		hooks.stage("path", "waiting for path to node")
 		if err := waitPath(ctx, b.tr, destHash, pathWaitDefault); err != nil {
 			res.Hops = transportHops(b.tr, destHash, b.handler, res.NodeHash)
 			res.Error = fmt.Sprintf("no path to node: %s", pathWaitError(err))
 			res.DurationMs = time.Since(start).Milliseconds()
+			hooks.stage("failed", res.Error)
 			return res
 		}
 	}
 	res.Hops = transportHops(b.tr, destHash, b.handler, res.NodeHash)
 	res.Interface = b.tr.NextHopInterface(destHash)
+	hooks.stage("path", fmt.Sprintf("path known, hops=%d interface=%s", res.Hops, res.Interface))
 
 	if lnk == nil {
 		remoteID, ok := b.handler.Identity(res.NodeHash)
 		if !ok || remoteID == nil {
 			res.Error = "node not discovered yet"
 			res.DurationMs = time.Since(start).Milliseconds()
+			hooks.stage("failed", res.Error)
 			return res
 		}
 
+		hooks.stage("link", "establishing link")
 		lnk, err = b.linkFor(ctx, destHash, remoteID)
 		if err != nil {
 			res.Error = err.Error()
 			res.DurationMs = time.Since(start).Milliseconds()
+			hooks.stage("failed", res.Error)
 			return res
 		}
+		hooks.stage("link", "link established")
 	}
 
 	requestTimeout, receiptTimeout := requestTimeouts(res.Path)
+	hooks.stage("request", fmt.Sprintf("sending request path=%s requestTimeout=%s", res.Path, requestTimeout))
 	receipt, err := lnk.Request(res.Path, buildRequestData(req), requestTimeout)
 	if err != nil {
 		res.Error = err.Error()
 		res.DurationMs = time.Since(start).Milliseconds()
+		hooks.stage("failed", res.Error)
 		return res
 	}
 	if iface := lnk.LinkedNetworkInterface(); iface != nil {
 		res.Interface = iface.GetName()
 	}
 
-	body, metadata, err := waitReceipt(ctx, receipt, receiptTimeout)
+	hooks.stage("waiting", fmt.Sprintf("waiting for response, receiptTimeout=%s", receiptTimeout))
+	body, metadata, err := waitReceipt(ctx, receipt, receiptTimeout, hooks)
 	if err != nil {
 		res.Error = err.Error()
 		res.DurationMs = time.Since(start).Milliseconds()
+		hooks.stage("failed", res.Error)
 		return res
 	}
 
@@ -138,6 +188,7 @@ func (b *Browser) Fetch(ctx context.Context, nodeHash string, path string, req R
 	res.FileName = fileNameFromMetadata(metadata)
 	res.ContentType = DetectContentType(res.Path, body)
 	res.DurationMs = time.Since(start).Milliseconds()
+	hooks.stage("done", fmt.Sprintf("received %d bytes in %dms", len(body), res.DurationMs))
 	return res
 }
 
@@ -249,22 +300,59 @@ func (b *Browser) establishLink(ctx context.Context, destHash []byte, remoteID *
 	return lnk, nil
 }
 
-func waitReceipt(ctx context.Context, receipt *rlink.RequestReceipt, timeout time.Duration) ([]byte, map[string]any, error) {
-	deadline := time.Now().Add(timeout)
+func receiptStatusLabel(status byte) string {
+	switch status {
+	case rlink.StatusPending:
+		return "pending"
+	case rlink.StatusActive:
+		return "active"
+	case rlink.StatusFailed:
+		return "failed"
+	default:
+		return fmt.Sprintf("unknown(%d)", status)
+	}
+}
+
+func waitReceipt(ctx context.Context, receipt *rlink.RequestReceipt, timeout time.Duration, hooks *FetchHooks) ([]byte, map[string]any, error) {
+	start := time.Now()
+	deadline := start.Add(timeout)
+	var lastReceived int64 = -1
+	var lastLogAt time.Time
 	for time.Now().Before(deadline) {
 		select {
 		case <-ctx.Done():
 			return nil, nil, ctx.Err()
 		default:
 		}
+		if received, total := receipt.Progress(); received != lastReceived || time.Since(lastLogAt) >= 2*time.Second {
+			if received != lastReceived {
+				hooks.progress(FetchProgress{Received: received, Total: total})
+			}
+			if time.Since(lastLogAt) >= 2*time.Second {
+				hooks.stage("waiting", fmt.Sprintf(
+					"elapsed=%s status=%s received=%d total=%d",
+					time.Since(start).Round(time.Millisecond), receiptStatusLabel(receipt.GetStatus()), received, total,
+				))
+				lastLogAt = time.Now()
+			}
+			lastReceived = received
+		}
 		if receipt.Concluded() {
 			resp := receipt.GetResponse()
 			if len(resp) == 0 {
-				return nil, nil, fmt.Errorf("empty response")
+				received, total := receipt.Progress()
+				return nil, nil, fmt.Errorf(
+					"empty response (status=%s received=%d total=%d elapsed=%s)",
+					receiptStatusLabel(receipt.GetStatus()), received, total, time.Since(start).Round(time.Millisecond),
+				)
 			}
 			return resp, receipt.GetMetadata(), nil
 		}
 		time.Sleep(40 * time.Millisecond)
 	}
-	return nil, nil, fmt.Errorf("node response timed out")
+	received, total := receipt.Progress()
+	return nil, nil, fmt.Errorf(
+		"node response timed out (received=%d total=%d after %s)",
+		received, total, time.Since(start).Round(time.Millisecond),
+	)
 }

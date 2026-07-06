@@ -22,6 +22,7 @@ import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.util.Base64;
 import android.util.Log;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -59,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private WailsBridge bridge;
+    private volatile boolean applicationLoaded;
     // Battery: system-event receivers are registered only while the activity is
     // in the foreground (onStart) and torn down in onStop, so background battery/
     // network/screen broadcasts don't wake the app.
@@ -87,15 +89,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize the native Go library
         bridge = new WailsBridge(this);
         bridge.initialize();
+        if (!bridge.isInitialized()) {
+            webView = findViewById(R.id.webview);
+            showStartupError("Native backend failed to start. Reinstall an APK built for your device (arm64).");
+            return;
+        }
 
-        // Set up WebView
         setupWebView();
-
-        // Load the application
-        loadApplication();
+        waitForBackendThenLoad();
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -205,12 +208,35 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                super.onReceivedError(view, request, error);
+                if (applicationLoaded || request == null || !request.isForMainFrame()) {
+                    return;
+                }
+                Uri uri = request.getUrl();
+                if (uri != null && WAILS_HOST.equals(uri.getHost())) {
+                    String description = error != null ? String.valueOf(error.getDescription()) : "unknown error";
+                    Log.e(TAG, "WebView load error for " + uri + ": " + description);
+                    showStartupError("Failed to load the app UI. Try force-stopping and reopening.");
+                }
+            }
+
+            @SuppressWarnings("deprecation")
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                super.onReceivedError(view, errorCode, description, failingUrl);
+                if (failingUrl != null && failingUrl.contains(WAILS_HOST) && !applicationLoaded) {
+                    Log.e(TAG, "WebView load error " + errorCode + " for " + failingUrl + ": " + description);
+                    showStartupError("Failed to load the app UI. Try force-stopping and reopening.");
+                }
+            }
+
+            @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 if (DEBUG) Log.d(TAG, "Page loaded: " + url);
+                injectEnvironmentFallback();
                 bridge.onPageFinished(url);
-                // Now that JS listeners are mounted, push a snapshot of the
-                // current battery / network / theme so the UI starts populated.
                 emitSystemSnapshot();
             }
         });
@@ -232,9 +258,69 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadApplication() {
+        applicationLoaded = true;
         String url = WAILS_SCHEME + "://" + WAILS_HOST + "/";
         if (DEBUG) Log.d(TAG, "Loading URL: " + url);
         webView.loadUrl(url);
+    }
+
+    private void waitForBackendThenLoad() {
+        new Thread(() -> {
+            final int attempts = 120;
+            for (int i = 0; i < attempts; i++) {
+                if (bridge.isBackendReady()) {
+                    runOnUiThread(this::loadApplication);
+                    return;
+                }
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+            runOnUiThread(() -> showStartupError(
+                    "Backend did not become ready in time. Force-stop the app and try again."));
+        }, "wails-backend-ready").start();
+    }
+
+    private void injectEnvironmentFallback() {
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            return;
+        }
+        String envJs = "(function(){window._wails=window._wails||{};"
+                + "window._wails.flags=window._wails.flags||{};"
+                + "window.wails=window.wails||{};"
+                + "if(!window._wails.environment){"
+                + "window._wails.environment={\"OS\":\"android\",\"Arch\":\"" + resolveArch()
+                + "\",\"Debug\":" + (DEBUG ? "true" : "false") + "};"
+                + "}})();";
+        webView.evaluateJavascript(envJs, null);
+    }
+
+    private void showStartupError(String message) {
+        if (webView == null) {
+            Log.e(TAG, message);
+            return;
+        }
+        String safe = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        String html = "<!doctype html><html><head>"
+                + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+                + "<style>"
+                + "body{margin:0;padding:24px;background:#18181b;color:#f3f4f6;"
+                + "font-family:system-ui,sans-serif;line-height:1.5}"
+                + "h1{font-size:1.1rem;margin:0 0 12px}"
+                + "p{margin:0;color:#9ca3af}"
+                + "</style></head><body>"
+                + "<h1>Ren Browser could not start</h1>"
+                + "<p>" + safe + "</p>"
+                + "</body></html>";
+        webView.loadDataWithBaseURL(
+                WAILS_SCHEME + "://" + WAILS_HOST + "/",
+                html,
+                "text/html",
+                "UTF-8",
+                null);
     }
 
     /**

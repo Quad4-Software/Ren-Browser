@@ -138,6 +138,23 @@ public class WailsBridge {
         }
     }
 
+    public boolean isInitialized() {
+        return initialized;
+    }
+
+    public boolean isBackendReady() {
+        if (!initialized) {
+            return false;
+        }
+        try {
+            byte[] probe = nativeServeAsset("/index.html", "GET", "{}");
+            return probe != null && probe.length > 0;
+        } catch (Exception e) {
+            Log.e(TAG, "Backend readiness probe failed", e);
+            return false;
+        }
+    }
+
     /**
      * Close the app from the Go/JS side.
      */

@@ -602,14 +602,32 @@ func (s *BrowserService) fetchFile(rawURL string) (nomadnet.FetchResult, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
-	fetch := stack.Browser().Fetch(ctx, parsed.NodeHash, parsed.Path, parsed.Request)
+	hooks := s.fileFetchHooks(rawURL)
+	fetch := stack.Browser().FetchWithHooks(ctx, parsed.NodeHash, parsed.Path, parsed.Request, hooks)
 	if fetch.Error != "" {
+		s.log("error", "file fetch failed", fmt.Sprintf("%s: %s", rawURL, fetch.Error))
 		return nomadnet.FetchResult{}, errors.New(fetch.Error)
 	}
 	if len(fetch.Body) == 0 {
+		s.log("error", "file fetch failed", fmt.Sprintf("%s: empty file response", rawURL))
 		return nomadnet.FetchResult{}, fmt.Errorf("empty file response")
 	}
 	return fetch, nil
+}
+
+// fileFetchHooks reports every stage transition and byte-progress update of
+// a /file/ fetch to the app's dev log console, so a failed or stalled
+// download is visible immediately instead of surfacing only as a single
+// opaque error once everything has already timed out.
+func (s *BrowserService) fileFetchHooks(rawURL string) *nomadnet.FetchHooks {
+	return &nomadnet.FetchHooks{
+		OnStage: func(stage, detail string) {
+			s.log("debug", "file fetch: "+stage, fmt.Sprintf("%s: %s", rawURL, detail))
+		},
+		OnProgress: func(p nomadnet.FetchProgress) {
+			s.log("debug", "file fetch: progress", fmt.Sprintf("%s: %d/%d bytes", rawURL, p.Received, p.Total))
+		},
+	}
 }
 
 func (s *BrowserService) SaveDownload(rawURL string, destPath string) error {

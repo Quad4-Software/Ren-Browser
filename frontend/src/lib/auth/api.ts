@@ -24,11 +24,15 @@ function apiBase(): string {
 }
 
 export async function fetchAuthStatus(): Promise<AuthStatus> {
-  const res = await fetch(`${apiBase()}/api/auth/status`, { credentials: "same-origin" });
-  if (!res.ok) {
+  try {
+    const res = await fetch(`${apiBase()}/api/auth/status`, { credentials: "same-origin" });
+    if (!res.ok) {
+      return { authRequired: false, authenticated: true };
+    }
+    return (await res.json()) as AuthStatus;
+  } catch {
     return { authRequired: false, authenticated: true };
   }
-  return (await res.json()) as AuthStatus;
 }
 
 export async function login(password: string): Promise<LoginResult> {
