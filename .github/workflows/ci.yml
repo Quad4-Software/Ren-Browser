@@ -248,11 +248,17 @@ jobs:
         shell: bash
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          if [ -n "$KEYSTORE_B64" ]; then
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
+            if [ -n "$KEYSTORE_B64" ]; then
+              echo "::warning::ANDROID_KEYSTORE_BASE64 is set but ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and/or ANDROID_KEY_PASSWORD is missing. Building debug APK."
+            fi
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -262,6 +268,27 @@ jobs:
         run: |
           set -euo pipefail
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "${RUNNER_TEMP}/release.keystore"
+          if [ ! -s "${RUNNER_TEMP}/release.keystore" ]; then
+            echo "Decoded keystore is empty. Re-encode with: base64 -w0 release.keystore" >&2
+            exit 1
+          fi
+
+      - name: Validate Android keystore
+        if: steps.android_sign.outputs.available == 'true'
+        shell: bash
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          keystore="${RUNNER_TEMP}/release.keystore"
+          if ! keytool -list -alias "$KEY_ALIAS" -keystore "$keystore" -storepass "$KEYSTORE_PASSWORD" >/dev/null 2>&1; then
+            echo "Android keystore validation failed for alias '$KEY_ALIAS'." >&2
+            echo "Aliases in keystore:" >&2
+            keytool -list -keystore "$keystore" -storepass "$KEYSTORE_PASSWORD" 2>/dev/null | sed -n 's/^Alias name: //p' >&2 || true
+            echo "Check ANDROID_KEYSTORE_PASSWORD and ANDROID_KEY_ALIAS repository secrets." >&2
+            exit 1
+          fi
 
       - name: Build signed APK
         if: steps.android_sign.outputs.available == 'true'

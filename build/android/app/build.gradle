@@ -24,7 +24,13 @@ android {
     }
 
     def keystoreFile = System.getenv("ANDROID_KEYSTORE_FILE")
-    def hasKeystore = keystoreFile != null && !keystoreFile.trim().isEmpty()
+    def keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+    def keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+    def keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+    def hasKeystore = keystoreFile != null && !keystoreFile.trim().isEmpty() &&
+            keystorePassword != null && !keystorePassword.trim().isEmpty() &&
+            keyAlias != null && !keyAlias.trim().isEmpty() &&
+            keyPassword != null && !keyPassword.trim().isEmpty()
 
     signingConfigs {
         // A real keystore can be provided via environment variables; without
