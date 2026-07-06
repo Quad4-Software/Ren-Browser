@@ -25,12 +25,12 @@ android {
 
     def keystoreFile = System.getenv("ANDROID_KEYSTORE_FILE")
     def keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
-    def keyAlias = System.getenv("ANDROID_KEY_ALIAS")
-    def keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+    def signingKeyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "renbrowser"
+    def signingKeyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: keystorePassword
     def hasKeystore = keystoreFile != null && !keystoreFile.trim().isEmpty() &&
             keystorePassword != null && !keystorePassword.trim().isEmpty() &&
-            keyAlias != null && !keyAlias.trim().isEmpty() &&
-            keyPassword != null && !keyPassword.trim().isEmpty()
+            signingKeyAlias != null && !signingKeyAlias.trim().isEmpty() &&
+            signingKeyPassword != null && !signingKeyPassword.trim().isEmpty()
 
     signingConfigs {
         // A real keystore can be provided via environment variables; without
@@ -40,8 +40,8 @@ android {
             if (hasKeystore) {
                 storeFile file(keystoreFile)
                 storePassword keystorePassword
-                keyAlias keyAlias
-                keyPassword keyPassword
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
             }
         }
     }
