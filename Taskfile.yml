@@ -266,6 +266,17 @@ tasks:
     cmds:
       - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
 
+  screenshots:
+    desc: Capture README preview screenshots into screenshots/desktop and screenshots/mobile
+    deps:
+      - common:install:frontend:deps
+    cmds:
+      - task: common:build:server
+      - pnpm --dir frontend exec playwright install chromium
+      - pnpm --dir frontend run screenshots
+    env:
+      GOFLAGS: "-mod=vendor"
+
   run:assets-dir:
     desc: Run using frontend assets from a directory
     cmds:
