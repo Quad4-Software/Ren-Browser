@@ -4,6 +4,8 @@ package app
 import (
 	"errors"
 	"strings"
+
+	"renbrowser/internal/brand"
 )
 
 type WindowChrome struct {
@@ -27,6 +29,9 @@ func (s *BrowserService) SetNativeTitlebar(enabled bool) (BrowserPrefs, error) {
 		return merged, errors.New("window unavailable")
 	}
 	window.SetFrameless(!enabled)
+	if enabled {
+		window.SetTitle(brand.DisplayName)
+	}
 	if s.app != nil {
 		s.app.Event.Emit("window:chrome", WindowChrome{NativeTitlebar: enabled})
 	}

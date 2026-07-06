@@ -1328,7 +1328,13 @@ func (w *linuxWebviewWindow) setBorderless(borderless bool) {
 }
 
 func (w *linuxWebviewWindow) setFrameless(frameless bool) {
-	C.gtk_window_set_decorated(w.gtkWindow(), gtkBool(!frameless))
+	title := w.parent.options.Title
+	if title == "" {
+		title = w.parent.options.Name
+	}
+	cTitle := C.CString(title)
+	defer C.free(unsafe.Pointer(cTitle))
+	C.window_apply_frameless(w.gtkWindow(), gtkBool(frameless), cTitle)
 	w.execJS(fmt.Sprintf("if(window._wails&&window._wails.flags)window._wails.flags.frameless=%v;", frameless))
 }
 

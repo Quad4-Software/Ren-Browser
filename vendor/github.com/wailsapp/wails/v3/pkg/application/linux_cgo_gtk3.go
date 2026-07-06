@@ -1654,7 +1654,20 @@ func windowSetGeometryHints(window pointer, minWidth, minHeight, maxWidth, maxHe
 }
 
 func (w *linuxWebviewWindow) setFrameless(frameless bool) {
+	if !frameless {
+		C.gtk_window_set_titlebar(w.gtkWindow(), nil)
+	}
 	C.gtk_window_set_decorated(w.gtkWindow(), gtkBool(!frameless))
+	if !frameless {
+		title := w.parent.options.Title
+		if title == "" {
+			title = w.parent.options.Name
+		}
+		cTitle := C.CString(title)
+		C.gtk_window_set_title(w.gtkWindow(), cTitle)
+		C.free(unsafe.Pointer(cTitle))
+		C.gtk_window_present(w.gtkWindow())
+	}
 	w.execJS(fmt.Sprintf("if(window._wails&&window._wails.flags)window._wails.flags.frameless=%v;", frameless))
 }
 

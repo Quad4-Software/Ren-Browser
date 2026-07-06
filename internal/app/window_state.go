@@ -133,6 +133,9 @@ func (s *BrowserService) InitialWindowOptions(frameless bool, reset bool) applic
 		Windows: application.WindowsWindow{
 			DisableFramelessWindowDecorations: frameless,
 		},
+		Linux: application.LinuxWindow{
+			MenuStyle: application.LinuxMenuStyleMenuBar,
+		},
 	}
 	if reset {
 		return opts

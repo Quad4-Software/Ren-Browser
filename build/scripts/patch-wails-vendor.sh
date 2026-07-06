@@ -81,6 +81,51 @@ func (a *iosApp) destroy() {\
 }' "${ios_app}"
   fi
 
+  linux_cgo_c="${app_dir}/linux_cgo.c"
+  linux_cgo_h="${app_dir}/linux_cgo.h"
+  linux_frameless_snippet="${patch_dir}/pkg/application/linux_cgo_frameless_snippet.c"
+  if [ -f "${linux_cgo_c}" ] && [ -f "${linux_frameless_snippet}" ] && ! grep -q 'window_apply_frameless' "${linux_cgo_c}"; then
+    sed -i '/^void attach_action_group_to_widget/r '"${linux_frameless_snippet}" "${linux_cgo_c}"
+  fi
+  if [ -f "${linux_cgo_h}" ] && ! grep -q 'window_apply_frameless' "${linux_cgo_h}"; then
+    sed -i '/void window_apply_pending_always_on_top/a void window_apply_frameless(GtkWindow *window, gboolean frameless, const char *title);' "${linux_cgo_h}"
+  fi
+  linux_cgo_go="${app_dir}/linux_cgo.go"
+  if [ -f "${linux_cgo_go}" ] && grep -q 'C.gtk_window_set_decorated(w.gtkWindow(), gtkBool(!frameless))' "${linux_cgo_go}" ]; then
+    sed -i '/func (w \*linuxWebviewWindow) setFrameless(frameless bool) {/,/^}$/c\
+func (w *linuxWebviewWindow) setFrameless(frameless bool) {\
+\ttitle := w.parent.options.Title\
+\tif title == "" {\
+\t\ttitle = w.parent.options.Name\
+\t}\
+\tcTitle := C.CString(title)\
+\tdefer C.free(unsafe.Pointer(cTitle))\
+\tC.window_apply_frameless(w.gtkWindow(), gtkBool(frameless), cTitle)\
+\tw.execJS(fmt.Sprintf("if(window._wails&&window._wails.flags)window._wails.flags.frameless=%v;", frameless))\
+}' "${linux_cgo_go}"
+  fi
+  linux_cgo_gtk3_go="${app_dir}/linux_cgo_gtk3.go"
+  if [ -f "${linux_cgo_gtk3_go}" ] && grep -q 'C.gtk_window_set_decorated(w.gtkWindow(), gtkBool(!frameless))' "${linux_cgo_gtk3_go}" ]; then
+    sed -i '/func (w \*linuxWebviewWindow) setFrameless(frameless bool) {/,/^}$/c\
+func (w *linuxWebviewWindow) setFrameless(frameless bool) {\
+\tif !frameless {\
+\t\tC.gtk_window_set_titlebar(w.gtkWindow(), nil)\
+\t}\
+\tC.gtk_window_set_decorated(w.gtkWindow(), gtkBool(!frameless))\
+\tif !frameless {\
+\t\ttitle := w.parent.options.Title\
+\t\tif title == "" {\
+\t\t\ttitle = w.parent.options.Name\
+\t\t}\
+\t\tcTitle := C.CString(title)\
+\t\tC.gtk_window_set_title(w.gtkWindow(), cTitle)\
+\t\tC.free(unsafe.Pointer(cTitle))\
+\t\tC.gtk_window_present(w.gtkWindow())\
+\t}\
+\tw.execJS(fmt.Sprintf("if(window._wails&&window._wails.flags)window._wails.flags.frameless=%v;", frameless))\
+}' "${linux_cgo_gtk3_go}"
+  fi
+
   prod="${app_dir}/webview_window_windows_production.go"
   if [ -f "${prod}" ]; then
     sed -i '1s/^\/\/go:build windows && production && !devtools$/\/\/go:build windows \&\& production \&\& !devtools \&\& !server/' "${prod}"

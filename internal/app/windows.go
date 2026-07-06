@@ -41,6 +41,9 @@ func (s *BrowserService) OpenNewWindow(rawURL string) error {
 		Windows: application.WindowsWindow{
 			DisableFramelessWindowDecorations: frameless,
 		},
+		Linux: application.LinuxWindow{
+			MenuStyle: application.LinuxMenuStyleMenuBar,
+		},
 	}
 
 	s.app.Window.NewWithOptions(opts).Show()
