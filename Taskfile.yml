@@ -95,7 +95,15 @@ tasks:
   test:go:stress:
     desc: Concurrent stress tests with race detector (deadlock/race checks)
     cmds:
-      - go test -race -tags=stress -timeout=5m ./internal/store/... ./internal/db/...
+      - go test -race -tags=stress -timeout=5m ./internal/store/... ./internal/db/... ./internal/cache/...
+    env:
+      GOFLAGS: "-mod=vendor"
+
+  test:regression:
+    desc: Reliability and optimization regression suite
+    cmds:
+      - go test ./internal/regression/... ./internal/cache/... ./internal/nomadnet/... ./internal/store/... ./internal/app/... ./internal/servermw/... ./internal/limits/... ./internal/apperrors/... ./internal/db/... ./internal/plugins/... ./internal/content/... ./internal/safe/...
+      - go test -race -tags=stress -timeout=5m ./internal/cache/...
     env:
       GOFLAGS: "-mod=vendor"
 
@@ -137,6 +145,7 @@ tasks:
       - test:go:race
       - test:go:leak
       - test:go:stress
+      - test:regression
       - fuzz:go
 
   bench:go:

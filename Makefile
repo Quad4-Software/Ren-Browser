@@ -2,7 +2,7 @@
 # Common workflows work without installing `task`.
 
 SHELL := /bin/bash
-.PHONY: help check format test test-go frontend-check frontend-test frontend-fmt \
+.PHONY: help check format test test-go test-regression frontend-check frontend-test frontend-fmt \
 	build-server screenshots dev clean vendor mod-tidy
 
 export GOFLAGS ?= -mod=vendor
@@ -31,6 +31,10 @@ check: fmt-go test-go gosec frontend-check
 format: fmt-go frontend-fmt
 
 test: test-go frontend-test
+
+test-regression:
+	go test ./internal/regression/... ./internal/cache/... ./internal/nomadnet/... ./internal/store/... ./internal/app/... ./internal/servermw/... ./internal/limits/... ./internal/apperrors/... ./internal/db/... ./internal/plugins/... ./internal/content/... ./internal/safe/...
+	go test -race -tags=stress -timeout=5m ./internal/cache/...
 
 fmt-go:
 	bash build/scripts/gofmt-project.sh write

@@ -79,7 +79,7 @@ func TestVerifyPasswordRejectsGarbage(t *testing.T) {
 
 func TestNewSessionTokenUnique(t *testing.T) {
 	seen := make(map[string]struct{}, 32)
-	for i := 0; i < 32; i++ {
+	for range 32 {
 		token, err := auth.NewSessionToken()
 		if err != nil {
 			t.Fatal(err)
