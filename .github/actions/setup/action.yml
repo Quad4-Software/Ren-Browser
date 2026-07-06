@@ -32,6 +32,10 @@ inputs:
     description: wails3 module version tag
     required: false
     default: "v3.0.0-alpha2.111"
+  cache-node:
+    description: Enable pnpm cache in setup-node (only when the job runs pnpm install)
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -58,7 +62,7 @@ runs:
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
       with:
         node-version: "22"
-        cache: pnpm
+        cache: ${{ inputs.cache-node == 'true' && 'pnpm' || '' }}
         cache-dependency-path: |
           pnpm-lock.yaml
           frontend/pnpm-lock.yaml
