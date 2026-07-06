@@ -1,4 +1,5 @@
 - Fix /file/ downloads
+- Fix request parameters
 - Test Windows
 - Android user storage over app storage
 - Expanded backend tests and UI regression tests
