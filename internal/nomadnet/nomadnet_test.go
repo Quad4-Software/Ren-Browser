@@ -83,6 +83,13 @@ func TestDetectContentType(t *testing.T) {
 	}
 }
 
+func TestDetectContentTypeUppercaseExtension(t *testing.T) {
+	got := nomadnet.DetectContentType("/page/index.MU", []byte("ignored"))
+	if got != "micron" {
+		t.Fatalf("got %q want micron", got)
+	}
+}
+
 func TestAnnounceHandlerStoresNode(t *testing.T) {
 	id, err := identity.NewIdentity()
 	if err != nil {

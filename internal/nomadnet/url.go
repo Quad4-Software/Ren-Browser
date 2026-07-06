@@ -110,7 +110,7 @@ func parseQueryFields(raw string) map[string]string {
 			val = v
 		}
 		if out == nil {
-			out = make(map[string]string, 4)
+			out = make(map[string]string, strings.Count(raw, "&")+1)
 		}
 		out[key] = val
 	}
@@ -130,7 +130,7 @@ func parseBacktickFields(raw string) map[string]string {
 		k, v, ok := strings.Cut(part, "=")
 		if ok {
 			if out == nil {
-				out = make(map[string]string, 4)
+				out = make(map[string]string, strings.Count(raw, "|")+1)
 			}
 			out[k] = v
 		}

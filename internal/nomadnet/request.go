@@ -9,6 +9,7 @@ import (
 type RequestData struct {
 	Vars   map[string]string
 	Fields map[string]string
+	suffix string
 }
 
 func (r RequestData) Empty() bool {
@@ -72,6 +73,18 @@ func parseRequestPairs(pairs map[string]string) RequestData {
 	for k, v := range pairs {
 		req = mergeRequestPair(req, k, v)
 	}
+	return finalizeRequestSuffix(req)
+}
+
+func finalizeRequestSuffix(req RequestData) RequestData {
+	if req.Empty() {
+		return req
+	}
+	pairs := formatRequestPairs(req)
+	if len(pairs) == 0 {
+		return req
+	}
+	req.suffix = "`" + strings.Join(pairs, "|")
 	return req
 }
 
@@ -79,18 +92,27 @@ func formatRequestPairs(req RequestData) []string {
 	if req.Empty() {
 		return nil
 	}
-	pairs := make([]string, 0, len(req.Vars)+len(req.Fields))
+	n := len(req.Vars) + len(req.Fields)
+	pairs := make([]string, 0, n)
 	for k, v := range req.Vars {
 		pairs = append(pairs, k+"="+v)
 	}
 	for k, v := range req.Fields {
 		pairs = append(pairs, fieldKeyPrefix+k+"="+v)
 	}
-	sort.Strings(pairs)
+	if n > 1 {
+		sort.Strings(pairs)
+	}
 	return pairs
 }
 
 func (r RequestData) CacheKeySuffix() string {
+	if r.Empty() {
+		return ""
+	}
+	if r.suffix != "" {
+		return r.suffix
+	}
 	pairs := formatRequestPairs(r)
 	if len(pairs) == 0 {
 		return ""

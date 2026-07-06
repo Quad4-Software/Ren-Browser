@@ -2,7 +2,7 @@
 package nomadnet
 
 import (
-	"strings"
+	"bytes"
 )
 
 type ContentKind string
@@ -16,16 +16,8 @@ const (
 )
 
 func DetectContentType(path string, body []byte) string {
-	path = strings.ToLower(path)
-	switch {
-	case strings.HasSuffix(path, ".mu"):
-		return string(KindMicron)
-	case strings.HasSuffix(path, ".html"), strings.HasSuffix(path, ".htm"):
-		return string(KindHTML)
-	case strings.HasSuffix(path, ".md"), strings.HasSuffix(path, ".markdown"):
-		return string(KindMarkdown)
-	case strings.HasSuffix(path, ".txt"):
-		return string(KindPlaintext)
+	if kind, ok := contentKindByPath(path); ok {
+		return kind
 	}
 
 	sample := body
@@ -39,13 +31,48 @@ func DetectContentType(path string, body []byte) string {
 	switch {
 	case hasPrefixFold(trim, "<!doctype") || hasPrefixFold(trim, "<html"):
 		return string(KindHTML)
-	case bytesContains(trim, "`>") || bytesContains(trim, "`>>"):
+	case bytes.Contains(trim, []byte("`>")) || bytes.Contains(trim, []byte("`>>")):
 		return string(KindMicron)
-	case hasPrefix(trim, []byte("# ")) || bytesContains(trim, "\n## "):
+	case hasPrefix(trim, []byte("# ")) || bytes.Contains(trim, []byte("\n## ")):
 		return string(KindMarkdown)
 	default:
 		return string(KindPlaintext)
 	}
+}
+
+func contentKindByPath(path string) (string, bool) {
+	switch {
+	case pathEndsWithFold(path, ".mu"):
+		return string(KindMicron), true
+	case pathEndsWithFold(path, ".html"), pathEndsWithFold(path, ".htm"):
+		return string(KindHTML), true
+	case pathEndsWithFold(path, ".md"), pathEndsWithFold(path, ".markdown"):
+		return string(KindMarkdown), true
+	case pathEndsWithFold(path, ".txt"):
+		return string(KindPlaintext), true
+	default:
+		return "", false
+	}
+}
+
+func pathEndsWithFold(path, suffix string) bool {
+	if len(path) < len(suffix) {
+		return false
+	}
+	part := path[len(path)-len(suffix):]
+	for i := 0; i < len(suffix); i++ {
+		a, b := part[i], suffix[i]
+		if a >= 'A' && a <= 'Z' {
+			a += 'a' - 'A'
+		}
+		if b >= 'A' && b <= 'Z' {
+			b += 'a' - 'A'
+		}
+		if a != b {
+			return false
+		}
+	}
+	return true
 }
 
 func trimSpaceBytes(b []byte) []byte {
@@ -67,12 +94,7 @@ func hasPrefix(b, prefix []byte) bool {
 	if len(b) < len(prefix) {
 		return false
 	}
-	for i := range prefix {
-		if b[i] != prefix[i] {
-			return false
-		}
-	}
-	return true
+	return bytes.Equal(b[:len(prefix)], prefix)
 }
 
 func hasPrefixFold(b []byte, prefix string) bool {
@@ -92,26 +114,4 @@ func hasPrefixFold(b []byte, prefix string) bool {
 		}
 	}
 	return true
-}
-
-func bytesContains(b []byte, sub string) bool {
-	if len(sub) == 0 {
-		return true
-	}
-	if len(b) < len(sub) {
-		return false
-	}
-	for i := 0; i <= len(b)-len(sub); i++ {
-		match := true
-		for j := 0; j < len(sub); j++ {
-			if b[i+j] != sub[j] {
-				match = false
-				break
-			}
-		}
-		if match {
-			return true
-		}
-	}
-	return false
 }

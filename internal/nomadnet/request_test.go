@@ -94,6 +94,19 @@ func TestParseRequestPairsFieldPrefix(t *testing.T) {
 	}
 }
 
+func TestParseRequestPairsCachesSuffix(t *testing.T) {
+	req := parseRequestPairs(map[string]string{
+		"category":   "general",
+		"field.user": "alice",
+	})
+	if req.suffix == "" {
+		t.Fatal("expected cached suffix")
+	}
+	if req.CacheKeySuffix() != req.suffix {
+		t.Fatalf("suffix = %q cached = %q", req.CacheKeySuffix(), req.suffix)
+	}
+}
+
 func TestBuildRequestDataEmpty(t *testing.T) {
 	var empty RequestData
 	if got := buildRequestData(empty); got != nil {

@@ -8,6 +8,23 @@ import (
 	"renbrowser/internal/nomadnet"
 )
 
+func BenchmarkPageCacheGetHit(b *testing.B) {
+	c := cache.NewPageCache(128)
+	body := []byte("sample page body for cache benchmark")
+	node := "abb3ebcd03cb2388a838e70c001291f9"
+	path := "/page/index.mu"
+	empty := nomadnet.RequestData{}
+	c.Put(node, path, empty, body, "micron")
+
+	b.ReportAllocs()
+	b.SetBytes(int64(len(body)))
+	for b.Loop() {
+		if _, ok := c.Get(node, path, empty); !ok {
+			b.Fatal("cache miss")
+		}
+	}
+}
+
 func BenchmarkPageCachePutGet(b *testing.B) {
 	c := cache.NewPageCache(128)
 	body := []byte("sample page body for cache benchmark")

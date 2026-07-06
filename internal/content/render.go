@@ -22,10 +22,10 @@ func RendererRegistry() *plugins.Registry {
 }
 
 func Render(path string, body []byte, nodeHash string) Rendered {
-	raw := string(body)
 	kind := nomadnet.DetectContentType(path, body)
 
 	if out, ok := defaultRegistry.Render(path, body, nodeHash, kind); ok {
+		raw := string(body)
 		return Rendered{
 			Kind:    firstNonEmpty(out.Kind, kind),
 			HTML:    out.HTML,
@@ -38,8 +38,8 @@ func Render(path string, body []byte, nodeHash string) Rendered {
 
 	return Rendered{
 		Kind: string(nomadnet.KindPlaintext),
-		HTML: `<pre class="plaintext">` + html.EscapeString(raw) + `</pre>`,
-		Raw:  raw,
+		HTML: `<pre class="plaintext">` + html.EscapeString(string(body)) + `</pre>`,
+		Raw:  string(body),
 	}
 }
 
