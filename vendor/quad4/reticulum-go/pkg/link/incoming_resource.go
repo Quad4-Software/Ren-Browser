@@ -426,13 +426,6 @@ func (l *Link) deliverIncomingResource(inner []byte, adv *resource.ResourceAdver
 	return nil
 }
 
-// splitResourceMetadata separates a resource's leading metadata block (a
-// 3-byte big-endian length prefix followed by msgpacked metadata, as sent by
-// Python RNS.Resource when constructed with metadata=...) from the actual
-// response payload. Nomad Network nodes attach a {"name": <filename>} map
-// this way when responding to /file/ requests. If the advertisement did not
-// flag metadata, or the metadata cannot be parsed, payload is returned
-// unmodified and metadata is nil.
 func splitResourceMetadata(payload []byte, adv *resource.ResourceAdvertisement) ([]byte, map[string]any) {
 	if adv == nil || !adv.HasMetadata {
 		return payload, nil

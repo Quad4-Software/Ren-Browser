@@ -32,19 +32,6 @@ tasks:
       - gen:brand
     cmds:
       - git diff --exit-code internal/brand/brand_gen.go frontend/src/lib/brand.gen.ts build/config.yml build/windows/msix/app_manifest.xml
-  reticulum:patch-txbytes:
-    summary: Patch reticulum-go interface TX byte accounting (used by vendor:go)
-    internal: true
-    run: once
-    cmds:
-      - bash "{{.ROOT_DIR}}/build/scripts/patch-reticulum-txbytes.sh"
-
-  reticulum:patch-nomadnet:
-    summary: Patch reticulum-go request-parameter and file-download-metadata handling (used by vendor:go)
-    internal: true
-    run: once
-    cmds:
-      - bash "{{.ROOT_DIR}}/build/scripts/patch-reticulum-nomadnet.sh"
 
   vendor:go:
     summary: Refresh vendor/ from go.mod
@@ -61,8 +48,7 @@ tasks:
     run: once
     timeout: 3m
     cmds:
-      - bash "{{.ROOT_DIR}}/build/scripts/patch-reticulum-txbytes.sh"
-      - bash "{{.ROOT_DIR}}/build/scripts/patch-reticulum-nomadnet.sh"
+      - bash "{{.ROOT_DIR}}/build/scripts/fetch-reticulum-go.sh"
       - go mod tidy
     env:
       GOFLAGS: "-mod=mod"
