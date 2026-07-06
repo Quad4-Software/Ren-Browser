@@ -1,8 +1,14 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Download, FolderOpen } from "@lucide/svelte";
+  import { Download, FolderOpen, X } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
+  import {
+    formatBytes,
+    formatEta,
+    formatSpeed,
+    type DownloadProgressView,
+  } from "$lib/browser/download-progress";
 
   export type DownloadRow = {
     name: string;
@@ -13,46 +19,62 @@
 
   type Props = {
     open: boolean;
+    active?: DownloadProgressView[];
     downloads: DownloadRow[];
     downloadDir: string;
     variant?: "dropdown" | "sheet";
     onDownloadPage: () => void;
     onOpenFile: (path: string) => void;
     onOpenFolder: () => void;
+    onCancelActive?: (id: string) => void;
+    onDismissActive?: (id: string) => void;
     onClose: () => void;
   };
 
   let {
     open,
+    active = [],
     downloads,
     downloadDir,
     variant = "dropdown",
     onDownloadPage,
     onOpenFile,
     onOpenFolder,
+    onCancelActive = () => {},
+    onDismissActive = () => {},
     onClose,
   }: Props = $props();
-
-  function formatBytes(bytes: number): string {
-    if (!bytes) {
-      return "0 B";
-    }
-    const units = ["B", "KB", "MB", "GB"];
-    let value = bytes;
-    let unit = 0;
-    while (value >= 1024 && unit < units.length - 1) {
-      value /= 1024;
-      unit++;
-    }
-    const rounded = value >= 10 || unit === 0 ? Math.round(value) : Math.round(value * 10) / 10;
-    return `${rounded} ${units[unit]}`;
-  }
 
   function formatWhen(ts: number): string {
     if (!ts) {
       return "";
     }
     return new Date(ts * 1000).toLocaleString();
+  }
+
+  function progressPercent(item: DownloadProgressView): number | null {
+    if (item.total <= 0) {
+      return null;
+    }
+    return Math.max(0, Math.min(100, (item.received / item.total) * 100));
+  }
+
+  function metaLine(item: DownloadProgressView): string {
+    const parts: string[] = [];
+    parts.push(
+      item.total > 0
+        ? `${formatBytes(item.received)} / ${formatBytes(item.total)}`
+        : formatBytes(item.received),
+    );
+    const speed = formatSpeed(item.speedBps);
+    if (speed) {
+      parts.push(speed);
+    }
+    const eta = formatEta(item.etaSeconds);
+    if (eta) {
+      parts.push(t("downloads.etaLeft", { eta }));
+    }
+    return parts.join(" \u00b7 ");
   }
 </script>
 
@@ -80,14 +102,64 @@
     </header>
 
     <div class="list">
-      {#if downloads.length === 0}
+      {#if active.length > 0}
+        <ul class="active-list">
+          {#each active as item (item.id)}
+            {@const percent = progressPercent(item)}
+            <li class="active-row" class:error={item.status === "failed"}>
+              <div class="active-head">
+                <span class="name" class:pending={item.status === "pending"}>{item.name}</span>
+                {#if item.status === "pending" || item.status === "downloading"}
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    aria-label={t("downloads.cancel")}
+                    onclick={() => onCancelActive(item.id)}
+                  >
+                    <X size={13} />
+                  </button>
+                {:else}
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    aria-label={t("downloads.dismiss")}
+                    onclick={() => onDismissActive(item.id)}
+                  >
+                    <X size={13} />
+                  </button>
+                {/if}
+              </div>
+              {#if item.status === "failed"}
+                <span class="error-text">{item.error || t("downloads.downloadFailed")}</span>
+              {:else if item.status === "canceled"}
+                <span class="meta">{t("downloads.canceled")}</span>
+              {:else if item.status === "completed"}
+                <span class="meta success">{t("downloads.fileSaved")}</span>
+              {:else if item.status === "pending"}
+                <span class="meta">{t("downloads.starting")}</span>
+              {:else}
+                <div class="progress-track">
+                  <div
+                    class="progress-fill"
+                    class:indeterminate={percent === null}
+                    style={percent !== null ? `width:${percent}%` : ""}
+                  ></div>
+                </div>
+                <span class="meta">{metaLine(item)}</span>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      {/if}
+
+      {#if downloads.length === 0 && active.length === 0}
         <EmptyState
           title={t("downloads.noDownloads")}
           description={t("downloads.noDownloadsDescription")}
         >
           <Download size={22} />
         </EmptyState>
-      {:else}
+      {:else if downloads.length > 0}
         <ul>
           {#each downloads as item (item.path)}
             <li>
@@ -207,6 +279,100 @@
     padding: 0.45rem;
     display: grid;
     gap: 0.35rem;
+  }
+
+  .active-list {
+    border-bottom: 1px solid var(--ren-border);
+    padding-bottom: 0.55rem;
+    margin-bottom: 0.1rem;
+  }
+
+  .active-row {
+    border: 1px solid var(--ren-border);
+    background: var(--ren-surface-raised);
+    border-radius: 10px;
+    padding: 0.55rem 0.65rem;
+    display: grid;
+    gap: 0.3rem;
+  }
+
+  .active-row.error {
+    border-color: color-mix(in srgb, var(--ren-danger, #e5484d) 55%, var(--ren-border));
+  }
+
+  .active-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .active-head .name {
+    font-weight: 600;
+    font-size: 0.86rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .active-head .name.pending {
+    color: var(--ren-muted);
+  }
+
+  .icon-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ren-muted);
+    cursor: pointer;
+  }
+
+  .icon-btn:hover {
+    background: var(--ren-tab-hover);
+    color: var(--ren-fg);
+  }
+
+  .progress-track {
+    height: 5px;
+    border-radius: 999px;
+    background: var(--ren-surface-muted);
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--ren-accent);
+    transition: width 0.25s ease;
+  }
+
+  .progress-fill.indeterminate {
+    width: 40%;
+    animation: indeterminate 1.1s ease-in-out infinite;
+  }
+
+  @keyframes indeterminate {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(250%);
+    }
+  }
+
+  .error-text {
+    color: var(--ren-danger, #e5484d);
+    font-size: 0.78rem;
+  }
+
+  .meta.success {
+    color: var(--ren-accent);
   }
 
   .file-row {

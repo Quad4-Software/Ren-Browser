@@ -10,6 +10,7 @@
     pluginPanels?: PluginPanelContribution[];
     mobileDevTools: boolean;
     downloadsOpen: boolean;
+    activeDownloadCount?: number;
     onPanel: (panel: ActivePanel) => void;
     onToggleDownloads: () => void;
   };
@@ -19,6 +20,7 @@
     pluginPanels = [],
     mobileDevTools,
     downloadsOpen,
+    activeDownloadCount = 0,
     onPanel,
     onToggleDownloads,
   }: Props = $props();
@@ -38,11 +40,17 @@
     <span>{t("mobileNav.history")}</span>
   </button>
   <button
+    class="downloads-btn"
     class:active={downloadsOpen}
     onclick={onToggleDownloads}
     aria-label={t("mobileNav.downloads")}
   >
-    <Download size={18} />
+    <span class="icon-wrap">
+      <Download size={18} />
+      {#if activeDownloadCount > 0}
+        <span class="download-badge">{activeDownloadCount > 99 ? "99+" : activeDownloadCount}</span>
+      {/if}
+    </span>
     <span>{t("mobileNav.downloads")}</span>
   </button>
   {#each pluginPanels as panel (panel.pluginId + ":" + panel.id)}
@@ -103,6 +111,30 @@
   button.active {
     color: #fff;
     background: var(--ren-accent);
+  }
+
+  .icon-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .download-badge {
+    position: absolute;
+    bottom: -3px;
+    right: -6px;
+    min-width: 14px;
+    height: 14px;
+    padding: 0 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--ren-accent);
+    color: #fff;
+    font-size: 0.56rem;
+    font-weight: 700;
+    line-height: 1;
+    border: 1.5px solid var(--ren-chrome-bg);
   }
 
   .plugin-dot {

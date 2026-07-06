@@ -15,6 +15,7 @@
     X,
   } from "@lucide/svelte";
   import DownloadsMenu, { type DownloadRow } from "$lib/components/DownloadsMenu.svelte";
+  import type { DownloadProgressView } from "$lib/browser/download-progress";
   import { t } from "$lib/i18n/i18n.svelte";
   import type { ActivePanel, PluginPanelContribution } from "$lib/plugins/api-types.js";
   import { panelKey } from "$lib/plugins/registry.js";
@@ -28,6 +29,7 @@
     themeMode: "dark" | "light";
     downloadsOpen: boolean;
     downloads: DownloadRow[];
+    activeDownloads?: DownloadProgressView[];
     downloadDir: string;
     canIdentify: boolean;
     identifying: boolean;
@@ -42,6 +44,8 @@
     onCloseDownloads: () => void;
     onOpenDownload: (path: string) => void;
     onOpenDownloadFolder: () => void;
+    onCancelDownload?: (id: string) => void;
+    onDismissDownload?: (id: string) => void;
     onIdentify: () => void;
   };
 
@@ -54,6 +58,7 @@
     themeMode,
     downloadsOpen,
     downloads,
+    activeDownloads = [],
     downloadDir,
     canIdentify,
     identifying,
@@ -68,8 +73,15 @@
     onCloseDownloads,
     onOpenDownload,
     onOpenDownloadFolder,
+    onCancelDownload = () => {},
+    onDismissDownload = () => {},
     onIdentify,
   }: Props = $props();
+
+  const activeDownloadCount = $derived(
+    activeDownloads.filter((item) => item.status === "pending" || item.status === "downloading")
+      .length,
+  );
 
   function submit(event: Event) {
     event.preventDefault();
@@ -131,14 +143,22 @@
         onclick={onToggleDownloads}
       >
         <Download size={16} />
+        {#if activeDownloadCount > 0}
+          <span class="download-badge"
+            >{activeDownloadCount > 99 ? "99+" : activeDownloadCount}</span
+          >
+        {/if}
       </button>
       <DownloadsMenu
         open={downloadsOpen}
+        active={activeDownloads}
         {downloads}
         {downloadDir}
         {onDownloadPage}
         onOpenFile={onOpenDownload}
         onOpenFolder={onOpenDownloadFolder}
+        onCancelActive={onCancelDownload}
+        onDismissActive={onDismissDownload}
         onClose={onCloseDownloads}
       />
     </div>
@@ -229,6 +249,25 @@
 
   .downloads-anchor {
     position: relative;
+  }
+
+  .download-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: var(--ren-accent);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 1;
+    border: 1.5px solid var(--ren-chrome-bg);
   }
 
   .url-form {

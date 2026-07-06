@@ -5,10 +5,12 @@
   import { Events, System } from "@wailsio/runtime";
   import {
     AddFavorite,
+    CancelDownload,
     ClearDevLogs,
     ClearBrowsingHistory,
     ClearPageCache,
     ConfigPath,
+    DismissDownload,
     ExportDevLogs,
     ExportTheme,
     FetchCommunityInterfaces,
@@ -32,6 +34,7 @@
     IdentifyToNode,
     ImportCommunityInterfaces,
     ImportTheme,
+    ListActiveDownloads,
     ListDownloads,
     ListInterfaces,
     ListNodes,
@@ -60,6 +63,7 @@
   } from "../bindings/renbrowser/internal/app/browserservice.js";
   import type { WindowChrome } from "../bindings/renbrowser/internal/app/models.js";
   import type { DownloadRow } from "$lib/components/DownloadsMenu.svelte";
+  import { withProgress, type ActiveDownloadRow } from "$lib/browser/download-progress";
   import { exportFilename } from "$lib/brand";
   import BrowserChrome from "$lib/components/BrowserChrome.svelte";
   import TabBar from "$lib/components/TabBar.svelte";
@@ -265,6 +269,8 @@
   let keybinds = $state<KeybindSettings>(defaultKeybinds());
   let downloadDir = $state("");
   let downloads = $state<DownloadRow[]>([]);
+  let activeDownloads = $state<ActiveDownloadRow[]>([]);
+  const activeDownloadViews = $derived(withProgress(activeDownloads));
   let downloadsOpen = $state(false);
   let findOpen = $state(false);
   let canGoBack = $state(false);
@@ -1611,6 +1617,19 @@
     downloads = ((await ListDownloads()) ?? []) as DownloadRow[];
   }
 
+  async function loadActiveDownloads() {
+    activeDownloads = ((await ListActiveDownloads()) ?? []) as ActiveDownloadRow[];
+  }
+
+  async function cancelActiveDownload(id: string) {
+    await CancelDownload(id);
+  }
+
+  async function dismissActiveDownload(id: string) {
+    await DismissDownload(id);
+    activeDownloads = activeDownloads.filter((item) => item.id !== id);
+  }
+
   async function saveDownloadDir(dir: string) {
     downloadDir = await SetDownloadDir(dir);
     await loadDownloads();
@@ -1817,6 +1836,7 @@
     void loadWindowChrome();
     void loadDownloadDir();
     void loadDownloads();
+    void loadActiveDownloads();
     void ListSystemFonts().then((fonts) => {
       if (Array.isArray(fonts) && fonts.length > 0) {
         systemFonts = fonts as string[];
@@ -1898,6 +1918,13 @@
 
     Events.On("node:discovered", () => {
       scheduleLoadNodesFromEvent();
+    });
+
+    Events.On("downloads:active", (event) => {
+      activeDownloads = (event.data ?? []) as ActiveDownloadRow[];
+      if (activeDownloads.some((item) => item.status === "completed")) {
+        void loadDownloads();
+      }
     });
 
     Events.On("dev:log", (payload: { data: string }) => {
@@ -2036,6 +2063,7 @@
       themeMode={theme.mode === "light" ? "light" : "dark"}
       {downloadsOpen}
       {downloads}
+      activeDownloads={activeDownloadViews}
       {downloadDir}
       {canIdentify}
       {identifying}
@@ -2048,6 +2076,8 @@
       onCloseDownloads={() => (downloadsOpen = false)}
       onOpenDownload={openDownload}
       onOpenDownloadFolder={openDownloadFolder}
+      onCancelDownload={cancelActiveDownload}
+      onDismissDownload={dismissActiveDownload}
       onIdentify={requestIdentify}
       onPanel={setPanel}
       onToggleTheme={toggleTheme}
@@ -2351,6 +2381,9 @@
       pluginPanels={pluginContributions.panels}
       mobileDevTools={mobileUI ? mobileDevTools : true}
       {downloadsOpen}
+      activeDownloadCount={activeDownloadViews.filter(
+        (item) => item.status === "pending" || item.status === "downloading",
+      ).length}
       onPanel={setPanel}
       onToggleDownloads={toggleDownloads}
     />
@@ -2359,12 +2392,15 @@
   {#if mobileUI}
     <DownloadsMenu
       open={downloadsOpen}
+      active={activeDownloadViews}
       {downloads}
       {downloadDir}
       variant="sheet"
       onDownloadPage={downloadCurrentPage}
       onOpenFile={openDownload}
       onOpenFolder={openDownloadFolder}
+      onCancelActive={cancelActiveDownload}
+      onDismissActive={dismissActiveDownload}
       onClose={() => (downloadsOpen = false)}
     />
   {/if}

@@ -218,7 +218,13 @@
     "fileSaved": "Datei in Downloads gespeichert",
     "downloading": "Wird über das Mesh heruntergeladen\u2026",
     "noPageToSave": "Keine Seite zum Speichern geöffnet",
-    "noPageContent": "Aktuelle Seite hat keinen Inhalt zum Speichern"
+    "noPageContent": "Aktuelle Seite hat keinen Inhalt zum Speichern",
+    "starting": "Wird gestartet\u2026",
+    "canceled": "Abgebrochen",
+    "downloadFailed": "Download fehlgeschlagen",
+    "cancel": "Download abbrechen",
+    "dismiss": "Verwerfen",
+    "etaLeft": "noch {eta}"
   },
   "content": {
     "cachedBanner": "Gecachte Seite von {when} wird angezeigt",

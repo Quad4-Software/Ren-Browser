@@ -20,6 +20,24 @@ export interface AboutInfo {
     "dataPath": string;
 }
 
+/**
+ * ActiveDownload is the live state of a tracked mesh file download, used to
+ * drive the downloads panel's progress list, speed/ETA readouts, and the
+ * badge counter on the download icon.
+ */
+export interface ActiveDownload {
+    "id": string;
+    "url": string;
+    "name": string;
+    "path"?: string;
+    "received": number;
+    "total": number;
+    "status": DownloadStatus;
+    "error"?: string;
+    "startedAt": number;
+    "updatedAt": number;
+}
+
 export interface BrowserPrefs {
     "openLinksInNewTab": boolean;
     "openLinksInNewWindow": boolean;
@@ -54,6 +72,23 @@ export interface DownloadItem {
     "size": number;
     "modifiedAt": number;
 }
+
+/**
+ * DownloadStatus is the lifecycle state of a tracked download shown in the
+ * downloads UI.
+ */
+export enum DownloadStatus {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = "",
+
+    DownloadStatusPending = "pending",
+    DownloadStatusDownloading = "downloading",
+    DownloadStatusCompleted = "completed",
+    DownloadStatusFailed = "failed",
+    DownloadStatusCanceled = "canceled",
+};
 
 export type HistoryEntry = store$0.HistoryEntry;
 

@@ -36,6 +36,14 @@ export function AttachStack(stack: rns$0.Stack | null): $CancellablePromise<void
     return $Call.ByID(1182225214, stack);
 }
 
+/**
+ * CancelDownload aborts an in-flight download started via DownloadToDir.
+ * Returns false if the download is unknown or already finished.
+ */
+export function CancelDownload(id: string): $CancellablePromise<boolean> {
+    return $Call.ByID(2459978457, id);
+}
+
 export function CaptureWindowState(): $CancellablePromise<$models.WindowState> {
     return $Call.ByID(2070387988);
 }
@@ -54,6 +62,14 @@ export function ClearPageCache(): $CancellablePromise<number> {
 
 export function ConfigPath(): $CancellablePromise<string> {
     return $Call.ByID(1926139322);
+}
+
+/**
+ * DismissDownload removes a finished or failed download entry from the
+ * active downloads list without affecting any file already written to disk.
+ */
+export function DismissDownload(id: string): $CancellablePromise<void> {
+    return $Call.ByID(2093548437, id);
 }
 
 export function DownloadFile(rawURL: string): $CancellablePromise<string> {
@@ -190,6 +206,14 @@ export function ImportTheme(jsonData: string): $CancellablePromise<$models.Theme
 
 export function InitialWindowOptions(frameless: boolean, reset: boolean): $CancellablePromise<application$0.WebviewWindowOptions> {
     return $Call.ByID(1225990025, frameless, reset);
+}
+
+/**
+ * ListActiveDownloads returns the current set of in-flight and recently
+ * finished mesh file downloads for the downloads panel.
+ */
+export function ListActiveDownloads(): $CancellablePromise<$models.ActiveDownload[] | null> {
+    return $Call.ByID(3518671294);
 }
 
 export function ListDownloads(): $CancellablePromise<$models.DownloadItem[] | null> {

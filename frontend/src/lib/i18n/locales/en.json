@@ -218,7 +218,13 @@
     "fileSaved": "File saved to downloads",
     "downloading": "Downloading over the mesh\u2026",
     "noPageToSave": "No page is open to save",
-    "noPageContent": "Current page has no content to save"
+    "noPageContent": "Current page has no content to save",
+    "starting": "Starting\u2026",
+    "canceled": "Canceled",
+    "downloadFailed": "Download failed",
+    "cancel": "Cancel download",
+    "dismiss": "Dismiss",
+    "etaLeft": "{eta} left"
   },
   "content": {
     "cachedBanner": "Viewing cached page from {when}",

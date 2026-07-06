@@ -8,8 +8,13 @@ export {
     PluginHost
 };
 
+export {
+    DownloadStatus
+} from "./models.js";
+
 export type {
     AboutInfo,
+    ActiveDownload,
     BrowserPrefs,
     CommunityFetchResult,
     DevLogEntry,

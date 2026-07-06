@@ -218,7 +218,13 @@
     "fileSaved": "",
     "downloading": "",
     "noPageToSave": "",
-    "noPageContent": ""
+    "noPageContent": "",
+    "starting": "",
+    "canceled": "",
+    "downloadFailed": "",
+    "cancel": "",
+    "dismiss": "",
+    "etaLeft": ""
   },
   "content": {
     "cachedBanner": "",

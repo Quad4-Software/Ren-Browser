@@ -218,7 +218,13 @@
     "fileSaved": "Archivo guardado en descargas",
     "downloading": "Descargando a través de la malla\u2026",
     "noPageToSave": "No hay ninguna página abierta para guardar",
-    "noPageContent": "La página actual no tiene contenido para guardar"
+    "noPageContent": "La página actual no tiene contenido para guardar",
+    "starting": "Iniciando\u2026",
+    "canceled": "Cancelada",
+    "downloadFailed": "Error al descargar",
+    "cancel": "Cancelar descarga",
+    "dismiss": "Descartar",
+    "etaLeft": "{eta} restante"
   },
   "content": {
     "cachedBanner": "Viendo página en caché de {when}",

@@ -116,18 +116,23 @@ func (s *BrowserService) DownloadToDir(rawURL string) (string, error) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err
 	}
-	fetch, err := s.fetchFile(rawURL)
+	name := downloadNameFromURL(rawURL)
+	id := s.downloads.start(rawURL, name)
+	tracker := &downloadTracker{mgr: s.downloads, id: id}
+	fetch, err := s.fetchFileTracked(rawURL, tracker)
 	if err != nil {
+		s.downloads.fail(id, err.Error())
 		return "", err
 	}
-	name := downloadNameFromURL(rawURL)
 	if fetch.FileName != "" {
 		name = sanitizeDownloadFilename(fetch.FileName)
 	}
 	dest := uniqueFilePath(filepath.Join(dir, name))
 	if err := os.WriteFile(dest, fetch.Body, 0o600); err != nil {
+		s.downloads.fail(id, err.Error())
 		return "", err
 	}
+	s.downloads.complete(id, dest, int64(len(fetch.Body)))
 	s.recordDownload(dest)
 	return dest, nil
 }

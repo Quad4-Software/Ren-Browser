@@ -104,6 +104,7 @@ type BrowserService struct {
 	histIdx     int
 	lastPage    PageResponse
 	plugins     *plugins.Manager
+	downloads   *downloadManager
 }
 
 type ServiceOptions struct {
@@ -142,6 +143,12 @@ func NewBrowserServiceWithOptions(stack *rns.Stack, app *application.App, opts S
 		publicMode:  opts.PublicMode,
 		resetWindow: opts.ResetWindow,
 		pageCache:   cache.NewPageCache(128),
+		downloads:   newDownloadManager(),
+	}
+	svc.downloads.onChange = func(items []ActiveDownload) {
+		if svc.app != nil {
+			svc.app.Event.Emit("downloads:active", items)
+		}
 	}
 	if err := svc.runStartupProfileIO(opts.ExportProfile, opts.ImportProfile); err != nil {
 		_ = st.Close()
@@ -581,6 +588,13 @@ func (s *BrowserService) DownloadFile(rawURL string) (string, error) {
 // the file bytes; reticulum-go's Link splits that off before the response
 // ever reaches here, so fetch.Body is always the plain file content.
 func (s *BrowserService) fetchFile(rawURL string) (nomadnet.FetchResult, error) {
+	return s.fetchFileTracked(rawURL, nil)
+}
+
+// fetchFileTracked behaves like fetchFile but, when tracker is non-nil,
+// also reports byte progress to the download manager and makes the fetch
+// cancellable through it.
+func (s *BrowserService) fetchFileTracked(rawURL string, tracker *downloadTracker) (nomadnet.FetchResult, error) {
 	s.mu.RLock()
 	stack := s.stack
 	s.mu.RUnlock()
@@ -601,8 +615,17 @@ func (s *BrowserService) fetchFile(rawURL string) (nomadnet.FetchResult, error) 
 	// internal/nomadnet/browser.go for the matching inner timeouts.
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
+	if tracker != nil {
+		var trackerCancel context.CancelFunc
+		ctx, trackerCancel = context.WithCancel(ctx)
+		defer trackerCancel()
+		tracker.mgr.bindCancel(tracker.id, trackerCancel)
+	}
 
 	hooks := s.fileFetchHooks(rawURL)
+	if tracker != nil {
+		hooks = mergeFetchHooks(hooks, tracker.fetchHooks())
+	}
 	fetch := stack.Browser().FetchWithHooks(ctx, parsed.NodeHash, parsed.Path, parsed.Request, hooks)
 	if fetch.Error != "" {
 		s.log("error", "file fetch failed", fmt.Sprintf("%s: %s", rawURL, fetch.Error))
@@ -613,6 +636,24 @@ func (s *BrowserService) fetchFile(rawURL string) (nomadnet.FetchResult, error) 
 		return nomadnet.FetchResult{}, fmt.Errorf("empty file response")
 	}
 	return fetch, nil
+}
+
+// ListActiveDownloads returns the current set of in-flight and recently
+// finished mesh file downloads for the downloads panel.
+func (s *BrowserService) ListActiveDownloads() []ActiveDownload {
+	return s.downloads.list()
+}
+
+// CancelDownload aborts an in-flight download started via DownloadToDir.
+// Returns false if the download is unknown or already finished.
+func (s *BrowserService) CancelDownload(id string) bool {
+	return s.downloads.cancel(id)
+}
+
+// DismissDownload removes a finished or failed download entry from the
+// active downloads list without affecting any file already written to disk.
+func (s *BrowserService) DismissDownload(id string) {
+	s.downloads.dismiss(id)
 }
 
 // fileFetchHooks reports every stage transition and byte-progress update of
