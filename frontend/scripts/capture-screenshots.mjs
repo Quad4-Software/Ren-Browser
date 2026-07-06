@@ -24,7 +24,14 @@ const layouts = [
       { name: "about", scene: "about", wait: "article.about-page" },
       { name: "settings", scene: "settings", wait: ".side-pane .settings" },
       { name: "editor", scene: "editor", wait: "#micron-source" },
-      { name: "discovery", scene: "discovery", wait: ".side-pane h2" },
+      {
+        name: "discovery",
+        scene: "discovery",
+        wait: ".side-pane h2",
+        settleMs: 4000,
+        waitForNodes: ".discovery ul li",
+      },
+      { name: "docs", scene: "docs", wait: "article.docs-page" },
     ],
   },
   {
@@ -35,7 +42,14 @@ const layouts = [
       { name: "about", scene: "about", wait: "article.about-page" },
       { name: "settings", scene: "settings", wait: ".mobile-panel .settings" },
       { name: "editor", scene: "editor", wait: "#micron-source" },
-      { name: "discovery", scene: "discovery", wait: ".mobile-panel h2" },
+      {
+        name: "discovery",
+        scene: "discovery",
+        wait: ".mobile-panel h2",
+        settleMs: 4000,
+        waitForNodes: ".discovery ul li",
+      },
+      { name: "docs", scene: "docs", wait: "article.docs-page" },
     ],
   },
 ];
@@ -78,11 +92,18 @@ async function applyTheme(page, mode) {
   }, mode);
 }
 
-async function waitForScene(page, waitSelector) {
+async function waitForScene(page, scene) {
+  const settleMs = scene.settleMs ?? 500;
+
   await page
     .waitForSelector('[data-screenshot-ready="true"]', { timeout: 60_000 })
-    .catch(() => page.waitForSelector(waitSelector, { timeout: 60_000 }));
-  await page.waitForTimeout(500);
+    .catch(() => page.waitForSelector(scene.wait, { timeout: 60_000 }));
+
+  if (scene.waitForNodes) {
+    await page.waitForSelector(scene.waitForNodes, { timeout: 45_000 }).catch(() => {});
+  }
+
+  await page.waitForTimeout(settleMs);
 }
 
 async function captureShot(browser, layout, scene, mode) {
@@ -97,7 +118,7 @@ async function captureShot(browser, layout, scene, mode) {
   });
   await page.goto(`${baseURL}?${params}`, { waitUntil: "networkidle" });
   await applyTheme(page, mode);
-  await waitForScene(page, scene.wait);
+  await waitForScene(page, scene);
 
   const file = path.join(dir, `${scene.name}.png`);
   await page.screenshot({ path: file, fullPage: false });

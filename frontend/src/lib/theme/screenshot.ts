@@ -1,9 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-export type ScreenshotScene = "home" | "about" | "settings" | "editor" | "discovery";
+export type ScreenshotScene = "home" | "about" | "settings" | "editor" | "discovery" | "docs";
 export type ScreenshotLayout = "desktop" | "mobile";
 
-const SCENES = new Set<ScreenshotScene>(["home", "about", "settings", "editor", "discovery"]);
+const SCENES = new Set<ScreenshotScene>([
+  "home",
+  "about",
+  "settings",
+  "editor",
+  "discovery",
+  "docs",
+]);
 const LAYOUTS = new Set<ScreenshotLayout>(["desktop", "mobile"]);
 
 export function screenshotLayoutFromQuery(): ScreenshotLayout | null {

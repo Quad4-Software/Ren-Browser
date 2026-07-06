@@ -1820,6 +1820,9 @@
         case "discovery":
           activePanel = "discovery";
           break;
+        case "docs":
+          await openPage("docs:?lang=en&page=getting-started", false);
+          break;
         case "home":
           break;
       }
