@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 package app
 
+import "renbrowser/internal/brand"
+
 type SettingsReset struct {
 	Theme        ThemeSettings   `json:"theme"`
 	Keybinds     KeybindSettings `json:"keybinds"`
@@ -20,9 +22,12 @@ func (s *BrowserService) ResetSettings() SettingsReset {
 	if s.app != nil {
 		window := s.app.Window.Current()
 		if window != nil {
-			window.SetFrameless(true)
+			window.SetFrameless(!prefs.NativeTitlebar)
+			if prefs.NativeTitlebar {
+				window.SetTitle(brand.DisplayName)
+			}
 		}
-		s.app.Event.Emit("window:chrome", WindowChrome{NativeTitlebar: false})
+		s.app.Event.Emit("window:chrome", WindowChrome{NativeTitlebar: prefs.NativeTitlebar})
 	}
 	return SettingsReset{
 		Theme:        theme,

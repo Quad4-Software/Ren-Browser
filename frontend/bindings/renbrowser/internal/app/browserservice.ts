@@ -376,9 +376,6 @@ export function ShowDownloadDir(): $CancellablePromise<void> {
     return $Call.ByID(1423237973);
 }
 
-/**
- * Shutdown stops mesh networking and requests application exit.
- */
 export function Shutdown(): $CancellablePromise<void> {
     return $Call.ByID(1497311545);
 }

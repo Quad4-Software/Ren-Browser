@@ -7,9 +7,9 @@ package paths
 import (
 	"os"
 	"path/filepath"
-
-	"renbrowser/internal/brand"
 )
+
+var androidDataDirs = []string{".renbrowser", ".reticulum-go"}
 
 func migrateAndroidStorage(legacy, root string) {
 	if legacy == "" || root == "" {
@@ -20,7 +20,7 @@ func migrateAndroidStorage(legacy, root string) {
 	if legacy == root {
 		return
 	}
-	for _, name := range []string{brand.DataDirName, ".reticulum-go"} {
+	for _, name := range androidDataDirs {
 		migrateAndroidDir(filepath.Join(legacy, name), filepath.Join(root, name))
 	}
 }

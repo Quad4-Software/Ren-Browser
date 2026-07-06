@@ -24,6 +24,7 @@ type BrowserPrefs struct {
 func DefaultBrowserPrefs() BrowserPrefs {
 	return BrowserPrefs{
 		OpenLinksInNewTab:  true,
+		NativeTitlebar:     platformDefaultNativeTitlebar(),
 		MicronRenderer:     "auto",
 		MicronWasmEnabled:  true,
 		MicronWasmParserID: "bundled",
@@ -89,6 +90,9 @@ func decodeBrowserPrefs(raw string) (BrowserPrefs, error) {
 	}
 	if _, ok := fields["tabHoverPreviews"]; !ok {
 		merged.TabHoverPreviews = DefaultBrowserPrefs().TabHoverPreviews
+	}
+	if _, ok := fields["nativeTitlebar"]; !ok {
+		merged.NativeTitlebar = DefaultBrowserPrefs().NativeTitlebar
 	}
 	return merged, nil
 }
