@@ -38,8 +38,6 @@ on:
         required: false
       ANDROID_KEYSTORE_PASSWORD:
         required: false
-      ANDROID_KEY_ALIAS:
-        required: false
       ANDROID_KEY_PASSWORD:
         required: false
 
@@ -391,15 +389,16 @@ jobs:
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: renbrowser
         run: |
           set -euo pipefail
-          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+          effective_key_password="${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$effective_key_password" ]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             if [ -n "$KEYSTORE_B64" ]; then
-              echo "::warning::ANDROID_KEYSTORE_BASE64 is set but ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and/or ANDROID_KEY_PASSWORD is missing. Building debug APK."
+              echo "::warning::ANDROID_KEYSTORE_BASE64 is set but ANDROID_KEYSTORE_PASSWORD and/or ANDROID_KEY_PASSWORD is missing. Building debug APK."
             fi
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
@@ -424,7 +423,7 @@ jobs:
         shell: bash
         env:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_ALIAS: renbrowser
         run: |
           set -euo pipefail
           keystore="${RUNNER_TEMP}/release.keystore"
@@ -432,18 +431,22 @@ jobs:
             echo "Android keystore validation failed for alias '$KEY_ALIAS'." >&2
             echo "Aliases in keystore:" >&2
             keytool -list -keystore "$keystore" -storepass "$KEYSTORE_PASSWORD" 2>/dev/null | sed -n 's/^Alias name: //p' >&2 || true
-            echo "Check ANDROID_KEYSTORE_PASSWORD and ANDROID_KEY_ALIAS repository secrets." >&2
+            echo "Check ANDROID_KEYSTORE_PASSWORD (and ANDROID_KEY_PASSWORD if different) repository secrets." >&2
             exit 1
           fi
 
       - name: Build signed APK
         if: steps.android_sign.outputs.available == 'true'
+        shell: bash
         env:
           ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_ALIAS: renbrowser
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: task package:android
+        run: |
+          set -euo pipefail
+          export ANDROID_KEY_PASSWORD="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
+          task package:android
 
       - name: Build debug APK
         if: steps.android_sign.outputs.available != 'true' && (inputs.channel != 'release' || inputs.android_sign_release == false)
@@ -495,6 +498,12 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           path: artifacts
+          pattern: |
+            linux-*
+            windows-amd64
+            macos-universal
+            android-apk
+            server-*
           merge-multiple: true
 
       - name: Checksums
@@ -502,7 +511,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
-          find artifacts -type f -exec cp {} release/ \;
+          find artifacts -type f -name 'renbrowser-*' -exec cp {} release/ \;
+          if [ -z "$(find release -maxdepth 1 -type f | head -n 1)" ]; then
+            echo "No release binaries found in downloaded artifacts." >&2
+            find artifacts -type f | head -20 >&2 || true
+            exit 1
+          fi
           cd release
           sha256sum * > SHA256SUMS.txt
 
