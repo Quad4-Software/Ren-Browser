@@ -9,6 +9,7 @@ require (
 	go.uber.org/goleak v1.3.0
 	micron-parser-go v0.0.0
 	modernc.org/sqlite v1.53.0
+	quad4/bzip2 v0.0.0
 	quad4/msgpack/v5 v5.8.0
 	quad4/reticulum-go v0.0.0
 )
@@ -30,7 +31,6 @@ require (
 	modernc.org/libc v1.73.4 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
-	quad4/bzip2 v0.0.0 // indirect
 	quad4/tagparser v0.0.0 // indirect
 )
 
