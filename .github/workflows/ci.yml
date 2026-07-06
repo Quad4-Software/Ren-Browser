@@ -120,6 +120,81 @@ jobs:
           exit-code: 1
           skip-files: build/docker/Dockerfile.cross
 
+  build-linux:
+    name: Linux (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-linux-deps: "true"
+
+      - name: Build
+        run: task linux:build ARCH=${{ matrix.arch }}
+
+      - name: Package AppImage
+        run: task linux:create:appimage ARCH=${{ matrix.arch }}
+
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          pkg_version="$(sed -n 's/^  version: "\(.*\)".*/\1/p' build/config.yml)"
+          case "${{ matrix.arch }}" in
+            amd64) img_arch=x86_64 ;;
+            arm64) img_arch=aarch64 ;;
+            *) echo "Unknown arch: ${{ matrix.arch }}" >&2; exit 1 ;;
+          esac
+          mkdir -p dist/ci
+          cp "bin/renbrowser-${pkg_version}-${img_arch}.AppImage" "dist/ci/renbrowser-linux-${{ matrix.arch }}.AppImage"
+          cp bin/renbrowser "dist/ci/renbrowser-linux-${{ matrix.arch }}"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: linux-${{ matrix.arch }}
+          path: dist/ci/*
+          if-no-files-found: error
+          retention-days: 7
+
+  build-android:
+    name: Android (debug apk)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-linux-deps: "true"
+          install-wails: "true"
+
+      - name: Setup Android SDK
+        uses: ./.github/actions/setup-android
+
+      - name: Build debug APK
+        run: task build:android
+
+      - name: Upload APK
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: android-debug-apk
+          path: bin/renbrowser.apk
+          if-no-files-found: error
+          retention-days: 7
+
   build:
     name: Build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
@@ -127,12 +202,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: linux-amd64
-            os: ubuntu-latest
-            task: linux:build
-            artifact: bin/renbrowser
-            artifact_name: renbrowser-linux-amd64
-            install_linux_deps: "true"
           - target: windows-amd64
             os: windows-latest
             task: windows:build ARCH=amd64
@@ -178,6 +247,8 @@ jobs:
       - go
       - frontend
       - security
+      - build-linux
+      - build-android
       - build
     runs-on: ubuntu-latest
     steps:
@@ -189,6 +260,8 @@ jobs:
             "${{ needs.go.result }}" \
             "${{ needs.frontend.result }}" \
             "${{ needs.security.result }}" \
+            "${{ needs.build-linux.result }}" \
+            "${{ needs.build-android.result }}" \
             "${{ needs.build.result }}"; do
             case "$result" in
               success|skipped) ;;

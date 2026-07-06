@@ -1,0 +1,22 @@
+# Pinned third-party actions (bump tag and SHA together when upgrading):
+#   actions/setup-java@v4.8.0           c1e323688fd81a25caa38c78aa6df2d33d3e20d9
+
+name: Setup Android SDK
+description: Install JDK 21 and Android SDK/NDK for APK builds
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Java
+      uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9
+      with:
+        distribution: temurin
+        java-version: "21"
+
+    - name: Install Android SDK and NDK
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends unzip
+        bash build/scripts/ci-setup-android.sh

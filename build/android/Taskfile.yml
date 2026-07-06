@@ -14,13 +14,12 @@ vars:
   ANDROID_ABI:
     sh: '[ "$(uname -m)" = "arm64" ] && echo "arm64-v8a" || echo "x86_64"'
   # SDK location: $ANDROID_HOME / $ANDROID_SDK_ROOT, else the per-OS default
-  # (macOS: ~/Library/Android/sdk, Linux/other: ~/Android/Sdk)
   SDK_ROOT:
-    sh: 'for d in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" "$HOME/Library/Android/sdk" "$HOME/Android/Sdk"; do [ -n "$d" ] && [ -d "$d/ndk" ] && echo "$d" && exit 0; done; echo "${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}}"'
+    sh: bash "{{.ROOT_DIR}}/build/scripts/android-sdk-root.sh"
   ADB:
-    sh: 'command -v adb || echo "${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$([ -d "$HOME/Library/Android/sdk" ] && echo "$HOME/Library/Android/sdk" || echo "$HOME/Android/Sdk")}}/platform-tools/adb"'
+    sh: bash "{{.ROOT_DIR}}/build/scripts/android-adb-path.sh"
   EMULATOR:
-    sh: 'command -v emulator || echo "${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$([ -d "$HOME/Library/Android/sdk" ] && echo "$HOME/Library/Android/sdk" || echo "$HOME/Android/Sdk")}}/emulator/emulator"'
+    sh: bash "{{.ROOT_DIR}}/build/scripts/android-emulator-path.sh"
 
 tasks:
   install:deps:
@@ -71,11 +70,13 @@ tasks:
           exit 1
         fi
 
-        # Determine toolchain based on host OS
-        case "$(uname -s)" in
-          Darwin) HOST_TAG="darwin-x86_64" ;;
-          Linux)  HOST_TAG="linux-x86_64" ;;
-          *)      echo "Unsupported host OS"; exit 1 ;;
+        # Determine toolchain based on host OS and CPU
+        case "$(uname -s)-$(uname -m)" in
+          Darwin-arm64)  HOST_TAG="darwin-arm64" ;;
+          Darwin-*)      HOST_TAG="darwin-x86_64" ;;
+          Linux-aarch64|Linux-arm64) HOST_TAG="linux-aarch64" ;;
+          Linux-*)     HOST_TAG="linux-x86_64" ;;
+          *)           echo "Unsupported host OS"; exit 1 ;;
         esac
 
         TOOLCHAIN="$NDK_ROOT/toolchains/llvm/prebuilt/$HOST_TAG"

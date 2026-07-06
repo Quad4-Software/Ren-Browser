@@ -68,6 +68,8 @@ tasks:
       - task: common:generate:icons
       - task: generate:dotdesktop
     preconditions:
+      - sh: pkg-config --exists gtk4 && pkg-config --exists webkitgtk-6.0
+        msg: "GTK4/WebKitGTK dev packages required. On Debian/Ubuntu: sudo apt install libgtk-4-dev libwebkitgtk-6.0-dev pkg-config"
       - sh: '{{if eq .OBFUSCATED "true"}}command -v garble >/dev/null 2>&1{{else}}true{{end}}'
         msg: "garble is required for obfuscated builds. Install it with: go install mvdan.cc/garble@v0.16.0 (requires Go 1.24+). See https://github.com/burrowers/garble/releases for version/toolchain compatibility."
     cmds:
@@ -127,11 +129,14 @@ tasks:
     summary: Creates a fuse3-compatible AppImage via linuxdeploy
     deps:
       - task: build
+        vars:
+          ARCH:
+            ref: .ARCH
       - task: packaging-icon
       - task: fetch-linuxdeploy
     cmds:
       - chmod +x build/linux/appimage/package-appimage.sh
-      - build/linux/appimage/package-appimage.sh "{{.PKG_VERSION}}"
+      - ARCH='{{.ARCH | default ARCH}}' build/linux/appimage/package-appimage.sh "{{.PKG_VERSION}}"
 
   fetch-linuxdeploy:
     summary: Download linuxdeploy and the AppImage output plugin for the host architecture
