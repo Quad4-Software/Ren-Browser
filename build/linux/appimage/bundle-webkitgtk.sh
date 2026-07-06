@@ -39,7 +39,7 @@ install_helpers() {
 
 printf 'Bundling WebKitGTK helpers from %s\n' "$webkit_dir"
 
-LIB_DEST="${APPDIR}/usr/lib/${arch}-linux-gnu"
+LIB_DEST="${APPDIR}/usr/lib"
 mkdir -p "$LIB_DEST"
 declare -A BUNDLED_HELPER_LIBS=()
 
