@@ -163,9 +163,10 @@ Cross-compile headless server binaries (pure Go, `CGO_ENABLED=0`):
 task build:server GOOS=linux GOARCH=arm64 OUTPUT=bin/renbrowser-server-linux-arm64
 task build:server GOOS=linux GOARCH=arm GOARM=6 OUTPUT=bin/renbrowser-server-linux-armv6
 task build:server GOOS=freebsd GOARCH=amd64 OUTPUT=bin/renbrowser-server-freebsd-amd64
+task build:server GOOS=windows GOARCH=amd64 OUTPUT=bin/renbrowser-server-windows-amd64.exe
 ```
 
-Release builds also ship `renbrowser-server-linux-amd64`, `linux-arm64`, `linux-armv6` (Raspberry Pi Zero W), `freebsd-amd64`, `freebsd-arm64`, `openbsd-amd64`, and `netbsd-amd64`.
+Release builds also ship `renbrowser-server-linux-amd64`, `linux-arm64`, `linux-armv6` (Raspberry Pi Zero W), `freebsd-amd64`, `freebsd-arm64`, `openbsd-amd64`, `netbsd-amd64`, and `windows-amd64` (`renbrowser-server-windows-amd64.exe`).
 
 Common environment variables (also readable from a `.env` file in the working directory):
 
