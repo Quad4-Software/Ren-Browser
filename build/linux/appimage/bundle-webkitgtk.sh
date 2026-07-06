@@ -39,12 +39,93 @@ install_helpers() {
 
 printf 'Bundling WebKitGTK helpers from %s\n' "$webkit_dir"
 
+LIB_DEST="${APPDIR}/usr/lib/${arch}-linux-gnu"
+mkdir -p "$LIB_DEST"
+declare -A BUNDLED_HELPER_LIBS=()
+
+is_host_glibc_stack_lib() {
+  case "$1" in
+    ld-linux*.so* | linux-vdso.so* | libc.so.* | libm.so.* | libpthread.so.* | libdl.so.* | librt.so.* | libresolv.so.* | libutil.so.* | libnsl.so.* | libnss_* | libtinfo.so.* | libncurses.so.* | libBrokenLocale.so.*)
+      return 0
+      ;;
+  esac
+  return 1
+}
+
+lib_already_in_appdir() {
+  find "$APPDIR"/usr/lib* -name "$1" -print -quit 2>/dev/null | grep -q .
+}
+
+install_helper_library() {
+  local lib="$1"
+  [ -n "$lib" ] || return 0
+  [ -f "$lib" ] || return 0
+  case "$lib" in
+    "${APPDIR}"/*) return 0 ;;
+  esac
+
+  local base real
+  base="$(basename "$lib")"
+  if is_host_glibc_stack_lib "$base"; then
+    return 0
+  fi
+  if lib_already_in_appdir "$base"; then
+    BUNDLED_HELPER_LIBS["$base"]=1
+    return 0
+  fi
+  if [ -n "${BUNDLED_HELPER_LIBS[$base]:-}" ]; then
+    return 0
+  fi
+
+  cp -a "$lib" "${LIB_DEST}/${base}"
+  BUNDLED_HELPER_LIBS["$base"]=1
+  printf 'Bundled WebKit helper dependency: %s\n' "$base"
+
+  real="$(readlink -f "$lib")"
+  if [ "$real" != "$lib" ]; then
+    local real_base
+    real_base="$(basename "$real")"
+    if [ "$real_base" != "$base" ] && [ -z "${BUNDLED_HELPER_LIBS[$real_base]:-}" ] && ! lib_already_in_appdir "$real_base"; then
+      cp -a "$real" "${LIB_DEST}/${real_base}"
+      BUNDLED_HELPER_LIBS["$real_base"]=1
+      bundle_elf_dependencies "$real"
+    fi
+  fi
+
+  bundle_elf_dependencies "$real"
+}
+
+bundle_elf_dependencies() {
+  local elf="$1"
+  [ -f "$elf" ] || return 0
+
+  local lib
+  while IFS= read -r lib; do
+    install_helper_library "$lib"
+  done < <(ldd "$elf" 2>/dev/null | awk '/=> \// { print $3 } /^\// { print $1 }')
+}
+
+bundle_helper_libraries() {
+  local helper_dir="$1"
+  local helper
+  for helper in "${helper_dir}"/WebKit*Process; do
+    [ -x "$helper" ] || continue
+    printf 'Bundling shared libraries for %s\n' "$(basename "$helper")"
+    bundle_elf_dependencies "$helper"
+  done
+}
+
 # Debian/Ubuntu WebKit builds hard-code the multiarch helper directory.
 install_helpers "${APPDIR}/usr/lib/${arch}-linux-gnu/webkitgtk-6.0"
 
 # Arch and some other distros install helpers next to /usr/lib/webkitgtk-6.0.
 if [ "${webkit_dir}" != "${APPDIR}/usr/lib/webkitgtk-6.0" ]; then
   install_helpers "${APPDIR}/usr/lib/webkitgtk-6.0"
+fi
+
+bundle_helper_libraries "${APPDIR}/usr/lib/${arch}-linux-gnu/webkitgtk-6.0"
+if [ -d "${APPDIR}/usr/lib/webkitgtk-6.0" ]; then
+  bundle_helper_libraries "${APPDIR}/usr/lib/webkitgtk-6.0"
 fi
 
 printf 'Patching libwebkit paths for AppImage relocation\n'
