@@ -111,6 +111,7 @@
     "importTheme": "Import theme",
     "browsing": "Browsing",
     "openLinksInNewTab": "Open sites in a new tab",
+    "tabHoverPreviews": "Show tab previews on hover",
     "mobileDevTools": "Show developer tools in mobile navigation",
     "pageCache": "Page cache",
     "pageCacheHint": "Cached mesh pages load instantly. Disable caching or clear the cache when you need fresh content from the network.",
@@ -208,7 +209,10 @@
     "saveCurrentPage": "Save current page",
     "noDownloads": "No downloads yet",
     "noDownloadsDescription": "Pages and mesh files you save will appear here.",
-    "downloadsFolder": "Downloads folder"
+    "downloadsFolder": "Downloads folder",
+    "saved": "Page saved to downloads",
+    "noPageToSave": "No page is open to save",
+    "noPageContent": "Current page has no content to save"
   },
   "content": {
     "cachedBanner": "Viewing cached page from {when}",

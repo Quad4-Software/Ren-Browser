@@ -111,6 +111,7 @@
     "importTheme": "Importar tema",
     "browsing": "Navegación",
     "openLinksInNewTab": "Abrir sitios en una pestaña nueva",
+    "tabHoverPreviews": "Mostrar vista previa de pestañas al pasar el cursor",
     "mobileDevTools": "Mostrar herramientas de desarrollo en la navegación móvil",
     "pageCache": "Caché de páginas",
     "pageCacheHint": "Las páginas de malla en caché cargan al instante. Desactiva la caché o bórrala si necesitas contenido actualizado de la red.",
@@ -208,7 +209,10 @@
     "saveCurrentPage": "Guardar página actual",
     "noDownloads": "Aún no hay descargas",
     "noDownloadsDescription": "Las páginas y archivos de malla que guardes aparecerán aquí.",
-    "downloadsFolder": "Carpeta de descargas"
+    "downloadsFolder": "Carpeta de descargas",
+    "saved": "Página guardada en descargas",
+    "noPageToSave": "No hay ninguna página abierta para guardar",
+    "noPageContent": "La página actual no tiene contenido para guardar"
   },
   "content": {
     "cachedBanner": "Viendo página en caché de {when}",

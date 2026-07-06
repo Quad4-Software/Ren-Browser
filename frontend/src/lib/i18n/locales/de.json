@@ -111,6 +111,7 @@
     "importTheme": "Design importieren",
     "browsing": "Surfen",
     "openLinksInNewTab": "Seiten in neuem Tab öffnen",
+    "tabHoverPreviews": "Tab-Vorschau beim Überfahren anzeigen",
     "mobileDevTools": "Entwicklertools in der mobilen Navigation anzeigen",
     "pageCache": "Seitencache",
     "pageCacheHint": "Gecachte Mesh-Seiten laden sofort. Deaktivieren Sie den Cache oder leeren Sie ihn, wenn Sie frische Inhalte vom Netzwerk benötigen.",
@@ -208,7 +209,10 @@
     "saveCurrentPage": "Aktuelle Seite speichern",
     "noDownloads": "Noch keine Downloads",
     "noDownloadsDescription": "Seiten und Mesh-Dateien, die Sie speichern, erscheinen hier.",
-    "downloadsFolder": "Download-Ordner"
+    "downloadsFolder": "Download-Ordner",
+    "saved": "Seite in Downloads gespeichert",
+    "noPageToSave": "Keine Seite zum Speichern geöffnet",
+    "noPageContent": "Aktuelle Seite hat keinen Inhalt zum Speichern"
   },
   "content": {
     "cachedBanner": "Gecachte Seite von {when} wird angezeigt",

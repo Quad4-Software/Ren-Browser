@@ -111,6 +111,7 @@
     "importTheme": "",
     "browsing": "",
     "openLinksInNewTab": "",
+    "tabHoverPreviews": "",
     "mobileDevTools": "",
     "pageCache": "",
     "pageCacheHint": "",
@@ -208,7 +209,10 @@
     "saveCurrentPage": "",
     "noDownloads": "",
     "noDownloadsDescription": "",
-    "downloadsFolder": ""
+    "downloadsFolder": "",
+    "saved": "",
+    "noPageToSave": "",
+    "noPageContent": ""
   },
   "content": {
     "cachedBanner": "",
