@@ -127,7 +127,10 @@
 <section class="history-panel">
   <header>
     <div class="title-row">
-      <h2>{t("history.title")}</h2>
+      <div>
+        <h2>{t("history.title")}</h2>
+        <p class="subtitle">{t("history.subtitle")}</p>
+      </div>
       {#if history.length > 0}
         <button
           type="button"
@@ -140,7 +143,6 @@
         </button>
       {/if}
     </div>
-    <p class="subtitle">{t("history.subtitle")}</p>
     <input
       class="search ren-input"
       type="search"
@@ -196,27 +198,27 @@
 
   .title-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    gap: 0.75rem;
-    margin-bottom: 0.25rem;
+    gap: 0.65rem;
+    margin-bottom: 0.75rem;
   }
 
-  h2 {
-    margin: 0;
+  header h2 {
+    margin: 0 0 0.25rem;
     font-size: 1.05rem;
     font-weight: 600;
-    min-width: 0;
+  }
+
+  .subtitle {
+    margin: 0;
+    color: var(--ren-muted);
+    font-size: 0.88rem;
   }
 
   .clear-btn {
     flex-shrink: 0;
-  }
-
-  .subtitle {
-    margin: 0 0 0.75rem;
-    color: var(--ren-muted);
-    font-size: 0.88rem;
+    margin-left: auto;
   }
 
   .search {
@@ -257,7 +259,7 @@
     gap: 0.45rem;
   }
 
-  button {
+  ul button {
     width: 100%;
     text-align: left;
     border: 1px solid var(--ren-border);
@@ -273,7 +275,7 @@
       background 0.15s ease;
   }
 
-  button:hover {
+  ul button:hover {
     border-color: var(--ren-border-strong);
     background: var(--ren-tab-hover);
   }
