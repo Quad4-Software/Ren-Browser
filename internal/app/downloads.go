@@ -13,6 +13,8 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
+
+	"renbrowser/internal/paths"
 )
 
 const downloadDirSettingKey = "downloadDir"
@@ -27,8 +29,12 @@ type DownloadItem struct {
 }
 
 func defaultDownloadDir() string {
-	if dir := strings.TrimSpace(xdg.UserDirs.Download); dir != "" {
+	if dir := strings.TrimSpace(xdg.UserDirs.Download); dir != "" && !isTempDownloadDir(dir) {
 		return filepath.Clean(dir)
+	}
+	root := strings.TrimSpace(paths.DataRoot())
+	if root != "" && root != "." && !isTempDownloadDir(root) {
+		return filepath.Clean(filepath.Join(root, "Downloads"))
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -110,9 +116,16 @@ func (s *BrowserService) DownloadToDir(rawURL string) (string, error) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err
 	}
+	fetch, err := s.fetchFile(rawURL)
+	if err != nil {
+		return "", err
+	}
 	name := downloadNameFromURL(rawURL)
+	if fetch.FileName != "" {
+		name = sanitizeDownloadFilename(fetch.FileName)
+	}
 	dest := uniqueFilePath(filepath.Join(dir, name))
-	if err := s.SaveDownload(rawURL, dest); err != nil {
+	if err := os.WriteFile(dest, fetch.Body, 0o600); err != nil {
 		return "", err
 	}
 	s.recordDownload(dest)

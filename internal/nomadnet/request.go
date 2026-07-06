@@ -4,8 +4,6 @@ package nomadnet
 import (
 	"sort"
 	"strings"
-
-	"quad4/msgpack/v5/pkg/msgpack"
 )
 
 type RequestData struct {
@@ -17,7 +15,13 @@ func (r RequestData) Empty() bool {
 	return len(r.Vars) == 0 && len(r.Fields) == 0
 }
 
-func encodeRequestData(req RequestData) []byte {
+// buildRequestData assembles the var_/field_ prefixed map that Nomad Network
+// nodes expect as the request payload. It must be handed to link.Request as
+// a plain map (or nil), never pre-encoded to bytes: Nomad Network only reads
+// request parameters when the unpacked wire payload is a dict
+// (isinstance(data, dict) in nomadnet/Node.py). Pre-msgpacking it here would
+// ship a bytes blob instead and silently drop every var/field parameter.
+func buildRequestData(req RequestData) map[string]string {
 	if req.Empty() {
 		return nil
 	}
@@ -28,11 +32,7 @@ func encodeRequestData(req RequestData) []byte {
 	for k, v := range req.Fields {
 		out["field_"+k] = v
 	}
-	b, err := msgpack.Marshal(out)
-	if err != nil {
-		return nil
-	}
-	return b
+	return out
 }
 
 const fieldKeyPrefix = "field."

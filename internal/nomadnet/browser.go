@@ -19,6 +19,7 @@ type FetchResult struct {
 	Path        string `json:"path"`
 	Body        []byte `json:"body"`
 	ContentType string `json:"contentType"`
+	FileName    string `json:"fileName,omitempty"`
 	DurationMs  int64  `json:"durationMs"`
 	Hops        int    `json:"hops"`
 	Interface   string `json:"interface,omitempty"`
@@ -83,8 +84,7 @@ func (b *Browser) Fetch(ctx context.Context, nodeHash string, path string, req R
 		return res
 	}
 
-	payload := encodeRequestData(req)
-	receipt, err := lnk.Request(res.Path, payload, 20*time.Second)
+	receipt, err := lnk.Request(res.Path, buildRequestData(req), 20*time.Second)
 	if err != nil {
 		res.Error = err.Error()
 		res.DurationMs = time.Since(start).Milliseconds()
@@ -94,7 +94,7 @@ func (b *Browser) Fetch(ctx context.Context, nodeHash string, path string, req R
 		res.Interface = iface.GetName()
 	}
 
-	body, err := waitReceipt(ctx, receipt, 25*time.Second)
+	body, metadata, err := waitReceipt(ctx, receipt, 25*time.Second)
 	if err != nil {
 		res.Error = err.Error()
 		res.DurationMs = time.Since(start).Milliseconds()
@@ -102,9 +102,27 @@ func (b *Browser) Fetch(ctx context.Context, nodeHash string, path string, req R
 	}
 
 	res.Body = body
+	res.FileName = fileNameFromMetadata(metadata)
 	res.ContentType = DetectContentType(res.Path, body)
 	res.DurationMs = time.Since(start).Milliseconds()
 	return res
+}
+
+// fileNameFromMetadata extracts the file name Nomad Network attaches to
+// /file/ resource responses (serve_file returns [handle, {"name": ...}] on
+// the Python side). Returns "" if no usable name is present.
+func fileNameFromMetadata(metadata map[string]any) string {
+	if metadata == nil {
+		return ""
+	}
+	switch name := metadata["name"].(type) {
+	case []byte:
+		return string(name)
+	case string:
+		return name
+	default:
+		return ""
+	}
 }
 
 func (b *Browser) linkFor(ctx context.Context, destHash []byte, remoteID *identity.Identity) (*rlink.Link, error) {
@@ -186,22 +204,22 @@ func (b *Browser) establishLink(ctx context.Context, destHash []byte, remoteID *
 	return lnk, nil
 }
 
-func waitReceipt(ctx context.Context, receipt *rlink.RequestReceipt, timeout time.Duration) ([]byte, error) {
+func waitReceipt(ctx context.Context, receipt *rlink.RequestReceipt, timeout time.Duration) ([]byte, map[string]any, error) {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, nil, ctx.Err()
 		default:
 		}
 		if receipt.Concluded() {
 			resp := receipt.GetResponse()
 			if len(resp) == 0 {
-				return nil, fmt.Errorf("empty response")
+				return nil, nil, fmt.Errorf("empty response")
 			}
-			return resp, nil
+			return resp, receipt.GetMetadata(), nil
 		}
 		time.Sleep(80 * time.Millisecond)
 	}
-	return nil, fmt.Errorf("node response timed out")
+	return nil, nil, fmt.Errorf("node response timed out")
 }

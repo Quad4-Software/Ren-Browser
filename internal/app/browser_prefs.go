@@ -17,6 +17,7 @@ type BrowserPrefs struct {
 	DiscoverySlowMode         bool            `json:"discoverySlowMode"`
 	MobileDevTools            bool            `json:"mobileDevTools"`
 	PageCacheEnabled          bool            `json:"pageCacheEnabled"`
+	TabHoverPreviews          bool            `json:"tabHoverPreviews"`
 	SettingsSectionsCollapsed map[string]bool `json:"settingsSectionsCollapsed"`
 }
 
@@ -27,6 +28,7 @@ func DefaultBrowserPrefs() BrowserPrefs {
 		MicronWasmEnabled:  true,
 		MicronWasmParserID: "bundled",
 		PageCacheEnabled:   true,
+		TabHoverPreviews:   true,
 	}
 }
 
@@ -51,6 +53,7 @@ func mergeBrowserPrefs(saved BrowserPrefs) BrowserPrefs {
 	defaults.DiscoverySlowMode = saved.DiscoverySlowMode
 	defaults.MobileDevTools = saved.MobileDevTools
 	defaults.PageCacheEnabled = saved.PageCacheEnabled
+	defaults.TabHoverPreviews = saved.TabHoverPreviews
 	if len(saved.SettingsSectionsCollapsed) > 0 {
 		defaults.SettingsSectionsCollapsed = saved.SettingsSectionsCollapsed
 	}
@@ -83,6 +86,9 @@ func decodeBrowserPrefs(raw string) (BrowserPrefs, error) {
 	}
 	if _, ok := fields["pageCacheEnabled"]; !ok {
 		merged.PageCacheEnabled = DefaultBrowserPrefs().PageCacheEnabled
+	}
+	if _, ok := fields["tabHoverPreviews"]; !ok {
+		merged.TabHoverPreviews = DefaultBrowserPrefs().TabHoverPreviews
 	}
 	return merged, nil
 }

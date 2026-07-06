@@ -567,15 +567,29 @@ func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) Pa
 }
 
 func (s *BrowserService) DownloadFile(rawURL string) (string, error) {
+	fetch, err := s.fetchFile(rawURL)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(fetch.Body), nil
+}
+
+// fetchFile requests a /file/ resource and returns the raw (already
+// metadata-stripped) file bytes along with the server-supplied file name,
+// if any. Nomad Network nodes respond to /file/ requests with an RNS
+// resource transfer carrying a {"name": <filename>} metadata block ahead of
+// the file bytes; reticulum-go's Link splits that off before the response
+// ever reaches here, so fetch.Body is always the plain file content.
+func (s *BrowserService) fetchFile(rawURL string) (nomadnet.FetchResult, error) {
 	s.mu.RLock()
 	stack := s.stack
 	s.mu.RUnlock()
 	if stack == nil {
-		return "", errors.New("reticulum not ready")
+		return nomadnet.FetchResult{}, errors.New("reticulum not ready")
 	}
 	parsed, err := nomadnet.ParseURL(rawURL)
 	if err != nil {
-		return "", err
+		return nomadnet.FetchResult{}, err
 	}
 	if !strings.HasPrefix(parsed.Path, "/file/") {
 		parsed.Path = "/file/" + strings.TrimPrefix(parsed.Path, "/")
@@ -586,24 +600,20 @@ func (s *BrowserService) DownloadFile(rawURL string) (string, error) {
 
 	fetch := stack.Browser().Fetch(ctx, parsed.NodeHash, parsed.Path, parsed.Request)
 	if fetch.Error != "" {
-		return "", errors.New(fetch.Error)
+		return nomadnet.FetchResult{}, errors.New(fetch.Error)
 	}
 	if len(fetch.Body) == 0 {
-		return "", fmt.Errorf("empty file response")
+		return nomadnet.FetchResult{}, fmt.Errorf("empty file response")
 	}
-	return base64.StdEncoding.EncodeToString(fetch.Body), nil
+	return fetch, nil
 }
 
 func (s *BrowserService) SaveDownload(rawURL string, destPath string) error {
-	encoded, err := s.DownloadFile(rawURL)
+	fetch, err := s.fetchFile(rawURL)
 	if err != nil {
 		return err
 	}
-	body, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(destPath, body, 0o600)
+	return os.WriteFile(destPath, fetch.Body, 0o600)
 }
 
 func (s *BrowserService) ResolveMicronLink(currentURL, destination, fieldsSpec string, inputs []micron.FieldInput) (string, error) {

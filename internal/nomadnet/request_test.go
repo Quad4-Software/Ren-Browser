@@ -4,30 +4,20 @@ package nomadnet
 import (
 	"strings"
 	"testing"
-
-	"quad4/msgpack/v5/pkg/msgpack"
 )
 
-func TestEncodeRequestDataMsgpackVars(t *testing.T) {
-	raw := encodeRequestData(RequestData{Vars: map[string]string{"category": "general"}})
-	if len(raw) == 0 {
-		t.Fatal("expected msgpack payload")
-	}
-	var out map[string]string
-	if err := msgpack.Unmarshal(raw, &out); err != nil {
-		t.Fatalf("unmarshal: %v", err)
+func TestBuildRequestDataVars(t *testing.T) {
+	out := buildRequestData(RequestData{Vars: map[string]string{"category": "general"}})
+	if out == nil {
+		t.Fatal("expected request data map")
 	}
 	if out["var_category"] != "general" {
 		t.Fatalf("payload = %#v", out)
 	}
 }
 
-func TestEncodeRequestDataFormFields(t *testing.T) {
-	raw := encodeRequestData(RequestData{Fields: map[string]string{"user": "alice"}})
-	var out map[string]string
-	if err := msgpack.Unmarshal(raw, &out); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
+func TestBuildRequestDataFormFields(t *testing.T) {
+	out := buildRequestData(RequestData{Fields: map[string]string{"user": "alice"}})
 	if out["field_user"] != "alice" {
 		t.Fatalf("payload = %#v", out)
 	}
@@ -104,9 +94,24 @@ func TestParseRequestPairsFieldPrefix(t *testing.T) {
 	}
 }
 
-func TestEncodeRequestDataEmpty(t *testing.T) {
+func TestBuildRequestDataEmpty(t *testing.T) {
 	var empty RequestData
-	if got := encodeRequestData(empty); got != nil {
+	if got := buildRequestData(empty); got != nil {
 		t.Fatalf("expected nil payload, got %v", got)
+	}
+}
+
+func TestFileNameFromMetadata(t *testing.T) {
+	if got := fileNameFromMetadata(nil); got != "" {
+		t.Fatalf("expected empty name for nil metadata, got %q", got)
+	}
+	if got := fileNameFromMetadata(map[string]any{"other": 1}); got != "" {
+		t.Fatalf("expected empty name when no name key present, got %q", got)
+	}
+	if got := fileNameFromMetadata(map[string]any{"name": []byte("guide.zip")}); got != "guide.zip" {
+		t.Fatalf("expected guide.zip for []byte name, got %q", got)
+	}
+	if got := fileNameFromMetadata(map[string]any{"name": "guide.zip"}); got != "guide.zip" {
+		t.Fatalf("expected guide.zip for string name, got %q", got)
 	}
 }
