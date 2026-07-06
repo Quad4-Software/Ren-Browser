@@ -58,17 +58,57 @@ jobs:
       - name: Go tests
         run: task test:go
 
-      - name: Go race tests
+      - name: Go hard tests
         if: matrix.os == 'ubuntu-latest'
-        run: task test:go:race
+        run: task test:go:hard
+
+      - name: Go plugin tests
+        if: matrix.os == 'ubuntu-latest'
+        run: go test ./internal/plugins/...
+        env:
+          GOFLAGS: -mod=vendor
 
       - name: Contract drift tests
         if: matrix.os == 'ubuntu-latest'
         run: task test:contract
 
-      - name: Go fuzz tests
-        if: matrix.os == 'ubuntu-latest'
-        run: task fuzz:go
+  benchmark:
+    name: Go benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-wails: "false"
+
+      - name: Run benchmarks
+        run: task bench:go
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: go-benchmarks
+          path: bench/go.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  brand:
+    name: Brand drift
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-wails: "false"
+
+      - name: Check generated brand files
+        run: task common:check:brand
 
   frontend:
     name: Frontend
@@ -208,18 +248,21 @@ jobs:
             artifact: bin/renbrowser.exe
             artifact_name: renbrowser-windows-amd64
             install_linux_deps: "false"
+            install_wails: "true"
           - target: macos-arm64
             os: macos-latest
             task: darwin:build ARCH=arm64
             artifact: bin/renbrowser
             artifact_name: renbrowser-macos-arm64
             install_linux_deps: "false"
+            install_wails: "true"
           - target: server-linux-amd64
             os: ubuntu-latest
             task: build:server
             artifact: bin/renbrowser-server
             artifact_name: renbrowser-server-linux-amd64
-            install_linux_deps: "true"
+            install_linux_deps: "false"
+            install_wails: "false"
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -228,6 +271,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           install-linux-deps: ${{ matrix.install_linux_deps }}
+          install-wails: ${{ matrix.install_wails }}
 
       - name: Build
         run: task ${{ matrix.task }}
@@ -245,6 +289,8 @@ jobs:
     if: always()
     needs:
       - go
+      - benchmark
+      - brand
       - frontend
       - security
       - build-linux
@@ -258,6 +304,8 @@ jobs:
           set -euo pipefail
           for result in \
             "${{ needs.go.result }}" \
+            "${{ needs.benchmark.result }}" \
+            "${{ needs.brand.result }}" \
             "${{ needs.frontend.result }}" \
             "${{ needs.security.result }}" \
             "${{ needs.build-linux.result }}" \

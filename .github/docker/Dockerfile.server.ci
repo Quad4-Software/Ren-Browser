@@ -1,4 +1,20 @@
+ARG IMAGE_VERSION=0.1.0-dev
+ARG IMAGE_REVISION=unknown
+ARG IMAGE_SOURCE=https://github.com/Quad4-Software/Ren-Browser
+
 FROM gcr.io/distroless/static-debian12@sha256:9c346e4be81b5ca7ff31a0d89eaeade58b0f95cfd3baed1f36083ddb47ca3160
+
+ARG IMAGE_VERSION
+ARG IMAGE_REVISION
+ARG IMAGE_SOURCE
+
+LABEL org.opencontainers.image.title="Ren Browser Server"
+LABEL org.opencontainers.image.description="Reticulum browser HTTP server mode for NomadNet pages"
+LABEL org.opencontainers.image.vendor="Quad4"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.source="${IMAGE_SOURCE}"
+LABEL org.opencontainers.image.version="${IMAGE_VERSION}"
+LABEL org.opencontainers.image.revision="${IMAGE_REVISION}"
 
 COPY server /server
 COPY frontend-dist /frontend/dist
@@ -9,5 +25,7 @@ ENV WAILS_SERVER_HOST=0.0.0.0
 ENV WAILS_SERVER_PORT=8080
 ENV REN_BROWSER_TRUST_PROXY=false
 ENV REN_BROWSER_BASE_PATH=
+
+USER 65532:65532
 
 ENTRYPOINT ["/server"]

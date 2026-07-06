@@ -88,6 +88,10 @@ runs:
       env:
         GOFLAGS: -mod=mod
       run: |
+        if [ "${{ inputs.install-linux-deps }}" != "true" ] && [ "$(uname -s)" = "Linux" ]; then
+          echo "install-wails requires install-linux-deps on Linux (gtk4/webkitgtk dev packages)." >&2
+          exit 1
+        fi
         go install github.com/wailsapp/wails/v3/cmd/wails3@${{ inputs.wails-version }}
         echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 

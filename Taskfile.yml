@@ -125,6 +125,14 @@ tasks:
       - test:go:stress
       - fuzz:go
 
+  bench:go:
+    desc: Run Go benchmarks (smoke run for CI artifacts)
+    cmds:
+      - mkdir -p bench
+      - go test -run='^$' -bench=. -benchmem -count=1 ./internal/cache/... ./internal/content/... ./internal/nomadnet/... | tee bench/go.txt
+    env:
+      GOFLAGS: "-mod=vendor"
+
   test:interop:
     desc: Live Reticulum interop tests (requires network)
     cmds:

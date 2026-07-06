@@ -45,11 +45,18 @@ jobs:
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
+        with:
+          install-wails: "false"
 
-      - name: Build frontend
-        run: task common:build:frontend BUILD_FLAGS="-tags server,production"
+      - name: Read image version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -n 's/^  version: "\(.*\)".*/\1/p' build/config.yml)"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
-      - name: Build server binary
+      - name: Build server
         run: task build:server
 
       - name: Prepare image context
@@ -99,6 +106,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            IMAGE_VERSION=${{ steps.version.outputs.version }}
+            IMAGE_REVISION=${{ github.sha }}
+            IMAGE_SOURCE=https://github.com/${{ github.repository }}
           platforms: linux/amd64,linux/arm64
           provenance: true
           sbom: true

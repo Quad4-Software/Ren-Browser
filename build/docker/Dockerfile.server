@@ -42,7 +42,7 @@ RUN go mod download
 #   logger/asset middleware), matching the desktop production build.
 # - CGO_ENABLED defaults to 0 for a fully static binary (distroless/static);
 #   override with --build-arg CGO_ENABLED=1 (see header) for CGO apps.
-RUN CGO_ENABLED=${CGO_ENABLED} go build -tags server,production -trimpath -buildvcs=false -ldflags="-s -w" -o server .
+RUN CGO_ENABLED=0 go build -tags server,production -trimpath -buildvcs=false -ldflags="-s -w" -o server .
 
 # Runtime stage - minimal image
 FROM ${RUNTIME_IMAGE}

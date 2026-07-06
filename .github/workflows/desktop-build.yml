@@ -220,6 +220,8 @@ jobs:
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
+        with:
+          install-wails: "false"
 
       - name: Build server
         run: task build:server
