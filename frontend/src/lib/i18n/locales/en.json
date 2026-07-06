@@ -268,7 +268,7 @@
     "title": "Community interfaces",
     "hint": "Online entries from directory.rns.recipes",
     "searchPlaceholder": "Search name, network, host...",
-    "refresh": "Refresh directory",
+    "refresh": "Refresh community interfaces",
     "loading": "Loading directory...",
     "noInterfaces": "No interfaces found",
     "noInterfacesDescription": "Try another search or refresh the directory.",

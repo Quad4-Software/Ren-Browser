@@ -268,7 +268,7 @@
     "title": "Interfaces de la comunidad",
     "hint": "Entradas en línea de directory.rns.recipes",
     "searchPlaceholder": "Buscar nombre, red, host...",
-    "refresh": "Actualizar directorio",
+    "refresh": "Actualizar interfaces de la comunidad",
     "loading": "Cargando directorio...",
     "noInterfaces": "No se encontraron interfaces",
     "noInterfacesDescription": "Prueba otra búsqueda o actualiza el directorio.",

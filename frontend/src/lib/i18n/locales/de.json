@@ -268,7 +268,7 @@
     "title": "Community-Schnittstellen",
     "hint": "Online-Einträge von directory.rns.recipes",
     "searchPlaceholder": "Name, Netzwerk, Host suchen...",
-    "refresh": "Verzeichnis aktualisieren",
+    "refresh": "Community-Schnittstellen aktualisieren",
     "loading": "Verzeichnis wird geladen...",
     "noInterfaces": "Keine Schnittstellen gefunden",
     "noInterfacesDescription": "Versuchen Sie eine andere Suche oder aktualisieren Sie das Verzeichnis.",
