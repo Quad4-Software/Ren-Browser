@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 
@@ -45,7 +44,7 @@ func VerifyPassword(encoded, password string) error {
 		return ErrInvalidPassword
 	}
 	hashLen := len(hash)
-	if hashLen == 0 || hashLen > math.MaxUint32 {
+	if hashLen == 0 || uint64(hashLen) > 0xFFFFFFFF {
 		return ErrInvalidPassword
 	}
 	other := argon2.IDKey([]byte(password), salt, params.time, params.memory, params.threads, uint32(hashLen))
