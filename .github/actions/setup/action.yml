@@ -87,7 +87,9 @@ runs:
       shell: bash
       env:
         GOFLAGS: -mod=mod
-      run: go install github.com/wailsapp/wails/v3/cmd/wails3@${{ inputs.wails-version }}
+      run: |
+        go install github.com/wailsapp/wails/v3/cmd/wails3@${{ inputs.wails-version }}
+        echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
     - name: Prepare Go build inputs
       shell: bash

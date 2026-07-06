@@ -220,8 +220,6 @@ jobs:
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
-        with:
-          install-wails: "false"
 
       - name: Build server
         run: task build:server
@@ -260,19 +258,33 @@ jobs:
         if: inputs.channel != 'release'
         run: task build:android
 
+      - name: Detect Android release signing
+        id: android_sign
+        if: inputs.channel == 'release' && inputs.android_sign_release
+        shell: bash
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Skip Android release build
-        if: inputs.channel == 'release' && !inputs.android_sign_release
+        if: inputs.channel == 'release' && (inputs.android_sign_release == false || steps.android_sign.outputs.available != 'true')
         run: echo "Skipping Android APK on release (ANDROID_KEYSTORE_* secrets not configured)."
 
       - name: Decode release keystore
-        if: inputs.channel == 'release' && inputs.android_sign_release
+        if: inputs.channel == 'release' && inputs.android_sign_release && steps.android_sign.outputs.available == 'true'
         shell: bash
         run: |
           set -euo pipefail
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "${RUNNER_TEMP}/release.keystore"
 
       - name: Build signed release APK
-        if: inputs.channel == 'release' && inputs.android_sign_release
+        if: inputs.channel == 'release' && inputs.android_sign_release && steps.android_sign.outputs.available == 'true'
         env:
           ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -281,7 +293,7 @@ jobs:
         run: task package:android
 
       - name: Stage artifacts
-        if: inputs.channel != 'release' || inputs.android_sign_release
+        if: inputs.channel != 'release' || (inputs.android_sign_release && steps.android_sign.outputs.available == 'true')
         shell: bash
         run: |
           set -euo pipefail
@@ -289,7 +301,7 @@ jobs:
           cp bin/renbrowser.apk dist/release/renbrowser-android.apk
 
       - name: Upload artifacts
-        if: inputs.channel != 'release' || inputs.android_sign_release
+        if: inputs.channel != 'release' || (inputs.android_sign_release && steps.android_sign.outputs.available == 'true')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: android-apk
