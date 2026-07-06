@@ -175,7 +175,18 @@ jobs:
           cache-node: "true"
 
       - name: Install NSIS
-        run: choco install nsis -y --no-progress
+        shell: pwsh
+        run: |
+          choco install nsis -y --no-progress
+          $dirs = @(
+            "${env:ProgramFiles(x86)}\NSIS",
+            "${env:ProgramFiles}\NSIS"
+          ) | Where-Object { $_ -and (Test-Path $_) }
+          if (-not $dirs) {
+            throw "NSIS not found under Program Files after choco install."
+          }
+          $dirs | ForEach-Object { $_ | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append }
+          & (Join-Path $dirs[0] 'makensis.exe') /VERSION
 
       - name: Package NSIS installer
         run: task windows:create:nsis:installer ARCH=amd64
