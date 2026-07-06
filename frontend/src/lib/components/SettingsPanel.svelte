@@ -55,6 +55,7 @@
     micronWasmParserId: string;
     desktopChrome: boolean;
     mobileUI: boolean;
+    mobileDevTools: boolean;
     configText: string;
     configSaving: boolean;
     configError: string;
@@ -73,6 +74,7 @@
     onChangeDownloadDir: (dir: string) => void;
     onPickDownloadDir: () => void;
     onChangeOpenLinksInNewTab: (value: boolean) => void;
+    onChangeMobileDevTools: (value: boolean) => void;
     onChangeNativeTitlebar: (value: boolean) => void;
     onChangeMicronRenderer: (value: MicronRendererPreference) => void;
     onChangeMicronWasmEnabled: (value: boolean) => void;
@@ -111,6 +113,7 @@
     micronWasmParserId,
     desktopChrome,
     mobileUI,
+    mobileDevTools,
     configText = $bindable(),
     configSaving,
     configError,
@@ -126,6 +129,7 @@
     onChangeDownloadDir,
     onPickDownloadDir,
     onChangeOpenLinksInNewTab,
+    onChangeMobileDevTools,
     onChangeNativeTitlebar,
     onChangeMicronRenderer,
     onChangeMicronWasmEnabled,
@@ -364,6 +368,14 @@
       checked={openLinksInNewTab}
       onchange={onChangeOpenLinksInNewTab}
     />
+
+    {#if mobileUI}
+      <Toggle
+        label={t("settings.mobileDevTools")}
+        checked={mobileDevTools}
+        onchange={onChangeMobileDevTools}
+      />
+    {/if}
 
     {#if desktopChrome}
       <Toggle

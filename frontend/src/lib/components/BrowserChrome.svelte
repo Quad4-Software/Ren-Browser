@@ -186,7 +186,11 @@
     >
       <Settings size={16} />
     </button>
-    <button class="ren-icon-btn mobile-nav-dup" aria-label={t("chrome.toggleTheme")} onclick={onToggleTheme}>
+    <button
+      class="ren-icon-btn mobile-nav-dup"
+      aria-label={t("chrome.toggleTheme")}
+      onclick={onToggleTheme}
+    >
       {#if themeMode === "dark"}
         <Sun size={16} />
       {:else}

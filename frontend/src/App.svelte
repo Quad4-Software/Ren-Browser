@@ -70,6 +70,8 @@
   import SplitPane from "$lib/components/SplitPane.svelte";
   import SplitTabPicker from "$lib/components/SplitTabPicker.svelte";
   import MobileNav from "$lib/components/MobileNav.svelte";
+  import MobileUrlBar from "$lib/components/MobileUrlBar.svelte";
+  import MobileTabsPage from "$lib/components/MobileTabsPage.svelte";
   import DownloadsMenu from "$lib/components/DownloadsMenu.svelte";
   import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
   import AppStoreError from "$lib/components/AppStoreError.svelte";
@@ -110,6 +112,7 @@
   import { blockExternalLinkPointerEvent } from "$lib/browser/navigation-guard";
   import {
     canOpenTab,
+    MAX_TABS,
     normalizeReticulumURL,
     orderTabsPinnedFirst,
     pinTabInList,
@@ -173,6 +176,7 @@
     bytes: number;
     fromCache: boolean;
     hops: number;
+    interface?: string;
     error?: string;
   };
 
@@ -290,6 +294,8 @@
   let communityFilter = $state("");
   let communitySelected = new SvelteSet<number>();
   let discoverySlowMode = $state(false);
+  let mobileDevTools = $state(false);
+  let mobileTabsOpen = $state(false);
   let settingsSectionsCollapsed = $state<Record<string, boolean>>({});
 
   const DISCOVERY_POLL_MS = 5000;
@@ -318,6 +324,7 @@
   const canIdentify = $derived(
     /^[a-f0-9]{32}:/i.test(url.trim()) || /^[a-f0-9]{32}$/i.test(url.trim()),
   );
+  const atTabLimit = $derived(tabs.length >= MAX_TABS);
   const activeTabId = $derived(tabs.find((tab) => tab.active)?.id ?? "");
   const splitTab = $derived(
     splitTabId && splitTabId !== activeTabId ? tabs.find((tab) => tab.id === splitTabId) : null,
@@ -334,8 +341,12 @@
   let persistTimer: ReturnType<typeof setTimeout> | undefined;
 
   function setPanel(panel: ActivePanel) {
+    if (mobileUI && panel === "devtools" && !mobileDevTools) {
+      return;
+    }
     const next = activePanel === panel ? "browser" : panel;
     activePanel = next;
+    mobileTabsOpen = false;
     if (next === "settings") {
       void loadPageCacheStats();
     }
@@ -1131,6 +1142,7 @@
       await ImportCommunityInterfaces(configs);
       communitySelected.clear();
       await loadInterfaces();
+      await loadConfigText();
       await loadCommunityInterfaces();
     } catch (err) {
       communityError = err instanceof Error ? err.message : String(err);
@@ -1196,7 +1208,11 @@
     micronWasmParserId = prefs.micronWasmParserId || BUNDLED_MICRON_WASM_PARSER_ID;
     micronRenderer = normalizeMicronRendererPreference(prefs.micronRenderer);
     discoverySlowMode = !!prefs.discoverySlowMode;
+    mobileDevTools = !!prefs.mobileDevTools;
     settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
+    if (mobileUI && activePanel === "devtools" && !mobileDevTools) {
+      activePanel = "browser";
+    }
     await refreshMicronWasmState(micronWasmParserId);
   }
 
@@ -1211,6 +1227,7 @@
       uiLanguage,
       docsLanguage,
       discoverySlowMode,
+      mobileDevTools,
       settingsSectionsCollapsed,
     };
   }
@@ -1223,6 +1240,7 @@
     micronWasmParserId?: string;
     uiLanguage?: string;
     discoverySlowMode?: boolean;
+    mobileDevTools?: boolean;
     settingsSectionsCollapsed?: Record<string, boolean>;
   }) {
     const prefs = await SetBrowserPrefs({
@@ -1236,9 +1254,21 @@
     micronWasmParserId = prefs.micronWasmParserId || BUNDLED_MICRON_WASM_PARSER_ID;
     micronRenderer = normalizeMicronRendererPreference(prefs.micronRenderer);
     discoverySlowMode = !!prefs.discoverySlowMode;
+    mobileDevTools = !!prefs.mobileDevTools;
     settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
+    if (mobileUI && activePanel === "devtools" && !mobileDevTools) {
+      activePanel = "browser";
+    }
     await refreshMicronWasmState(micronWasmParserId);
     return prefs;
+  }
+
+  async function saveMobileDevTools(value: boolean) {
+    mobileDevTools = value;
+    if (!value && activePanel === "devtools") {
+      activePanel = "browser";
+    }
+    await persistBrowserPrefs({ mobileDevTools: value });
   }
 
   async function saveDiscoverySlowMode(value: boolean) {
@@ -1387,6 +1417,11 @@
     micronWasmParserId = reset.browserPrefs.micronWasmParserId || BUNDLED_MICRON_WASM_PARSER_ID;
     micronWasmAvailable = await isMicronWasmAvailable();
     micronRenderer = normalizeMicronRendererPreference(reset.browserPrefs.micronRenderer);
+    discoverySlowMode = !!reset.browserPrefs.discoverySlowMode;
+    mobileDevTools = !!reset.browserPrefs.mobileDevTools;
+    if (mobileUI && activePanel === "devtools" && !mobileDevTools) {
+      activePanel = "browser";
+    }
     await refreshMicronWasmState(micronWasmParserId);
   }
 
@@ -1418,10 +1453,31 @@
     downloadsOpen = !downloadsOpen;
     if (downloadsOpen) {
       void loadDownloads();
+      mobileTabsOpen = false;
       if (mobileUI && activePanel !== "browser") {
         activePanel = "browser";
       }
     }
+  }
+
+  function openMobileTabs() {
+    mobileTabsOpen = true;
+    downloadsOpen = false;
+    activePanel = "browser";
+  }
+
+  function closeMobileTabs() {
+    mobileTabsOpen = false;
+  }
+
+  function mobileSelectTab(id: string) {
+    setActiveTab(id);
+    mobileTabsOpen = false;
+  }
+
+  function mobileHome() {
+    mobileTabsOpen = false;
+    activePanel = "browser";
   }
 
   async function openDownload(path: string) {
@@ -1663,338 +1719,374 @@
   });
 </script>
 
-<div class="app-shell">
+<div class="app-shell" class:mobile-ui={mobileUI}>
   {#if pluginToast}
     <div class="plugin-toast" role="status">{pluginToast}</div>
   {/if}
-  <TabBar
-    {tabs}
-    {nativeTitlebar}
-    {mobileUI}
-    {splitViewOpen}
-    {splitTabId}
-    onSelect={setActiveTab}
-    onClose={closeTab}
-    onNew={newTab}
-    onReorder={reorderTabs}
-    onReload={reloadTab}
-    onDuplicate={duplicateTab}
-    onFavorite={favoriteTab}
-    onViewSource={viewSourceTab}
-    onDownload={downloadTab}
-    onSplit={splitTabView}
-    onCloseSplit={closeSplitView}
-    onCloseOthers={closeOtherTabs}
-    onCloseRight={closeTabsToRight}
-    onCloseAll={closeAllTabs}
-    onTogglePin={togglePinTab}
-  />
+  {#if mobileUI}
+    <MobileUrlBar
+      bind:url
+      tabCount={tabs.length}
+      {canIdentify}
+      {identifying}
+      {atTabLimit}
+      onNavigate={openPage}
+      onHome={mobileHome}
+      onNewTab={newTab}
+      onOpenTabs={openMobileTabs}
+      onIdentify={requestIdentify}
+    />
+  {:else}
+    <TabBar
+      {tabs}
+      {nativeTitlebar}
+      {mobileUI}
+      {splitViewOpen}
+      {splitTabId}
+      onSelect={setActiveTab}
+      onClose={closeTab}
+      onNew={newTab}
+      onReorder={reorderTabs}
+      onReload={reloadTab}
+      onDuplicate={duplicateTab}
+      onFavorite={favoriteTab}
+      onViewSource={viewSourceTab}
+      onDownload={downloadTab}
+      onSplit={splitTabView}
+      onCloseSplit={closeSplitView}
+      onCloseOthers={closeOtherTabs}
+      onCloseRight={closeTabsToRight}
+      onCloseAll={closeAllTabs}
+      onTogglePin={togglePinTab}
+    />
 
-  <BrowserChrome
-    bind:url
-    {canGoBack}
-    {canGoForward}
-    {activePanel}
-    pluginPanels={pluginContributions.panels}
-    themeMode={theme.mode === "light" ? "light" : "dark"}
-    {downloadsOpen}
-    {downloads}
-    {downloadDir}
-    {canIdentify}
-    {identifying}
-    onNavigate={openPage}
-    onBack={goBack}
-    onForward={goForward}
-    onReload={() => openPage(url)}
-    onDownloadPage={downloadCurrentPage}
-    onToggleDownloads={toggleDownloads}
-    onCloseDownloads={() => (downloadsOpen = false)}
-    onOpenDownload={openDownload}
-    onOpenDownloadFolder={openDownloadFolder}
-    onIdentify={requestIdentify}
-    onPanel={setPanel}
-    onToggleTheme={toggleTheme}
-  />
+    <BrowserChrome
+      bind:url
+      {canGoBack}
+      {canGoForward}
+      {activePanel}
+      pluginPanels={pluginContributions.panels}
+      themeMode={theme.mode === "light" ? "light" : "dark"}
+      {downloadsOpen}
+      {downloads}
+      {downloadDir}
+      {canIdentify}
+      {identifying}
+      onNavigate={openPage}
+      onBack={goBack}
+      onForward={goForward}
+      onReload={() => openPage(url)}
+      onDownloadPage={downloadCurrentPage}
+      onToggleDownloads={toggleDownloads}
+      onCloseDownloads={() => (downloadsOpen = false)}
+      onOpenDownload={openDownload}
+      onOpenDownloadFolder={openDownloadFolder}
+      onIdentify={requestIdentify}
+      onPanel={setPanel}
+      onToggleTheme={toggleTheme}
+    />
+  {/if}
 
-  <main class="workspace" class:split={activePanel !== "browser" && !mobileUI} class:mobile-panel={mobileUI && activePanel !== "browser"}>
-    {#snippet settingsPane()}
-      <SettingsPanel
-        bind:theme
-        {systemFonts}
-        {keybinds}
-        {interfaces}
-        {configPath}
-        {pluginsDir}
-        bind:downloadDir
-        {uiLanguage}
-        onChangeUILanguage={saveUILanguage}
-        {openLinksInNewTab}
-        {nativeTitlebar}
-        {micronRenderer}
-        {micronWasmEnabled}
-        {micronWasmParserId}
-        {desktopChrome}
-        {mobileUI}
-        bind:configText
-        {configSaving}
-        {configError}
-        {communityItems}
-        {communityLoading}
-        {communityImporting}
-        {communityError}
-        bind:communityFilter
-        {communitySelected}
-        sectionsCollapsed={settingsSectionsCollapsed}
-        onChangeSectionsCollapsed={saveSettingsSectionsCollapsed}
-        onChange={saveTheme}
-        onChangeKeybinds={saveKeybinds}
-        onChangeDownloadDir={saveDownloadDir}
-        onPickDownloadDir={pickDownloadDir}
-        onChangeOpenLinksInNewTab={saveOpenLinksInNewTab}
-        onChangeNativeTitlebar={saveNativeTitlebar}
-        onChangeMicronRenderer={saveMicronRenderer}
-        onChangeMicronWasmEnabled={saveMicronWasmEnabled}
-        onChangeMicronWasmParser={saveMicronWasmParser}
-        onMicronWasmReadyChange={setMicronWasmReady}
-        onResetDefaults={resetDefaults}
-        onToggleInterface={async (name, enabled) => {
-          await SetInterfaceEnabled(name, enabled);
-          await loadInterfaces();
-        }}
-        onExportTheme={async () => {
-          const json = await ExportTheme();
-          const blob = new Blob([json], { type: "application/json" });
-          const href = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = href;
-          a.download = exportFilename("theme");
-          a.click();
-          URL.revokeObjectURL(href);
-        }}
-        onImportTheme={async (json) => {
-          theme = (await ImportTheme(json)) as ThemeSettings;
-          applyTheme(theme);
-          await syncMobileChromeTheme(theme);
-        }}
-        onConfigChange={(text) => {
-          configText = text;
-        }}
-        onConfigSave={() => void saveConfigText()}
-        onConfigReload={() => void reloadConfigFromDisk()}
-        onClearPageCache={() => void clearPageCache()}
-        {pageCacheEntries}
-        {pageCacheMax}
-        {pageCacheClearing}
-        onCommunityRefresh={() => void loadCommunityInterfaces()}
-        onCommunityFilter={(value) => {
-          communityFilter = value;
-        }}
-        onCommunityToggle={toggleCommunitySelection}
-        onCommunityImport={() => void importCommunitySelection()}
-        onPluginsChanged={() => void reloadPlugins()}
+  <main
+    class="workspace"
+    class:split={activePanel !== "browser" && !mobileUI}
+    class:mobile-panel={mobileUI && activePanel !== "browser" && !mobileTabsOpen}
+    class:mobile-tabs={mobileUI && mobileTabsOpen}
+  >
+    {#if mobileUI && mobileTabsOpen}
+      <MobileTabsPage
+        {tabs}
+        {activeTabId}
+        {atTabLimit}
+        onSelect={mobileSelectTab}
+        onClose={closeTab}
+        onNew={newTab}
+        onDismiss={closeMobileTabs}
       />
-    {/snippet}
-    <section class="page-pane">
-      {#snippet primaryPane()}
-        {#if contentType === "editor"}
-          {#if loading}
-            <div class="editor-loading">{t("editor.loadingMicron")}</div>
-          {:else}
-            <MicronEditor
-              source={lastRaw}
-              currentURL={url}
-              onSourceChange={updateEditorSource}
-              onNavigate={openPage}
-            />
-          {/if}
-        {:else if contentType === "config"}
-          {#if loading}
-            <div class="editor-loading">{t("editor.loadingConfig")}</div>
-          {:else}
-            <section class="config-page">
-              <ReticulumConfigEditor
-                bind:configText
-                {configPath}
-                saving={configSaving}
-                error={configError}
-                onChange={(text) => {
-                  configText = text;
-                }}
-                onSave={() => void saveConfigText()}
-                onReload={() => void reloadConfigFromDisk()}
-              />
-            </section>
-          {/if}
-        {:else if contentType === "settings"}
-          {#if loading}
-            <div class="editor-loading">{t("common.loading")}</div>
-          {:else}
-            <div class="settings-page">
-              {@render settingsPane()}
-            </div>
-          {/if}
-        {:else}
-          <ContentViewer
-            {html}
-            {contentType}
-            {loading}
-            {error}
-            {errorKind}
-            {pageFg}
-            {pageBg}
-            raw={lastRaw}
-            {fromCache}
-            {cachedAt}
-            {showSource}
-            currentURL={url}
-            {findOpen}
-            micronEngine={effectiveMicronEngine}
-            onFindClose={() => (findOpen = false)}
-            onNavigate={openPage}
-            onRetry={() => openPage(url)}
-            onReloadFresh={() => openPage(url, true, { skipCache: true })}
-            onShowSourceChange={setShowSource}
-          />
-        {/if}
-      {/snippet}
-
-      {#if splitViewOpen}
-        {#snippet secondaryPane()}
-          {#if splitTab}
-            {@const splitPage = splitTab.page ?? emptyPage()}
-            <ContentViewer
-              html={splitPage.html}
-              contentType={splitPage.contentType}
-              loading={false}
-              error={splitPage.error}
-              errorKind={splitPage.errorKind}
-              pageFg={splitPage.pageFg}
-              pageBg={splitPage.pageBg}
-              raw={splitPage.lastRaw}
-              fromCache={splitPage.fromCache}
-              cachedAt={splitPage.cachedAt ?? 0}
-              showSource={splitPage.showSource ?? false}
-              currentURL={splitTab.url}
-              findOpen={false}
-              micronEngine={effectiveMicronEngine}
-              onFindClose={() => {}}
-              onNavigate={(target) => void openPage(target, true, { tabId: splitTab.id })}
-              onRetry={() => void openPage(splitTab.url, false, { tabId: splitTab.id })}
-              onReloadFresh={() =>
-                void openPage(splitTab.url, true, { tabId: splitTab.id, skipCache: true })}
-              onShowSourceChange={(value) => setSplitTabShowSource(splitTab.id, value)}
-            />
-          {:else}
-            <SplitTabPicker
-              {tabs}
-              {activeTabId}
-              onSelect={selectSplitTab}
-              onClose={closeSplitView}
-            />
-          {/if}
-        {/snippet}
-        <SplitPane
-          ratio={splitRatio}
-          onRatioChange={(value) => (splitRatio = value)}
-          primary={primaryPane}
-          secondary={secondaryPane}
-        />
-      {:else}
-        {@render primaryPane()}
-      {/if}
-    </section>
-
-    {#if activePanel === "discovery"}
-      <aside class="side-pane">
-        <DiscoveryPanel
-          {nodes}
-          {favorites}
-          slowMode={discoverySlowMode}
-          onSlowModeChange={saveDiscoverySlowMode}
-          onOpen={browseURL}
-          onFavorite={async (favUrl) => {
-            favorites = (await AddFavorite(favUrl)) as string[];
+    {:else}
+      {#snippet settingsPane()}
+        <SettingsPanel
+          bind:theme
+          {systemFonts}
+          {keybinds}
+          {interfaces}
+          {configPath}
+          {pluginsDir}
+          bind:downloadDir
+          {uiLanguage}
+          onChangeUILanguage={saveUILanguage}
+          {openLinksInNewTab}
+          {nativeTitlebar}
+          {micronRenderer}
+          {micronWasmEnabled}
+          {micronWasmParserId}
+          {desktopChrome}
+          {mobileUI}
+          {mobileDevTools}
+          bind:configText
+          {configSaving}
+          {configError}
+          {communityItems}
+          {communityLoading}
+          {communityImporting}
+          {communityError}
+          bind:communityFilter
+          {communitySelected}
+          sectionsCollapsed={settingsSectionsCollapsed}
+          onChangeSectionsCollapsed={saveSettingsSectionsCollapsed}
+          onChange={saveTheme}
+          onChangeKeybinds={saveKeybinds}
+          onChangeDownloadDir={saveDownloadDir}
+          onPickDownloadDir={pickDownloadDir}
+          onChangeOpenLinksInNewTab={saveOpenLinksInNewTab}
+          onChangeMobileDevTools={saveMobileDevTools}
+          onChangeNativeTitlebar={saveNativeTitlebar}
+          onChangeMicronRenderer={saveMicronRenderer}
+          onChangeMicronWasmEnabled={saveMicronWasmEnabled}
+          onChangeMicronWasmParser={saveMicronWasmParser}
+          onMicronWasmReadyChange={setMicronWasmReady}
+          onResetDefaults={resetDefaults}
+          onToggleInterface={async (name, enabled) => {
+            await SetInterfaceEnabled(name, enabled);
+            await loadInterfaces();
           }}
-        />
-      </aside>
-    {:else if activePanel === "history"}
-      <aside class="side-pane">
-        <HistoryPanel {history} onOpen={browseURL} />
-      </aside>
-    {:else if activePanel === "devtools"}
-      <aside class="side-pane">
-        <DevToolsPanel
-          {logs}
-          {network}
-          raw={lastRaw}
-          {logLevel}
-          {contentType}
-          {durationMs}
-          {hops}
-          {fromCache}
-          {cachedAt}
-          {micronRendererBadge}
-          pluginTabs={pluginContributions.devtools}
-          onClear={() => {
-            void ClearDevLogs();
-            logs = [];
-          }}
-          onExport={async () => {
-            const json = await ExportDevLogs();
+          onExportTheme={async () => {
+            const json = await ExportTheme();
             const blob = new Blob([json], { type: "application/json" });
             const href = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = href;
-            a.download = exportFilename("devlogs");
+            a.download = exportFilename("theme");
             a.click();
             URL.revokeObjectURL(href);
           }}
-          onLogLevel={(level) => {
-            void SetLogLevel(level).then((v) => {
-              logLevel = v;
-            });
+          onImportTheme={async (json) => {
+            theme = (await ImportTheme(json)) as ThemeSettings;
+            applyTheme(theme);
+            await syncMobileChromeTheme(theme);
           }}
+          onConfigChange={(text) => {
+            configText = text;
+          }}
+          onConfigSave={() => void saveConfigText()}
+          onConfigReload={() => void reloadConfigFromDisk()}
+          onClearPageCache={() => void clearPageCache()}
+          {pageCacheEntries}
+          {pageCacheMax}
+          {pageCacheClearing}
+          onCommunityRefresh={() => void loadCommunityInterfaces()}
+          onCommunityFilter={(value) => {
+            communityFilter = value;
+          }}
+          onCommunityToggle={toggleCommunitySelection}
+          onCommunityImport={() => void importCommunitySelection()}
+          onPluginsChanged={() => void reloadPlugins()}
         />
-      </aside>
-    {:else if activePanel === "settings"}
-      <aside class="side-pane">
-        {@render settingsPane()}
-      </aside>
-    {:else if activePluginPanel}
-      <aside class="side-pane">
-        <PluginPanelHost
-          pluginId={activePluginPanel.pluginId}
-          panelId={activePluginPanel.id}
-          title={activePluginPanel.title}
-          entry={activePluginPanel.entry}
-          getCurrentURL={() => url}
-          navigate={(next) => void browseURL(next)}
-          showToast={showPluginToast}
-        />
-      </aside>
+      {/snippet}
+      <section class="page-pane">
+        {#snippet primaryPane()}
+          {#if contentType === "editor"}
+            {#if loading}
+              <div class="editor-loading">{t("editor.loadingMicron")}</div>
+            {:else}
+              <MicronEditor
+                source={lastRaw}
+                currentURL={url}
+                onSourceChange={updateEditorSource}
+                onNavigate={openPage}
+              />
+            {/if}
+          {:else if contentType === "config"}
+            {#if loading}
+              <div class="editor-loading">{t("editor.loadingConfig")}</div>
+            {:else}
+              <section class="config-page">
+                <ReticulumConfigEditor
+                  bind:configText
+                  {configPath}
+                  saving={configSaving}
+                  error={configError}
+                  onChange={(text) => {
+                    configText = text;
+                  }}
+                  onSave={() => void saveConfigText()}
+                  onReload={() => void reloadConfigFromDisk()}
+                />
+              </section>
+            {/if}
+          {:else if contentType === "settings"}
+            {#if loading}
+              <div class="editor-loading">{t("common.loading")}</div>
+            {:else}
+              <div class="settings-page">
+                {@render settingsPane()}
+              </div>
+            {/if}
+          {:else}
+            <ContentViewer
+              {html}
+              {contentType}
+              {loading}
+              {error}
+              {errorKind}
+              {pageFg}
+              {pageBg}
+              raw={lastRaw}
+              {fromCache}
+              {cachedAt}
+              {showSource}
+              currentURL={url}
+              {findOpen}
+              micronEngine={effectiveMicronEngine}
+              onFindClose={() => (findOpen = false)}
+              onNavigate={openPage}
+              onRetry={() => openPage(url)}
+              onReloadFresh={() => openPage(url, true, { skipCache: true })}
+              onShowSourceChange={setShowSource}
+            />
+          {/if}
+        {/snippet}
+
+        {#if splitViewOpen}
+          {#snippet secondaryPane()}
+            {#if splitTab}
+              {@const splitPage = splitTab.page ?? emptyPage()}
+              <ContentViewer
+                html={splitPage.html}
+                contentType={splitPage.contentType}
+                loading={false}
+                error={splitPage.error}
+                errorKind={splitPage.errorKind}
+                pageFg={splitPage.pageFg}
+                pageBg={splitPage.pageBg}
+                raw={splitPage.lastRaw}
+                fromCache={splitPage.fromCache}
+                cachedAt={splitPage.cachedAt ?? 0}
+                showSource={splitPage.showSource ?? false}
+                currentURL={splitTab.url}
+                findOpen={false}
+                micronEngine={effectiveMicronEngine}
+                onFindClose={() => {}}
+                onNavigate={(target) => void openPage(target, true, { tabId: splitTab.id })}
+                onRetry={() => void openPage(splitTab.url, false, { tabId: splitTab.id })}
+                onReloadFresh={() =>
+                  void openPage(splitTab.url, true, { tabId: splitTab.id, skipCache: true })}
+                onShowSourceChange={(value) => setSplitTabShowSource(splitTab.id, value)}
+              />
+            {:else}
+              <SplitTabPicker
+                {tabs}
+                {activeTabId}
+                onSelect={selectSplitTab}
+                onClose={closeSplitView}
+              />
+            {/if}
+          {/snippet}
+          <SplitPane
+            ratio={splitRatio}
+            onRatioChange={(value) => (splitRatio = value)}
+            primary={primaryPane}
+            secondary={secondaryPane}
+          />
+        {:else}
+          {@render primaryPane()}
+        {/if}
+      </section>
+
+      {#if activePanel === "discovery"}
+        <aside class="side-pane">
+          <DiscoveryPanel
+            {nodes}
+            {favorites}
+            slowMode={discoverySlowMode}
+            onSlowModeChange={saveDiscoverySlowMode}
+            onOpen={browseURL}
+            onFavorite={async (favUrl) => {
+              favorites = (await AddFavorite(favUrl)) as string[];
+            }}
+          />
+        </aside>
+      {:else if activePanel === "history"}
+        <aside class="side-pane">
+          <HistoryPanel {history} onOpen={browseURL} />
+        </aside>
+      {:else if activePanel === "devtools"}
+        <aside class="side-pane">
+          <DevToolsPanel
+            {logs}
+            {network}
+            raw={lastRaw}
+            {logLevel}
+            {contentType}
+            {durationMs}
+            {hops}
+            {fromCache}
+            {cachedAt}
+            {micronRendererBadge}
+            pluginTabs={pluginContributions.devtools}
+            onClear={() => {
+              void ClearDevLogs();
+              logs = [];
+            }}
+            onExport={async () => {
+              const json = await ExportDevLogs();
+              const blob = new Blob([json], { type: "application/json" });
+              const href = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = href;
+              a.download = exportFilename("devlogs");
+              a.click();
+              URL.revokeObjectURL(href);
+            }}
+            onLogLevel={(level) => {
+              void SetLogLevel(level).then((v) => {
+                logLevel = v;
+              });
+            }}
+          />
+        </aside>
+      {:else if activePanel === "settings"}
+        <aside class="side-pane">
+          {@render settingsPane()}
+        </aside>
+      {:else if activePluginPanel}
+        <aside class="side-pane">
+          <PluginPanelHost
+            pluginId={activePluginPanel.pluginId}
+            panelId={activePluginPanel.id}
+            title={activePluginPanel.title}
+            entry={activePluginPanel.entry}
+            getCurrentURL={() => url}
+            navigate={(next) => void browseURL(next)}
+            showToast={showPluginToast}
+          />
+        </aside>
+      {/if}
     {/if}
   </main>
 
-  <MobileNav
-    {activePanel}
-    pluginPanels={pluginContributions.panels}
-    {downloadsOpen}
-    onPanel={setPanel}
-    onToggleDownloads={toggleDownloads}
-  />
+  {#if !mobileTabsOpen || !mobileUI}
+    <MobileNav
+      {activePanel}
+      pluginPanels={pluginContributions.panels}
+      mobileDevTools={mobileUI ? mobileDevTools : true}
+      {downloadsOpen}
+      onPanel={setPanel}
+      onToggleDownloads={toggleDownloads}
+    />
+  {/if}
 
   {#if mobileUI}
-    <div class="mobile-downloads">
-      <DownloadsMenu
-        open={downloadsOpen}
-        {downloads}
-        {downloadDir}
-        onDownloadPage={downloadCurrentPage}
-        onOpenFile={openDownload}
-        onOpenFolder={openDownloadFolder}
-        onClose={() => (downloadsOpen = false)}
-      />
-    </div>
+    <DownloadsMenu
+      open={downloadsOpen}
+      {downloads}
+      {downloadDir}
+      variant="sheet"
+      onDownloadPage={downloadCurrentPage}
+      onOpenFile={openDownload}
+      onOpenFolder={openDownloadFolder}
+      onClose={() => (downloadsOpen = false)}
+    />
   {/if}
 
   <ConfirmDialog
@@ -2034,6 +2126,10 @@
     background: var(--ren-surface-bg);
   }
 
+  .app-shell.mobile-ui {
+    grid-template-rows: auto 1fr auto;
+  }
+
   .workspace {
     min-height: 0;
     display: grid;
@@ -2058,6 +2154,16 @@
     height: 100%;
     border-left: none;
     box-shadow: none;
+  }
+
+  .workspace.mobile-tabs {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+
+  .workspace.mobile-tabs .page-pane,
+  .workspace.mobile-tabs .side-pane {
+    display: none;
   }
 
   .page-pane,
@@ -2102,19 +2208,6 @@
   .settings-page {
     height: 100%;
     overflow: hidden;
-  }
-
-  .mobile-downloads :global(.menu) {
-    position: fixed;
-    left: 0.75rem;
-    right: 0.75rem;
-    bottom: calc(3.6rem + env(safe-area-inset-bottom));
-    max-height: min(55vh, 28rem);
-    z-index: 40;
-  }
-
-  .mobile-downloads :global(.backdrop) {
-    z-index: 35;
   }
 
   .plugin-toast {

@@ -15,6 +15,7 @@ type BrowserPrefs struct {
 	DocsLanguage              string          `json:"docsLanguage"`
 	UILanguage                string          `json:"uiLanguage"`
 	DiscoverySlowMode         bool            `json:"discoverySlowMode"`
+	MobileDevTools            bool            `json:"mobileDevTools"`
 	SettingsSectionsCollapsed map[string]bool `json:"settingsSectionsCollapsed"`
 }
 
@@ -46,6 +47,7 @@ func mergeBrowserPrefs(saved BrowserPrefs) BrowserPrefs {
 		defaults.UILanguage = saved.UILanguage
 	}
 	defaults.DiscoverySlowMode = saved.DiscoverySlowMode
+	defaults.MobileDevTools = saved.MobileDevTools
 	if len(saved.SettingsSectionsCollapsed) > 0 {
 		defaults.SettingsSectionsCollapsed = saved.SettingsSectionsCollapsed
 	}

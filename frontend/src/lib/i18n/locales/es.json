@@ -62,6 +62,11 @@
     "devtools": "Devtools",
     "settings": "Ajustes"
   },
+  "mobileTabs": {
+    "title": "Pestañas",
+    "switcher": "Abrir pestañas",
+    "pageLoaded": "Página cargada"
+  },
   "tab": {
     "new": "Nueva pestaña",
     "close": "Cerrar pestaña",
@@ -105,6 +110,7 @@
     "importTheme": "Importar tema",
     "browsing": "Navegación",
     "openLinksInNewTab": "Abrir sitios en una pestaña nueva",
+    "mobileDevTools": "Mostrar herramientas de desarrollo en la navegación móvil",
     "pageCache": "Caché de páginas",
     "pageCacheHint": "Las páginas de malla en caché cargan al instante. Borra la caché si necesitas contenido actualizado de la red.",
     "clearPageCache": "Borrar caché de páginas",
@@ -180,6 +186,7 @@
     "time": "Hora",
     "path": "Ruta",
     "hops": "Saltos",
+    "interface": "Interfaz",
     "hopsCount": "{count} salto",
     "hopsCountPlural": "{count} saltos",
     "bytes": "Bytes",

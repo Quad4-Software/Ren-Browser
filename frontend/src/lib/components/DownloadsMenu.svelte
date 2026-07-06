@@ -15,14 +15,23 @@
     open: boolean;
     downloads: DownloadRow[];
     downloadDir: string;
+    variant?: "dropdown" | "sheet";
     onDownloadPage: () => void;
     onOpenFile: (path: string) => void;
     onOpenFolder: () => void;
     onClose: () => void;
   };
 
-  let { open, downloads, downloadDir, onDownloadPage, onOpenFile, onOpenFolder, onClose }: Props =
-    $props();
+  let {
+    open,
+    downloads,
+    downloadDir,
+    variant = "dropdown",
+    onDownloadPage,
+    onOpenFile,
+    onOpenFolder,
+    onClose,
+  }: Props = $props();
 
   function formatBytes(bytes: number): string {
     if (!bytes) {
@@ -48,9 +57,19 @@
 </script>
 
 {#if open}
-  <button type="button" class="backdrop" aria-label={t("downloads.close")} onclick={onClose}
+  <button
+    type="button"
+    class="backdrop"
+    class:sheet={variant === "sheet"}
+    aria-label={t("downloads.close")}
+    onclick={onClose}
   ></button>
-  <div class="menu" role="dialog" aria-label={t("downloads.title")}>
+  <div
+    class="menu"
+    class:sheet={variant === "sheet"}
+    role="dialog"
+    aria-label={t("downloads.title")}
+  >
     <header>
       <h2>{t("downloads.title")}</h2>
       <button type="button" class="page-btn" onclick={onDownloadPage}>
@@ -100,6 +119,11 @@
     cursor: default;
   }
 
+  .backdrop.sheet {
+    z-index: 115;
+    background: color-mix(in srgb, var(--ren-surface-bg) 35%, transparent);
+  }
+
   .menu {
     position: absolute;
     top: calc(100% + 0.35rem);
@@ -114,6 +138,17 @@
     background: var(--ren-chrome-bg);
     box-shadow: var(--ren-shadow);
     overflow: hidden;
+  }
+
+  .menu.sheet {
+    position: fixed;
+    top: auto;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: calc(3.6rem + env(safe-area-inset-bottom));
+    width: auto;
+    max-height: min(55vh, 28rem);
+    z-index: 120;
   }
 
   header {

@@ -42,6 +42,7 @@ type PageResponse struct {
 	FromCache   bool   `json:"fromCache"`
 	CachedAt    int64  `json:"cachedAt,omitempty"`
 	Hops        int    `json:"hops"`
+	Interface   string `json:"interface,omitempty"`
 	Error       string `json:"error,omitempty"`
 	ErrorKind   string `json:"errorKind,omitempty"`
 }
@@ -62,6 +63,7 @@ type NetworkEntry struct {
 	Bytes      int    `json:"bytes"`
 	FromCache  bool   `json:"fromCache"`
 	Hops       int    `json:"hops"`
+	Interface  string `json:"interface,omitempty"`
 	Error      string `json:"error,omitempty"`
 }
 
@@ -506,6 +508,7 @@ func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) Pa
 		ContentType: fetch.ContentType,
 		DurationMs:  fetch.DurationMs,
 		Hops:        fetch.Hops,
+		Interface:   fetch.Interface,
 	}
 	if fetch.Error != "" {
 		applyPageError(&resp, fetch.Error, fetch.Body)
@@ -765,6 +768,7 @@ func (s *BrowserService) recordNetwork(page PageResponse) {
 		Bytes:      len(page.Raw),
 		FromCache:  page.FromCache,
 		Hops:       hops,
+		Interface:  page.Interface,
 		Error:      page.Error,
 	}
 	s.mu.Lock()

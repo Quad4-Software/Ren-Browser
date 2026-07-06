@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { FileCode, Download } from "@lucide/svelte";
+  import { clampMenuPosition } from "$lib/browser/context-menu";
   import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
@@ -13,14 +14,27 @@
   };
 
   let { x, y, canViewSource, onViewSource, onDownload, onClose }: Props = $props();
+
+  let menuEl = $state<HTMLDivElement | null>(null);
+  let menuPos = $state({ x: 0, y: 0 });
+
+  $effect(() => {
+    if (!menuEl) {
+      menuPos = { x, y };
+      return;
+    }
+    const rect = menuEl.getBoundingClientRect();
+    menuPos = clampMenuPosition(x, y, rect.width, rect.height);
+  });
 </script>
 
 <svelte:window onclick={onClose} />
 
 <div
   class="context-menu"
-  style:left="{x}px"
-  style:top="{y}px"
+  bind:this={menuEl}
+  style:left="{menuPos.x}px"
+  style:top="{menuPos.y}px"
   role="menu"
   tabindex="0"
   onclick={(event) => event.stopPropagation()}
@@ -47,6 +61,7 @@
     position: fixed;
     z-index: 1000;
     min-width: 10rem;
+    max-width: calc(100vw - 1rem);
     padding: 0.35rem;
     border: 1px solid var(--ren-border);
     border-radius: var(--ren-radius);

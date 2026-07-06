@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Pin, Plus, X } from "@lucide/svelte";
+  import { clampMenuPosition } from "$lib/browser/context-menu";
   import { MAX_TABS, TAB_GAP_PX, type Tab, tabsAreaWidth, tabWidthForTab } from "$lib/browser/url";
   import WindowControls from "$lib/components/WindowControls.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
@@ -68,6 +69,8 @@
 
   let dragId = $state<string | null>(null);
   let menu = $state<{ x: number; y: number; tabId: string } | null>(null);
+  let menuEl = $state<HTMLDivElement | null>(null);
+  let menuPos = $state({ x: 0, y: 0 });
   const DRAG_STRIP_MIN_PX = 88;
 
   let tabbarEl = $state<HTMLDivElement | null>(null);
@@ -105,6 +108,14 @@
   );
   const canCloseOthers = $derived(tabs.length > 1);
   const showCloseSplit = $derived(splitViewOpen);
+
+  $effect(() => {
+    if (!menu || !menuEl) {
+      return;
+    }
+    const rect = menuEl.getBoundingClientRect();
+    menuPos = clampMenuPosition(menu.x, menu.y, rect.width, rect.height);
+  });
 
   $effect(() => {
     const bar = tabbarEl;
@@ -319,8 +330,9 @@
 {#if menu}
   <div
     class="context-menu"
-    style:left="{menu.x}px"
-    style:top="{menu.y}px"
+    bind:this={menuEl}
+    style:left="{menuPos.x}px"
+    style:top="{menuPos.y}px"
     role="menu"
     tabindex="0"
     onclick={(event) => event.stopPropagation()}
@@ -552,6 +564,7 @@
     position: fixed;
     z-index: 1000;
     min-width: 11.5rem;
+    max-width: calc(100vw - 1rem);
     padding: 0.35rem;
     border: 1px solid var(--ren-border);
     border-radius: var(--ren-radius);

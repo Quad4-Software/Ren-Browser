@@ -21,6 +21,7 @@ type FetchResult struct {
 	ContentType string `json:"contentType"`
 	DurationMs  int64  `json:"durationMs"`
 	Hops        int    `json:"hops"`
+	Interface   string `json:"interface,omitempty"`
 	Error       string `json:"error,omitempty"`
 }
 
@@ -59,6 +60,7 @@ func (b *Browser) Fetch(ctx context.Context, nodeHash string, path string, req R
 		return res
 	}
 	res.Hops = transportHops(b.tr, destHash, b.handler, res.NodeHash)
+	res.Interface = b.tr.NextHopInterface(destHash)
 
 	remoteID, ok := b.handler.Identity(res.NodeHash)
 	if !ok || remoteID == nil {
@@ -80,6 +82,9 @@ func (b *Browser) Fetch(ctx context.Context, nodeHash string, path string, req R
 		res.Error = err.Error()
 		res.DurationMs = time.Since(start).Milliseconds()
 		return res
+	}
+	if iface := lnk.LinkedNetworkInterface(); iface != nil {
+		res.Interface = iface.GetName()
 	}
 
 	body, err := waitReceipt(ctx, receipt, 25*time.Second)

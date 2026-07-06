@@ -28,6 +28,7 @@ export interface BrowserPrefs {
     "docsLanguage": string;
     "uiLanguage": string;
     "discoverySlowMode": boolean;
+    "mobileDevTools": boolean;
     "settingsSectionsCollapsed": { [_ in string]?: boolean } | null;
 }
 
@@ -72,6 +73,7 @@ export interface NetworkEntry {
     "bytes": number;
     "fromCache": boolean;
     "hops": number;
+    "interface"?: string;
     "error"?: string;
 }
 
@@ -93,6 +95,7 @@ export interface PageResponse {
     "fromCache": boolean;
     "cachedAt"?: number;
     "hops": number;
+    "interface"?: string;
     "error"?: string;
     "errorKind"?: string;
 }

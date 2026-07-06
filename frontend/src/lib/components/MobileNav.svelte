@@ -8,6 +8,7 @@
   type Props = {
     activePanel: ActivePanel;
     pluginPanels?: PluginPanelContribution[];
+    mobileDevTools: boolean;
     downloadsOpen: boolean;
     onPanel: (panel: ActivePanel) => void;
     onToggleDownloads: () => void;
@@ -16,6 +17,7 @@
   let {
     activePanel,
     pluginPanels = [],
+    mobileDevTools,
     downloadsOpen,
     onPanel,
     onToggleDownloads,
@@ -50,10 +52,12 @@
       <span>{panel.title}</span>
     </button>
   {/each}
-  <button class:active={activePanel === "devtools"} onclick={() => onPanel("devtools")}>
-    <Terminal size={18} />
-    <span>{t("mobileNav.devtools")}</span>
-  </button>
+  {#if mobileDevTools}
+    <button class:active={activePanel === "devtools"} onclick={() => onPanel("devtools")}>
+      <Terminal size={18} />
+      <span>{t("mobileNav.devtools")}</span>
+    </button>
+  {/if}
   <button class:active={activePanel === "settings"} onclick={() => onPanel("settings")}>
     <Settings size={18} />
     <span>{t("mobileNav.settings")}</span>

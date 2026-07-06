@@ -21,6 +21,7 @@
     bytes: number;
     fromCache: boolean;
     hops: number;
+    interface?: string;
     error?: string;
   };
 
@@ -205,6 +206,7 @@
               <th>{t("devtools.time")}</th>
               <th>{t("devtools.path")}</th>
               <th>{t("devtools.hops")}</th>
+              <th>{t("devtools.interface")}</th>
               <th>ms</th>
               <th>{t("devtools.bytes")}</th>
               <th>{t("devtools.cache")}</th>
@@ -217,6 +219,7 @@
                 <td>{formatTime(row.time)}</td>
                 <td>{row.path}</td>
                 <td>{formatHops(row.hops ?? -1)}</td>
+                <td>{row.interface || "—"}</td>
                 <td>{row.durationMs}</td>
                 <td>{row.bytes}</td>
                 <td>{row.fromCache ? t("common.yes") : t("common.no")}</td>
