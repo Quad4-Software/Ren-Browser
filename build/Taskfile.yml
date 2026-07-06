@@ -365,6 +365,22 @@ tasks:
       BUILD_FLAGS: '-tags server{{if eq .DEV "true"}}{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -buildvcs=false -gcflags=all="-l"{{else}},production{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -trimpath -buildvcs=false -ldflags="-w -s -X renbrowser/internal/buildinfo.Version={{.VERSION}} -X renbrowser/internal/buildinfo.Commit={{.GIT_COMMIT}}"{{end}}'
       SERVER_OUTPUT: '{{.OUTPUT | default (printf "%s/%s-server%s" .BIN_DIR .APP_NAME (exeExt))}}'
 
+  build:server:windows-legacy:
+    summary: Builds the headless server for Windows 7/8/8.1 using go-legacy-win7
+    deps:
+      - task: build:frontend
+        vars:
+          DEV:
+            ref: .DEV
+          BUILD_FLAGS:
+            ref: .BUILD_FLAGS
+          OBFUSCATED:
+            ref: .OBFUSCATED
+    cmds:
+      - bash "{{.ROOT_DIR}}/build/scripts/build-server-windows-legacy.sh"
+    vars:
+      OUTPUT: '{{.OUTPUT | default (printf "%s/%s-server-windows7-amd64.exe" .BIN_DIR .APP_NAME)}}'
+
   run:server:
     summary: Builds and runs a development server (DEV=true)
     deps:

@@ -308,6 +308,11 @@ tasks:
     cmds:
       - task: common:build:server
 
+  build:server:windows-legacy:
+    desc: Build headless server .exe for Windows 7/8/8.1 (go-legacy-win7)
+    cmds:
+      - task: common:build:server:windows-legacy
+
   run:server:
     summary: Runs the application in server mode
     cmds:

@@ -418,6 +418,10 @@ jobs:
             task: build:server GOOS=freebsd GOARCH=arm64 OUTPUT=bin/renbrowser-server-freebsd-arm64
             artifact: bin/renbrowser-server-freebsd-arm64
             artifact_name: renbrowser-server-freebsd-arm64
+          - target: server-windows-amd64
+            task: build:server GOOS=windows GOARCH=amd64 OUTPUT=bin/renbrowser-server-windows-amd64.exe
+            artifact: bin/renbrowser-server-windows-amd64.exe
+            artifact_name: renbrowser-server-windows-amd64.exe
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
