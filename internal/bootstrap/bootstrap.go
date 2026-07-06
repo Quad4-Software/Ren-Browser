@@ -15,6 +15,7 @@ import (
 	"renbrowser/internal/config"
 	"renbrowser/internal/nomadnet"
 	"renbrowser/internal/plugins"
+	"renbrowser/internal/serverlog"
 	"renbrowser/internal/servermw"
 )
 
@@ -65,6 +66,7 @@ func newWailsApp(browserSvc *app.BrowserService, pluginHost *app.PluginHost, plu
 	return application.New(application.Options{
 		Name:        brand.DisplayName,
 		Description: brand.Description,
+		Logger:      serverlog.WailsLogger(),
 		Services:    services,
 		Assets: application.AssetOptions{
 			Handler: handler,

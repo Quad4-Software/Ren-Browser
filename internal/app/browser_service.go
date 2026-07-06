@@ -26,6 +26,7 @@ import (
 	"renbrowser/internal/nomadnet"
 	"renbrowser/internal/plugins"
 	"renbrowser/internal/rns"
+	"renbrowser/internal/serverlog"
 	"renbrowser/internal/store"
 )
 
@@ -803,6 +804,7 @@ func (s *BrowserService) log(level, message, detail string) {
 		})
 		s.app.Event.Emit("dev:log", string(payload))
 	}
+	serverlog.Emit(level, message, detail)
 }
 
 func errString(err error) string {
