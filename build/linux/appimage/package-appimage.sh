@@ -19,13 +19,14 @@ OUTDIR="${ROOT}/bin"
 APPDIR="${ROOT}/build/linux/appimage/AppDir"
 TOOLSDIR="${ROOT}/build/tools"
 LINUXDEPLOY="${TOOLSDIR}/linuxdeploy-${TOOL_SUFFIX}.AppImage"
+GTK_PLUGIN="${TOOLSDIR}/linuxdeploy-plugin-gtk.sh"
 APPIMAGETOOL="${TOOLSDIR}/appimagetool-${TOOL_SUFFIX}.AppImage"
 BINARY="${ROOT}/bin/renbrowser"
 ICON="${ROOT}/build/packaging/renbrowser-256.png"
 DESKTOP="${ROOT}/build/linux/appimage/renbrowser.desktop"
 OUTPUT="${OUTDIR}/renbrowser-${VERSION}-${ARCH}.AppImage"
 
-for tool in "${LINUXDEPLOY}" "${APPIMAGETOOL}"; do
+for tool in "${LINUXDEPLOY}" "${GTK_PLUGIN}" "${APPIMAGETOOL}"; do
   if [[ ! -f "${tool}" ]]; then
     printf 'Missing %s. Run: task linux:fetch-linuxdeploy\n' "${tool}" >&2
     exit 1
@@ -44,16 +45,21 @@ mkdir -p "${OUTDIR}" "$(dirname "${APPDIR}")"
 rm -rf "${APPDIR}"
 export ARCH
 export LINUXDEPLOY
+export DEPLOY_GTK_VERSION=4
 export NO_STRIP=1
 export APPIMAGE_EXTRACT_AND_RUN=1
 export VERSION
 
 cd "${TOOLSDIR}"
+chmod +x "${GTK_PLUGIN}"
 "${LINUXDEPLOY}" \
   --appdir "${APPDIR}" \
   -e "${BINARY}" \
   -i "${ICON}" \
-  -d "${DESKTOP}"
+  -d "${DESKTOP}" \
+  --plugin gtk
+
+"${ROOT}/build/linux/appimage/bundle-webkitgtk.sh" "${APPDIR}"
 
 rm -f "${OUTPUT}"
 "${APPIMAGETOOL}" --appimage-extract-and-run -n "${APPDIR}" "${OUTPUT}"

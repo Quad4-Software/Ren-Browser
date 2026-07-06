@@ -19,3 +19,4 @@ for arch in arm64 x64 x86; do
 done
 
 go mod vendor
+bash "${root}/build/scripts/patch-wails-vendor.sh"
