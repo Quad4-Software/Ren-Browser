@@ -29,6 +29,7 @@
     onToggle: (id: number) => void;
     onImport: () => void;
     showTitle?: boolean;
+    desktopChrome?: boolean;
   };
 
   let {
@@ -43,6 +44,7 @@
     onToggle,
     onImport,
     showTitle = true,
+    desktopChrome = false,
   }: Props = $props();
 
   const filtered = $derived.by(() => {
@@ -80,8 +82,9 @@
     />
     <button
       type="button"
-      class="icon-btn"
+      class="ren-icon-btn refresh-btn"
       aria-label={t("community.refresh")}
+      title={desktopChrome ? t("community.refresh") : undefined}
       onclick={onRefresh}
       disabled={loading}
     >
@@ -189,32 +192,8 @@
     font: inherit;
   }
 
-  .icon-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 2.5rem;
-    border: 1px solid var(--ren-border);
-    background: var(--ren-input-bg);
-    color: var(--ren-fg);
-    border-radius: calc(var(--ren-radius) + 2px);
-    cursor: pointer;
-  }
-
-  .icon-btn:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-  }
-
-  :global(.spin) {
-    display: inline-flex;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
+  .refresh-btn {
+    flex-shrink: 0;
   }
 
   .error {

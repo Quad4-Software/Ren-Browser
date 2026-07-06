@@ -9,29 +9,37 @@
     collapsed: boolean;
     onToggle: (id: string) => void;
     children: Snippet;
+    actions?: Snippet;
     heading?: "h2" | "h3";
   };
 
-  let { id, title, collapsed, onToggle, children, heading = "h3" }: Props = $props();
+  let { id, title, collapsed, onToggle, children, actions, heading = "h3" }: Props = $props();
 </script>
 
 <section class="settings-section">
-  <button
-    type="button"
-    class="section-toggle"
-    aria-expanded={!collapsed}
-    aria-controls={`settings-section-${id}`}
-    onclick={() => onToggle(id)}
-  >
-    <span class="chevron" class:collapsed>
-      <ChevronDown size={16} />
-    </span>
-    {#if heading === "h2"}
-      <h2>{title}</h2>
-    {:else}
-      <h3>{title}</h3>
+  <div class="section-header">
+    <button
+      type="button"
+      class="section-toggle"
+      aria-expanded={!collapsed}
+      aria-controls={`settings-section-${id}`}
+      onclick={() => onToggle(id)}
+    >
+      <span class="chevron" class:collapsed>
+        <ChevronDown size={16} />
+      </span>
+      {#if heading === "h2"}
+        <h2>{title}</h2>
+      {:else}
+        <h3>{title}</h3>
+      {/if}
+    </button>
+    {#if actions}
+      <div class="section-actions">
+        {@render actions()}
+      </div>
     {/if}
-  </button>
+  </div>
   {#if !collapsed}
     <div class="section-body" id={`settings-section-${id}`}>
       {@render children()}
@@ -45,11 +53,24 @@
     gap: 0.65rem;
   }
 
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .section-actions {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+  }
+
   .section-toggle {
     display: flex;
     align-items: center;
     gap: 0.45rem;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     padding: 0;
     border: none;
     background: transparent;

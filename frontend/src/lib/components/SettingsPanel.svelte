@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { FolderOpen, Network } from "@lucide/svelte";
+  import { FolderOpen, Network, RefreshCw } from "@lucide/svelte";
   import Toggle from "$lib/components/Toggle.svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import MicronWasmManager from "$lib/components/MicronWasmManager.svelte";
@@ -557,8 +557,26 @@
     collapsed={sectionCollapsed("community")}
     onToggle={toggleSettingsSection}
   >
+    {#snippet actions()}
+      <button
+        type="button"
+        class="ren-icon-btn"
+        aria-label={t("community.refresh")}
+        title={desktopChrome ? t("community.refresh") : undefined}
+        disabled={communityLoading}
+        onclick={(event) => {
+          event.stopPropagation();
+          onCommunityRefresh();
+        }}
+      >
+        <span class:spin={communityLoading}>
+          <RefreshCw size={16} />
+        </span>
+      </button>
+    {/snippet}
     <CommunityInterfaces
       showTitle={false}
+      {desktopChrome}
       items={communityItems}
       loading={communityLoading}
       importing={communityImporting}
@@ -864,5 +882,16 @@
 
   .meta {
     font-size: 0.8rem;
+  }
+
+  :global(.spin) {
+    display: inline-flex;
+    animation: community-refresh-spin 0.8s linear infinite;
+  }
+
+  @keyframes community-refresh-spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>
