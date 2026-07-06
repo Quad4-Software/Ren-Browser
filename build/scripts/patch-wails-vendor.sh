@@ -11,9 +11,16 @@ if [ ! -d "${vendor}" ]; then
   exit 0
 fi
 
-install -D -m 0644 "${patch_dir}/internal/operatingsystem/os_bsd.go" "${vendor}/internal/operatingsystem/os_bsd.go"
-install -D -m 0644 "${patch_dir}/internal/assetserver/assetserver_bsd.go" "${vendor}/internal/assetserver/assetserver_bsd.go"
-install -D -m 0644 "${patch_dir}/internal/fileexplorer/fileexplorer_bsd.go" "${vendor}/internal/fileexplorer/fileexplorer_bsd.go"
+# install's -D flag (create dst's parent directory) is GNU-only; BSD/macOS
+# install has no such flag, so create the parent directory ourselves first.
+install_file() {
+  mkdir -p "$(dirname "$2")"
+  install -m 0644 "$1" "$2"
+}
+
+install_file "${patch_dir}/internal/operatingsystem/os_bsd.go" "${vendor}/internal/operatingsystem/os_bsd.go"
+install_file "${patch_dir}/internal/assetserver/assetserver_bsd.go" "${vendor}/internal/assetserver/assetserver_bsd.go"
+install_file "${patch_dir}/internal/fileexplorer/fileexplorer_bsd.go" "${vendor}/internal/fileexplorer/fileexplorer_bsd.go"
 
 if [ -f "${extract}" ]; then
   sed -i \
