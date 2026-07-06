@@ -5,6 +5,7 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "${root}"
 
 bash "${root}/build/scripts/patch-reticulum-txbytes.sh"
+bash "${root}/build/scripts/patch-reticulum-nomadnet.sh"
 
 gomod="$(go env GOMODCACHE)"
 wv2_ver="$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/webview2)"

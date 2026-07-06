@@ -4,6 +4,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 
 bash "${root}/build/scripts/patch-reticulum-txbytes.sh"
+bash "${root}/build/scripts/patch-reticulum-nomadnet.sh"
 
 dist="${root}/frontend/dist"
 mkdir -p "${dist}"
