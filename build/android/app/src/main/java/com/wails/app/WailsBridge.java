@@ -5,6 +5,8 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.ClipData;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
@@ -30,12 +32,14 @@ import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.os.StatFs;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.util.DisplayMetrics;
@@ -59,6 +63,9 @@ import androidx.security.crypto.MasterKey;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.Locale;
 import java.util.concurrent.Executor;
 
@@ -1053,6 +1060,168 @@ public class WailsBridge {
     public String getStoragePath() {
         java.io.File dir = activity.getFilesDir();
         return dir != null ? dir.getAbsolutePath() : "";
+    }
+
+    /** Absolute path to the user-visible public Downloads directory. */
+    public String getDownloadPath() {
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        return dir != null ? dir.getAbsolutePath() : "";
+    }
+
+    /**
+     * Move a temp file written by Go into the public Downloads folder.
+     * json: {"name":"file.zip","path":"/data/.../temp"}.
+     */
+    public String commitDownloadFileJson(final String json) {
+        try {
+            JSONObject o = new JSONObject(json);
+            String name = o.optString("name", "");
+            String tempPath = o.optString("path", "");
+            if (name.isEmpty() || tempPath.isEmpty()) {
+                return "";
+            }
+            File temp = new File(tempPath);
+            if (!temp.exists()) {
+                return "";
+            }
+            byte[] data = java.nio.file.Files.readAllBytes(temp.toPath());
+            temp.delete();
+            return writeDownloadFile(name, data);
+        } catch (Exception e) {
+            Log.e(TAG, "commitDownloadFileJson failed", e);
+            return "";
+        }
+    }
+
+    private String writeDownloadFile(String filename, byte[] data) throws Exception {
+        filename = sanitizeDownloadFilename(filename);
+        if (filename.isEmpty()) {
+            throw new Exception("invalid filename");
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ContentResolver resolver = activity.getContentResolver();
+            String displayName = uniqueDownloadDisplayName(resolver, filename);
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Downloads.DISPLAY_NAME, displayName);
+            values.put(MediaStore.Downloads.MIME_TYPE, guessDownloadMimeType(displayName));
+            values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/");
+            values.put(MediaStore.Downloads.IS_PENDING, 1);
+            Uri uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+            if (uri == null) {
+                throw new Exception("MediaStore insert failed");
+            }
+            try (OutputStream out = resolver.openOutputStream(uri)) {
+                if (out == null) {
+                    throw new Exception("openOutputStream failed");
+                }
+                out.write(data);
+            }
+            values.clear();
+            values.put(MediaStore.Downloads.IS_PENDING, 0);
+            resolver.update(uri, values, null, null);
+            File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            return new File(dir, displayName).getAbsolutePath();
+        }
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new Exception("mkdir failed");
+        }
+        File file = uniqueDownloadFile(new File(dir, filename));
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(data);
+        }
+        return file.getAbsolutePath();
+    }
+
+    private static String sanitizeDownloadFilename(String name) {
+        if (name == null) {
+            return "";
+        }
+        String trimmed = name.trim();
+        int slash = Math.max(trimmed.lastIndexOf('/'), trimmed.lastIndexOf('\\'));
+        if (slash >= 0 && slash + 1 < trimmed.length()) {
+            trimmed = trimmed.substring(slash + 1);
+        }
+        if (trimmed.isEmpty() || ".".equals(trimmed)) {
+            return "download.bin";
+        }
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < trimmed.length(); i++) {
+            char c = trimmed.charAt(i);
+            if (c == '/' || c == '\\' || c == ':' || c == '*' || c == '?' || c == '"'
+                    || c == '<' || c == '>' || c == '|' || c == '\0') {
+                out.append('_');
+            } else {
+                out.append(c);
+            }
+        }
+        String cleaned = out.toString().trim();
+        return cleaned.isEmpty() ? "download.bin" : cleaned;
+    }
+
+    private static String guessDownloadMimeType(String filename) {
+        String lower = filename.toLowerCase(Locale.US);
+        if (lower.endsWith(".zip")) return "application/zip";
+        if (lower.endsWith(".pdf")) return "application/pdf";
+        if (lower.endsWith(".png")) return "image/png";
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+        if (lower.endsWith(".gif")) return "image/gif";
+        if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html";
+        if (lower.endsWith(".txt")) return "text/plain";
+        if (lower.endsWith(".json")) return "application/json";
+        return "application/octet-stream";
+    }
+
+    private static String uniqueDownloadDisplayName(ContentResolver resolver, String filename) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return filename;
+        }
+        String base = filename;
+        String ext = "";
+        int dot = filename.lastIndexOf('.');
+        if (dot > 0) {
+            base = filename.substring(0, dot);
+            ext = filename.substring(dot);
+        }
+        String candidate = filename;
+        for (int i = 1; i < 1000; i++) {
+            if (!downloadDisplayNameExists(resolver, candidate)) {
+                return candidate;
+            }
+            candidate = base + " (" + i + ")" + ext;
+        }
+        return base + "-" + System.currentTimeMillis() + ext;
+    }
+
+    private static boolean downloadDisplayNameExists(ContentResolver resolver, String displayName) {
+        try (android.database.Cursor c = resolver.query(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                new String[]{MediaStore.Downloads._ID},
+                MediaStore.Downloads.DISPLAY_NAME + "=?",
+                new String[]{displayName},
+                null)) {
+            return c != null && c.moveToFirst();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static File uniqueDownloadFile(File file) {
+        if (!file.exists()) {
+            return file;
+        }
+        File parent = file.getParentFile();
+        String name = file.getName();
+        int nameDot = name.lastIndexOf('.');
+        String nameBase = nameDot > 0 ? name.substring(0, nameDot) : name;
+        String nameExt = nameDot > 0 ? name.substring(nameDot) : "";
+        for (int i = 1; i < 1000; i++) {
+            File candidate = new File(parent, nameBase + " (" + i + ")" + nameExt);
+            if (!candidate.exists()) {
+                return candidate;
+            }
+        }
+        return new File(parent, nameBase + "-" + System.currentTimeMillis() + nameExt);
     }
 
     /** Battery/power state as {"level":0-1,"charging":bool,"lowPower":bool}. */

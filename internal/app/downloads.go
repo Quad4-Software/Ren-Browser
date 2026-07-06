@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -29,11 +28,14 @@ type DownloadItem struct {
 }
 
 func defaultDownloadDir() string {
-	if dir := strings.TrimSpace(xdg.UserDirs.Download); dir != "" && !isTempDownloadDir(dir) {
+	if dir := strings.TrimSpace(paths.UserDownloadDir()); dir != "" && !isTempDownloadDir(dir) {
+		return filepath.Clean(dir)
+	}
+	if dir := strings.TrimSpace(xdg.UserDirs.Download); dir != "" && !isTempDownloadDir(dir) && !isRootLevelDownloadDir(dir) {
 		return filepath.Clean(dir)
 	}
 	root := strings.TrimSpace(paths.DataRoot())
-	if root != "" && root != "." && !isTempDownloadDir(root) {
+	if runtime.GOOS != "android" && root != "" && root != "." && !isTempDownloadDir(root) {
 		return filepath.Clean(filepath.Join(root, "Downloads"))
 	}
 	home, err := os.UserHomeDir()
@@ -41,6 +43,11 @@ func defaultDownloadDir() string {
 		return "."
 	}
 	return filepath.Clean(filepath.Join(home, "Downloads"))
+}
+
+func isRootLevelDownloadDir(dir string) bool {
+	dir = filepath.Clean(dir)
+	return dir == "/Downloads" || dir == string(filepath.Separator)+"Downloads"
 }
 
 func isTempDownloadDir(dir string) bool {
@@ -77,7 +84,7 @@ func (s *BrowserService) persistDefaultDownloadDir() string {
 func (s *BrowserService) GetDownloadDir() string {
 	raw, err := s.store.GetSetting(downloadDirSettingKey)
 	dir := strings.TrimSpace(raw)
-	if err == nil && isAcceptableDownloadDir(dir) {
+	if err == nil && isAcceptableDownloadDir(dir) && !shouldResetStoredDownloadDir(dir) {
 		return filepath.Clean(dir)
 	}
 	return s.persistDefaultDownloadDir()
@@ -113,9 +120,6 @@ func (s *BrowserService) PickDownloadDir() (string, error) {
 
 func (s *BrowserService) DownloadToDir(rawURL string) (string, error) {
 	dir := s.GetDownloadDir()
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return "", err
-	}
 	name := downloadNameFromURL(rawURL)
 	id := s.downloads.start(rawURL, name)
 	tracker := &downloadTracker{mgr: s.downloads, id: id}
@@ -127,8 +131,8 @@ func (s *BrowserService) DownloadToDir(rawURL string) (string, error) {
 	if fetch.FileName != "" {
 		name = sanitizeDownloadFilename(fetch.FileName)
 	}
-	dest := uniqueFilePath(filepath.Join(dir, name))
-	if err := os.WriteFile(dest, fetch.Body, 0o600); err != nil {
+	dest, err := writeDownloadBytes(dir, name, fetch.Body)
+	if err != nil {
 		s.downloads.fail(id, err.Error())
 		return "", err
 	}
@@ -139,12 +143,9 @@ func (s *BrowserService) DownloadToDir(rawURL string) (string, error) {
 
 func (s *BrowserService) SaveTextToDownloadDir(filename, content string) (string, error) {
 	dir := s.GetDownloadDir()
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return "", err
-	}
 	name := sanitizeDownloadFilename(filename)
-	dest := uniqueFilePath(filepath.Join(dir, name))
-	if err := os.WriteFile(dest, []byte(content), 0o600); err != nil { //nolint:gosec // user download path
+	dest, err := writeDownloadBytes(dir, name, []byte(content))
+	if err != nil {
 		return "", err
 	}
 	s.recordDownload(dest)
@@ -176,15 +177,12 @@ func (s *BrowserService) OpenDownloadPath(path string) error {
 	if err := s.validateDownloadPath(path); err != nil {
 		return err
 	}
-	return openPath(path)
+	return platformOpenPath(path)
 }
 
 func (s *BrowserService) ShowDownloadDir() error {
 	dir := s.GetDownloadDir()
-	if err := os.MkdirAll(dir, 0o700); err != nil {
-		return err
-	}
-	return openPath(dir)
+	return platformOpenPath(dir)
 }
 
 func (s *BrowserService) recordDownload(path string) {
@@ -243,17 +241,6 @@ func (s *BrowserService) validateDownloadPath(path string) error {
 		return err
 	}
 	return nil
-}
-
-func openPath(path string) error {
-	switch runtime.GOOS {
-	case "darwin":
-		return exec.Command("open", path).Start() // #nosec G204 -- path validated by validateDownloadPath before OpenDownloadPath
-	case "windows":
-		return exec.Command("rundll32", "url.dll,FileProtocolHandler", path).Start() // #nosec G204 -- path validated by validateDownloadPath before OpenDownloadPath
-	default:
-		return exec.Command("xdg-open", path).Start() // #nosec G204 -- path validated by validateDownloadPath before OpenDownloadPath
-	}
 }
 
 func downloadNameFromURL(rawURL string) string {

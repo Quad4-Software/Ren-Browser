@@ -178,6 +178,28 @@ func (m *downloadManager) cancel(id string) bool {
 	return true
 }
 
+func (m *downloadManager) cancelAll() {
+	m.mu.Lock()
+	cancels := make([]context.CancelFunc, 0)
+	for _, d := range m.items {
+		if d.Status == DownloadStatusCompleted || d.Status == DownloadStatusFailed || d.Status == DownloadStatusCanceled {
+			continue
+		}
+		d.Status = DownloadStatusCanceled
+		d.UpdatedAt = time.Now().UnixMilli()
+		if d.cancel != nil {
+			cancels = append(cancels, d.cancel)
+		}
+	}
+	m.mu.Unlock()
+	for _, cancel := range cancels {
+		cancel()
+	}
+	if len(cancels) > 0 {
+		m.notify()
+	}
+}
+
 func (m *downloadManager) dismiss(id string) {
 	m.remove(id)
 }
