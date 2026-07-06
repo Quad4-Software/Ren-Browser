@@ -85,6 +85,7 @@
     "closeOthers": "Cerrar otras pestañas",
     "closeRight": "Cerrar pestañas a la derecha",
     "closeAll": "Cerrar todas las pestañas",
+    "closeAllConfirm": "¿Cerrar todas las pestañas? Las pestañas fijadas permanecerán abiertas.",
     "about": "Acerca de",
     "license": "Licencia",
     "micronEditor": "Micron Editor",
@@ -112,7 +113,8 @@
     "openLinksInNewTab": "Abrir sitios en una pestaña nueva",
     "mobileDevTools": "Mostrar herramientas de desarrollo en la navegación móvil",
     "pageCache": "Caché de páginas",
-    "pageCacheHint": "Las páginas de malla en caché cargan al instante. Borra la caché si necesitas contenido actualizado de la red.",
+    "pageCacheHint": "Las páginas de malla en caché cargan al instante. Desactiva la caché o bórrala si necesitas contenido actualizado de la red.",
+    "pageCacheEnabled": "Guardar páginas de malla en caché local",
     "clearPageCache": "Borrar caché de páginas",
     "nativeTitlebar": "Usar barra de título nativa",
     "micronPages": "Páginas Micron",
@@ -168,7 +170,9 @@
     "pages": "páginas",
     "noHistory": "Sin historial de navegación",
     "noHistoryDescription": "Las páginas que visites en la malla se listarán aquí, agrupadas por fecha.",
-    "noMatching": "No hay páginas coincidentes"
+    "noMatching": "No hay páginas coincidentes",
+    "clear": "Borrar historial",
+    "clearConfirm": "¿Borrar todo el historial de navegación? Esto no se puede deshacer."
   },
   "devtools": {
     "console": "Consola",

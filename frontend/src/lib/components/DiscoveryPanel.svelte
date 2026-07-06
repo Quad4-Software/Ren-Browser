@@ -53,6 +53,24 @@
     return new Date(ts * 1000).toLocaleString();
   }
 
+  function formatHops(hops: number): string {
+    if (hops < 0) {
+      return "";
+    }
+    return hops === 1
+      ? t("devtools.hopsCount", { count: hops })
+      : t("devtools.hopsCountPlural", { count: hops });
+  }
+
+  function formatMeta(node: Node): string {
+    const seen = t("common.lastSeen", { when: formatSeen(node.lastSeen) });
+    const hops = formatHops(node.hops);
+    if (!hops) {
+      return seen;
+    }
+    return `${seen} · ${hops}`;
+  }
+
   const scanningDescription = $derived(t("discovery.scanning", { app: displayName }));
 
   function isFavorite(hash: string): boolean {
@@ -126,7 +144,7 @@
                 <Star size={14} fill={isFavorite(node.hash) ? "currentColor" : "none"} />
               </span>
             </span>
-            <span class="meta">{t("common.lastSeen", { when: formatSeen(node.lastSeen) })}</span>
+            <span class="meta">{formatMeta(node)}</span>
           </button>
         </li>
       {/each}
@@ -162,6 +180,11 @@
     font-size: 0.88rem;
   }
 
+  .slow-btn {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
   .slow-btn.active {
     color: var(--ren-accent);
     background: color-mix(in srgb, var(--ren-accent) 14%, var(--ren-chrome-bg));
@@ -179,7 +202,7 @@
     gap: 0.45rem;
   }
 
-  button {
+  ul button {
     width: 100%;
     text-align: left;
     border: 1px solid var(--ren-border);
@@ -195,7 +218,7 @@
       background 0.15s ease;
   }
 
-  button:hover {
+  ul button:hover {
     border-color: var(--ren-border-strong);
     background: var(--ren-tab-hover);
   }

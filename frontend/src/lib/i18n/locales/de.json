@@ -85,6 +85,7 @@
     "closeOthers": "Andere Tabs schließen",
     "closeRight": "Tabs rechts schließen",
     "closeAll": "Alle Tabs schließen",
+    "closeAllConfirm": "Alle Tabs schließen? Angeheftete Tabs bleiben geöffnet.",
     "about": "Über",
     "license": "Lizenz",
     "micronEditor": "Micron Editor",
@@ -112,7 +113,8 @@
     "openLinksInNewTab": "Seiten in neuem Tab öffnen",
     "mobileDevTools": "Entwicklertools in der mobilen Navigation anzeigen",
     "pageCache": "Seitencache",
-    "pageCacheHint": "Gecachte Mesh-Seiten laden sofort. Leeren Sie den Cache, wenn Sie frische Inhalte vom Netzwerk benötigen.",
+    "pageCacheHint": "Gecachte Mesh-Seiten laden sofort. Deaktivieren Sie den Cache oder leeren Sie ihn, wenn Sie frische Inhalte vom Netzwerk benötigen.",
+    "pageCacheEnabled": "Mesh-Seiten lokal zwischenspeichern",
     "clearPageCache": "Seitencache leeren",
     "nativeTitlebar": "Native Titelleiste verwenden",
     "micronPages": "Micron-Seiten",
@@ -168,7 +170,9 @@
     "pages": "Seiten",
     "noHistory": "Kein Browserverlauf",
     "noHistoryDescription": "Seiten, die Sie im Mesh besuchen, werden hier nach Datum gruppiert aufgelistet.",
-    "noMatching": "Keine passenden Seiten"
+    "noMatching": "Keine passenden Seiten",
+    "clear": "Verlauf löschen",
+    "clearConfirm": "Gesamten Browserverlauf löschen? Dies kann nicht rückgängig gemacht werden."
   },
   "devtools": {
     "console": "Konsole",

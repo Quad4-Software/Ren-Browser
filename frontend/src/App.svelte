@@ -6,6 +6,7 @@
   import {
     AddFavorite,
     ClearDevLogs,
+    ClearBrowsingHistory,
     ClearPageCache,
     ConfigPath,
     ExportDevLogs,
@@ -287,6 +288,7 @@
   let pageCacheEntries = $state(0);
   let pageCacheMax = $state(128);
   let pageCacheClearing = $state(false);
+  let pageCacheEnabled = $state(true);
   let communityItems = $state<CommunityInterface[]>([]);
   let communityLoading = $state(false);
   let communityImporting = $state(false);
@@ -553,7 +555,7 @@
     } else {
       clearPageState();
     }
-    loading = false;
+    loading = !!selected?.loading;
     if (splitViewOpen && splitTabId === id) {
       splitTabId = null;
     }
@@ -665,6 +667,30 @@
     applyPageState(activePinned.page ?? emptyPage());
     schedulePersistTabs();
     reconcileSplitView();
+  }
+
+  function requestCloseAllTabs() {
+    if (tabs.length <= 1) {
+      return;
+    }
+    if (!confirm(t("tab.closeAllConfirm"))) {
+      return;
+    }
+    closeAllTabs();
+    if (mobileTabsOpen && tabs.length <= 1) {
+      mobileTabsOpen = false;
+    }
+  }
+
+  async function clearHistory() {
+    if (!history.length) {
+      return;
+    }
+    if (!confirm(t("history.clearConfirm"))) {
+      return;
+    }
+    await ClearBrowsingHistory();
+    await loadHistory();
   }
 
   function togglePinTab(id: string) {
@@ -817,11 +843,14 @@
             url: pageUrl,
             title: tabTitleFromURL(pageUrl, nodes),
             page,
+            loading: false,
           }
         : tab,
     );
-    if (tabs.find((tab) => tab.id === tabId)?.active) {
+    const selected = tabs.find((tab) => tab.id === tabId);
+    if (selected?.active) {
       applyPageState(page);
+      loading = false;
     }
   }
 
@@ -867,6 +896,7 @@
             url: normalized,
             title: tabTitleFromURL(normalized, nodes),
             navGeneration: generation,
+            loading: true,
           }
         : tab,
     );
@@ -933,6 +963,7 @@
       applyPageToTab(tabId, failed, normalized);
       schedulePersistTabs();
     } finally {
+      tabs = tabs.map((tab) => (tab.id === tabId ? { ...tab, loading: false } : tab));
       if (tabs.find((tab) => tab.id === tabId)?.active) {
         loading = false;
       }
@@ -1209,6 +1240,7 @@
     micronRenderer = normalizeMicronRendererPreference(prefs.micronRenderer);
     discoverySlowMode = !!prefs.discoverySlowMode;
     mobileDevTools = !!prefs.mobileDevTools;
+    pageCacheEnabled = prefs.pageCacheEnabled !== false;
     settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
     if (mobileUI && activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
@@ -1228,6 +1260,7 @@
       docsLanguage,
       discoverySlowMode,
       mobileDevTools,
+      pageCacheEnabled,
       settingsSectionsCollapsed,
     };
   }
@@ -1241,6 +1274,7 @@
     uiLanguage?: string;
     discoverySlowMode?: boolean;
     mobileDevTools?: boolean;
+    pageCacheEnabled?: boolean;
     settingsSectionsCollapsed?: Record<string, boolean>;
   }) {
     const prefs = await SetBrowserPrefs({
@@ -1255,12 +1289,22 @@
     micronRenderer = normalizeMicronRendererPreference(prefs.micronRenderer);
     discoverySlowMode = !!prefs.discoverySlowMode;
     mobileDevTools = !!prefs.mobileDevTools;
+    pageCacheEnabled = prefs.pageCacheEnabled !== false;
     settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
     if (mobileUI && activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
     }
     await refreshMicronWasmState(micronWasmParserId);
     return prefs;
+  }
+
+  async function savePageCacheEnabled(value: boolean) {
+    if (!value && pageCacheEnabled) {
+      await ClearPageCache();
+      await refreshPageCacheStats();
+    }
+    pageCacheEnabled = value;
+    await persistBrowserPrefs({ pageCacheEnabled: value });
   }
 
   async function saveMobileDevTools(value: boolean) {
@@ -1390,13 +1434,26 @@
     }
   }
 
+  function tabIdForPageEvent(page: PageResponse): string | undefined {
+    const pageUrl = (page.url ?? "").trim();
+    if (!pageUrl) {
+      return undefined;
+    }
+    const loadingTab = tabs.find((tab) => tab.url === pageUrl && tab.loading);
+    if (loadingTab) {
+      return loadingTab.id;
+    }
+    return tabs.find((tab) => tab.url === pageUrl)?.id;
+  }
+
   function applyAsyncPageError(page: PageResponse) {
-    const tabId = tabs.find((tab) => tab.active)?.id;
-    if (!tabId || page.url !== url) {
+    const tabId = tabIdForPageEvent(page);
+    if (!tabId) {
       return;
     }
+    const target = tabs.find((tab) => tab.id === tabId);
     const tabPage = pageFromResponse(page);
-    applyPageToTab(tabId, tabPage, page.url || url);
+    applyPageToTab(tabId, tabPage, page.url || target?.url || "");
     schedulePersistTabs();
   }
 
@@ -1419,6 +1476,7 @@
     micronRenderer = normalizeMicronRendererPreference(reset.browserPrefs.micronRenderer);
     discoverySlowMode = !!reset.browserPrefs.discoverySlowMode;
     mobileDevTools = !!reset.browserPrefs.mobileDevTools;
+    pageCacheEnabled = reset.browserPrefs.pageCacheEnabled !== false;
     if (mobileUI && activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
     }
@@ -1644,13 +1702,11 @@
           applyPageToTab(tabId, lost, url);
           schedulePersistTabs();
         }
-        loading = false;
       }
     });
 
     Events.On("page:error", (event) => {
       applyAsyncPageError(event.data as PageResponse);
-      loading = false;
     });
 
     Events.On("store:health", (event) => {
@@ -1756,7 +1812,7 @@
       onCloseSplit={closeSplitView}
       onCloseOthers={closeOtherTabs}
       onCloseRight={closeTabsToRight}
-      onCloseAll={closeAllTabs}
+      onCloseAll={requestCloseAllTabs}
       onTogglePin={togglePinTab}
     />
 
@@ -1800,6 +1856,7 @@
         {atTabLimit}
         onSelect={mobileSelectTab}
         onClose={closeTab}
+        onCloseAll={requestCloseAllTabs}
         onNew={newTab}
         onDismiss={closeMobileTabs}
       />
@@ -1871,9 +1928,11 @@
           onConfigSave={() => void saveConfigText()}
           onConfigReload={() => void reloadConfigFromDisk()}
           onClearPageCache={() => void clearPageCache()}
+          onChangePageCacheEnabled={(value) => void savePageCacheEnabled(value)}
           {pageCacheEntries}
           {pageCacheMax}
           {pageCacheClearing}
+          {pageCacheEnabled}
           onCommunityRefresh={() => void loadCommunityInterfaces()}
           onCommunityFilter={(value) => {
             communityFilter = value;
@@ -2008,7 +2067,7 @@
         </aside>
       {:else if activePanel === "history"}
         <aside class="side-pane">
-          <HistoryPanel {history} onOpen={browseURL} />
+          <HistoryPanel {history} onOpen={browseURL} onClear={() => void clearHistory()} />
         </aside>
       {:else if activePanel === "devtools"}
         <aside class="side-pane">

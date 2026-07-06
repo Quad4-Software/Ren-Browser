@@ -85,6 +85,7 @@
     "closeOthers": "",
     "closeRight": "",
     "closeAll": "",
+    "closeAllConfirm": "",
     "about": "",
     "license": "",
     "micronEditor": "",
@@ -113,6 +114,7 @@
     "mobileDevTools": "",
     "pageCache": "",
     "pageCacheHint": "",
+    "pageCacheEnabled": "",
     "clearPageCache": "",
     "nativeTitlebar": "",
     "micronPages": "",
@@ -168,7 +170,9 @@
     "pages": "",
     "noHistory": "",
     "noHistoryDescription": "",
-    "noMatching": ""
+    "noMatching": "",
+    "clear": "",
+    "clearConfirm": ""
   },
   "devtools": {
     "console": "",

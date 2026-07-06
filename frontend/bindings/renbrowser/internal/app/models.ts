@@ -29,6 +29,7 @@ export interface BrowserPrefs {
     "uiLanguage": string;
     "discoverySlowMode": boolean;
     "mobileDevTools": boolean;
+    "pageCacheEnabled": boolean;
     "settingsSectionsCollapsed": { [_ in string]?: boolean } | null;
 }
 

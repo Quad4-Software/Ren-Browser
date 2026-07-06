@@ -1,7 +1,9 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Plus, X } from "@lucide/svelte";
+  import { Plus, Trash2, X } from "@lucide/svelte";
+  import TabPreviewThumb from "$lib/components/TabPreviewThumb.svelte";
   import { type Tab } from "$lib/browser/url";
+  import { normalizePageErrorKind, pageErrorContent } from "$lib/browser/errors";
   import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
@@ -10,11 +12,12 @@
     atTabLimit: boolean;
     onSelect: (id: string) => void;
     onClose: (id: string) => void;
+    onCloseAll: () => void;
     onNew: () => void;
     onDismiss: () => void;
   };
 
-  let { tabs, activeTabId, atTabLimit, onSelect, onClose, onNew, onDismiss }: Props = $props();
+  let { tabs, activeTabId, atTabLimit, onSelect, onClose, onCloseAll, onNew, onDismiss }: Props = $props();
 
   function previewLabel(tab: Tab): string {
     const title = tab.title.trim();
@@ -34,7 +37,8 @@
       return url;
     }
     if (tab.page?.error) {
-      return tab.page.error;
+      const kind = normalizePageErrorKind(tab.page.errorKind, tab.page.error);
+      return pageErrorContent(kind, tab.page.error).title;
     }
     return tab.page?.contentType || "";
   }
@@ -54,6 +58,17 @@
         <Plus size={16} />
         <span>{t("tab.newTab")}</span>
       </button>
+      {#if tabs.length > 1}
+        <button
+          type="button"
+          class="ren-icon-btn"
+          aria-label={t("tab.closeAll")}
+          title={t("tab.closeAll")}
+          onclick={onCloseAll}
+        >
+          <Trash2 size={16} />
+        </button>
+      {/if}
       <button
         type="button"
         class="ren-icon-btn"
@@ -69,18 +84,7 @@
     {#each tabs as tab (tab.id)}
       <article class="tab-card" class:active={tab.id === activeTabId}>
         <button type="button" class="card-main" onclick={() => onSelect(tab.id)}>
-          <div
-            class="preview"
-            style:background={tab.page?.pageBg || "var(--ren-surface-muted)"}
-            style:color={tab.page?.pageFg || "var(--ren-fg)"}
-          >
-            <span class="preview-title">{previewLabel(tab)}</span>
-            {#if tab.page?.error}
-              <span class="preview-meta error">{tab.page.error}</span>
-            {:else if tab.page?.html}
-              <span class="preview-meta">{tab.page.contentType || t("mobileTabs.pageLoaded")}</span>
-            {/if}
-          </div>
+          <TabPreviewThumb {tab} label={previewLabel(tab)} class="preview" />
           <div class="card-footer">
             <span class="card-title">{previewLabel(tab)}</span>
             <span class="card-url">{previewSubtitle(tab)}</span>
@@ -189,37 +193,10 @@
     font: inherit;
   }
 
-  .preview {
+  :global(.preview.thumb) {
     min-height: 6.5rem;
-    padding: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
+    height: 6.5rem;
     border-bottom: 1px solid var(--ren-border);
-  }
-
-  .preview-title {
-    font-weight: 600;
-    font-size: 0.88rem;
-    line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .preview-meta {
-    font-size: 0.75rem;
-    opacity: 0.85;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .preview-meta.error {
-    color: var(--ren-danger);
-    opacity: 1;
   }
 
   .card-footer {

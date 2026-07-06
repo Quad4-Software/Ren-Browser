@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Clock, History } from "@lucide/svelte";
+  import { Clock, History, Trash2 } from "@lucide/svelte";
   import { SvelteDate } from "svelte/reactivity";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
@@ -21,9 +21,10 @@
   type Props = {
     history: HistoryEntry[];
     onOpen: (url: string) => void;
+    onClear: () => void;
   };
 
-  let { history, onOpen }: Props = $props();
+  let { history, onOpen, onClear }: Props = $props();
 
   let query = $state("");
 
@@ -125,8 +126,23 @@
 
 <section class="history-panel">
   <header>
-    <h2>{t("history.title")}</h2>
-    <p>{t("history.subtitle")}</p>
+    <div class="title-row">
+      <div>
+        <h2>{t("history.title")}</h2>
+        <p>{t("history.subtitle")}</p>
+      </div>
+      {#if history.length > 0}
+        <button
+          type="button"
+          class="ren-icon-btn clear-btn"
+          aria-label={t("history.clear")}
+          title={t("history.clear")}
+          onclick={onClear}
+        >
+          <Trash2 size={16} />
+        </button>
+      {/if}
+    </div>
     <input
       class="search ren-input"
       type="search"
@@ -184,6 +200,19 @@
     margin: 0 0 0.25rem;
     font-size: 1.05rem;
     font-weight: 600;
+  }
+
+  .title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.65rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .clear-btn {
+    flex-shrink: 0;
+    margin-left: auto;
   }
 
   header p {

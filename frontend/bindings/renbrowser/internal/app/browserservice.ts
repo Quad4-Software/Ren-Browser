@@ -40,6 +40,10 @@ export function CaptureWindowState(): $CancellablePromise<$models.WindowState> {
     return $Call.ByID(2070387988);
 }
 
+export function ClearBrowsingHistory(): $CancellablePromise<void> {
+    return $Call.ByID(3405602571);
+}
+
 export function ClearDevLogs(): $CancellablePromise<void> {
     return $Call.ByID(1245444528);
 }

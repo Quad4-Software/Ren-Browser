@@ -90,7 +90,10 @@ export function normalizePageErrorKind(kind: string | undefined, error: string):
   if (
     msg.includes("reticulum not ready") ||
     msg.includes("no path") ||
-    msg.includes("link establish")
+    msg.includes("path discovery") ||
+    msg.includes("link establish") ||
+    msg.includes("deadline exceeded") ||
+    msg.includes("timed out")
   ) {
     return "connection_failed";
   }

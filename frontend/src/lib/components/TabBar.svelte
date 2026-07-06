@@ -3,6 +3,7 @@
   import { Pin, Plus, X } from "@lucide/svelte";
   import { clampMenuPosition } from "$lib/browser/context-menu";
   import { MAX_TABS, TAB_GAP_PX, type Tab, tabsAreaWidth, tabWidthForTab } from "$lib/browser/url";
+  import TabPreviewThumb from "$lib/components/TabPreviewThumb.svelte";
   import WindowControls from "$lib/components/WindowControls.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
 
@@ -78,6 +79,13 @@
   let newTabEl = $state<HTMLButtonElement | null>(null);
   let tabsSlotWidth = $state(0);
   let newTabWidth = $state(0);
+  let hoverTabId = $state<string | null>(null);
+  let previewPos = $state({ left: 0, top: 0 });
+
+  const PREVIEW_WIDTH = 220;
+  const PREVIEW_OFFSET = 6;
+
+  const hoverTab = $derived(hoverTabId ? tabs.find((tab) => tab.id === hoverTabId) : null);
 
   const tabsRowMaxWidth = $derived(
     mobileUI ? tabsSlotWidth : Math.max(0, tabsSlotWidth - DRAG_STRIP_MIN_PX),
@@ -181,6 +189,22 @@
     menu = null;
   }
 
+  function showTabPreview(tabId: string, target: HTMLElement) {
+    if (mobileUI) {
+      return;
+    }
+    const rect = target.getBoundingClientRect();
+    let left = rect.left + rect.width / 2 - PREVIEW_WIDTH / 2;
+    const margin = 8;
+    left = Math.max(margin, Math.min(left, window.innerWidth - PREVIEW_WIDTH - margin));
+    hoverTabId = tabId;
+    previewPos = { left, top: rect.bottom + PREVIEW_OFFSET };
+  }
+
+  function hideTabPreview() {
+    hoverTabId = null;
+  }
+
   function runAction(action: MenuAction) {
     if (!menu) {
       return;
@@ -261,7 +285,12 @@
             style:--tab-width="{tabItemWidth}px"
             onclick={() => onSelect(tab.id)}
             oncontextmenu={(event) => openMenu(event, tab.id)}
-            ondragstart={() => handleDragStart(tab.id)}
+            onmouseenter={(event) => showTabPreview(tab.id, event.currentTarget)}
+            onmouseleave={hideTabPreview}
+            ondragstart={() => {
+              hideTabPreview();
+              handleDragStart(tab.id);
+            }}
             ondragover={handleDragOver}
             ondrop={() => handleDrop(tab.id)}
           >
@@ -371,6 +400,23 @@
     <button role="menuitem" class="danger" onclick={() => runAction("closeAll")}
       >{t("tab.closeAll")}</button
     >
+  </div>
+{/if}
+
+{#if hoverTab && !mobileUI}
+  <div
+    class="tab-preview-popover"
+    style:left="{previewPos.left}px"
+    style:top="{previewPos.top}px"
+    role="tooltip"
+  >
+    <TabPreviewThumb tab={hoverTab} label={hoverTab.title} class="tab-preview-thumb" />
+    <div class="tab-preview-footer">
+      <span class="tab-preview-title">{hoverTab.title || hoverTab.url || t("tab.new")}</span>
+      {#if hoverTab.url && hoverTab.url !== hoverTab.title}
+        <span class="tab-preview-url">{hoverTab.url}</span>
+      {/if}
+    </div>
   </div>
 {/if}
 
@@ -598,5 +644,46 @@
     border: none;
     border-top: 1px solid var(--ren-border);
     margin: 0.15rem 0;
+  }
+
+  .tab-preview-popover {
+    position: fixed;
+    z-index: 950;
+    width: 220px;
+    border: 1px solid var(--ren-border);
+    border-radius: calc(var(--ren-radius) + 2px);
+    background: var(--ren-chrome-bg);
+    box-shadow: var(--ren-shadow);
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  :global(.tab-preview-thumb.thumb) {
+    width: 100%;
+    height: 10.5rem;
+    border-bottom: 1px solid var(--ren-border);
+  }
+
+  .tab-preview-footer {
+    padding: 0.5rem 0.6rem;
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+
+  .tab-preview-title {
+    font-weight: 600;
+    font-size: 0.82rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tab-preview-url {
+    color: var(--ren-muted);
+    font-size: 0.72rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 </style>

@@ -193,6 +193,12 @@ func (s *Store) BrowsingHistory(limit int) ([]HistoryEntry, error) {
 	return out, nil
 }
 
+func (s *Store) ClearBrowsingHistory() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.db.ClearHistory()
+}
+
 func (s *Store) Favorites() []string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

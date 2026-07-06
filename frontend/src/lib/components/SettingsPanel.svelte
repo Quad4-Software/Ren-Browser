@@ -68,6 +68,7 @@
     pageCacheEntries: number;
     pageCacheMax: number;
     pageCacheClearing: boolean;
+    pageCacheEnabled: boolean;
     onChange: (theme: ThemeSettings) => void;
     onChangeKeybinds: (keybinds: KeybindSettings) => void;
     onChangeUILanguage: (value: string) => void;
@@ -92,6 +93,7 @@
     onCommunityToggle: (id: number) => void;
     onCommunityImport: () => void;
     onClearPageCache: () => void;
+    onChangePageCacheEnabled: (value: boolean) => void;
     sectionsCollapsed: Record<string, boolean>;
     onChangeSectionsCollapsed: (sections: Record<string, boolean>) => void;
     pluginsDir?: string;
@@ -147,6 +149,7 @@
     onCommunityToggle,
     onCommunityImport,
     onClearPageCache,
+    onChangePageCacheEnabled,
     sectionsCollapsed,
     onChangeSectionsCollapsed,
     onPluginsChanged,
@@ -154,6 +157,7 @@
     pageCacheEntries = 0,
     pageCacheMax = 128,
     pageCacheClearing = false,
+    pageCacheEnabled = true,
   }: Props = $props();
 
   let recordingAction = $state<KeybindAction | null>(null);
@@ -395,6 +399,11 @@
     <p class="hint">
       {t("settings.pageCacheHint")}
     </p>
+    <Toggle
+      label={t("settings.pageCacheEnabled")}
+      checked={pageCacheEnabled}
+      onchange={onChangePageCacheEnabled}
+    />
     <div class="cache-row">
       <span class="meta"
         >{t("common.entries", { current: pageCacheEntries, max: pageCacheMax })}</span

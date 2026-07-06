@@ -41,7 +41,10 @@ func ClassifyFetch(errMsg string, body []byte) (Kind, string) {
 		strings.Contains(msg, "node not discovered"),
 		strings.Contains(msg, "link establish"),
 		strings.Contains(msg, "invalid node hash"),
-		strings.Contains(msg, "invalid destination"):
+		strings.Contains(msg, "invalid destination"),
+		strings.Contains(msg, "deadline exceeded"),
+		strings.Contains(msg, "timed out"),
+		strings.Contains(msg, "timeout"):
 		return KindConnectionFailed, errMsg
 	case strings.Contains(msg, "context canceled"),
 		strings.Contains(msg, "teardown"),

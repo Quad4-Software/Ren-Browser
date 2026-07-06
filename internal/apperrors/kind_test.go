@@ -24,6 +24,13 @@ func TestClassifyFetchConnectionLost(t *testing.T) {
 	}
 }
 
+func TestClassifyFetchDeadlineExceeded(t *testing.T) {
+	kind, _ := ClassifyFetch("context deadline exceeded", nil)
+	if kind != KindConnectionFailed {
+		t.Fatalf("kind=%q want connection_failed", kind)
+	}
+}
+
 func TestClassifyFetchInternal(t *testing.T) {
 	kind, detail := ClassifyFetch("unexpected server fault", nil)
 	if kind != KindInternal {

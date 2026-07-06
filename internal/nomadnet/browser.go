@@ -26,10 +26,17 @@ type FetchResult struct {
 }
 
 type Browser struct {
-	mu      sync.Mutex
-	tr      *transport.Transport
-	handler *AnnounceHandler
-	links   map[string]*rlink.Link
+	mu           sync.Mutex
+	tr           *transport.Transport
+	handler      *AnnounceHandler
+	links        map[string]*rlink.Link
+	establishing map[string]*linkEstablishWait
+}
+
+type linkEstablishWait struct {
+	done chan struct{}
+	link *rlink.Link
+	err  error
 }
 
 func NewBrowser(tr *transport.Transport, handler *AnnounceHandler) *Browser {
@@ -104,17 +111,50 @@ func (b *Browser) linkFor(ctx context.Context, destHash []byte, remoteID *identi
 	key := hex.EncodeToString(destHash)
 
 	b.mu.Lock()
-	cached := b.links[key]
-	if cached != nil && cached.GetStatus() == rlink.StatusActive {
+	if cached := b.links[key]; cached != nil && cached.GetStatus() == rlink.StatusActive {
 		b.mu.Unlock()
 		return cached, nil
 	}
-	if cached != nil {
+	if cached := b.links[key]; cached != nil {
 		cached.Teardown()
 		delete(b.links, key)
 	}
+	waiter, already := b.establishing[key]
+	if already {
+		b.mu.Unlock()
+		select {
+		case <-waiter.done:
+			if waiter.err != nil {
+				return nil, waiter.err
+			}
+			return waiter.link, nil
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+	waiter = &linkEstablishWait{done: make(chan struct{})}
+	if b.establishing == nil {
+		b.establishing = make(map[string]*linkEstablishWait)
+	}
+	b.establishing[key] = waiter
 	b.mu.Unlock()
 
+	lnk, err := b.establishLink(ctx, destHash, remoteID)
+
+	waiter.link = lnk
+	waiter.err = err
+	close(waiter.done)
+
+	b.mu.Lock()
+	delete(b.establishing, key)
+	if err == nil {
+		b.links[key] = lnk
+	}
+	b.mu.Unlock()
+	return lnk, err
+}
+
+func (b *Browser) establishLink(ctx context.Context, destHash []byte, remoteID *identity.Identity) (*rlink.Link, error) {
 	destOut, err := destination.FromHash(destHash, remoteID, destination.Single, b.tr)
 	if err != nil {
 		return nil, err
@@ -136,17 +176,13 @@ func (b *Browser) linkFor(ctx context.Context, destHash []byte, remoteID *identi
 	case <-established:
 	case <-ctx.Done():
 		lnk.Teardown()
-		return nil, ctx.Err()
+		return nil, fmt.Errorf("no path to node: %s", pathWaitError(ctx.Err()))
 	case <-time.After(45 * time.Second):
 		lnk.Teardown()
 		return nil, fmt.Errorf("link establish timeout")
 	}
 
 	lnk.Start()
-
-	b.mu.Lock()
-	b.links[key] = lnk
-	b.mu.Unlock()
 	return lnk, nil
 }
 
@@ -167,5 +203,5 @@ func waitReceipt(ctx context.Context, receipt *rlink.RequestReceipt, timeout tim
 		}
 		time.Sleep(80 * time.Millisecond)
 	}
-	return nil, context.DeadlineExceeded
+	return nil, fmt.Errorf("node response timed out")
 }

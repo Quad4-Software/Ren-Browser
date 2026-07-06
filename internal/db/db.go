@@ -242,6 +242,11 @@ func (d *DB) ListRecentURLs(limit int) ([]string, error) {
 	return out, rows.Err()
 }
 
+func (d *DB) ClearHistory() error {
+	_, err := d.sql.Exec(`DELETE FROM history`)
+	return err
+}
+
 func boolInt(v bool) int {
 	if v {
 		return 1

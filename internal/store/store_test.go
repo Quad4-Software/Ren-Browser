@@ -43,6 +43,13 @@ func TestStoreFavoritesAndHistory(t *testing.T) {
 	if err != nil || len(hist) != 1 {
 		t.Fatalf("history = %#v err=%v", hist, err)
 	}
+	if err := s2.ClearBrowsingHistory(); err != nil {
+		t.Fatal(err)
+	}
+	hist, err = s2.BrowsingHistory(10)
+	if err != nil || len(hist) != 0 {
+		t.Fatalf("history after clear = %#v err=%v", hist, err)
+	}
 }
 
 func TestStoreNodes(t *testing.T) {

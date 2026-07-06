@@ -19,6 +19,12 @@ type AboutInfo struct {
 	WailsVersion    string
 	ReticulumConfig string
 	DataPath        string
+	Runtime         []AboutRow
+}
+
+type AboutRow struct {
+	Label string
+	Value string
 }
 
 func RenderAbout(info AboutInfo) string {
@@ -35,6 +41,12 @@ func RenderAbout(info AboutInfo) string {
 		{"Wails", info.WailsVersion},
 		{"Reticulum config", info.ReticulumConfig},
 		{"Data", info.DataPath},
+	}
+	for _, row := range info.Runtime {
+		rows = append(rows, struct {
+			label string
+			value string
+		}{row.Label, row.Value})
 	}
 
 	var body string

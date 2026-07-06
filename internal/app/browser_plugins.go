@@ -21,19 +21,7 @@ func (s *BrowserService) SetPluginManager(manager *plugins.Manager) {
 	builtin.RegisterRenderers(manager.Registry())
 	builtin.RegisterSchemes(manager.Registry(), builtin.SchemeDeps{
 		AboutHTML: func() string {
-			info := s.GetAboutInfo()
-			return content.RenderAbout(content.AboutInfo{
-				AppName:         info.AppName,
-				Version:         info.Version,
-				Build:           info.Build,
-				License:         info.License,
-				GoVersion:       info.GoVersion,
-				OS:              info.OS,
-				Arch:            info.Arch,
-				WailsVersion:    info.WailsVersion,
-				ReticulumConfig: info.ReticulumConfig,
-				DataPath:        info.DataPath,
-			})
+			return content.RenderAbout(s.aboutContentInfo())
 		},
 		EditorRaw: func() string {
 			return content.DefaultEditorTemplate()

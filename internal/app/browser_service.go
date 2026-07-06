@@ -349,6 +349,13 @@ func (s *BrowserService) GetBrowsingHistory(limit int) []HistoryEntry {
 	return rows
 }
 
+func (s *BrowserService) ClearBrowsingHistory() error {
+	if s.publicMode {
+		return nil
+	}
+	return s.store.ClearBrowsingHistory()
+}
+
 func (s *BrowserService) GetKeybinds() KeybindSettings {
 	raw, err := s.store.GetSetting(keybindsSettingKey)
 	if err != nil {
@@ -460,7 +467,7 @@ func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) Pa
 		}
 	}
 
-	if !skipCache {
+	if !skipCache && s.GetBrowserPrefs().PageCacheEnabled {
 		if entry, ok := s.pageCache.Get(parsed.NodeHash, parsed.Path, parsed.Request); ok {
 			rendered := content.Render(parsed.Path, entry.Body, parsed.NodeHash)
 			resp := PageResponse{
@@ -545,7 +552,9 @@ func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) Pa
 	resp.ContentType = rendered.Kind
 	resp.PageFG = rendered.PageFG
 	resp.PageBG = rendered.PageBG
-	s.pageCache.Put(fetch.NodeHash, fetch.Path, parsed.Request, fetch.Body, rendered.Kind)
+	if s.GetBrowserPrefs().PageCacheEnabled {
+		s.pageCache.Put(fetch.NodeHash, fetch.Path, parsed.Request, fetch.Body, rendered.Kind)
+	}
 
 	s.log("info", "page loaded", url)
 	s.setLastPage(resp)

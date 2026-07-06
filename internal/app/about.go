@@ -25,7 +25,7 @@ type AboutInfo struct {
 }
 
 func (s *BrowserService) GetAboutInfo() AboutInfo {
-	return AboutInfo{
+	info := AboutInfo{
 		AppName:         brand.DisplayName,
 		Version:         buildinfo.Version,
 		Build:           buildinfo.BuildLabel(),
@@ -34,8 +34,26 @@ func (s *BrowserService) GetAboutInfo() AboutInfo {
 		OS:              runtime.GOOS,
 		Arch:            runtime.GOARCH,
 		WailsVersion:    brand.WailsVersion,
-		ReticulumConfig: s.stack.ConfigPath(),
+		ReticulumConfig: s.ConfigPath(),
 		DataPath:        store.DefaultPath(),
+	}
+	return info
+}
+
+func (s *BrowserService) aboutContentInfo() content.AboutInfo {
+	info := s.GetAboutInfo()
+	return content.AboutInfo{
+		AppName:         info.AppName,
+		Version:         info.Version,
+		Build:           info.Build,
+		License:         info.License,
+		GoVersion:       info.GoVersion,
+		OS:              info.OS,
+		Arch:            info.Arch,
+		WailsVersion:    info.WailsVersion,
+		ReticulumConfig: info.ReticulumConfig,
+		DataPath:        info.DataPath,
+		Runtime:         platformRuntimeRows(s.app),
 	}
 }
 
@@ -49,19 +67,7 @@ func isAboutURL(raw string) bool {
 }
 
 func (s *BrowserService) aboutPage(pushHistory bool) PageResponse {
-	info := s.GetAboutInfo()
-	html := content.RenderAbout(content.AboutInfo{
-		AppName:         info.AppName,
-		Version:         info.Version,
-		Build:           info.Build,
-		License:         info.License,
-		GoVersion:       info.GoVersion,
-		OS:              info.OS,
-		Arch:            info.Arch,
-		WailsVersion:    info.WailsVersion,
-		ReticulumConfig: info.ReticulumConfig,
-		DataPath:        info.DataPath,
-	})
+	html := content.RenderAbout(s.aboutContentInfo())
 	resp := PageResponse{
 		URL:         "about:",
 		Path:        "/about",

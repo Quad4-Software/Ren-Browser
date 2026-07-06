@@ -24,6 +24,7 @@ export type Tab = {
   pinned?: boolean;
   page?: TabPage;
   navGeneration?: number;
+  loading?: boolean;
 };
 
 export const MAX_TABS = 32;

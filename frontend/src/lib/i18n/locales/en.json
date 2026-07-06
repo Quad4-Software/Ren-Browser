@@ -85,6 +85,7 @@
     "closeOthers": "Close other tabs",
     "closeRight": "Close tabs to the right",
     "closeAll": "Close all tabs",
+    "closeAllConfirm": "Close all tabs? Pinned tabs will stay open.",
     "about": "About",
     "license": "License",
     "micronEditor": "Micron Editor",
@@ -112,7 +113,8 @@
     "openLinksInNewTab": "Open sites in a new tab",
     "mobileDevTools": "Show developer tools in mobile navigation",
     "pageCache": "Page cache",
-    "pageCacheHint": "Cached mesh pages load instantly. Clear the cache if you need fresh content from the network.",
+    "pageCacheHint": "Cached mesh pages load instantly. Disable caching or clear the cache when you need fresh content from the network.",
+    "pageCacheEnabled": "Cache mesh pages locally",
     "clearPageCache": "Clear page cache",
     "nativeTitlebar": "Use native title bar",
     "micronPages": "Micron pages",
@@ -168,7 +170,9 @@
     "pages": "pages",
     "noHistory": "No browsing history",
     "noHistoryDescription": "Pages you visit on the mesh will be listed here, grouped by date.",
-    "noMatching": "No matching pages"
+    "noMatching": "No matching pages",
+    "clear": "Clear history",
+    "clearConfirm": "Clear all browsing history? This cannot be undone."
   },
   "devtools": {
     "console": "Console",
