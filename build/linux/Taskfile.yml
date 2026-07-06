@@ -163,6 +163,7 @@ tasks:
         }
         fetch "https://github.com/linuxdeploy/linuxdeploy/releases/download/{{.LINUXDEPLOY_TAG}}/linuxdeploy-${suffix}.AppImage" "build/tools/linuxdeploy-${suffix}.AppImage"
         fetch "{{.APPIMAGETOOL_URL}}-${suffix}.AppImage" "build/tools/appimagetool-${suffix}.AppImage"
+        fetch "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh" "build/tools/linuxdeploy-plugin-gtk.sh"
     preconditions:
       - sh: command -v curl >/dev/null 2>&1
         msg: "curl is required to download linuxdeploy"

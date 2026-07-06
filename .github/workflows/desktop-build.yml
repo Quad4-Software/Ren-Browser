@@ -2,7 +2,7 @@
 #   actions/checkout@v7.0.0                    9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 #   actions/upload-artifact@v7.0.1             043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
 #   actions/download-artifact@v8.0.1           3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-#   softprops/action-gh-release@v2.5.0         a06a81a03ee405af7f2048a818ed3f03bbf83c7b
+#   softprops/action-gh-release@v3.0.1         718ea10b132b3b2eba29c1007bb80653f286566b
 
 name: Desktop build
 
@@ -211,9 +211,48 @@ jobs:
           if-no-files-found: error
 
   build-server:
-    name: Server (linux amd64)
+    name: Server (${{ matrix.id }})
     needs: version
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: linux-amd64
+            goos: linux
+            goarch: amd64
+            goarm: "7"
+            artifact: renbrowser-server-linux-amd64
+          - id: linux-arm64
+            goos: linux
+            goarch: arm64
+            goarm: "7"
+            artifact: renbrowser-server-linux-arm64
+          - id: linux-armv6
+            goos: linux
+            goarch: arm
+            goarm: "6"
+            artifact: renbrowser-server-linux-armv6
+          - id: freebsd-amd64
+            goos: freebsd
+            goarch: amd64
+            goarm: "7"
+            artifact: renbrowser-server-freebsd-amd64
+          - id: freebsd-arm64
+            goos: freebsd
+            goarch: arm64
+            goarm: "7"
+            artifact: renbrowser-server-freebsd-arm64
+          - id: openbsd-amd64
+            goos: openbsd
+            goarch: amd64
+            goarm: "7"
+            artifact: renbrowser-server-openbsd-amd64
+          - id: netbsd-amd64
+            goos: netbsd
+            goarch: amd64
+            goarm: "7"
+            artifact: renbrowser-server-netbsd-amd64
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -224,18 +263,18 @@ jobs:
           install-wails: "false"
 
       - name: Build server
-        run: task build:server
+        run: task build:server GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} GOARM=${{ matrix.goarm }} OUTPUT=bin/${{ matrix.artifact }}
 
       - name: Stage artifacts
         shell: bash
         run: |
           mkdir -p dist/release
-          cp bin/renbrowser-server dist/release/renbrowser-server-linux-amd64
+          cp "bin/${{ matrix.artifact }}" "dist/release/${{ matrix.artifact }}"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: server-linux-amd64
+          name: server-${{ matrix.id }}
           path: dist/release/*
           if-no-files-found: error
 
@@ -300,7 +339,13 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist/release
-          cp bin/renbrowser.apk dist/release/renbrowser-android.apk
+          channel="${{ inputs.channel }}"
+          if [ "$channel" = "release" ]; then
+            apk_name="renbrowser-android.apk"
+          else
+            apk_name="renbrowser-android-debug.apk"
+          fi
+          cp bin/renbrowser.apk "dist/release/${apk_name}"
 
       - name: Upload artifacts
         if: inputs.channel != 'release' || (inputs.android_sign_release && steps.android_sign.outputs.available == 'true')
@@ -358,21 +403,19 @@ jobs:
           - Linux amd64/arm64 AppImage and binary
           - Windows amd64 portable executable
           - macOS universal .app (zip)
-          - Headless server binary (linux amd64)
-          - Android APK (signed on release when keystore secrets are configured)
+          - Headless server binaries (Linux amd64/arm64/armv6, FreeBSD amd64/arm64, OpenBSD/NetBSD amd64)
+          - Android APK (debug for nightly/beta; signed release when keystore secrets are configured)
 
           See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${tag}/CHANGELOG.md) for details.
           EOF
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b
         with:
           tag_name: ${{ needs.version.outputs.tag }}
           name: Ren Browser ${{ needs.version.outputs.version }}
           body_path: release-notes.md
           prerelease: ${{ inputs.prerelease }}
           make_latest: ${{ inputs.channel == 'release' }}
-          files: |
-            release/*
-            release/SHA256SUMS.txt
+          files: release/*
           generate_release_notes: ${{ inputs.channel == 'release' }}

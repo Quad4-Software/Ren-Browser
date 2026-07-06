@@ -258,9 +258,37 @@ jobs:
             install_wails: "true"
           - target: server-linux-amd64
             os: ubuntu-latest
-            task: build:server
-            artifact: bin/renbrowser-server
+            task: build:server GOOS=linux GOARCH=amd64 OUTPUT=bin/renbrowser-server-linux-amd64
+            artifact: bin/renbrowser-server-linux-amd64
             artifact_name: renbrowser-server-linux-amd64
+            install_linux_deps: "false"
+            install_wails: "false"
+          - target: server-linux-arm64
+            os: ubuntu-latest
+            task: build:server GOOS=linux GOARCH=arm64 OUTPUT=bin/renbrowser-server-linux-arm64
+            artifact: bin/renbrowser-server-linux-arm64
+            artifact_name: renbrowser-server-linux-arm64
+            install_linux_deps: "false"
+            install_wails: "false"
+          - target: server-linux-armv6
+            os: ubuntu-latest
+            task: build:server GOOS=linux GOARCH=arm GOARM=6 OUTPUT=bin/renbrowser-server-linux-armv6
+            artifact: bin/renbrowser-server-linux-armv6
+            artifact_name: renbrowser-server-linux-armv6
+            install_linux_deps: "false"
+            install_wails: "false"
+          - target: server-freebsd-amd64
+            os: ubuntu-latest
+            task: build:server GOOS=freebsd GOARCH=amd64 OUTPUT=bin/renbrowser-server-freebsd-amd64
+            artifact: bin/renbrowser-server-freebsd-amd64
+            artifact_name: renbrowser-server-freebsd-amd64
+            install_linux_deps: "false"
+            install_wails: "false"
+          - target: server-freebsd-arm64
+            os: ubuntu-latest
+            task: build:server GOOS=freebsd GOARCH=arm64 OUTPUT=bin/renbrowser-server-freebsd-arm64
+            artifact: bin/renbrowser-server-freebsd-arm64
+            artifact_name: renbrowser-server-freebsd-arm64
             install_linux_deps: "false"
             install_wails: "false"
     steps:
