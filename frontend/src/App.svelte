@@ -1615,8 +1615,8 @@
     await loadDownloads();
   }
 
-  function handleDownloadResult(result: { ok: boolean; message: string }) {
-    if (result.ok) {
+  function handleDownloadResult(result: { ok: boolean; message: string; pending?: boolean }) {
+    if (result.ok && !result.pending) {
       void loadDownloads();
     }
     showPluginToast(result.message);

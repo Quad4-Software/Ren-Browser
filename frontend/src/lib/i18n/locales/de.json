@@ -216,6 +216,7 @@
     "downloadsFolder": "Download-Ordner",
     "saved": "Seite in Downloads gespeichert",
     "fileSaved": "Datei in Downloads gespeichert",
+    "downloading": "Wird über das Mesh heruntergeladen\u2026",
     "noPageToSave": "Keine Seite zum Speichern geöffnet",
     "noPageContent": "Aktuelle Seite hat keinen Inhalt zum Speichern"
   },

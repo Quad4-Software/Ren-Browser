@@ -216,6 +216,7 @@
     "downloadsFolder": "Downloads folder",
     "saved": "Page saved to downloads",
     "fileSaved": "File saved to downloads",
+    "downloading": "Downloading over the mesh\u2026",
     "noPageToSave": "No page is open to save",
     "noPageContent": "Current page has no content to save"
   },

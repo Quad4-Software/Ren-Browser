@@ -39,7 +39,7 @@
     onReloadFresh: () => void;
     onShowSourceChange: (show: boolean) => void;
     onFindClose?: () => void;
-    onDownloadResult?: (result: { ok: boolean; message: string }) => void;
+    onDownloadResult?: (result: { ok: boolean; message: string; pending?: boolean }) => void;
   };
 
   let {
@@ -135,11 +135,17 @@
   }
 
   async function runDownload(url: string, contentTypeForSave: string, payload: string) {
+    const isFile = isFileURL(url);
+    if (isFile) {
+      // Mesh file fetches can take a while; confirm the click landed right
+      // away so it doesn't look like nothing happened while it's in flight.
+      onDownloadResult({ ok: true, pending: true, message: t("downloads.downloading") });
+    }
     try {
       await downloadPageContent(url, contentTypeForSave, payload);
       onDownloadResult({
         ok: true,
-        message: isFileURL(url) ? t("downloads.fileSaved") : t("downloads.saved"),
+        message: isFile ? t("downloads.fileSaved") : t("downloads.saved"),
       });
     } catch (err) {
       onDownloadResult({ ok: false, message: err instanceof Error ? err.message : String(err) });

@@ -216,6 +216,7 @@
     "downloadsFolder": "Carpeta de descargas",
     "saved": "Página guardada en descargas",
     "fileSaved": "Archivo guardado en descargas",
+    "downloading": "Descargando a través de la malla\u2026",
     "noPageToSave": "No hay ninguna página abierta para guardar",
     "noPageContent": "La página actual no tiene contenido para guardar"
   },
