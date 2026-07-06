@@ -139,6 +139,22 @@ public class WailsBridge {
     }
 
     /**
+     * Close the app from the Go/JS side.
+     */
+    public void quitApp() {
+        mainHandler.post(() -> {
+            if (activity == null || activity.isFinishing()) {
+                return;
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                activity.finishAndRemoveTask();
+            } else {
+                activity.finish();
+            }
+        });
+    }
+
+    /**
      * Shutdown the native Go library
      */
     public void shutdown() {

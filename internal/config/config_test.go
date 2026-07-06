@@ -13,6 +13,8 @@ func TestApplyEnvOverrides(t *testing.T) {
 	t.Setenv("REN_BROWSER_PORT", "9090")
 	t.Setenv("REN_BROWSER_TRUST_PROXY", "true")
 	t.Setenv("REN_BROWSER_BASE_PATH", "/ren")
+	t.Setenv("REN_BROWSER_AUTH", "true")
+	t.Setenv("REN_BROWSER_AUTH_BRUTE_MAX", "5")
 
 	cfg := config.ApplyEnv(config.Runtime{})
 	if cfg.ServerHost != "0.0.0.0" {
@@ -26,6 +28,20 @@ func TestApplyEnvOverrides(t *testing.T) {
 	}
 	if cfg.BasePath != "/ren" {
 		t.Fatalf("base path = %q", cfg.BasePath)
+	}
+	if !cfg.Auth {
+		t.Fatal("expected auth")
+	}
+	if cfg.AuthBruteMax != 5 {
+		t.Fatalf("brute max = %d", cfg.AuthBruteMax)
+	}
+}
+
+func TestApplyEnvNativeTitlebar(t *testing.T) {
+	t.Setenv("REN_BROWSER_NATIVE_TITLEBAR", "true")
+	cfg := config.ApplyEnv(config.Runtime{})
+	if !cfg.NativeTitlebar {
+		t.Fatal("expected native titlebar")
 	}
 }
 

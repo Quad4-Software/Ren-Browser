@@ -39,6 +39,7 @@
     onReloadFresh: () => void;
     onShowSourceChange: (show: boolean) => void;
     onFindClose?: () => void;
+    onDownloadResult?: (result: { ok: boolean; message: string }) => void;
   };
 
   let {
@@ -61,6 +62,7 @@
     onReloadFresh,
     onShowSourceChange,
     onFindClose = () => {},
+    onDownloadResult = () => {},
   }: Props = $props();
 
   let contentEl: HTMLElement | undefined = $state();
@@ -132,13 +134,25 @@
     menu = null;
   }
 
+  async function runDownload(url: string, contentTypeForSave: string, payload: string) {
+    try {
+      await downloadPageContent(url, contentTypeForSave, payload);
+      onDownloadResult({
+        ok: true,
+        message: isFileURL(url) ? t("downloads.fileSaved") : t("downloads.saved"),
+      });
+    } catch (err) {
+      onDownloadResult({ ok: false, message: err instanceof Error ? err.message : String(err) });
+    }
+  }
+
   async function downloadPage() {
     closeMenu();
     const payload = raw || html;
     if (!payload && !isFileURL(currentURL)) {
       return;
     }
-    await downloadPageContent(currentURL, contentType, payload);
+    await runDownload(currentURL, contentType, payload);
   }
 
   async function handleClick(event: MouseEvent) {
@@ -147,7 +161,7 @@
     }
     await handlePageLinkClick(event, contentEl, currentURL, async (next) => {
       if (isFileURL(next)) {
-        await downloadPageContent(next, "file", "");
+        await runDownload(next, "file", "");
         return;
       }
       onNavigate(next);

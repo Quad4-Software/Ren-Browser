@@ -44,7 +44,12 @@ func openAssetsAndLoader(embedded embed.FS, cfg config.Runtime) (fs.FS, *assets.
 	return assetFS, loader, nil
 }
 
-func newWailsApp(browserSvc *app.BrowserService, pluginHost *app.PluginHost, pluginMgr *plugins.Manager, loader *assets.Loader, cfg config.Runtime) *application.App {
+type WailsServerExtra struct {
+	AuthMiddleware application.Middleware
+	ServerWrap     func(http.Handler) http.Handler
+}
+
+func newWailsApp(browserSvc *app.BrowserService, pluginHost *app.PluginHost, pluginMgr *plugins.Manager, loader *assets.Loader, cfg config.Runtime, extra WailsServerExtra) *application.App {
 	registerEvents()
 
 	base := loader.Handler()
@@ -69,7 +74,8 @@ func newWailsApp(browserSvc *app.BrowserService, pluginHost *app.PluginHost, plu
 		Logger:      serverlog.WailsLogger(),
 		Services:    services,
 		Assets: application.AssetOptions{
-			Handler: handler,
+			Handler:    handler,
+			Middleware: extra.AuthMiddleware,
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
@@ -78,8 +84,9 @@ func newWailsApp(browserSvc *app.BrowserService, pluginHost *app.PluginHost, plu
 			DisableQuitOnLastWindowClosed: false,
 		},
 		Server: application.ServerOptions{
-			Host: cfg.ServerHost,
-			Port: cfg.ServerPort,
+			Host:            cfg.ServerHost,
+			Port:            cfg.ServerPort,
+			OuterMiddleware: extra.ServerWrap,
 		},
 	})
 }

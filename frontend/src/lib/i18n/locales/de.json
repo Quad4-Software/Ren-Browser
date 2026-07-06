@@ -138,7 +138,11 @@
     "reticulumInterfacesHint": "Oben konfigurierte oder aus dem Verzeichnis importierte Schnittstellen umschalten.",
     "noInterfaces": "Keine Schnittstellen konfiguriert",
     "noInterfacesDescription": "Fügen Sie Reticulum-Schnittstellen in Ihrer Konfigurationsdatei hinzu, um sich mit dem Mesh zu verbinden.",
-    "resetConfirm": "Erscheinungsbild, Surfeinstellungen und Tastenkürzel auf Standard zurücksetzen?"
+    "resetConfirm": "Erscheinungsbild, Surfeinstellungen und Tastenkürzel auf Standard zurücksetzen?",
+    "application": "Anwendung",
+    "shutdown": "Herunterfahren",
+    "shutdownHint": "Mesh-Netzwerkverbindung beenden und die App schließen.",
+    "shutdownConfirm": "Anwendung herunterfahren? Mesh-Verbindungen werden beendet."
   },
   "keybinds": {
     "focusUrl": "Adressleiste fokussieren",
@@ -211,6 +215,7 @@
     "noDownloadsDescription": "Seiten und Mesh-Dateien, die Sie speichern, erscheinen hier.",
     "downloadsFolder": "Download-Ordner",
     "saved": "Seite in Downloads gespeichert",
+    "fileSaved": "Datei in Downloads gespeichert",
     "noPageToSave": "Keine Seite zum Speichern geöffnet",
     "noPageContent": "Aktuelle Seite hat keinen Inhalt zum Speichern"
   },
@@ -267,6 +272,7 @@
   "community": {
     "title": "Community-Schnittstellen",
     "hint": "Online-Einträge von directory.rns.recipes",
+    "bundledHint": "Es werden gebündelte Community-Schnittstellen angezeigt, weil das Live-Verzeichnis nicht erreichbar ist.",
     "searchPlaceholder": "Name, Netzwerk, Host suchen...",
     "refresh": "Community-Schnittstellen aktualisieren",
     "loading": "Verzeichnis wird geladen...",

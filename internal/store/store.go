@@ -83,6 +83,12 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
+func (s *Store) DB() *db.DB {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.db
+}
+
 type legacyData struct {
 	Favorites []string      `json:"favorites"`
 	Recent    []string      `json:"recent"`

@@ -521,7 +521,8 @@
     position: absolute;
     right: 0.5rem;
     bottom: 0;
-    z-index: 2;
+    z-index: 20;
+    pointer-events: auto;
   }
 
   .tabbar.frameless-desktop .tabs-slot {

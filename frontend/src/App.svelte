@@ -25,6 +25,7 @@
     GetWindowChrome,
     GetReticulumConfigText,
     GetPageCacheStats,
+    GetRuntimeConfig,
     GoBack,
     GoForward,
     HistoryState,
@@ -54,6 +55,7 @@
     SetNativeTitlebar,
     SetTheme,
     ShowDownloadDir,
+    Shutdown,
     SyncMobileChrome,
   } from "../bindings/renbrowser/internal/app/browserservice.js";
   import type { WindowChrome } from "../bindings/renbrowser/internal/app/models.js";
@@ -283,12 +285,15 @@
   let identifying = $state(false);
   let identifyConfirmOpen = $state(false);
   let resetDbConfirmOpen = $state(false);
+  let closeAllConfirmOpen = $state(false);
+  let shutdownConfirmOpen = $state(false);
+  let publicMode = $state(false);
   let storeHealth = $state<StoreHealth>({ ok: true, path: "" });
   let meshOnline = $state(true);
   let splitViewOpen = $state(false);
   let splitTabId = $state<string | null>(null);
   let splitRatio = $state(52);
-  const desktopChrome = System.IsDesktop();
+  const desktopChrome = $derived(System.IsDesktop());
   const layoutOverride = screenshotLayoutFromQuery();
   const mobileUI =
     layoutOverride === "mobile" ? true : layoutOverride === "desktop" ? false : System.IsMobile();
@@ -304,6 +309,7 @@
   let communityLoading = $state(false);
   let communityImporting = $state(false);
   let communityError = $state("");
+  let communityFromBundle = $state(false);
   let communityFilter = $state("");
   let communitySelected = new SvelteSet<number>();
   let discoverySlowMode = $state(false);
@@ -687,9 +693,11 @@
     if (tabs.length <= 1) {
       return;
     }
-    if (!confirm(t("tab.closeAllConfirm"))) {
-      return;
-    }
+    closeAllConfirmOpen = true;
+  }
+
+  function confirmCloseAllTabs() {
+    closeAllConfirmOpen = false;
     closeAllTabs();
     if (mobileTabsOpen && tabs.length <= 1) {
       mobileTabsOpen = false;
@@ -1194,8 +1202,14 @@
     communityLoading = true;
     communityError = "";
     try {
-      communityItems = (await FetchCommunityInterfaces()) as CommunityInterface[];
+      const result = (await FetchCommunityInterfaces()) as {
+        items?: CommunityInterface[] | null;
+        fromBundle?: boolean;
+      };
+      communityItems = Array.isArray(result?.items) ? result.items : [];
+      communityFromBundle = !!result?.fromBundle;
     } catch (err) {
+      communityFromBundle = false;
       communityError = err instanceof Error ? err.message : String(err);
     } finally {
       communityLoading = false;
@@ -1466,6 +1480,11 @@
     }
   }
 
+  async function loadRuntimeConfig() {
+    const config = await GetRuntimeConfig();
+    publicMode = !!config.publicMode;
+  }
+
   async function loadStoreHealth() {
     const health = (await GetStoreHealth()) as StoreHealth;
     storeHealth = {
@@ -1478,6 +1497,15 @@
 
   function requestResetDatabase() {
     resetDbConfirmOpen = true;
+  }
+
+  function requestShutdown() {
+    shutdownConfirmOpen = true;
+  }
+
+  async function confirmShutdown() {
+    shutdownConfirmOpen = false;
+    await Shutdown();
   }
 
   async function confirmResetDatabase() {
@@ -1580,6 +1608,13 @@
   async function pickDownloadDir() {
     downloadDir = await PickDownloadDir();
     await loadDownloads();
+  }
+
+  function handleDownloadResult(result: { ok: boolean; message: string }) {
+    if (result.ok) {
+      void loadDownloads();
+    }
+    showPluginToast(result.message);
   }
 
   async function downloadCurrentPage() {
@@ -1792,6 +1827,7 @@
     void loadCommunityInterfaces();
     void refreshNetwork();
     void loadStoreHealth();
+    void loadRuntimeConfig();
     void bootPlugins();
 
     Events.On("plugin:loaded", () => {
@@ -2044,6 +2080,7 @@
           {desktopChrome}
           {mobileUI}
           {mobileDevTools}
+          {publicMode}
           bind:configText
           {configSaving}
           {configError}
@@ -2051,6 +2088,7 @@
           {communityLoading}
           {communityImporting}
           {communityError}
+          {communityFromBundle}
           bind:communityFilter
           {communitySelected}
           sectionsCollapsed={settingsSectionsCollapsed}
@@ -2068,6 +2106,7 @@
           onChangeMicronWasmParser={saveMicronWasmParser}
           onMicronWasmReadyChange={setMicronWasmReady}
           onResetDefaults={resetDefaults}
+          onShutdown={requestShutdown}
           onToggleInterface={async (name, enabled) => {
             await SetInterfaceEnabled(name, enabled);
             await loadInterfaces();
@@ -2170,6 +2209,7 @@
               onRetry={() => openPage(url)}
               onReloadFresh={() => openPage(url, true, { skipCache: true })}
               onShowSourceChange={setShowSource}
+              onDownloadResult={handleDownloadResult}
             />
           {/if}
         {/snippet}
@@ -2199,6 +2239,7 @@
                 onReloadFresh={() =>
                   void openPage(splitTab.url, true, { tabId: splitTab.id, skipCache: true })}
                 onShowSourceChange={(value) => setSplitTabShowSource(splitTab.id, value)}
+                onDownloadResult={handleDownloadResult}
               />
             {:else}
               <SplitTabPicker
@@ -2332,6 +2373,24 @@
     confirmLabel={t("dialog.resetDbConfirm")}
     onConfirm={confirmResetDatabase}
     onCancel={() => (resetDbConfirmOpen = false)}
+  />
+
+  <ConfirmDialog
+    open={closeAllConfirmOpen}
+    title={t("tab.closeAll")}
+    message={t("tab.closeAllConfirm")}
+    confirmLabel={t("tab.closeAll")}
+    onConfirm={confirmCloseAllTabs}
+    onCancel={() => (closeAllConfirmOpen = false)}
+  />
+
+  <ConfirmDialog
+    open={shutdownConfirmOpen}
+    title={t("settings.shutdown")}
+    message={t("settings.shutdownConfirm")}
+    confirmLabel={t("settings.shutdown")}
+    onConfirm={confirmShutdown}
+    onCancel={() => (shutdownConfirmOpen = false)}
   />
 
   {#if storeErrorVisible}

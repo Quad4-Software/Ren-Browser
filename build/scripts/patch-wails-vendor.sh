@@ -47,6 +47,40 @@ if [ -d "${app_dir}" ]; then
     fi
   done
 
+  server_opts="${app_dir}/application_options.go"
+  if [ -f "${server_opts}" ] && ! grep -q 'OuterMiddleware' "${server_opts}"; then
+    sed -i '/TLS \*TLSOptions$/a\\n\t// OuterMiddleware wraps the entire server mux in headless mode, including\n\t// /wails/events and /health. Used by Ren Browser for HTTP auth.\n\tOuterMiddleware func(http.Handler) http.Handler' "${server_opts}"
+  fi
+
+  server_app="${app_dir}/application_server.go"
+  if [ -f "${server_app}" ] && ! grep -q 'OuterMiddleware' "${server_app}"; then
+    sed -i 's/return mux$/handler := http.Handler(mux)\n\tif wrap := h.app.options.Server.OuterMiddleware; wrap != nil {\n\t\thandler = wrap(handler)\n\t}\n\treturn handler/' "${server_app}"
+  fi
+
+  android_app="${app_dir}/application_android.go"
+  if [ -f "${android_app}" ] && grep -q 'func (a \*androidApp) destroy() {$' "${android_app}"; then
+  if ! grep -q 'quitApp' "${android_app}"; then
+    sed -i '/func (a \*androidApp) destroy() {/,/^}$/c\
+func (a *androidApp) destroy() {\
+\tif globalApplication != nil \&\& globalApplication.shouldQuit() {\
+\t\tglobalApplication.cleanup()\
+\t}\
+\tandroidBridgeVoid("quitApp")\
+}' "${android_app}"
+  fi
+  fi
+
+  ios_app="${app_dir}/application_ios.go"
+  if [ -f "${ios_app}" ] && grep -q 'Cleanup iOS resources' "${ios_app}"; then
+    sed -i '/func (a \*iosApp) destroy() {/,/^}$/c\
+func (a *iosApp) destroy() {\
+\tif globalApplication != nil \&\& globalApplication.shouldQuit() {\
+\t\tglobalApplication.cleanup()\
+\t}\
+\ta.parent.platformQuit()\
+}' "${ios_app}"
+  fi
+
   prod="${app_dir}/webview_window_windows_production.go"
   if [ -f "${prod}" ]; then
     sed -i '1s/^\/\/go:build windows && production && !devtools$/\/\/go:build windows \&\& production \&\& !devtools \&\& !server/' "${prod}"

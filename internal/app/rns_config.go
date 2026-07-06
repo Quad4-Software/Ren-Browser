@@ -37,17 +37,6 @@ func (s *BrowserService) SaveReticulumConfigText(text string) error {
 	return nil
 }
 
-func (s *BrowserService) FetchCommunityInterfaces() ([]rns.CommunityInterface, error) {
-	s.mu.RLock()
-	stack := s.stack
-	s.mu.RUnlock()
-	installed := map[string]bool{}
-	if stack != nil {
-		installed = stack.InstalledInterfaceNames()
-	}
-	return rns.FetchCommunityInterfaces(installed)
-}
-
 func (s *BrowserService) ReloadReticulumConfig() (string, error) {
 	s.mu.RLock()
 	stack := s.stack

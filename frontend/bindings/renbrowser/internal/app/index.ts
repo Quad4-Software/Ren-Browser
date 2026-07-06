@@ -11,6 +11,7 @@ export {
 export type {
     AboutInfo,
     BrowserPrefs,
+    CommunityFetchResult,
     DevLogEntry,
     DownloadItem,
     HistoryEntry,

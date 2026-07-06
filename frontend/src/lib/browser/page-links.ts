@@ -23,7 +23,7 @@ export async function handlePageLinkClick(
     const fieldsSpec = nodeLink.getAttribute("data-fields");
     const next = await resolveMicronNavigation(root, currentURL, destination, fieldsSpec);
     if (next) {
-      onNavigate(next);
+      await onNavigate(next);
     }
     return;
   }

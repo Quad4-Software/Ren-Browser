@@ -162,13 +162,16 @@
     overflow: auto;
     padding: 0.85rem;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+    grid-template-columns: repeat(auto-fill, 10.5rem);
+    justify-content: start;
     gap: 0.75rem;
     align-content: start;
+    -webkit-overflow-scrolling: touch;
   }
 
   .tab-card {
     position: relative;
+    width: 10.5rem;
     border: 1px solid var(--ren-border);
     border-radius: calc(var(--ren-radius) + 2px);
     background: var(--ren-surface-raised);

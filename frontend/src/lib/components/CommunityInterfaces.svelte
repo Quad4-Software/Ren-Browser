@@ -22,6 +22,7 @@
     loading: boolean;
     importing: boolean;
     error: string;
+    fromBundle?: boolean;
     filter: string;
     selected: Set<number>;
     onFilter: (value: string) => void;
@@ -37,6 +38,7 @@
     loading,
     importing,
     error,
+    fromBundle = false,
     filter = $bindable(),
     selected,
     onFilter,
@@ -93,6 +95,10 @@
       </span>
     </button>
   </div>
+
+  {#if fromBundle && !error}
+    <p class="notice">{t("community.bundledHint")}</p>
+  {/if}
 
   {#if error}
     <p class="error">{error}</p>
@@ -194,6 +200,12 @@
 
   .refresh-btn {
     flex-shrink: 0;
+  }
+
+  .notice {
+    margin: 0;
+    color: var(--ren-muted);
+    font-size: 0.85rem;
   }
 
   .error {

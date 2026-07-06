@@ -66,7 +66,7 @@ func seedCommunityInterfaces(cfg *common.ReticulumConfig) {
 	if err != nil {
 		return
 	}
-	tcp := FilterTCPClientInterfaces(items)
+	tcp := FilterTCPClientInterfaces(items.Items)
 	if len(tcp) == 0 {
 		return
 	}

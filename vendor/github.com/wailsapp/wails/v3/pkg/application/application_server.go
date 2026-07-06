@@ -223,7 +223,11 @@ func (h *serverApp) createHandler() http.Handler {
 	// Serve all other requests through the asset server
 	mux.Handle("/", h.app.assets)
 
-	return mux
+	handler := http.Handler(mux)
+	if wrap := h.app.options.Server.OuterMiddleware; wrap != nil {
+		handler = wrap(handler)
+	}
+	return handler
 }
 
 // destroy stops the server and cleans up.

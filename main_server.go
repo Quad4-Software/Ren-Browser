@@ -64,6 +64,15 @@ func logServerStartup(svc *app.BrowserService, cfg config.Runtime) {
 	if cfg.TrustProxy {
 		serverlog.Field("proxy", "trust X-Forwarded-* headers")
 	}
+	if cfg.Auth || cfg.AuthReset {
+		serverlog.Field("auth", "enabled")
+	}
+	if cfg.NoBruteForce {
+		serverlog.Field("auth brute-force", "disabled")
+	}
+	if cfg.AuthIPWhitelist != "" {
+		serverlog.Field("auth whitelist", "configured")
+	}
 
 	host := cfg.ServerHost
 	if host == "" {

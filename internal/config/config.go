@@ -25,6 +25,15 @@ type Runtime struct {
 	ImportProfile   string
 	PublicMode      bool
 	ResetWindow     bool
+	NativeTitlebar  bool
+	Auth            bool
+	AuthReset       bool
+	NoBruteForce    bool
+	AuthBruteMax    int
+	AuthBruteRelax  int
+	AuthBruteBanMin int
+	AuthIPWhitelist string
+	AuthSessionHrs  int
 }
 
 func ParseFlags() Runtime {
@@ -41,6 +50,15 @@ func ParseFlags() Runtime {
 	flag.StringVar(&cfg.ImportProfile, "import-profile", "", "Import profile data from a JSON file at startup")
 	flag.BoolVar(&cfg.PublicMode, "public-mode", false, "Store favorites, history, and tabs in the browser (localStorage) instead of the server database")
 	flag.BoolVar(&cfg.ResetWindow, "reset-window", false, "Ignore saved window size and position on startup")
+	flag.BoolVar(&cfg.NativeTitlebar, "native-titlebar", false, "Use the native OS title bar instead of custom window controls")
+	flag.BoolVar(&cfg.Auth, "auth", false, "Enable HTTP basic auth for server mode (prompts to set password on first run)")
+	flag.BoolVar(&cfg.AuthReset, "auth-reset", false, "Reset server auth password and prompt for a new one")
+	flag.BoolVar(&cfg.NoBruteForce, "no-bruteforce-protection", false, "Disable login brute-force IP bans (server mode)")
+	flag.IntVar(&cfg.AuthBruteMax, "auth-brute-max", 0, "Failed login attempts before ban when brute-force protection is on (default 3)")
+	flag.IntVar(&cfg.AuthBruteRelax, "auth-brute-relaxed-max", 0, "Failed login attempts before ban for trusted clients (default 10)")
+	flag.IntVar(&cfg.AuthBruteBanMin, "auth-brute-ban-minutes", 0, "Brute-force ban duration in minutes (default 15)")
+	flag.StringVar(&cfg.AuthIPWhitelist, "auth-ip-whitelist", "", "Comma-separated IPs/CIDRs that bypass auth (supports IPv6)")
+	flag.IntVar(&cfg.AuthSessionHrs, "auth-session-hours", 0, "Auth session lifetime in hours (default 168)")
 	flag.Parse()
 	LoadDotEnv("")
 	return ApplyEnv(cfg)
@@ -120,7 +138,46 @@ func ApplyEnv(cfg Runtime) Runtime {
 	if !cfg.ResetWindow {
 		cfg.ResetWindow = envBool("REN_BROWSER_RESET_WINDOW")
 	}
+	if !cfg.NativeTitlebar {
+		cfg.NativeTitlebar = envBool("REN_BROWSER_NATIVE_TITLEBAR")
+	}
+	if !cfg.Auth {
+		cfg.Auth = envBool("REN_BROWSER_AUTH")
+	}
+	if !cfg.AuthReset {
+		cfg.AuthReset = envBool("REN_BROWSER_AUTH_RESET")
+	}
+	if !cfg.NoBruteForce {
+		cfg.NoBruteForce = envBool("REN_BROWSER_NO_BRUTEFORCE_PROTECTION")
+	}
+	if cfg.AuthBruteMax == 0 {
+		cfg.AuthBruteMax = envInt("REN_BROWSER_AUTH_BRUTE_MAX", 3)
+	}
+	if cfg.AuthBruteRelax == 0 {
+		cfg.AuthBruteRelax = envInt("REN_BROWSER_AUTH_BRUTE_RELAXED_MAX", 10)
+	}
+	if cfg.AuthBruteBanMin == 0 {
+		cfg.AuthBruteBanMin = envInt("REN_BROWSER_AUTH_BRUTE_BAN_MINUTES", 15)
+	}
+	if v := os.Getenv("REN_BROWSER_AUTH_IP_WHITELIST"); v != "" && cfg.AuthIPWhitelist == "" {
+		cfg.AuthIPWhitelist = v
+	}
+	if cfg.AuthSessionHrs == 0 {
+		cfg.AuthSessionHrs = envInt("REN_BROWSER_AUTH_SESSION_HOURS", 168)
+	}
 	return cfg
+}
+
+func envInt(key string, fallback int) int {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n <= 0 {
+		return fallback
+	}
+	return n
 }
 
 func envFirst(keys ...string) string {

@@ -138,7 +138,11 @@
     "reticulumInterfacesHint": "Activa o desactiva las interfaces configuradas arriba o importadas del directorio.",
     "noInterfaces": "No hay interfaces configuradas",
     "noInterfacesDescription": "Añade interfaces Reticulum en tu archivo de configuración para conectarte a la malla.",
-    "resetConfirm": "¿Restablecer apariencia, preferencias de navegación y atajos de teclado a los valores predeterminados?"
+    "resetConfirm": "¿Restablecer apariencia, preferencias de navegación y atajos de teclado a los valores predeterminados?",
+    "application": "Aplicación",
+    "shutdown": "Apagar",
+    "shutdownHint": "Detener la red mesh y cerrar la aplicación.",
+    "shutdownConfirm": "¿Apagar la aplicación? Las conexiones mesh se detendrán."
   },
   "keybinds": {
     "focusUrl": "Enfocar barra de direcciones",
@@ -211,6 +215,7 @@
     "noDownloadsDescription": "Las páginas y archivos de malla que guardes aparecerán aquí.",
     "downloadsFolder": "Carpeta de descargas",
     "saved": "Página guardada en descargas",
+    "fileSaved": "Archivo guardado en descargas",
     "noPageToSave": "No hay ninguna página abierta para guardar",
     "noPageContent": "La página actual no tiene contenido para guardar"
   },
@@ -267,6 +272,7 @@
   "community": {
     "title": "Interfaces de la comunidad",
     "hint": "Entradas en línea de directory.rns.recipes",
+    "bundledHint": "Mostrando interfaces comunitarias incluidas porque el directorio en vivo no está disponible.",
     "searchPlaceholder": "Buscar nombre, red, host...",
     "refresh": "Actualizar interfaces de la comunidad",
     "loading": "Cargando directorio...",

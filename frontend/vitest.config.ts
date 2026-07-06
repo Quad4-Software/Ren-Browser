@@ -14,6 +14,7 @@ export default defineConfig({
   test: {
     environment: "node",
     environmentMatchGlobs: [
+      ["src/lib/auth/api.test.ts", "happy-dom"],
       ["src/lib/browser/find-in-page.test.ts", "happy-dom"],
       ["src/lib/browser/docs-render.test.ts", "happy-dom"],
     ],

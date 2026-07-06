@@ -117,6 +117,9 @@ func (d *DB) migrate() error {
 			return err
 		}
 	}
+	if err := d.authMigrate(); err != nil {
+		return err
+	}
 	if _, err := d.sql.Exec(`ALTER TABLE tabs ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0`); err != nil {
 		if !strings.Contains(strings.ToLower(err.Error()), "duplicate column") {
 			return err

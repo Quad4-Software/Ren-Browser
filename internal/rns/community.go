@@ -2,6 +2,7 @@
 package rns
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,7 +11,10 @@ import (
 	"time"
 )
 
-const communityDirectoryURL = "https://directory.rns.recipes/api/directory/submitted?search=&type=&status=online"
+//go:embed data/community_directory.json
+var bundledCommunityDirectory []byte
+
+var communityDirectoryURL = "https://directory.rns.recipes/api/directory/submitted?search=&type=&status=online"
 
 type CommunityInterface struct {
 	ID        int    `json:"id"`
@@ -29,7 +33,24 @@ type communityDirectoryResponse struct {
 	Data []CommunityInterface `json:"data"`
 }
 
-func FetchCommunityInterfaces(installed map[string]bool) ([]CommunityInterface, error) {
+type CommunityFetchResult struct {
+	Items      []CommunityInterface
+	FromBundle bool
+}
+
+func FetchCommunityInterfaces(installed map[string]bool) (CommunityFetchResult, error) {
+	items, err := fetchLiveCommunityInterfaces(installed)
+	if err == nil {
+		return CommunityFetchResult{Items: items, FromBundle: false}, nil
+	}
+	bundled, berr := loadBundledCommunityInterfaces(installed)
+	if berr != nil || len(bundled) == 0 {
+		return CommunityFetchResult{}, err
+	}
+	return CommunityFetchResult{Items: bundled, FromBundle: true}, nil
+}
+
+func fetchLiveCommunityInterfaces(installed map[string]bool) ([]CommunityInterface, error) {
 	client := &http.Client{Timeout: 20 * time.Second}
 	resp, err := client.Get(communityDirectoryURL)
 	if err != nil {
@@ -46,16 +67,27 @@ func FetchCommunityInterfaces(installed map[string]bool) ([]CommunityInterface, 
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
 		return nil, fmt.Errorf("decode directory: %w", err)
 	}
+	return markInstalledCommunityItems(payload.Data, installed), nil
+}
 
-	out := make([]CommunityInterface, 0, len(payload.Data))
-	for _, item := range payload.Data {
+func loadBundledCommunityInterfaces(installed map[string]bool) ([]CommunityInterface, error) {
+	var payload communityDirectoryResponse
+	if err := json.Unmarshal(bundledCommunityDirectory, &payload); err != nil {
+		return nil, fmt.Errorf("decode bundled directory: %w", err)
+	}
+	return markInstalledCommunityItems(payload.Data, installed), nil
+}
+
+func markInstalledCommunityItems(items []CommunityInterface, installed map[string]bool) []CommunityInterface {
+	out := make([]CommunityInterface, 0, len(items))
+	for _, item := range items {
 		if item.Config == "" {
 			continue
 		}
 		item.Installed = installed != nil && installed[item.Name]
 		out = append(out, item)
 	}
-	return out, nil
+	return out
 }
 
 func FilterTCPClientInterfaces(items []CommunityInterface) []CommunityInterface {

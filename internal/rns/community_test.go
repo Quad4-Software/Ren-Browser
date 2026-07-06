@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MIT
 package rns
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
 
 func TestIsTCPClientInterface(t *testing.T) {
 	cases := []struct {
@@ -34,5 +38,47 @@ func TestFilterTCPClientInterfaces(t *testing.T) {
 	}
 	if out[0].Name != "a" || out[1].Name != "c" {
 		t.Fatalf("names = %q, %q", out[0].Name, out[1].Name)
+	}
+}
+
+func TestLoadBundledCommunityInterfaces(t *testing.T) {
+	items, err := loadBundledCommunityInterfaces(map[string]bool{"Beleth RNS Hub": true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) == 0 {
+		t.Fatal("expected bundled entries")
+	}
+	found := false
+	for _, item := range items {
+		if item.Name == "Beleth RNS Hub" && item.Installed {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("expected installed bundled item")
+	}
+}
+
+func TestFetchCommunityInterfacesBundledFallback(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "unavailable", http.StatusServiceUnavailable)
+	}))
+	defer server.Close()
+
+	original := communityDirectoryURL
+	communityDirectoryURL = server.URL
+	t.Cleanup(func() { communityDirectoryURL = original })
+
+	result, err := FetchCommunityInterfaces(map[string]bool{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.FromBundle {
+		t.Fatal("expected bundled fallback")
+	}
+	if len(result.Items) == 0 {
+		t.Fatal("expected bundled items")
 	}
 }

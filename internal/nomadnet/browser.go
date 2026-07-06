@@ -61,27 +61,38 @@ func (b *Browser) Fetch(ctx context.Context, nodeHash string, path string, req R
 		return res
 	}
 
-	if err := waitPath(ctx, b.tr, destHash, pathWaitDefault); err != nil {
-		res.Hops = transportHops(b.tr, destHash, b.handler, res.NodeHash)
-		res.Error = fmt.Sprintf("no path to node: %s", pathWaitError(err))
-		res.DurationMs = time.Since(start).Milliseconds()
-		return res
+	// Reusing an already-established link means the route to this node is
+	// known good right now, so skip path discovery entirely: the transport's
+	// path table entry can otherwise expire (PathRequestTTL) well before a
+	// quiet-but-active link goes stale, which would needlessly force a fresh
+	// path request (and its poll/nudge wait) on every subsequent page load
+	// to a node the user is already connected to.
+	lnk := b.cachedLink(destHash)
+	if lnk == nil {
+		if err := waitPath(ctx, b.tr, destHash, pathWaitDefault); err != nil {
+			res.Hops = transportHops(b.tr, destHash, b.handler, res.NodeHash)
+			res.Error = fmt.Sprintf("no path to node: %s", pathWaitError(err))
+			res.DurationMs = time.Since(start).Milliseconds()
+			return res
+		}
 	}
 	res.Hops = transportHops(b.tr, destHash, b.handler, res.NodeHash)
 	res.Interface = b.tr.NextHopInterface(destHash)
 
-	remoteID, ok := b.handler.Identity(res.NodeHash)
-	if !ok || remoteID == nil {
-		res.Error = "node not discovered yet"
-		res.DurationMs = time.Since(start).Milliseconds()
-		return res
-	}
+	if lnk == nil {
+		remoteID, ok := b.handler.Identity(res.NodeHash)
+		if !ok || remoteID == nil {
+			res.Error = "node not discovered yet"
+			res.DurationMs = time.Since(start).Milliseconds()
+			return res
+		}
 
-	lnk, err := b.linkFor(ctx, destHash, remoteID)
-	if err != nil {
-		res.Error = err.Error()
-		res.DurationMs = time.Since(start).Milliseconds()
-		return res
+		lnk, err = b.linkFor(ctx, destHash, remoteID)
+		if err != nil {
+			res.Error = err.Error()
+			res.DurationMs = time.Since(start).Milliseconds()
+			return res
+		}
 	}
 
 	receipt, err := lnk.Request(res.Path, buildRequestData(req), 20*time.Second)
@@ -123,6 +134,18 @@ func fileNameFromMetadata(metadata map[string]any) string {
 	default:
 		return ""
 	}
+}
+
+// cachedLink returns the currently active link for destHash, if any, without
+// establishing a new one or touching path discovery.
+func (b *Browser) cachedLink(destHash []byte) *rlink.Link {
+	key := hex.EncodeToString(destHash)
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if cached := b.links[key]; cached != nil && cached.GetStatus() == rlink.StatusActive {
+		return cached
+	}
+	return nil
 }
 
 func (b *Browser) linkFor(ctx context.Context, destHash []byte, remoteID *identity.Identity) (*rlink.Link, error) {
@@ -219,7 +242,7 @@ func waitReceipt(ctx context.Context, receipt *rlink.RequestReceipt, timeout tim
 			}
 			return resp, receipt.GetMetadata(), nil
 		}
-		time.Sleep(80 * time.Millisecond)
+		time.Sleep(40 * time.Millisecond)
 	}
 	return nil, nil, fmt.Errorf("node response timed out")
 }

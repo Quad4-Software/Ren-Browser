@@ -138,7 +138,11 @@
     "reticulumInterfacesHint": "",
     "noInterfaces": "",
     "noInterfacesDescription": "",
-    "resetConfirm": ""
+    "resetConfirm": "",
+    "application": "",
+    "shutdown": "",
+    "shutdownHint": "",
+    "shutdownConfirm": ""
   },
   "keybinds": {
     "focusUrl": "",
@@ -211,6 +215,7 @@
     "noDownloadsDescription": "",
     "downloadsFolder": "",
     "saved": "",
+    "fileSaved": "",
     "noPageToSave": "",
     "noPageContent": ""
   },
@@ -267,6 +272,7 @@
   "community": {
     "title": "",
     "hint": "",
+    "bundledHint": "",
     "searchPlaceholder": "",
     "refresh": "",
     "loading": "",

@@ -13,7 +13,7 @@ import (
 var errInvalidPathDestination = errors.New("invalid destination")
 
 const (
-	pathPollInterval = 100 * time.Millisecond
+	pathPollInterval = 40 * time.Millisecond
 	pathWaitDefault  = 35 * time.Second
 )
 

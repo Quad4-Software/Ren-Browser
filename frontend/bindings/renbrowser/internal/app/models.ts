@@ -3,6 +3,9 @@
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as rns$0 from "../rns/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as store$0 from "../store/models.js";
 
 export interface AboutInfo {
@@ -31,6 +34,11 @@ export interface BrowserPrefs {
     "pageCacheEnabled": boolean;
     "tabHoverPreviews": boolean;
     "settingsSectionsCollapsed": { [_ in string]?: boolean } | null;
+}
+
+export interface CommunityFetchResult {
+    "items": rns$0.CommunityInterface[] | null;
+    "fromBundle": boolean;
 }
 
 export interface DevLogEntry {

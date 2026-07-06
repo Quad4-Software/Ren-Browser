@@ -162,6 +162,10 @@ type ServerOptions struct {
 
 	// TLS configures HTTPS. If nil, HTTP is used.
 	TLS *TLSOptions
+
+	// OuterMiddleware wraps the entire server mux in headless mode, including
+	// /wails/events and /health. Used by Ren Browser for HTTP auth.
+	OuterMiddleware func(http.Handler) http.Handler
 }
 
 // TLSOptions configures HTTPS for the headless server.

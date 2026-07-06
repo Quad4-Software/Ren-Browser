@@ -2,9 +2,7 @@
 <script lang="ts">
   import { Minus, Square, X } from "@lucide/svelte";
   import { t } from "$lib/i18n/i18n.svelte";
-  import { System, Window } from "@wailsio/runtime";
-
-  const desktop = System.IsDesktop();
+  import { Window } from "@wailsio/runtime";
 
   async function minimize() {
     await Window.Minimise();
@@ -19,19 +17,17 @@
   }
 </script>
 
-{#if desktop}
-  <div class="window-controls" style:--wails-draggable="no-drag">
-    <button type="button" class="win-btn" aria-label={t("window.minimize")} onclick={minimize}>
-      <Minus size={14} />
-    </button>
-    <button type="button" class="win-btn" aria-label={t("window.maximize")} onclick={maximize}>
-      <Square size={12} />
-    </button>
-    <button type="button" class="win-btn close" aria-label={t("window.close")} onclick={close}>
-      <X size={14} />
-    </button>
-  </div>
-{/if}
+<div class="window-controls" style:--wails-draggable="no-drag">
+  <button type="button" class="win-btn" aria-label={t("window.minimize")} onclick={minimize}>
+    <Minus size={14} />
+  </button>
+  <button type="button" class="win-btn" aria-label={t("window.maximize")} onclick={maximize}>
+    <Square size={12} />
+  </button>
+  <button type="button" class="win-btn close" aria-label={t("window.close")} onclick={close}>
+    <X size={14} />
+  </button>
+</div>
 
 <style>
   .window-controls {
@@ -40,6 +36,7 @@
     gap: 0.15rem;
     flex-shrink: 0;
     margin-bottom: 0.15rem;
+    pointer-events: auto;
   }
 
   .win-btn {

@@ -138,7 +138,11 @@
     "reticulumInterfacesHint": "Toggle interfaces configured above or imported from the directory.",
     "noInterfaces": "No interfaces configured",
     "noInterfacesDescription": "Add Reticulum interfaces in your config file to connect to the mesh.",
-    "resetConfirm": "Reset appearance, browsing preferences, and keyboard shortcuts to defaults?"
+    "resetConfirm": "Reset appearance, browsing preferences, and keyboard shortcuts to defaults?",
+    "application": "Application",
+    "shutdown": "Shut down",
+    "shutdownHint": "Stop mesh networking and close the app.",
+    "shutdownConfirm": "Shut down the application? Mesh connections will stop."
   },
   "keybinds": {
     "focusUrl": "Focus address bar",
@@ -211,6 +215,7 @@
     "noDownloadsDescription": "Pages and mesh files you save will appear here.",
     "downloadsFolder": "Downloads folder",
     "saved": "Page saved to downloads",
+    "fileSaved": "File saved to downloads",
     "noPageToSave": "No page is open to save",
     "noPageContent": "Current page has no content to save"
   },
@@ -267,6 +272,7 @@
   "community": {
     "title": "Community interfaces",
     "hint": "Online entries from directory.rns.recipes",
+    "bundledHint": "Showing bundled community interfaces because the live directory is unavailable.",
     "searchPlaceholder": "Search name, network, host...",
     "refresh": "Refresh community interfaces",
     "loading": "Loading directory...",

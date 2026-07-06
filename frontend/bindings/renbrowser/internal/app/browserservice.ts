@@ -76,7 +76,7 @@ export function ExportTheme(): $CancellablePromise<string> {
     return $Call.ByID(2779828062);
 }
 
-export function FetchCommunityInterfaces(): $CancellablePromise<rns$0.CommunityInterface[] | null> {
+export function FetchCommunityInterfaces(): $CancellablePromise<$models.CommunityFetchResult> {
     return $Call.ByID(44455642);
 }
 
@@ -350,6 +350,13 @@ export function SetTheme(theme: $models.ThemeSettings): $CancellablePromise<$mod
 
 export function ShowDownloadDir(): $CancellablePromise<void> {
     return $Call.ByID(1423237973);
+}
+
+/**
+ * Shutdown stops mesh networking and requests application exit.
+ */
+export function Shutdown(): $CancellablePromise<void> {
+    return $Call.ByID(1497311545);
 }
 
 export function StartReticulum(): $CancellablePromise<void> {

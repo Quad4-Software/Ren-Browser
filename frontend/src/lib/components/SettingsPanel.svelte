@@ -57,6 +57,7 @@
     desktopChrome: boolean;
     mobileUI: boolean;
     mobileDevTools: boolean;
+    publicMode: boolean;
     configText: string;
     configSaving: boolean;
     configError: string;
@@ -64,6 +65,7 @@
     communityLoading: boolean;
     communityImporting: boolean;
     communityError: string;
+    communityFromBundle: boolean;
     communityFilter: string;
     communitySelected: Set<number>;
     pageCacheEntries: number;
@@ -84,6 +86,7 @@
     onChangeMicronWasmParser: (parserId: string) => void;
     onMicronWasmReadyChange: (ready: boolean) => void;
     onResetDefaults: () => void;
+    onShutdown: () => void;
     onToggleInterface: (name: string, enabled: boolean) => void;
     onExportTheme: () => void;
     onImportTheme: (json: string) => void;
@@ -119,6 +122,7 @@
     desktopChrome,
     mobileUI,
     mobileDevTools,
+    publicMode,
     configText = $bindable(),
     configSaving,
     configError,
@@ -126,6 +130,7 @@
     communityLoading,
     communityImporting,
     communityError,
+    communityFromBundle,
     communityFilter = $bindable(),
     communitySelected,
     onChange,
@@ -142,6 +147,7 @@
     onChangeMicronWasmParser,
     onMicronWasmReadyChange,
     onResetDefaults,
+    onShutdown,
     onToggleInterface,
     onExportTheme,
     onImportTheme,
@@ -581,6 +587,7 @@
       loading={communityLoading}
       importing={communityImporting}
       error={communityError}
+      fromBundle={communityFromBundle}
       bind:filter={communityFilter}
       selected={communitySelected}
       onFilter={onCommunityFilter}
@@ -648,6 +655,22 @@
       {/if}
     </ul>
   </SettingsSection>
+
+  {#if !publicMode}
+    <SettingsSection
+      id="application"
+      title={t("settings.application")}
+      collapsed={sectionCollapsed("application")}
+      onToggle={toggleSettingsSection}
+    >
+      <p class="hint">{t("settings.shutdownHint")}</p>
+      <div class="reset-row">
+        <button type="button" class="reset-btn" onclick={onShutdown}
+          >{t("settings.shutdown")}</button
+        >
+      </div>
+    </SettingsSection>
+  {/if}
 </section>
 
 <style>
