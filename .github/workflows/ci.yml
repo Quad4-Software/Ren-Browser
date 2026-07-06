@@ -72,6 +72,22 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: task test:contract
 
+  reproducible-binary:
+    name: Reproducible server binary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-wails: "false"
+          cache-node: "true"
+
+      - name: Reproducible binary check
+        run: task check:reproducible
+
   benchmark:
     name: Go benchmarks
     runs-on: ubuntu-latest
@@ -355,6 +371,7 @@ jobs:
       - brand
       - frontend
       - security
+      - reproducible-binary
       - build-linux
       - build-android
       - build
@@ -370,6 +387,7 @@ jobs:
             "${{ needs.brand.result }}" \
             "${{ needs.frontend.result }}" \
             "${{ needs.security.result }}" \
+            "${{ needs.reproducible-binary.result }}" \
             "${{ needs.build-linux.result }}" \
             "${{ needs.build-android.result }}" \
             "${{ needs.build.result }}"; do

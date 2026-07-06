@@ -57,6 +57,13 @@ tasks:
     cmds:
       - bash "{{.ROOT_DIR}}/build/scripts/gosec.sh" ./...
 
+  check:reproducible:
+    desc: Verify headless server binary builds are bitwise reproducible
+    cmds:
+      - bash build/scripts/check-reproducible-binary.sh
+    env:
+      GOFLAGS: "-mod=vendor"
+
   test:
     desc: Run all tests
     deps:
