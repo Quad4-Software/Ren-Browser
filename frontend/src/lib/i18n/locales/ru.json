@@ -233,7 +233,9 @@
     "resizePanes": "Изменить размер панелей исходного кода и предпросмотра",
     "loadingMicron": "Загрузка редактора Micron...",
     "loadingConfig": "Загрузка конфигурации Reticulum...",
-    "exportIndexMu": "Экспорт как index.mu"
+    "exportIndexMu": "Экспорт как index.mu",
+    "parser": "Парсер",
+    "parserWasmUnavailable": "Не удалось загрузить WebAssembly-парсер; предпросмотр использует JavaScript."
   },
   "config": {
     "title": "Конфигурация Reticulum",

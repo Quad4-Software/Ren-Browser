@@ -233,7 +233,9 @@
     "resizePanes": "",
     "loadingMicron": "",
     "loadingConfig": "",
-    "exportIndexMu": ""
+    "exportIndexMu": "",
+    "parser": "",
+    "parserWasmUnavailable": ""
   },
   "config": {
     "title": "",

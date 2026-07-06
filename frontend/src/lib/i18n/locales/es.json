@@ -233,7 +233,9 @@
     "resizePanes": "Redimensionar paneles de código y vista previa",
     "loadingMicron": "Cargando editor Micron...",
     "loadingConfig": "Cargando configuración de Reticulum...",
-    "exportIndexMu": "Exportar como index.mu"
+    "exportIndexMu": "Exportar como index.mu",
+    "parser": "Parser",
+    "parserWasmUnavailable": "No se pudo cargar el parser WebAssembly; la vista previa usa JavaScript."
   },
   "config": {
     "title": "Configuración de Reticulum",

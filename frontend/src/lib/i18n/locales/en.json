@@ -233,7 +233,9 @@
     "resizePanes": "Resize source and preview panes",
     "loadingMicron": "Loading micron editor...",
     "loadingConfig": "Loading Reticulum config...",
-    "exportIndexMu": "Export as index.mu"
+    "exportIndexMu": "Export as index.mu",
+    "parser": "Parser",
+    "parserWasmUnavailable": "WebAssembly parser failed to load; preview uses JavaScript."
   },
   "config": {
     "title": "Reticulum config",

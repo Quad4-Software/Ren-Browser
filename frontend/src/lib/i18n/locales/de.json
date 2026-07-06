@@ -233,7 +233,9 @@
     "resizePanes": "Quelltext- und Vorschau-Bereiche in der Größe ändern",
     "loadingMicron": "Micron-Editor wird geladen...",
     "loadingConfig": "Reticulum-Konfiguration wird geladen...",
-    "exportIndexMu": "Als index.mu exportieren"
+    "exportIndexMu": "Als index.mu exportieren",
+    "parser": "Parser",
+    "parserWasmUnavailable": "WebAssembly-Parser konnte nicht geladen werden; Vorschau nutzt JavaScript."
   },
   "config": {
     "title": "Reticulum-Konfiguration",
