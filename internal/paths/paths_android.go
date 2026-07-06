@@ -8,17 +8,23 @@ import (
 	"strings"
 
 	_ "unsafe"
-
-	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 //go:linkname androidBridgeString github.com/wailsapp/wails/v3/pkg/application.androidBridgeString
 func androidBridgeString(method string) (string, bool)
 
 func InitAndroid() {
-	if root := application.Mobile.StoragePath(); root != "" {
-		SetDataRoot(root)
+	root, ok := androidBridgeString("getStoragePath")
+	if !ok {
+		return
 	}
+	root = strings.TrimSpace(root)
+	if root == "" {
+		return
+	}
+	legacy, _ := androidBridgeString("getLegacyStoragePath")
+	migrateAndroidStorage(strings.TrimSpace(legacy), root)
+	SetDataRoot(root)
 }
 
 func UserDownloadDir() string {

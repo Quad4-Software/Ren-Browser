@@ -1046,7 +1046,11 @@ public class WailsBridge {
     /** Disk space as {"free":bytes,"total":bytes}. */
     public String getStorageJson() {
         try {
-            StatFs stat = new StatFs(activity.getFilesDir().getAbsolutePath());
+            File dir = resolveAppDataDir();
+            if (dir == null) {
+                return "{\"free\":0,\"total\":0}";
+            }
+            StatFs stat = new StatFs(dir.getAbsolutePath());
             long free = stat.getAvailableBytes();
             long total = stat.getTotalBytes();
             return new JSONObject().put("free", free).put("total", total).toString();
@@ -1055,11 +1059,38 @@ public class WailsBridge {
         }
     }
 
-    /** Absolute path to the app's private internal files directory
-     *  (getFilesDir()), suitable for databases and other persistent files. */
+    /**
+     * App data root on user-accessible external storage (getExternalFilesDir),
+     * falling back to internal files dir when external storage is unavailable.
+     */
     public String getStoragePath() {
-        java.io.File dir = activity.getFilesDir();
+        File dir = resolveAppDataDir();
         return dir != null ? dir.getAbsolutePath() : "";
+    }
+
+    /** Legacy internal files dir, returned only when it differs from getStoragePath. */
+    public String getLegacyStoragePath() {
+        File legacy = activity.getFilesDir();
+        File current = resolveAppDataDir();
+        if (legacy == null || current == null) {
+            return "";
+        }
+        String legacyPath = legacy.getAbsolutePath();
+        if (legacyPath.equals(current.getAbsolutePath())) {
+            return "";
+        }
+        return legacyPath;
+    }
+
+    private File resolveAppDataDir() {
+        File dir = activity.getExternalFilesDir(null);
+        if (dir == null) {
+            dir = activity.getFilesDir();
+        }
+        if (dir != null && !dir.exists()) {
+            dir.mkdirs();
+        }
+        return dir;
     }
 
     /** Absolute path to the user-visible public Downloads directory. */
