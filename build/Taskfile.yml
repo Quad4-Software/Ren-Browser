@@ -149,8 +149,12 @@ tasks:
       - dist/index.html
     deps:
       - task: install:frontend:deps
+        status:
+          - bash "{{.ROOT_DIR}}/build/scripts/frontend-prebuilt-skip-vite.sh"
       - task: gen:brand
       - task: frontend:vendor:micron
+        status:
+          - bash "{{.ROOT_DIR}}/build/scripts/frontend-prebuilt-skip-vite.sh"
       - task: generate:bindings
         vars:
           BUILD_FLAGS:
@@ -161,6 +165,8 @@ tasks:
       - task: frontend:run
         vars:
           SCRIPT: '{{if eq .DEV "true"}}build:dev{{else}}build{{end}}'
+        status:
+          - bash "{{.ROOT_DIR}}/build/scripts/frontend-prebuilt-skip-vite.sh"
     env:
       PRODUCTION: '{{if eq .DEV "true"}}false{{else}}true{{end}}'
 

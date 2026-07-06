@@ -46,6 +46,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 env:
   GOFLAGS: -mod=vendor
@@ -105,9 +106,18 @@ jobs:
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
 
+  frontend:
+    name: Frontend artifact
+    uses: ./.github/workflows/frontend-build.yml
+    with:
+      artifact_name: renbrowser-frontend-${{ github.run_id }}-${{ github.run_attempt }}
+      retention_days: 7
+
   build-linux:
     name: Linux (${{ matrix.arch }})
-    needs: version
+    needs:
+      - version
+      - frontend
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -121,19 +131,30 @@ jobs:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
+      - name: Fetch frontend artifact
+        uses: ./.github/actions/fetch-frontend-artifact
+        with:
+          artifact-name: ${{ needs.frontend.outputs.artifact_name }}
+
       - name: Setup dependencies
         uses: ./.github/actions/setup
         with:
           install-linux-deps: "true"
-          cache-node: "true"
+          cache-node: "false"
 
       - name: Build
+        env:
+          REN_BROWSER_FRONTEND_PREBUILT: "1"
         run: task linux:build ARCH=${{ matrix.arch }}
 
       - name: Package AppImage
+        env:
+          REN_BROWSER_FRONTEND_PREBUILT: "1"
         run: task linux:create:appimage ARCH=${{ matrix.arch }}
 
       - name: Package deb and rpm
+        env:
+          REN_BROWSER_FRONTEND_PREBUILT: "1"
         run: |
           task linux:create:deb ARCH=${{ matrix.arch }}
           task linux:create:rpm ARCH=${{ matrix.arch }}
@@ -163,16 +184,25 @@ jobs:
 
   build-windows:
     name: Windows (amd64)
-    needs: version
+    needs:
+      - version
+      - frontend
     runs-on: windows-latest
+    env:
+      REN_BROWSER_FRONTEND_PREBUILT: "1"
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
+      - name: Fetch frontend artifact
+        uses: ./.github/actions/fetch-frontend-artifact
+        with:
+          artifact-name: ${{ needs.frontend.outputs.artifact_name }}
+
       - name: Setup dependencies
         uses: ./.github/actions/setup
         with:
-          cache-node: "true"
+          cache-node: "false"
 
       - name: Install NSIS
         shell: pwsh
@@ -222,17 +252,26 @@ jobs:
 
   build-macos:
     name: macOS (universal)
-    needs: version
+    needs:
+      - version
+      - frontend
     runs-on: macos-latest
+    env:
+      REN_BROWSER_FRONTEND_PREBUILT: "1"
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Fetch frontend artifact
+        uses: ./.github/actions/fetch-frontend-artifact
+        with:
+          artifact-name: ${{ needs.frontend.outputs.artifact_name }}
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
         with:
           install-linux-deps: "false"
-          cache-node: "true"
+          cache-node: "false"
 
       - name: Build universal app bundle
         run: task darwin:package:universal
@@ -322,18 +361,27 @@ jobs:
 
   build-android:
     name: Android (apk)
-    needs: version
+    needs:
+      - version
+      - frontend
     runs-on: ubuntu-latest
+    env:
+      REN_BROWSER_FRONTEND_PREBUILT: "1"
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Fetch frontend artifact
+        uses: ./.github/actions/fetch-frontend-artifact
+        with:
+          artifact-name: ${{ needs.frontend.outputs.artifact_name }}
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
         with:
           install-linux-deps: "true"
           install-wails: "true"
-          cache-node: "true"
+          cache-node: "false"
 
       - name: Setup Android SDK
         uses: ./.github/actions/setup-android

@@ -1,0 +1,32 @@
+# Pinned third-party actions (bump tag and SHA together when upgrading):
+#   actions/download-artifact@v8.0.1  3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+
+name: Fetch frontend artifact
+description: Download a prebuilt frontend/dist artifact and verify required paths
+
+inputs:
+  artifact-name:
+    description: Artifact name from the reusable frontend-build workflow
+    required: true
+  path:
+    description: Destination directory for frontend/dist contents
+    required: false
+    default: frontend/dist
+
+runs:
+  using: composite
+  steps:
+    - name: Download frontend artifact
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.path }}
+
+    - name: Verify frontend artifact contents
+      shell: bash
+      env:
+        FRONTEND_PATH: ${{ inputs.path }}
+      run: |
+        set -euo pipefail
+        test -f "${FRONTEND_PATH}/index.html"
+        test -d "${FRONTEND_PATH}/assets"

@@ -21,6 +21,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read
 
 env:
   GOFLAGS: -mod=vendor
@@ -143,6 +144,13 @@ jobs:
       - name: Frontend quality gates
         run: task frontend:check
 
+  frontend-artifact:
+    name: Frontend artifact
+    uses: ./.github/workflows/frontend-build.yml
+    with:
+      artifact_name: renbrowser-frontend-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      retention_days: 1
+
   security:
     name: Security
     runs-on: ubuntu-latest
@@ -179,7 +187,10 @@ jobs:
 
   build-linux:
     name: Linux (${{ matrix.arch }})
+    needs: frontend-artifact
     runs-on: ${{ matrix.runner }}
+    env:
+      REN_BROWSER_FRONTEND_PREBUILT: "1"
     strategy:
       fail-fast: false
       matrix:
@@ -192,11 +203,16 @@ jobs:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
+      - name: Fetch frontend artifact
+        uses: ./.github/actions/fetch-frontend-artifact
+        with:
+          artifact-name: ${{ needs.frontend-artifact.outputs.artifact_name }}
+
       - name: Setup dependencies
         uses: ./.github/actions/setup
         with:
           install-linux-deps: "true"
-          cache-node: "true"
+          cache-node: "false"
 
       - name: Build
         run: task linux:build ARCH=${{ matrix.arch }}
@@ -228,17 +244,25 @@ jobs:
 
   build-android:
     name: Android (debug apk)
+    needs: frontend-artifact
     runs-on: ubuntu-latest
+    env:
+      REN_BROWSER_FRONTEND_PREBUILT: "1"
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Fetch frontend artifact
+        uses: ./.github/actions/fetch-frontend-artifact
+        with:
+          artifact-name: ${{ needs.frontend-artifact.outputs.artifact_name }}
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
         with:
           install-linux-deps: "true"
           install-wails: "true"
-          cache-node: "true"
+          cache-node: "false"
 
       - name: Setup Android SDK
         uses: ./.github/actions/setup-android
@@ -311,9 +335,12 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  build:
+  build-desktop:
     name: Build (${{ matrix.target }})
+    needs: frontend-artifact
     runs-on: ${{ matrix.os }}
+    env:
+      REN_BROWSER_FRONTEND_PREBUILT: "1"
     strategy:
       fail-fast: false
       matrix:
@@ -332,41 +359,60 @@ jobs:
             artifact_name: renbrowser-macos-arm64
             install_linux_deps: "false"
             install_wails: "true"
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Fetch frontend artifact
+        uses: ./.github/actions/fetch-frontend-artifact
+        with:
+          artifact-name: ${{ needs.frontend-artifact.outputs.artifact_name }}
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-linux-deps: ${{ matrix.install_linux_deps }}
+          install-wails: ${{ matrix.install_wails }}
+          cache-node: "false"
+
+      - name: Build
+        run: task ${{ matrix.task }}
+
+      - name: Upload binary
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error
+          retention-days: 7
+
+  build-server:
+    name: Server (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - target: server-linux-amd64
-            os: ubuntu-latest
             task: build:server GOOS=linux GOARCH=amd64 OUTPUT=bin/renbrowser-server-linux-amd64
             artifact: bin/renbrowser-server-linux-amd64
             artifact_name: renbrowser-server-linux-amd64
-            install_linux_deps: "false"
-            install_wails: "false"
           - target: server-linux-arm64
-            os: ubuntu-latest
             task: build:server GOOS=linux GOARCH=arm64 OUTPUT=bin/renbrowser-server-linux-arm64
             artifact: bin/renbrowser-server-linux-arm64
             artifact_name: renbrowser-server-linux-arm64
-            install_linux_deps: "false"
-            install_wails: "false"
           - target: server-linux-armv6
-            os: ubuntu-latest
             task: build:server GOOS=linux GOARCH=arm GOARM=6 OUTPUT=bin/renbrowser-server-linux-armv6
             artifact: bin/renbrowser-server-linux-armv6
             artifact_name: renbrowser-server-linux-armv6
-            install_linux_deps: "false"
-            install_wails: "false"
           - target: server-freebsd-amd64
-            os: ubuntu-latest
             task: build:server GOOS=freebsd GOARCH=amd64 OUTPUT=bin/renbrowser-server-freebsd-amd64
             artifact: bin/renbrowser-server-freebsd-amd64
             artifact_name: renbrowser-server-freebsd-amd64
-            install_linux_deps: "false"
-            install_wails: "false"
           - target: server-freebsd-arm64
-            os: ubuntu-latest
             task: build:server GOOS=freebsd GOARCH=arm64 OUTPUT=bin/renbrowser-server-freebsd-arm64
             artifact: bin/renbrowser-server-freebsd-arm64
             artifact_name: renbrowser-server-freebsd-arm64
-            install_linux_deps: "false"
-            install_wails: "false"
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
@@ -374,9 +420,9 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup
         with:
-          install-linux-deps: ${{ matrix.install_linux_deps }}
-          install-wails: ${{ matrix.install_wails }}
-          cache-node: "true"
+          install-linux-deps: "false"
+          install-wails: "false"
+          cache-node: "false"
 
       - name: Build
         run: task ${{ matrix.task }}
@@ -397,11 +443,13 @@ jobs:
       - benchmark
       - brand
       - frontend
+      - frontend-artifact
       - security
       - reproducible-binary
       - build-linux
       - build-android
-      - build
+      - build-desktop
+      - build-server
     runs-on: ubuntu-latest
     steps:
       - name: Check required jobs
@@ -417,7 +465,9 @@ jobs:
             "${{ needs.reproducible-binary.result }}" \
             "${{ needs.build-linux.result }}" \
             "${{ needs.build-android.result }}" \
-            "${{ needs.build.result }}"; do
+            "${{ needs.build-desktop.result }}" \
+            "${{ needs.build-server.result }}" \
+            "${{ needs.frontend-artifact.result }}"; do
             case "$result" in
               success|skipped) ;;
               *) echo "One or more required CI jobs failed." >&2; exit 1 ;;

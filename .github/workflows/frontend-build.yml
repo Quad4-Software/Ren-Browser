@@ -1,0 +1,77 @@
+# Reusable workflow that builds the production frontend once. Callers download
+# frontend/dist instead of re-running pnpm/vite on every platform job.
+#
+# Pinned third-party actions (bump tag and SHA together when upgrading):
+#   actions/checkout@v7.0.0         9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+#   actions/upload-artifact@v7.0.1  043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+
+name: Frontend build
+
+on:
+  workflow_call:
+    inputs:
+      artifact_name:
+        description: >-
+          Name of the artifact uploaded to the calling workflow run.
+          Defaults to renbrowser-frontend-<run_id>-<run_attempt>.
+        required: false
+        type: string
+        default: ""
+      retention_days:
+        description: Artifact retention in days
+        required: false
+        type: number
+        default: 1
+    outputs:
+      artifact_name:
+        description: Name of the uploaded frontend artifact
+        value: ${{ jobs.build.outputs.artifact_name }}
+
+permissions:
+  contents: read
+
+env:
+  GOFLAGS: -mod=vendor
+
+jobs:
+  build:
+    name: Build frontend artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      artifact_name: ${{ steps.resolve.outputs.artifact_name }}
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Resolve artifact name
+        id: resolve
+        shell: bash
+        env:
+          REQUESTED_NAME: ${{ inputs.artifact_name }}
+        run: |
+          set -euo pipefail
+          if [ -n "$REQUESTED_NAME" ]; then
+            name="$REQUESTED_NAME"
+          else
+            name="renbrowser-frontend-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          fi
+          echo "artifact_name=${name}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-linux-deps: "true"
+          install-wails: "true"
+          cache-node: "true"
+
+      - name: Build production frontend
+        run: task common:build:frontend
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ${{ steps.resolve.outputs.artifact_name }}
+          path: frontend/dist
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention_days }}
