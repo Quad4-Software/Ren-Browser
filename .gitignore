@@ -3,6 +3,8 @@
 
 # Build output
 bin/
+bench/
+.docker/
 *.exe
 /renbrowser
 *.apk
