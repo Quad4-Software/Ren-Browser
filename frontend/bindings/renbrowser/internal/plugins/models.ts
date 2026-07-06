@@ -69,7 +69,7 @@ export interface Manifest {
     "main"?: string;
     "backend"?: string;
     "permissions"?: string[] | null;
-    "contributes"?: Contributions;
+    "contributes": Contributions;
 }
 
 export interface PanelContrib {

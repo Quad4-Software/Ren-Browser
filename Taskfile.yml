@@ -322,3 +322,17 @@ tasks:
     summary: Builds and runs the Docker image
     cmds:
       - task: common:run:docker
+
+  release:rngit:
+    desc: Build Linux/Windows/server/APK binaries and publish an rngit release
+    cmds:
+      - bash build/scripts/rngit-release.sh
+    env:
+      GOFLAGS: "-mod=vendor"
+
+  release:rngit:local:
+    desc: Build release binaries and create a local rngit manifest without uploading
+    cmds:
+      - bash build/scripts/rngit-release.sh --local
+    env:
+      GOFLAGS: "-mod=vendor"

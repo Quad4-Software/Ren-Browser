@@ -133,6 +133,11 @@ jobs:
       - name: Package AppImage
         run: task linux:create:appimage ARCH=${{ matrix.arch }}
 
+      - name: Package deb and rpm
+        run: |
+          task linux:create:deb ARCH=${{ matrix.arch }}
+          task linux:create:rpm ARCH=${{ matrix.arch }}
+
       - name: Stage artifacts
         shell: bash
         run: |
@@ -146,6 +151,8 @@ jobs:
           mkdir -p dist/release
           cp "bin/renbrowser-${pkg_version}-${img_arch}.AppImage" "dist/release/renbrowser-linux-${{ matrix.arch }}.AppImage"
           cp bin/renbrowser "dist/release/renbrowser-linux-${{ matrix.arch }}"
+          cp bin/renbrowser.deb "dist/release/renbrowser-linux-${{ matrix.arch }}.deb"
+          cp bin/renbrowser.rpm "dist/release/renbrowser-linux-${{ matrix.arch }}.rpm"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -167,14 +174,23 @@ jobs:
         with:
           cache-node: "true"
 
-      - name: Build
-        run: task windows:build ARCH=amd64
+      - name: Install NSIS
+        run: choco install nsis -y --no-progress
+
+      - name: Package NSIS installer
+        run: task windows:create:nsis:installer ARCH=amd64
+
+      - name: Package MSIX
+        shell: pwsh
+        run: task windows:create:msix:package ARCH=amd64
 
       - name: Stage artifacts
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist/release | Out-Null
           Copy-Item bin/renbrowser.exe dist/release/renbrowser-windows-amd64.exe
+          Copy-Item bin/renbrowser-amd64-installer.exe dist/release/renbrowser-windows-amd64-installer.exe
+          Copy-Item bin/renbrowser-amd64.msix dist/release/renbrowser-windows-amd64.msix
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -409,8 +425,8 @@ jobs:
           Commit: \`${{ github.sha }}\`
 
           ### Assets
-          - Linux amd64/arm64 AppImage and binary
-          - Windows amd64 portable executable
+          - Linux amd64/arm64 AppImage, plain binary, .deb, and .rpm
+          - Windows amd64 portable executable, NSIS installer, and MSIX package
           - macOS universal .app (zip)
           - Headless server binaries (Linux amd64/arm64/armv6, FreeBSD amd64/arm64, OpenBSD/NetBSD amd64)
           - Android APK (debug for nightly/beta; signed release when keystore secrets are configured)
