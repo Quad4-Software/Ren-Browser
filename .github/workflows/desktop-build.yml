@@ -498,12 +498,6 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           path: artifacts
-          pattern: |
-            linux-*
-            windows-amd64
-            macos-universal
-            android-apk
-            server-*
           merge-multiple: true
 
       - name: Checksums
@@ -511,6 +505,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release
+          if [ ! -d artifacts ]; then
+            echo "No artifacts directory after download." >&2
+            exit 1
+          fi
           find artifacts -type f -name 'renbrowser-*' -exec cp {} release/ \;
           if [ -z "$(find release -maxdepth 1 -type f | head -n 1)" ]; then
             echo "No release binaries found in downloaded artifacts." >&2
