@@ -19,7 +19,8 @@
     "audit": "pnpm audit --audit-level=moderate",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --config vitest.config.ts",
-    "i18n:template": "node src/lib/i18n/sync-template.mjs"
+    "i18n:template": "node src/lib/i18n/sync-template.mjs",
+    "screenshots": "node scripts/capture-screenshots.mjs"
   },
   "dependencies": {
     "@lucide/svelte": "^1.23.0",
@@ -40,6 +41,7 @@
     "globals": "^16.2.0",
     "happy-dom": "^20.0.10",
     "knip": "^6.24.0",
+    "playwright": "^1.55.0",
     "prettier": "^3.5.3",
     "prettier-plugin-svelte": "^3.4.0",
     "svelte": "^5.46.4",
