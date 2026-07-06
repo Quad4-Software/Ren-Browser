@@ -20,6 +20,7 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 vendor_dir="${root}/third_party/reticulum-go"
 patch_dir="${root}/build/patches/reticulum-go"
 link_dir="${vendor_dir}/pkg/link"
+gomod_vendor_link_dir="${root}/vendor/quad4/reticulum-go/pkg/link"
 
 bash "${root}/build/scripts/fetch-reticulum-go.sh"
 
@@ -28,16 +29,30 @@ if [[ ! -d "${link_dir}" ]]; then
   exit 1
 fi
 
-if grep -q 'func splitResourceMetadata' "${link_dir}/incoming_resource.go" 2>/dev/null; then
-  exit 0
+if ! grep -q 'func splitResourceMetadata' "${link_dir}/incoming_resource.go" 2>/dev/null; then
+  chmod -R u+w "${link_dir}"
+  install -D -m 0644 "${patch_dir}/pkg/link/link.go" "${link_dir}/link.go"
+  install -D -m 0644 "${patch_dir}/pkg/link/incoming_resource.go" "${link_dir}/incoming_resource.go"
+  install -D -m 0644 "${patch_dir}/pkg/link/nomadnet_response_test.go" "${link_dir}/nomadnet_response_test.go"
+
+  if ! grep -q 'func splitResourceMetadata' "${link_dir}/incoming_resource.go"; then
+    echo "patch-reticulum-nomadnet: failed to patch ${link_dir}/incoming_resource.go" >&2
+    exit 1
+  fi
 fi
 
-chmod -R u+w "${link_dir}"
-install -D -m 0644 "${patch_dir}/pkg/link/link.go" "${link_dir}/link.go"
-install -D -m 0644 "${patch_dir}/pkg/link/incoming_resource.go" "${link_dir}/incoming_resource.go"
-install -D -m 0644 "${patch_dir}/pkg/link/nomadnet_response_test.go" "${link_dir}/nomadnet_response_test.go"
+# go.mod's replace directive points quad4/reticulum-go at third_party/reticulum-go,
+# so `go mod vendor` is what normally copies these fixes into vendor/. That step is
+# only run by the vendor:go task, not by go:mod:tidy/ci-prep-go, so also patch the
+# committed vendor/ copy directly here to keep -mod=vendor builds (the default,
+# since vendor/modules.txt is present) from silently reverting to the buggy behavior.
+if [[ -d "${gomod_vendor_link_dir}" ]] && ! grep -q 'func splitResourceMetadata' "${gomod_vendor_link_dir}/incoming_resource.go" 2>/dev/null; then
+  chmod -R u+w "${gomod_vendor_link_dir}"
+  install -D -m 0644 "${patch_dir}/pkg/link/link.go" "${gomod_vendor_link_dir}/link.go"
+  install -D -m 0644 "${patch_dir}/pkg/link/incoming_resource.go" "${gomod_vendor_link_dir}/incoming_resource.go"
 
-if ! grep -q 'func splitResourceMetadata' "${link_dir}/incoming_resource.go"; then
-  echo "patch-reticulum-nomadnet: failed to patch ${link_dir}/incoming_resource.go" >&2
-  exit 1
+  if ! grep -q 'func splitResourceMetadata' "${gomod_vendor_link_dir}/incoming_resource.go"; then
+    echo "patch-reticulum-nomadnet: failed to patch ${gomod_vendor_link_dir}/incoming_resource.go" >&2
+    exit 1
+  fi
 fi
