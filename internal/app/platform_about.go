@@ -17,15 +17,6 @@ func platformRuntimeRows(app *application.App) []content.AboutRow {
 	env := app.Env.Info()
 	var rows []content.AboutRow
 
-	if env.OSInfo != nil {
-		if name := strings.TrimSpace(env.OSInfo.Name); name != "" {
-			rows = appendRow(rows, "OS", name)
-		}
-		if version := strings.TrimSpace(env.OSInfo.Version); version != "" {
-			rows = appendRow(rows, "OS version", version)
-		}
-	}
-
 	pi := env.PlatformInfo
 	if pi == nil {
 		return appendWebEngineFallback(rows, env.OS)

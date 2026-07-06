@@ -1,22 +1,46 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   /* eslint-disable svelte/no-at-html-tags -- live micron preview */
+  import { onMount } from "svelte";
   import { Download } from "@lucide/svelte";
   import { handlePageLinkClick } from "$lib/browser/page-links";
   import { downloadPageContent, downloadText } from "$lib/browser/download";
   import { micronShellStyle } from "$lib/browser/url";
-  import { parseMicronHeaderColors, renderClientMicronPage } from "$lib/micron/render-page";
+  import {
+    ensureMicronWasmReady,
+    listAvailableMicronWasmParsers,
+    parseMicronHeaderColors,
+    renderClientMicronPage,
+    resolveEffectiveMicronEngine,
+    type MicronEffectiveEngine,
+    type MicronRendererPreference,
+  } from "$lib/micron/render-page";
+  import { isWebAssemblySupported } from "$lib/micron/wasm-loader";
+  import type { MicronWasmParserListEntry } from "$lib/micron/wasm-store";
   import PageContextMenu from "$lib/components/PageContextMenu.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
+
+  type EditorParserPreference = Extract<MicronRendererPreference, "auto" | "js" | "wasm">;
 
   type Props = {
     source: string;
     currentURL: string;
+    micronWasmEnabled: boolean;
+    micronWasmParserId: string;
+    micronWasmReady: boolean;
     onSourceChange: (source: string) => void;
     onNavigate: (url: string) => void;
   };
 
-  let { source, currentURL, onSourceChange, onNavigate }: Props = $props();
+  let {
+    source,
+    currentURL,
+    micronWasmEnabled,
+    micronWasmParserId,
+    micronWasmReady,
+    onSourceChange,
+    onNavigate,
+  }: Props = $props();
 
   const SNAP_POINTS = [30, 40, 50, 60, 70];
   const MIN_RATIO = 25;
@@ -36,8 +60,37 @@
   let sourceRatio = $state(50);
   let dragging = $state(false);
   let verticalLayout = $state(false);
+  let parserChoice = $state("auto");
+  let wasmParsers = $state<MicronWasmParserListEntry[]>([]);
+  let localWasmReady = $state(false);
 
+  const wasmSupported = isWebAssemblySupported();
   const shellStyle = $derived(micronShellStyle("micron", pageFg, pageBg));
+  const parserOptions = $derived.by(() => {
+    const options = [
+      { value: "auto", label: t("settings.rendererAuto") },
+      { value: "js", label: t("settings.rendererJs") },
+    ];
+    if (wasmSupported && micronWasmEnabled) {
+      for (const parser of wasmParsers) {
+        options.push({
+          value: `wasm:${parser.id}`,
+          label: `${t("settings.rendererWasm")} · ${parser.label}`,
+        });
+      }
+    }
+    return options;
+  });
+
+  function parsedChoice(): { engine: EditorParserPreference; wasmId: string } {
+    if (parserChoice.startsWith("wasm:")) {
+      return { engine: "wasm", wasmId: parserChoice.slice(5) };
+    }
+    return {
+      engine: parserChoice as EditorParserPreference,
+      wasmId: micronWasmParserId,
+    };
+  }
 
   function snapRatio(value: number): number {
     const clamped = Math.min(MAX_RATIO, Math.max(MIN_RATIO, value));
@@ -60,11 +113,32 @@
     verticalLayout = (splitEl?.clientWidth ?? 0) <= 900;
   }
 
-  function renderPreviewNow() {
+  function resolvePreviewEngine(): MicronEffectiveEngine {
+    const { engine } = parsedChoice();
+    return resolveEffectiveMicronEngine(engine, {
+      wasmEnabled: micronWasmEnabled,
+      wasmAvailable: wasmSupported,
+      wasmReady: localWasmReady || micronWasmReady,
+      hasServerHtml: false,
+    });
+  }
+
+  async function renderPreviewNow() {
     try {
-      const renderURL =
-        currentURL === "editor:" || currentURL === "editor" ? "editor:/page/editor.mu" : currentURL;
-      previewHtml = renderClientMicronPage(renderURL, source, "js");
+      const { wasmId } = parsedChoice();
+      const engine = resolvePreviewEngine();
+      if (engine === "wasm") {
+        localWasmReady = await ensureMicronWasmReady(micronWasmEnabled, wasmId);
+        if (!localWasmReady) {
+          previewError = t("editor.parserWasmUnavailable");
+          previewHtml = renderClientMicronPage(previewURL(), source, "js");
+          const colors = parseMicronHeaderColors(source);
+          pageFg = colors.fg;
+          pageBg = colors.bg;
+          return;
+        }
+      }
+      previewHtml = renderClientMicronPage(previewURL(), source, engine);
       const colors = parseMicronHeaderColors(source);
       pageFg = colors.fg;
       pageBg = colors.bg;
@@ -75,11 +149,25 @@
     }
   }
 
+  function previewURL() {
+    return currentURL === "editor:" || currentURL === "editor"
+      ? "editor:/page/editor.mu"
+      : currentURL;
+  }
+
   function scheduleRender() {
     if (renderTimer) {
       clearTimeout(renderTimer);
     }
-    renderTimer = setTimeout(renderPreviewNow, 200);
+    renderTimer = setTimeout(() => {
+      void renderPreviewNow();
+    }, 200);
+  }
+
+  async function onParserChange(event: Event) {
+    parserChoice = (event.currentTarget as HTMLSelectElement).value;
+    localWasmReady = false;
+    await renderPreviewNow();
   }
 
   function onInput(event: Event) {
@@ -120,6 +208,10 @@
   $effect(() => {
     void source;
     void currentURL;
+    void parserChoice;
+    void micronWasmEnabled;
+    void micronWasmParserId;
+    void micronWasmReady;
     scheduleRender();
     return () => {
       if (renderTimer) {
@@ -136,6 +228,12 @@
     const observer = new ResizeObserver(() => updateLayoutMode());
     observer.observe(splitEl);
     return () => observer.disconnect();
+  });
+
+  onMount(() => {
+    void listAvailableMicronWasmParsers().then((entries) => {
+      wasmParsers = entries;
+    });
   });
 
   function openMenu(event: MouseEvent) {
@@ -203,16 +301,26 @@
     <div class="pane preview-pane">
       <div class="pane-header">
         <span class="pane-label">{t("editor.preview")}</span>
-        <button
-          type="button"
-          class="export-btn ren-icon-btn"
-          aria-label={t("editor.exportIndexMu")}
-          title={t("editor.exportIndexMu")}
-          disabled={!source.trim()}
-          onclick={exportIndexMu}
-        >
-          <Download size={14} />
-        </button>
+        <div class="preview-controls">
+          <label class="parser-select">
+            <span class="parser-label">{t("editor.parser")}</span>
+            <select value={parserChoice} onchange={onParserChange}>
+              {#each parserOptions as option (option.value)}
+                <option value={option.value}>{option.label}</option>
+              {/each}
+            </select>
+          </label>
+          <button
+            type="button"
+            class="export-btn ren-icon-btn"
+            aria-label={t("editor.exportIndexMu")}
+            title={t("editor.exportIndexMu")}
+            disabled={!source.trim()}
+            onclick={exportIndexMu}
+          >
+            <Download size={14} />
+          </button>
+        </div>
       </div>
       {#if previewError}
         <div class="preview-error">{previewError}</div>
@@ -355,14 +463,50 @@
   }
 
   .pane-header .pane-label {
-    flex: 1;
+    flex: 0 0 auto;
     border-bottom: none;
     color: color-mix(in srgb, #ffffff 55%, transparent);
     background: transparent;
   }
 
+  .preview-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    flex: 1;
+    justify-content: flex-end;
+    padding-right: 0.35rem;
+  }
+
+  .parser-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .parser-label {
+    color: color-mix(in srgb, #ffffff 55%, transparent);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .parser-select select {
+    max-width: 14rem;
+    min-width: 0;
+    border: 1px solid color-mix(in srgb, #ffffff 18%, transparent);
+    border-radius: 0.35rem;
+    background: color-mix(in srgb, #ffffff 8%, transparent);
+    color: #fff;
+    font-size: 0.78rem;
+    padding: 0.2rem 0.35rem;
+  }
+
   .export-btn {
-    margin-right: 0.45rem;
+    flex: 0 0 auto;
     color: color-mix(in srgb, #ffffff 70%, transparent);
   }
 

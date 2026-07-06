@@ -84,6 +84,13 @@
     mobileChromeUsesLightIcons,
     type ThemeSettings,
   } from "$lib/theme/tokens";
+  import {
+    screenshotThemeFromQuery,
+    screenshotLayoutFromQuery,
+    screenshotSceneFromQuery,
+    markScreenshotReady,
+    type ScreenshotScene,
+  } from "$lib/theme/screenshot";
   import type { CommunityInterface } from "$lib/components/CommunityInterfaces.svelte";
   import {
     defaultKeybinds,
@@ -280,7 +287,9 @@
   let splitTabId = $state<string | null>(null);
   let splitRatio = $state(52);
   const desktopChrome = System.IsDesktop();
-  const mobileUI = System.IsMobile();
+  const layoutOverride = screenshotLayoutFromQuery();
+  const mobileUI =
+    layoutOverride === "mobile" ? true : layoutOverride === "desktop" ? false : System.IsMobile();
 
   let configText = $state("");
   let configSaving = $state(false);
@@ -1191,6 +1200,13 @@
   }
 
   async function loadTheme() {
+    const shot = screenshotThemeFromQuery();
+    if (shot) {
+      theme = { ...theme, mode: shot };
+      applyTheme(theme);
+      await syncMobileChromeTheme(theme);
+      return;
+    }
     theme = (await GetTheme()) as ThemeSettings;
     applyTheme(theme);
     await syncMobileChromeTheme(theme);
@@ -1637,6 +1653,30 @@
     void saveTheme({ ...theme, mode: nextMode });
   }
 
+  async function applyScreenshotScene(scene: ScreenshotScene) {
+    try {
+      switch (scene) {
+        case "about":
+          await openPage("about:", false);
+          break;
+        case "editor":
+          await openPage("editor:", false);
+          break;
+        case "settings":
+          activePanel = "settings";
+          break;
+        case "discovery":
+          activePanel = "discovery";
+          break;
+        case "home":
+          break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    } finally {
+      markScreenshotReady();
+    }
+  }
+
   onMount(() => {
     void loadTheme();
     void loadKeybinds();
@@ -1649,9 +1689,12 @@
         systemFonts = fonts as string[];
       }
     });
+    const screenshotScene = screenshotSceneFromQuery();
     void loadNodes().then(async () => {
-      const saved = (await GetTabs()) as TabSnapshot[];
-      restoreTabs(saved);
+      if (!screenshotScene) {
+        const saved = (await GetTabs()) as TabSnapshot[];
+        restoreTabs(saved);
+      }
     });
     void loadLogs();
     void loadFavorites();
@@ -1756,6 +1799,17 @@
     window.addEventListener("keydown", onKeyDown);
     document.addEventListener("click", blockExternalLink, true);
     document.addEventListener("auxclick", blockExternalLink, true);
+
+    if (screenshotScene) {
+      void loadNodes().then(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        await applyScreenshotScene(screenshotScene);
+      });
+    } else if (screenshotThemeFromQuery()) {
+      setTimeout(() => {
+        markScreenshotReady();
+      }, 1200);
+    }
 
     return () => {
       if (statusTimer !== undefined) {
@@ -1951,6 +2005,9 @@
               <MicronEditor
                 source={lastRaw}
                 currentURL={url}
+                {micronWasmEnabled}
+                {micronWasmParserId}
+                {micronWasmReady}
                 onSourceChange={updateEditorSource}
                 onNavigate={openPage}
               />

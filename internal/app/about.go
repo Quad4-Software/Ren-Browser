@@ -17,9 +17,8 @@ type AboutInfo struct {
 	Build           string `json:"build"`
 	License         string `json:"license"`
 	GoVersion       string `json:"goVersion"`
-	OS              string `json:"os"`
-	Arch            string `json:"arch"`
 	WailsVersion    string `json:"wailsVersion"`
+	ReticulumGo     string `json:"reticulumGo"`
 	ReticulumConfig string `json:"reticulumConfig"`
 	DataPath        string `json:"dataPath"`
 }
@@ -31,9 +30,8 @@ func (s *BrowserService) GetAboutInfo() AboutInfo {
 		Build:           buildinfo.BuildLabel(),
 		License:         content.ProjectLicense,
 		GoVersion:       runtime.Version(),
-		OS:              runtime.GOOS,
-		Arch:            runtime.GOARCH,
 		WailsVersion:    brand.WailsVersion,
+		ReticulumGo:     buildinfo.ReticulumGoVersion(),
 		ReticulumConfig: s.ConfigPath(),
 		DataPath:        store.DefaultPath(),
 	}
@@ -48,9 +46,8 @@ func (s *BrowserService) aboutContentInfo() content.AboutInfo {
 		Build:           info.Build,
 		License:         info.License,
 		GoVersion:       info.GoVersion,
-		OS:              info.OS,
-		Arch:            info.Arch,
 		WailsVersion:    info.WailsVersion,
+		ReticulumGo:     info.ReticulumGo,
 		ReticulumConfig: info.ReticulumConfig,
 		DataPath:        info.DataPath,
 		Runtime:         platformRuntimeRows(s.app),

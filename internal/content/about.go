@@ -14,9 +14,8 @@ type AboutInfo struct {
 	Build           string
 	License         string
 	GoVersion       string
-	OS              string
-	Arch            string
 	WailsVersion    string
+	ReticulumGo     string
 	ReticulumConfig string
 	DataPath        string
 	Runtime         []AboutRow
@@ -37,7 +36,7 @@ func RenderAbout(info AboutInfo) string {
 		{"Build", info.Build},
 		{"License", info.License},
 		{"Go", info.GoVersion},
-		{"Platform", fmt.Sprintf("%s/%s", info.OS, info.Arch)},
+		{"reticulum-go", info.ReticulumGo},
 		{"Wails", info.WailsVersion},
 		{"Reticulum config", info.ReticulumConfig},
 		{"Data", info.DataPath},

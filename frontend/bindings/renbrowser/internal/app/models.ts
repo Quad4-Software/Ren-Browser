@@ -11,9 +11,8 @@ export interface AboutInfo {
     "build": string;
     "license": string;
     "goVersion": string;
-    "os": string;
-    "arch": string;
     "wailsVersion": string;
+    "reticulumGo": string;
     "reticulumConfig": string;
     "dataPath": string;
 }
