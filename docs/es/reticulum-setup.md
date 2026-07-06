@@ -68,13 +68,17 @@ Recorre esta lista:
 
 ## Servidor y Docker
 
-Cuando ejecutas la imagen Docker `renbrowser`, monta la configuración del host en solo lectura:
+Cuando ejecutas la imagen Docker `renbrowser`, monta el directorio Reticulum del host y ejecuta como tu usuario del host para que el contenedor sin root pueda leer claves y escribir almacenamiento de la mesh:
 
 ```sh
--v "$HOME/.reticulum-go:/root/.reticulum-go:ro"
+--user "$(id -u):$(id -g)" \
+-e HOME=/data \
+-v "$HOME/.reticulum-go:/data/.reticulum-go" \
+-v "$HOME/.renbrowser:/data/.renbrowser" \
+-e REN_BROWSER_CONFIG=/data/.reticulum-go/config
 ```
 
-El usuario del contenedor debe poder leer claves y definiciones de interfaz dentro de ese directorio.
+No montes la configuración en solo lectura; Reticulum debe poder actualizar el almacenamiento junto al archivo de configuración.
 
 ## Próximos pasos
 

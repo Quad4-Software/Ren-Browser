@@ -13,6 +13,10 @@ Get the latest release for your system from [GitHub Releases](https://github.com
 | Windows | `renbrowser-windows-amd64.exe` | Run directly. No installer required. |
 | macOS | `renbrowser-macos-universal.zip` | Unzip and open `renbrowser.app`. |
 | Server (Linux x86_64) | `renbrowser-server-linux-amd64` | Headless binary for Docker or self-hosting. |
+| Server (Linux ARM64) | `renbrowser-server-linux-arm64` | Raspberry Pi 3/4/5 and other 64-bit ARM boards. |
+| Server (Linux ARMv6) | `renbrowser-server-linux-armv6` | Raspberry Pi Zero W and other 32-bit ARMv6 devices. |
+| Server (FreeBSD) | `renbrowser-server-freebsd-amd64`, `renbrowser-server-freebsd-arm64` | Headless on FreeBSD. |
+| Server (OpenBSD / NetBSD) | `renbrowser-server-openbsd-amd64`, `renbrowser-server-netbsd-amd64` | Headless on BSD. |
 | Android | `renbrowser.apk` | When the release pipeline includes it. |
 
 Each release ships `SHA256SUMS.txt` so you can verify downloads. See [Security](security.md).
@@ -25,17 +29,35 @@ sha256sum -c SHA256SUMS.txt
 
 Check only the file you downloaded if the sums file lists many assets.
 
+### System requirements
+
+| Package | What you need on the host |
+|---------|---------------------------|
+| **Linux AppImage** | Bundles GTK 4, WebKitGTK 6, and other libraries. No separate WebKit install. Some distros need FUSE or `APPIMAGE_EXTRACT_AND_RUN=1`. |
+| **Linux Flatpak** | Flatpak plus the `org.gnome.Platform` runtime (GTK 4 and WebKitGTK 6). |
+| **Linux plain binary** | GTK 4 and WebKitGTK 6.0 at runtime (for example on Debian/Ubuntu 24.04+, Fedora, or Arch). |
+| **Windows `.exe`** | [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Usually on Windows 10/11. The NSIS installer can install it; the portable `.exe` does not. |
+| **macOS `.app`** | Recent macOS with system WebKit (no extra runtime). |
+| **Android APK** | Android 5.0+ (API 21+). |
+| **Server binary / Docker** | No desktop GUI stack. Use any browser on the host for the UI. Release server builds: Linux amd64/arm64/armv6, FreeBSD amd64/arm64, OpenBSD/NetBSD amd64. |
+
 ## Docker or Podman (server mode)
 
 Official image: `ghcr.io/quad4-software/renbrowser`
 
-Mount your Reticulum config so the container can join the mesh:
+Mount your Reticulum config and profile data so the container can join the mesh. The image runs as a non-root user, so pass your host UID/GID:
 
 ```sh
 docker run --rm -p 8080:8080 \
-  -v "$HOME/.reticulum-go:/root/.reticulum-go:ro" \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/data \
+  -v "$HOME/.reticulum-go:/data/.reticulum-go" \
+  -v "$HOME/.renbrowser:/data/.renbrowser" \
+  -e REN_BROWSER_CONFIG=/data/.reticulum-go/config \
   ghcr.io/quad4-software/renbrowser:latest
 ```
+
+The same flags work with `podman run`. On Podman you can use `--userns=keep-id` instead of `--user "$(id -u):$(id -g)"`. If SELinux blocks the bind mount, add `:Z` to the volume flags.
 
 Open `http://localhost:8080` in any browser on the same machine.
 

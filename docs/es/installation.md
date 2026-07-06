@@ -25,17 +25,35 @@ sha256sum -c SHA256SUMS.txt
 
 Comprueba solo el archivo que descargaste si el archivo de sumas lista muchos activos.
 
+### Requisitos del sistema
+
+| Paquete | Requisitos en el host |
+|---------|------------------------|
+| **Linux AppImage** | Incluye GTK 4, WebKitGTK 6 y otras bibliotecas. No hace falta instalar WebKit aparte. Algunas distros necesitan FUSE o `APPIMAGE_EXTRACT_AND_RUN=1`. |
+| **Linux Flatpak** | Flatpak más el runtime `org.gnome.Platform` (GTK 4 y WebKitGTK 6). |
+| **Binario Linux** | GTK 4 y WebKitGTK 6.0 en tiempo de ejecución (p. ej. Debian/Ubuntu 24.04+, Fedora o Arch). |
+| **Windows `.exe`** | [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Suele estar en Windows 10/11. El instalador NSIS puede instalarlo; el `.exe` portable no. |
+| **macOS `.app`** | macOS reciente con WebKit del sistema (sin runtime extra). |
+| **Android APK** | Android 5.0+ (API 21+). |
+| **Binario servidor / Docker** | Sin stack gráfico de escritorio. Abre la UI en un navegador del host. |
+
 ## Docker o Podman (modo servidor)
 
 Imagen oficial: `ghcr.io/quad4-software/renbrowser`
 
-Monta tu configuración de Reticulum para que el contenedor pueda unirse a la mesh:
+Monta la configuración de Reticulum y los datos de perfil. La imagen no corre como root; pasa el UID/GID del host:
 
 ```sh
 docker run --rm -p 8080:8080 \
-  -v "$HOME/.reticulum-go:/root/.reticulum-go:ro" \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/data \
+  -v "$HOME/.reticulum-go:/data/.reticulum-go" \
+  -v "$HOME/.renbrowser:/data/.renbrowser" \
+  -e REN_BROWSER_CONFIG=/data/.reticulum-go/config \
   ghcr.io/quad4-software/renbrowser:latest
 ```
+
+Los mismos flags sirven con `podman run`. En Podman puedes usar `--userns=keep-id` en lugar de `--user "$(id -u):$(id -g)"`. Si SELinux bloquea el montaje, añade `:Z` a los volúmenes.
 
 Abre `http://localhost:8080` en cualquier navegador de la misma máquina.
 

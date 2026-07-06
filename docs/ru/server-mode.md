@@ -30,9 +30,15 @@ ghcr.io/quad4-software/renbrowser:latest
 
 ```sh
 docker run --rm -p 8080:8080 \
-  -v "$HOME/.reticulum-go:/root/.reticulum-go:ro" \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/data \
+  -v "$HOME/.reticulum-go:/data/.reticulum-go" \
+  -v "$HOME/.renbrowser:/data/.renbrowser" \
+  -e REN_BROWSER_CONFIG=/data/.reticulum-go/config \
   ghcr.io/quad4-software/renbrowser:latest
 ```
+
+Не монтируйте каталог Reticulum только для чтения. Подробности и Podman: [Настройка Reticulum](reticulum-setup.md#сервер-и-docker).
 
 Локальная сборка:
 

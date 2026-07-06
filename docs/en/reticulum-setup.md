@@ -68,13 +68,17 @@ Work through this list:
 
 ## Server and Docker
 
-When you run the `renbrowser` Docker image, mount the host config read-only:
+When you run the `renbrowser` Docker image, mount the host Reticulum directory and run as your host user so the non-root container can read keys and write mesh storage:
 
 ```sh
--v "$HOME/.reticulum-go:/root/.reticulum-go:ro"
+--user "$(id -u):$(id -g)" \
+-e HOME=/data \
+-v "$HOME/.reticulum-go:/data/.reticulum-go" \
+-v "$HOME/.renbrowser:/data/.renbrowser" \
+-e REN_BROWSER_CONFIG=/data/.reticulum-go/config
 ```
 
-The container user must be able to read keys and interface definitions inside that directory.
+Do not mount the config read-only; Reticulum needs to update storage next to the config file.
 
 ## Next steps
 

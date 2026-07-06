@@ -23,18 +23,35 @@ Start with [Getting started](docs/en/getting-started.md) in your language.
 
 Grab the latest release for your system from [GitHub Releases](https://github.com/Quad4-Software/Ren-Browser/releases).
 
+#### System requirements
+
+| Package | What you need on the host |
+|---------|---------------------------|
+| **Linux AppImage** | Bundles GTK 4, WebKitGTK 6, and other libraries via linuxdeploy. No separate WebKit install. Some distros need FUSE or `APPIMAGE_EXTRACT_AND_RUN=1`. |
+| **Linux Flatpak** | Flatpak plus the `org.gnome.Platform` runtime (GTK 4 and WebKitGTK 6). The app bundle does not ship those runtimes itself. |
+| **Linux plain binary** | GTK 4 and WebKitGTK 6.0 at runtime, for example `libgtk-4-1` and `libwebkitgtk-6.0-4` on Debian/Ubuntu 24.04+, Fedora, or Arch. |
+| **Windows `.exe`** | [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Usually already on Windows 10/11. The NSIS installer can install it if missing; the portable `.exe` does not. |
+| **macOS `.app`** | Recent macOS with the system WebKit framework (no extra browser runtime to install). |
+| **Android APK** | Android 5.0 or newer (API 21+). |
+| **Server binary / Docker** | No desktop GUI stack. Static Linux/FreeBSD/NetBSD builds; OpenBSD may link against the system libc. Docker image is linux amd64 only. |
+
 ### Docker or Podman
 
 The published image is `ghcr.io/quad4-software/renbrowser`.
 
-Mount your Reticulum config so the container can join the mesh:
+Mount your Reticulum config so the container can join the mesh. The image runs as a non-root user, so pass your host UID/GID and map config and profile data under `/data`:
 
 ```sh
 docker run --rm -p 8080:8080 \
-  -v "$HOME/.reticulum-go:/data/reticulum" \
-  -e REN_BROWSER_CONFIG=/data/reticulum/config \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/data \
+  -v "$HOME/.reticulum-go:/data/.reticulum-go" \
+  -v "$HOME/.renbrowser:/data/.renbrowser" \
+  -e REN_BROWSER_CONFIG=/data/.reticulum-go/config \
   ghcr.io/quad4-software/renbrowser:latest
 ```
+
+The same flags work with `podman run` instead of `docker run`. On Podman you can use `--userns=keep-id` instead of `--user "$(id -u):$(id -g)"`. If SELinux blocks the bind mount, add `:Z` to the volume flags (for example `-v "$HOME/.reticulum-go:/data/.reticulum-go:Z"`).
 
 Then open `http://localhost:8080` in any browser on the same machine.
 
@@ -109,6 +126,16 @@ Run Ren Browser as a web app without the desktop shell — useful for homelab se
 task build:server
 ./bin/renbrowser-server --host 0.0.0.0 --port 8080
 ```
+
+Cross-compile headless server binaries (pure Go, `CGO_ENABLED=0`):
+
+```sh
+task build:server GOOS=linux GOARCH=arm64 OUTPUT=bin/renbrowser-server-linux-arm64
+task build:server GOOS=linux GOARCH=arm GOARM=6 OUTPUT=bin/renbrowser-server-linux-armv6
+task build:server GOOS=freebsd GOARCH=amd64 OUTPUT=bin/renbrowser-server-freebsd-amd64
+```
+
+Release builds also ship `renbrowser-server-linux-amd64`, `linux-arm64`, `linux-armv6` (Raspberry Pi Zero W), `freebsd-amd64`, `freebsd-arm64`, `openbsd-amd64`, and `netbsd-amd64`.
 
 Common environment variables (also readable from a `.env` file in the working directory):
 

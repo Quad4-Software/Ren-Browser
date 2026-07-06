@@ -68,13 +68,17 @@ Gehen Sie diese Liste durch:
 
 ## Server und Docker
 
-Wenn Sie das Docker-Image `renbrowser` betreiben, binden Sie die Host-Konfiguration schreibgeschützt ein:
+Wenn Sie das Docker-Image `renbrowser` betreiben, binden Sie das Reticulum-Verzeichnis des Hosts ein und starten Sie als Ihr Host-Benutzer, damit der nicht-root Container Schlüssel lesen und Mesh-Speicher schreiben kann:
 
 ```sh
--v "$HOME/.reticulum-go:/root/.reticulum-go:ro"
+--user "$(id -u):$(id -g)" \
+-e HOME=/data \
+-v "$HOME/.reticulum-go:/data/.reticulum-go" \
+-v "$HOME/.renbrowser:/data/.renbrowser" \
+-e REN_BROWSER_CONFIG=/data/.reticulum-go/config
 ```
 
-Der Container-Benutzer muss Schlüssel und Interface-Definitionen in diesem Verzeichnis lesen können.
+Binden Sie die Konfiguration nicht schreibgeschützt ein; Reticulum muss den Speicher neben der Konfigurationsdatei aktualisieren können.
 
 ## Nächste Schritte
 

@@ -25,17 +25,35 @@ sha256sum -c SHA256SUMS.txt
 
 Можно проверить только нужный файл, если в списке много артефактов.
 
+### Системные требования
+
+| Пакет | Что нужно на хосте |
+|-------|---------------------|
+| **Linux AppImage** | Включает GTK 4, WebKitGTK 6 и другие библиотеки. Отдельный WebKit не нужен. На некоторых дистрибутивах нужен FUSE или `APPIMAGE_EXTRACT_AND_RUN=1`. |
+| **Linux Flatpak** | Flatpak и runtime `org.gnome.Platform` (GTK 4 и WebKitGTK 6). |
+| **Обычный бинарник Linux** | GTK 4 и WebKitGTK 6.0 (например Debian/Ubuntu 24.04+, Fedora, Arch). |
+| **Windows `.exe`** | [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Обычно уже есть в Windows 10/11. NSIS-установщик может поставить его; portable `.exe` — нет. |
+| **macOS `.app`** | Недавний macOS со встроенным WebKit (отдельный runtime не нужен). |
+| **Android APK** | Android 5.0+ (API 21+). |
+| **Сервер / Docker** | Без GUI-стека. Интерфейс открывается в браузере на хосте. |
+
 ## Docker или Podman (серверный режим)
 
 Официальный образ: `ghcr.io/quad4-software/renbrowser`
 
-Смонтируйте конфиг Reticulum, чтобы контейнер мог войти в mesh:
+Смонтируйте конфиг Reticulum и данные профиля. Образ работает не от root — передайте UID/GID хоста:
 
 ```sh
 docker run --rm -p 8080:8080 \
-  -v "$HOME/.reticulum-go:/root/.reticulum-go:ro" \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/data \
+  -v "$HOME/.reticulum-go:/data/.reticulum-go" \
+  -v "$HOME/.renbrowser:/data/.renbrowser" \
+  -e REN_BROWSER_CONFIG=/data/.reticulum-go/config \
   ghcr.io/quad4-software/renbrowser:latest
 ```
+
+Те же флаги подходят для `podman run`. В Podman можно использовать `--userns=keep-id` вместо `--user "$(id -u):$(id -g)"`. При блокировке SELinux добавьте `:Z` к томам.
 
 Откройте `http://localhost:8080` в любом браузере на той же машине.
 
