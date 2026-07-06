@@ -103,12 +103,20 @@ task package
 
 Android builds need the [Android SDK](https://developer.android.com/studio) (API 34, NDK r26+). Set `ANDROID_HOME` and run `task android:install:deps` if the build complains about missing tools.
 
+#### Android memory tagging (GrapheneOS)
+
+On GrapheneOS, memory tagging (MTE) is often enabled by default. The app manifest sets `android:memtagMode="off"`, but GrapheneOS can still force native memory tagging on the app, so that flag may not be enough.
+
+If Ren Browser crashes on launch try turning off memory tagging for this app in system settings.
+
+This is a known Go + MTE issue on Android ([golang/go#59090](https://github.com/golang/go/issues/59090)) next version should ship with fix.
+
 ## Using the app
 
-- **Address bar** — enter a NomadNet destination or use built-in schemes (`about:`, `settings:`, etc.).
-- **Discovery** — find nodes announced on your Reticulum interfaces.
-- **Settings** — manage interfaces, themes, extensions, and profile data.
-- **Data** — bookmarks, history, and tabs are stored in `~/.renbrowser/renbrowser.db`. Older `state.json` files are migrated on first launch.
+- **Address bar**: enter a NomadNet destination or use built-in schemes (`about:`, `settings:`, etc.).
+- **Discovery**: find nodes announced on your Reticulum interfaces.
+- **Settings**: manage interfaces, themes, extensions, and profile data.
+- **Data**: bookmarks, history, and tabs are stored in `~/.renbrowser/renbrowser.db`. Older `state.json` files are migrated on first launch.
 
 Type `license` in the address bar to read the in-app license text.
 
@@ -120,7 +128,7 @@ An example extension lives in `extensions/hello-extension/`. Extension authors w
 
 ## Server mode
 
-Run Ren Browser as a web app without the desktop shell — useful for homelab servers, Docker, or a machine that already runs Reticulum.
+Run Ren Browser as a web app without the desktop shell. Useful for homelab servers, Docker, or a machine that already runs Reticulum.
 
 ```sh
 task build:server
