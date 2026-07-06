@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,6 +14,26 @@ import (
 	rlink "quad4/reticulum-go/pkg/link"
 	"quad4/reticulum-go/pkg/transport"
 )
+
+const (
+	defaultRequestTimeout = 20 * time.Second
+	defaultReceiptTimeout = 25 * time.Second
+	fileRequestTimeout    = 280 * time.Second
+	fileReceiptTimeout    = 285 * time.Second
+)
+
+// requestTimeouts picks how long to wait for a response before giving up.
+// /file/ responses are delivered as RNS resource transfers that can span
+// many packets and take far longer than a single-packet page response,
+// especially over slow interfaces; using the page-sized timeout for both
+// caused large file downloads to be aborted as "empty response" well
+// before the transfer had a chance to finish.
+func requestTimeouts(path string) (request, receipt time.Duration) {
+	if strings.HasPrefix(path, "/file/") {
+		return fileRequestTimeout, fileReceiptTimeout
+	}
+	return defaultRequestTimeout, defaultReceiptTimeout
+}
 
 type FetchResult struct {
 	NodeHash    string `json:"nodeHash"`
@@ -95,7 +116,8 @@ func (b *Browser) Fetch(ctx context.Context, nodeHash string, path string, req R
 		}
 	}
 
-	receipt, err := lnk.Request(res.Path, buildRequestData(req), 20*time.Second)
+	requestTimeout, receiptTimeout := requestTimeouts(res.Path)
+	receipt, err := lnk.Request(res.Path, buildRequestData(req), requestTimeout)
 	if err != nil {
 		res.Error = err.Error()
 		res.DurationMs = time.Since(start).Milliseconds()
@@ -105,7 +127,7 @@ func (b *Browser) Fetch(ctx context.Context, nodeHash string, path string, req R
 		res.Interface = iface.GetName()
 	}
 
-	body, metadata, err := waitReceipt(ctx, receipt, 25*time.Second)
+	body, metadata, err := waitReceipt(ctx, receipt, receiptTimeout)
 	if err != nil {
 		res.Error = err.Error()
 		res.DurationMs = time.Since(start).Milliseconds()

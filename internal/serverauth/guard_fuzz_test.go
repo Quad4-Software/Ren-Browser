@@ -6,6 +6,7 @@ package serverauth_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -55,7 +56,11 @@ func FuzzGuardRoute(f *testing.F) {
 		guard, _ := newTestGuard(t, config.Runtime{BasePath: "/ren"})
 		handler := guard.Middleware()(okHandler())
 
-		req := httptest.NewRequest(http.MethodGet, route, nil)
+		req := &http.Request{
+			Method: http.MethodGet,
+			URL:    &url.URL{Path: route},
+			Header: make(http.Header),
+		}
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 

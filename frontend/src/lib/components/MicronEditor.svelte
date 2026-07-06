@@ -264,6 +264,7 @@
     try {
       await handlePageLinkClick(event, previewEl, currentURL, onNavigate);
     } catch (err) {
+      console.error("[MicronEditor] link click failed", err);
       previewError = err instanceof Error ? err.message : String(err);
     }
   }

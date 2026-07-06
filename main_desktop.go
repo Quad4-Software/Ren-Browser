@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"renbrowser/internal/bootstrap"
 	"renbrowser/internal/config"
@@ -71,12 +72,23 @@ func main() {
 // directory". The bundled helpers live under $APPDIR/usr, so chdir there to
 // match. See https://github.com/tauri-apps/tauri/issues/5292.
 func relocateForAppImage(cfg *config.Runtime) {
-	appDir := os.Getenv("APPDIR")
-	if appDir == "" || os.Getenv("APPIMAGE") == "" {
+	if os.Getenv("APPIMAGE") == "" {
+		return
+	}
+	appDir, err := filepath.Abs(filepath.Clean(os.Getenv("APPDIR")))
+	if err != nil || appDir == "" {
 		return
 	}
 	usrDir := filepath.Join(appDir, "usr")
-	if info, err := os.Stat(usrDir); err != nil || !info.IsDir() {
+	usrAbs, err := filepath.Abs(usrDir)
+	if err != nil {
+		return
+	}
+	rel, err := filepath.Rel(appDir, usrAbs)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return
+	}
+	if info, err := os.Stat(usrAbs); err != nil || !info.IsDir() {
 		return
 	}
 	absolutize(&cfg.ReticulumConfig)
@@ -84,7 +96,7 @@ func relocateForAppImage(cfg *config.Runtime) {
 	absolutize(&cfg.AssetsZip)
 	absolutize(&cfg.ExportProfile)
 	absolutize(&cfg.ImportProfile)
-	_ = os.Chdir(usrDir)
+	_ = os.Chdir(usrAbs)
 
 	// WebKit's BubblewrapLauncher spawns its web process sandbox (bwrap plus
 	// an xdg-dbus-proxy helper) with hard-coded, same-relocation-trick paths

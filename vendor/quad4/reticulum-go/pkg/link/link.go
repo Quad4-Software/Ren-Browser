@@ -396,18 +396,20 @@ func (l *Link) Request(path string, data any, timeout time.Duration) (*RequestRe
 }
 
 type RequestReceipt struct {
-	link       *Link
-	mutex      sync.RWMutex
-	requestID  []byte
-	status     byte
-	sentAt     time.Time
-	receivedAt time.Time
-	response   []byte
-	metadata   map[string]any
-	timeout    time.Duration
-	responseCb func(*RequestReceipt)
-	failedCb   func(*RequestReceipt)
-	progressCb func(*RequestReceipt)
+	link          *Link
+	mutex         sync.RWMutex
+	requestID     []byte
+	status        byte
+	sentAt        time.Time
+	receivedAt    time.Time
+	response      []byte
+	metadata      map[string]any
+	timeout       time.Duration
+	bytesReceived int64
+	totalBytes    int64
+	responseCb    func(*RequestReceipt)
+	failedCb      func(*RequestReceipt)
+	progressCb    func(*RequestReceipt)
 }
 
 func (r *RequestReceipt) GetRequestID() []byte {
@@ -438,6 +440,17 @@ func (r *RequestReceipt) GetMetadata() map[string]any {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 	return r.metadata
+}
+
+// Progress returns how many bytes of the response have arrived so far and
+// the total number of bytes expected, for responses delivered as a resource
+// transfer (e.g. large /file/ downloads). total is 0 until the resource
+// advertisement carrying the transfer size has been received; both values
+// are 0 for responses that never go through a resource transfer.
+func (r *RequestReceipt) Progress() (received int64, total int64) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+	return r.bytesReceived, r.totalBytes
 }
 
 func (r *RequestReceipt) GetResponseTime() float64 {
@@ -619,7 +632,11 @@ func (l *Link) Teardown() {
 	defer l.mutex.Unlock()
 
 	if l.status.Load() == int32(StatusActive) {
+		_ = l.sendTeardownPacket() // #nosec G104 - best effort notification to peer
 		l.status.Store(int32(StatusClosed))
+		if l.transport != nil && len(l.linkID) > 0 {
+			l.transport.UnregisterLink(l.linkID)
+		}
 		if l.closedCallback != nil {
 			l.closedCallback(l)
 		}
@@ -1004,6 +1021,10 @@ func (l *Link) handleResourceAdvertisement(pkt *packet.Packet) error {
 		l.incomingMu.Lock()
 		l.incomingResourceRequest = matched
 		l.incomingMu.Unlock()
+
+		matched.mutex.Lock()
+		matched.totalBytes = adv.TransferSize
+		matched.mutex.Unlock()
 
 		if err := l.beginIncomingResource(adv); err != nil {
 			debug.Log(debug.DebugInfo, "Failed to begin incoming response resource", "error", err)
@@ -1616,6 +1637,8 @@ func (l *Link) handleResponse(plaintext []byte) error {
 			req.status = StatusActive
 			req.response = responsePayload
 			req.receivedAt = time.Now()
+			req.bytesReceived = int64(len(responsePayload))
+			req.totalBytes = int64(len(responsePayload))
 			req.mutex.Unlock()
 
 			if req.responseCb != nil {

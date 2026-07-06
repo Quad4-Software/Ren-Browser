@@ -40,7 +40,7 @@ func New(embedded embed.FS, cfg config.Runtime) (*App, error) {
 		return nil, err
 	}
 
-	wailsApp := newWailsApp(browserSvc, pluginHost, pluginMgr, loader, cfg)
+	wailsApp := newWailsApp(browserSvc, pluginHost, pluginMgr, loader, cfg, WailsServerExtra{})
 	browserSvc.SetApp(wailsApp)
 	if pluginMgr != nil {
 		pluginMgr.SetApp(wailsApp)

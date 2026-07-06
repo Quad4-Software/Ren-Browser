@@ -595,7 +595,11 @@ func (s *BrowserService) fetchFile(rawURL string) (nomadnet.FetchResult, error) 
 		parsed.Path = "/file/" + strings.TrimPrefix(parsed.Path, "/")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	// Large files are delivered as multi-packet RNS resource transfers that
+	// can legitimately take minutes on slow or high-hop interfaces, so this
+	// needs far more headroom than a page fetch; see requestTimeouts in
+	// internal/nomadnet/browser.go for the matching inner timeouts.
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
 	fetch := stack.Browser().Fetch(ctx, parsed.NodeHash, parsed.Path, parsed.Request)

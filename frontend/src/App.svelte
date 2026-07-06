@@ -240,6 +240,7 @@
     urlSchemes: [],
   });
   let pluginToast = $state("");
+  let pluginToastIsError = $state(false);
   let pluginsDir = $state("");
   let url = $state("");
   let loading = $state(false);
@@ -376,13 +377,18 @@
     }
   }
 
-  function showPluginToast(message: string) {
+  function showPluginToast(message: string, opts: { isError?: boolean } = {}) {
     pluginToast = message;
+    pluginToastIsError = !!opts.isError;
+    if (opts.isError) {
+      console.error("[RenBrowser]", message);
+    }
+    const duration = opts.isError ? 8000 : 2500;
     setTimeout(() => {
       if (pluginToast === message) {
         pluginToast = "";
       }
-    }, 2500);
+    }, duration);
   }
 
   async function bootPlugins() {
@@ -1619,7 +1625,7 @@
     if (result.ok && !result.pending) {
       void loadDownloads();
     }
-    showPluginToast(result.message);
+    showPluginToast(result.message, { isError: !result.ok });
   }
 
   async function downloadCurrentPage() {
@@ -1640,7 +1646,7 @@
       await loadDownloads();
       showPluginToast(t("downloads.saved"));
     } catch (err) {
-      showPluginToast(err instanceof Error ? err.message : String(err));
+      showPluginToast(err instanceof Error ? err.message : String(err), { isError: true });
     }
   }
 
@@ -1980,7 +1986,7 @@
 
 <div class="app-shell" class:mobile-ui={mobileUI}>
   {#if pluginToast}
-    <div class="plugin-toast" role="status">{pluginToast}</div>
+    <div class="plugin-toast" class:error={pluginToastIsError} role="status">{pluginToast}</div>
   {/if}
   {#if mobileUI}
     <MobileUrlBar
@@ -2517,11 +2523,21 @@
     bottom: 1.25rem;
     transform: translateX(-50%);
     z-index: 60;
+    max-width: min(32rem, calc(100vw - 2rem));
     padding: 0.55rem 0.9rem;
     border-radius: var(--ren-radius);
     background: var(--ren-chrome-bg);
     border: 1px solid var(--ren-border);
     box-shadow: var(--ren-shadow);
     font-size: 0.85rem;
+    user-select: text;
+    cursor: text;
+    word-break: break-word;
+  }
+
+  .plugin-toast.error {
+    border-color: color-mix(in srgb, #ef4444 55%, var(--ren-border));
+    background: color-mix(in srgb, #ef4444 12%, var(--ren-chrome-bg));
+    color: #ef4444;
   }
 </style>

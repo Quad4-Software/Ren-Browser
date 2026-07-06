@@ -148,6 +148,7 @@
         message: isFile ? t("downloads.fileSaved") : t("downloads.saved"),
       });
     } catch (err) {
+      console.error("[ContentViewer] download failed", url, err);
       onDownloadResult({ ok: false, message: err instanceof Error ? err.message : String(err) });
     }
   }
@@ -174,6 +175,7 @@
         onNavigate(next);
       });
     } catch (err) {
+      console.error("[ContentViewer] link click failed", err);
       onDownloadResult({ ok: false, message: err instanceof Error ? err.message : String(err) });
     }
   }
