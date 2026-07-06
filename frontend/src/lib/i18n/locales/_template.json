@@ -235,7 +235,8 @@
     "loadingPage": "",
     "emptyDescription": "",
     "viewSource": "",
-    "downloadPage": ""
+    "downloadPage": "",
+    "multilineHint": ""
   },
   "find": {
     "placeholder": "",

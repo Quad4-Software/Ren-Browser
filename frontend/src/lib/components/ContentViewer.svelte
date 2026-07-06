@@ -11,6 +11,7 @@
     usesClientMicronRenderer,
     type MicronEffectiveEngine,
   } from "$lib/micron/render-page";
+  import { attachMicronMultilineExpansion } from "$lib/micron/multiline";
   import PageFindBar from "$lib/components/PageFindBar.svelte";
   import PageContextMenu from "$lib/components/PageContextMenu.svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
@@ -68,6 +69,7 @@
   let contentEl: HTMLElement | undefined = $state();
   let menu = $state<{ x: number; y: number } | null>(null);
   let dismissedCacheKey = $state("");
+  let multilineHintVisible = $state(false);
 
   const cacheBannerKey = $derived(`${fromCache}:${cachedAt}`);
   const isMicron = $derived(contentType === "micron");
@@ -179,6 +181,30 @@
       onDownloadResult({ ok: false, message: err instanceof Error ? err.message : String(err) });
     }
   }
+
+  $effect(() => {
+    const root = contentEl;
+    const active = isMicron && !showSource && !loading && !error && Boolean(displayHtml);
+
+    if (!root || !active) {
+      multilineHintVisible = false;
+      return;
+    }
+
+    const expansion = attachMicronMultilineExpansion(root, {
+      onArmed: () => {
+        multilineHintVisible = true;
+      },
+      onDisarmed: () => {
+        multilineHintVisible = false;
+      },
+      onExpanded: () => {
+        multilineHintVisible = false;
+      },
+    });
+
+    return () => expansion.teardown();
+  });
 </script>
 
 <section class="viewer" class:micron={isMicron && !showSource} class:about={isInternalPage}>
@@ -241,6 +267,10 @@
     </div>
   {/if}
 </section>
+
+{#if multilineHintVisible}
+  <div class="multiline-hint" aria-live="polite">{t("content.multilineHint")}</div>
+{/if}
 
 {#if menu}
   <PageContextMenu
@@ -420,6 +450,31 @@
     color: inherit;
     caret-color: currentColor;
     box-sizing: content-box;
+  }
+
+  .content.micron :global(input.Mu-armed) {
+    outline: 1px dashed #fbbf24;
+    outline-offset: 1px;
+  }
+
+  .content.micron :global(textarea.Mu-multiline) {
+    outline: 1px solid #34d399;
+    outline-offset: 1px;
+    resize: vertical;
+  }
+
+  .multiline-hint {
+    position: fixed;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 20;
+    pointer-events: none;
+    padding: 0.35rem 0.55rem;
+    border-radius: 6px;
+    background: #fcd34d;
+    color: #18181b;
+    font-size: 0.78rem;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
   }
 
   .state {

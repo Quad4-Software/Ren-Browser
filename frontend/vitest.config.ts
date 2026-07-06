@@ -18,6 +18,7 @@ export default defineConfig({
       ["src/lib/browser/find-in-page.test.ts", "happy-dom"],
       ["src/lib/browser/docs-render.test.ts", "happy-dom"],
       ["src/lib/browser/page-links.test.ts", "happy-dom"],
+      ["src/lib/micron/multiline.test.ts", "happy-dom"],
     ],
     include: ["src/**/*.test.ts"],
   },

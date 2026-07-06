@@ -235,7 +235,8 @@
     "loadingPage": "Seite wird geladen...",
     "emptyDescription": "Geben Sie eine Adresse in der Leiste oben ein oder öffnen Sie Entdecken, um das Mesh zu durchsuchen.",
     "viewSource": "Quelltext anzeigen",
-    "downloadPage": "Seite herunterladen"
+    "downloadPage": "Seite herunterladen",
+    "multilineHint": "Eingabetaste erneut drücken, um auf mehrere Zeilen zu erweitern"
   },
   "find": {
     "placeholder": "Auf Seite suchen",

@@ -235,7 +235,8 @@
     "loadingPage": "Loading page...",
     "emptyDescription": "Enter an address in the bar above or open Discovery to browse the mesh.",
     "viewSource": "View Source",
-    "downloadPage": "Download Page"
+    "downloadPage": "Download Page",
+    "multilineHint": "Press Enter again to expand to multi-line"
   },
   "find": {
     "placeholder": "Find in page",
