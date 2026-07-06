@@ -1,6 +1,6 @@
 # Ren Browser
 
-A modern browser for Reticulum Network.
+A modern browser for Reticulum Network using Reticulum-Go and Micron-Parser-Go.
 
 This project is under heavy active development, please wait until v1.0 for stability and to be more user friendly.
 
