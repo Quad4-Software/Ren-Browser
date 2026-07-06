@@ -21,6 +21,7 @@ import (
 	"renbrowser/internal/cache"
 	"renbrowser/internal/content"
 	"renbrowser/internal/fonts"
+	"renbrowser/internal/limits"
 	"renbrowser/internal/micron"
 	"renbrowser/internal/micronwasm"
 	"renbrowser/internal/nomadnet"
@@ -88,23 +89,25 @@ type ThemeSettings struct {
 }
 
 type BrowserService struct {
-	mu          sync.RWMutex
-	stack       *rns.Stack
-	app         *application.App
-	store       *store.Store
-	storePath   string
-	profileName string
-	publicMode  bool
-	resetWindow bool
-	pageCache   *cache.PageCache
-	devLogs     []DevLogEntry
-	networkLog  []NetworkEntry
-	theme       ThemeSettings
-	history     []string
-	histIdx     int
-	lastPage    PageResponse
-	plugins     *plugins.Manager
-	downloads   *downloadManager
+	mu           sync.RWMutex
+	stack        *rns.Stack
+	app          *application.App
+	store        *store.Store
+	storePath    string
+	profileName  string
+	publicMode   bool
+	resetWindow  bool
+	pageCache    *cache.PageCache
+	devLogs      []DevLogEntry
+	networkLog   []NetworkEntry
+	theme        ThemeSettings
+	history      []string
+	histIdx      int
+	lastPage     PageResponse
+	plugins      *plugins.Manager
+	downloads    *downloadManager
+	shuttingDown bool
+	shutdownOnce sync.Once
 }
 
 type ServiceOptions struct {
@@ -428,6 +431,15 @@ func (s *BrowserService) OpenFreshURL(rawURL string) PageResponse {
 
 func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) PageResponse {
 	s.mu.RLock()
+	shutting := s.shuttingDown
+	s.mu.RUnlock()
+	if shutting {
+		resp := PageResponse{URL: rawURL}
+		applyPageError(&resp, "application shutting down", nil)
+		return resp
+	}
+
+	s.mu.RLock()
 	manager := s.plugins
 	s.mu.RUnlock()
 	if manager == nil {
@@ -560,7 +572,9 @@ func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) Pa
 	resp.PageFG = rendered.PageFG
 	resp.PageBG = rendered.PageBG
 	if s.GetBrowserPrefs().PageCacheEnabled {
-		s.pageCache.Put(fetch.NodeHash, fetch.Path, parsed.Request, fetch.Body, rendered.Kind)
+		if len(fetch.Body) <= limits.MaxPageBytes() {
+			s.pageCache.Put(fetch.NodeHash, fetch.Path, parsed.Request, fetch.Body, rendered.Kind)
+		}
 	}
 
 	s.log("info", "page loaded", url)

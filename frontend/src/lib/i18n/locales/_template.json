@@ -328,6 +328,8 @@
     "notFoundTitle": "",
     "notFoundDescription": "",
     "internalTitle": "",
+    "payloadTooLargeTitle": "",
+    "payloadTooLargeDescription": "",
     "storageFullTitle": "",
     "storageFullDescription": "",
     "databaseCorruptTitle": "",

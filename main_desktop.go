@@ -14,6 +14,7 @@ import (
 
 	"renbrowser/internal/bootstrap"
 	"renbrowser/internal/config"
+	"renbrowser/internal/safe"
 )
 
 //go:embed all:frontend/dist
@@ -43,11 +44,11 @@ func main() {
 
 	maybeCaptureDesktopScreenshot()
 
-	go func() {
+	safe.Go("reticulum-start", func() {
 		if err := appBundle.Service.StartReticulum(); err != nil {
 			log.Printf("reticulum start: %v", err)
 		}
-	}()
+	})
 
 	if os.Getenv("REN_BROWSER_ASSET_PROBE") == "1" {
 		log.Printf("asset source: %s", appBundle.Loader.Kind())

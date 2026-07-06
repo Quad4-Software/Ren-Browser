@@ -11,6 +11,7 @@ import (
 type Options struct {
 	TrustProxy bool
 	BasePath   string
+	ReadyCheck func() bool
 }
 
 func Wrap(handler http.Handler, opts Options) http.Handler {
@@ -21,6 +22,8 @@ func Wrap(handler http.Handler, opts Options) http.Handler {
 	if opts.TrustProxy {
 		h = trustForwardedHeaders(h)
 	}
+	h = readyHandler(h, opts.ReadyCheck)
+	h = recoverHandler(h)
 	return h
 }
 

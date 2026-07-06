@@ -58,6 +58,9 @@ func (d *DB) migrate() error {
 	if _, err := d.sql.Exec(`PRAGMA foreign_keys=ON`); err != nil {
 		return fmt.Errorf("foreign_keys: %w", err)
 	}
+	if _, err := d.sql.Exec(`PRAGMA busy_timeout=5000`); err != nil {
+		return fmt.Errorf("busy_timeout: %w", err)
+	}
 
 	stmts := []string{
 		`CREATE TABLE IF NOT EXISTS nodes (

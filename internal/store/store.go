@@ -80,7 +80,9 @@ func (s *Store) Close() error {
 	if s.db == nil {
 		return nil
 	}
-	return s.db.Close()
+	err := s.db.Close()
+	s.db = nil
+	return err
 }
 
 func (s *Store) DB() *db.DB {
@@ -276,6 +278,7 @@ func (s *Store) SaveTabs(tabs []TabSnapshot) []TabSnapshot {
 	if s.db == nil {
 		return tabs
 	}
+	tabs = clampTabSnapshots(tabs)
 	rows := snapshotsToTabRows(tabs)
 	if err := s.db.SaveTabs(rows); err != nil {
 		s.noteWriteError(err)

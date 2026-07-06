@@ -476,3 +476,13 @@ func copyDir(src, dest string) error {
 		return os.WriteFile(target, data, 0o600) // #nosec G703 G306 -- target under validated dest root
 	})
 }
+
+func (m *Manager) Close() error {
+	m.mu.Lock()
+	wasm := m.wasm
+	m.mu.Unlock()
+	if wasm == nil {
+		return nil
+	}
+	return wasm.Close()
+}

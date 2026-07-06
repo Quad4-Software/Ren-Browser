@@ -13,6 +13,8 @@ import (
 	"quad4/reticulum-go/pkg/identity"
 	rlink "quad4/reticulum-go/pkg/link"
 	"quad4/reticulum-go/pkg/transport"
+
+	"renbrowser/internal/limits"
 )
 
 const (
@@ -176,7 +178,8 @@ func (b *Browser) FetchWithHooks(ctx context.Context, nodeHash string, path stri
 	}
 
 	hooks.stage("waiting", fmt.Sprintf("waiting for response, receiptTimeout=%s", receiptTimeout))
-	body, metadata, err := waitReceipt(ctx, receipt, receiptTimeout, hooks)
+	maxBytes := limits.MaxFetchBytes(res.Path)
+	body, metadata, err := waitReceipt(ctx, receipt, receiptTimeout, maxBytes, hooks)
 	if err != nil {
 		res.Error = err.Error()
 		res.DurationMs = time.Since(start).Milliseconds()
@@ -313,7 +316,19 @@ func receiptStatusLabel(status byte) string {
 	}
 }
 
-func waitReceipt(ctx context.Context, receipt *rlink.RequestReceipt, timeout time.Duration, hooks *FetchHooks) ([]byte, map[string]any, error) {
+func (b *Browser) Close() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for key, lnk := range b.links {
+		if lnk != nil {
+			lnk.Teardown()
+		}
+		delete(b.links, key)
+	}
+	b.establishing = nil
+}
+
+func waitReceipt(ctx context.Context, receipt *rlink.RequestReceipt, timeout time.Duration, maxBytes int, hooks *FetchHooks) ([]byte, map[string]any, error) {
 	start := time.Now()
 	deadline := start.Add(timeout)
 	var lastReceived int64 = -1
@@ -325,6 +340,13 @@ func waitReceipt(ctx context.Context, receipt *rlink.RequestReceipt, timeout tim
 		default:
 		}
 		if received, total := receipt.Progress(); received != lastReceived || time.Since(lastLogAt) >= 2*time.Second {
+			if maxBytes > 0 && (total > int64(maxBytes) || received > int64(maxBytes)) {
+				limit := maxBytes
+				if total > int64(maxBytes) {
+					return nil, nil, fmt.Errorf("response too large: advertised %d bytes (limit %d)", total, limit)
+				}
+				return nil, nil, fmt.Errorf("response too large: received %d bytes (limit %d)", received, limit)
+			}
 			if received != lastReceived {
 				hooks.progress(FetchProgress{Received: received, Total: total})
 			}
@@ -345,6 +367,10 @@ func waitReceipt(ctx context.Context, receipt *rlink.RequestReceipt, timeout tim
 					"empty response (status=%s received=%d total=%d elapsed=%s)",
 					receiptStatusLabel(receipt.GetStatus()), received, total, time.Since(start).Round(time.Millisecond),
 				)
+			}
+			_, total := receipt.Progress()
+			if err := CheckResponseSize(resp, total, maxBytes); err != nil {
+				return nil, nil, err
 			}
 			return resp, receipt.GetMetadata(), nil
 		}

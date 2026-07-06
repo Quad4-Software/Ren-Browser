@@ -15,6 +15,7 @@ const (
 	KindConnectionLost   Kind = "connection_lost"
 	KindNotFound         Kind = "not_found"
 	KindInternal         Kind = "internal"
+	KindPayloadTooLarge  Kind = "payload_too_large"
 	KindStorageFull      Kind = "storage_full"
 	KindDatabaseCorrupt  Kind = "database_corrupt"
 	KindUnknown          Kind = "unknown"
@@ -32,6 +33,8 @@ func ClassifyFetch(errMsg string, body []byte) (Kind, string) {
 	switch {
 	case msg == "reticulum not ready":
 		return KindConnectionFailed, errMsg
+	case strings.Contains(msg, "response too large"), strings.Contains(msg, "payload too large"):
+		return KindPayloadTooLarge, errMsg
 	case strings.Contains(msg, "empty response"):
 		return KindNotFound, errMsg
 	case strings.Contains(msg, "not found"), strings.Contains(msg, "404"):

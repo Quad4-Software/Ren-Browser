@@ -17,6 +17,12 @@ describe("errors", () => {
     expect(page.showRetry).toBe(true);
   });
 
+  it("maps oversized responses to payload_too_large", () => {
+    expect(
+      normalizePageErrorKind(undefined, "response too large: received 16 bytes (limit 8)"),
+    ).toBe("payload_too_large");
+  });
+
   it("enables database reset for corrupt store errors", () => {
     const page = pageErrorContent("database_corrupt", "");
     expect(page.showResetDatabase).toBe(true);

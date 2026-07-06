@@ -6,6 +6,7 @@ import { fetchAuthStatus } from "$lib/auth/api";
 import { applyScreenshotQueryTheme } from "$lib/theme/screenshot";
 import App from "./App.svelte";
 import AuthApp from "./AuthApp.svelte";
+import BootShell from "./BootShell.svelte";
 
 document.title = displayName;
 applyScreenshotQueryTheme();
@@ -42,11 +43,11 @@ async function boot() {
   try {
     const status = await fetchAuthStatus();
     if (status.authRequired && !status.authenticated) {
-      mount(AuthApp, { target });
+      mount(BootShell, { target, props: { Root: AuthApp } });
       return;
     }
 
-    mount(App, { target });
+    mount(BootShell, { target, props: { Root: App } });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unexpected startup error";
     showBootError(message);

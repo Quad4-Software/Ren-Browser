@@ -1,14 +1,47 @@
 // SPDX-License-Identifier: MIT
-
 package app
 
-// Shutdown stops mesh networking and requests application exit.
+import (
+	"context"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
+)
+
 func (s *BrowserService) Shutdown() {
-	_ = s.StopReticulum()
-	s.mu.RLock()
-	wailsApp := s.app
-	s.mu.RUnlock()
-	if wailsApp != nil {
-		wailsApp.Quit()
-	}
+	s.shutdown(true)
+}
+
+func (s *BrowserService) ServiceShutdown(ctx context.Context, options application.ServiceOptions) error {
+	s.shutdown(false)
+	return nil
+}
+
+func (s *BrowserService) shutdown(quitApp bool) {
+	s.shutdownOnce.Do(func() {
+		s.mu.Lock()
+		s.shuttingDown = true
+		downloads := s.downloads
+		stack := s.stack
+		plugins := s.plugins
+		st := s.store
+		wailsApp := s.app
+		s.mu.Unlock()
+
+		if downloads != nil {
+			downloads.cancelAll()
+		}
+		_ = s.StopReticulum()
+		if stack != nil && stack.Browser() != nil {
+			stack.Browser().Close()
+		}
+		if plugins != nil {
+			_ = plugins.Close()
+		}
+		if st != nil {
+			_ = st.Close()
+		}
+		if quitApp && wailsApp != nil {
+			wailsApp.Quit()
+		}
+	})
 }

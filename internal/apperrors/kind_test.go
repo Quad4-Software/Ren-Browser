@@ -31,6 +31,13 @@ func TestClassifyFetchDeadlineExceeded(t *testing.T) {
 	}
 }
 
+func TestClassifyFetchPayloadTooLarge(t *testing.T) {
+	kind, _ := ClassifyFetch("response too large: received 16 bytes (limit 8)", nil)
+	if kind != KindPayloadTooLarge {
+		t.Fatalf("kind=%q want payload_too_large", kind)
+	}
+}
+
 func TestClassifyFetchInternal(t *testing.T) {
 	kind, detail := ClassifyFetch("unexpected server fault", nil)
 	if kind != KindInternal {

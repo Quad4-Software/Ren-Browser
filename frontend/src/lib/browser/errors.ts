@@ -7,6 +7,7 @@ export type PageErrorKind =
   | "connection_lost"
   | "not_found"
   | "internal"
+  | "payload_too_large"
   | "storage_full"
   | "database_corrupt"
   | "unknown";
@@ -59,6 +60,13 @@ const PAGE_ERROR_KEYS: Record<
     showResetDatabase: false,
     tone: "danger",
   },
+  payload_too_large: {
+    title: "errors.payloadTooLargeTitle",
+    description: "errors.payloadTooLargeDescription",
+    showRetry: false,
+    showResetDatabase: false,
+    tone: "danger",
+  },
   storage_full: {
     title: "errors.storageFullTitle",
     description: "errors.storageFullDescription",
@@ -100,6 +108,9 @@ export function normalizePageErrorKind(kind: string | undefined, error: string):
   if (msg.includes("context canceled") || msg.includes("connection lost")) {
     return "connection_lost";
   }
+  if (msg.includes("response too large") || msg.includes("payload too large")) {
+    return "payload_too_large";
+  }
   if (msg.includes("empty response") || msg.includes("not found") || msg.includes("404")) {
     return "not_found";
   }
@@ -114,6 +125,9 @@ export function pageErrorContent(kind: PageErrorKind, detail: string): ErrorPage
   const title = translate(base.title);
   let description = base.description ? translate(base.description, { app: displayName }) : "";
   if (kind === "internal" && detail.trim()) {
+    description = detail.trim();
+  }
+  if (kind === "payload_too_large" && detail.trim()) {
     description = detail.trim();
   }
   if (kind === "unknown" && detail.trim()) {

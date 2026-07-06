@@ -328,6 +328,8 @@
     "notFoundTitle": "404 — Page not found",
     "notFoundDescription": "This node does not have a page at this address.",
     "internalTitle": "500 — Internal node error",
+    "payloadTooLargeTitle": "Response too large",
+    "payloadTooLargeDescription": "This page or file exceeds the configured size limit and was rejected to protect your device.",
     "storageFullTitle": "Storage unavailable",
     "storageFullDescription": "{app} cannot write to disk. Free up space or fix permissions for your profile folder.",
     "databaseCorruptTitle": "Database corrupted",

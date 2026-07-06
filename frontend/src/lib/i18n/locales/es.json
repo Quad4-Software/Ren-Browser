@@ -328,6 +328,8 @@
     "notFoundTitle": "404 — Página no encontrada",
     "notFoundDescription": "Este nodo no tiene una página en esta dirección.",
     "internalTitle": "500 — Error interno del nodo",
+    "payloadTooLargeTitle": "Respuesta demasiado grande",
+    "payloadTooLargeDescription": "Esta página o archivo supera el límite de tamaño configurado y se rechazó para proteger tu dispositivo.",
     "storageFullTitle": "Almacenamiento no disponible",
     "storageFullDescription": "{app} no puede escribir en el disco. Libera espacio o corrige los permisos de tu carpeta de perfil.",
     "databaseCorruptTitle": "Base de datos dañada",

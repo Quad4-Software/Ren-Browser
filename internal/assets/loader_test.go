@@ -78,6 +78,26 @@ func TestLoaderZip(t *testing.T) {
 	}
 }
 
+func TestLoaderRejectsOversizedFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "big.bin")
+	if err := os.WriteFile(path, make([]byte, 64), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("REN_BROWSER_MAX_ASSET_BYTES", "32")
+
+	loader, err := assets.New(assets.Config{Dir: dir})
+	if err != nil {
+		t.Fatalf("New dir loader: %v", err)
+	}
+	defer loader.Close()
+
+	_, err = loader.ReadFile("big.bin")
+	if err == nil {
+		t.Fatal("expected size limit error")
+	}
+}
+
 func TestLoaderRequiresSource(t *testing.T) {
 	_, err := assets.New(assets.Config{})
 	if err == nil {

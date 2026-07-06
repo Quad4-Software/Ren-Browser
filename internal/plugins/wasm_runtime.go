@@ -55,6 +55,19 @@ func (rt *WasmRuntime) loadModule(pluginID string, data []byte) (api.Module, err
 	return mod, nil
 }
 
+func (rt *WasmRuntime) Close() error {
+	rt.mu.Lock()
+	defer rt.mu.Unlock()
+	for id, mod := range rt.modules {
+		_ = mod.Close(context.Background())
+		delete(rt.modules, id)
+	}
+	if rt.runtime != nil {
+		return rt.runtime.Close(context.Background())
+	}
+	return nil
+}
+
 func (rt *WasmRuntime) Unload(pluginID string) {
 	rt.mu.Lock()
 	defer rt.mu.Unlock()

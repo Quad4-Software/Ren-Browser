@@ -130,6 +130,9 @@ func (s *Stack) Stop() error {
 	if !s.started {
 		return nil
 	}
+	if s.browser != nil {
+		s.browser.Close()
+	}
 	err := s.transport.Close()
 	s.running = make(map[string]interfaces.Interface)
 	s.started = false

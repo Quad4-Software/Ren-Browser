@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
+
+	"renbrowser/internal/limits"
 )
 
 type SourceKind string
@@ -98,5 +100,13 @@ func (l *Loader) ReadFile(name string) ([]byte, error) {
 		return nil, err
 	}
 	defer f.Close()
-	return io.ReadAll(f)
+	max := int64(limits.MaxAssetBytes()) + 1
+	data, err := io.ReadAll(io.LimitReader(f, max))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > int64(limits.MaxAssetBytes()) {
+		return nil, fmt.Errorf("asset %q exceeds size limit", name)
+	}
+	return data, nil
 }

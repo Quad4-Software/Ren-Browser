@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"renbrowser/internal/safe"
 )
 
 func screenshotThemeFromEnv() string {
@@ -52,7 +54,7 @@ func maybeCaptureDesktopScreenshot() {
 		return
 	}
 	script := filepath.Join(root, "build", "scripts", "desktop-screenshot.sh")
-	go func() {
+	safe.Go("desktop-screenshot", func() {
 		time.Sleep(4 * time.Second)
 		cmd := exec.Command(script, dir, theme) // #nosec G204 -- argv-only; dir and theme are validated
 		cmd.Dir = root
@@ -62,5 +64,5 @@ func maybeCaptureDesktopScreenshot() {
 			return
 		}
 		log.Printf("screenshot saved: %q", strings.TrimSpace(string(out)))
-	}()
+	})
 }

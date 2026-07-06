@@ -26,6 +26,15 @@ func TestSanitizeDownloadFilename(t *testing.T) {
 	}
 }
 
+func TestIsRootLevelDownloadDir(t *testing.T) {
+	if !isRootLevelDownloadDir("/Downloads") {
+		t.Fatal("expected /Downloads to be rejected")
+	}
+	if isRootLevelDownloadDir("/home/user/Downloads") {
+		t.Fatal("expected normal path to be accepted")
+	}
+}
+
 func TestIsTempDownloadDir(t *testing.T) {
 	temp := filepath.Clean(os.TempDir())
 	if !isTempDownloadDir(temp) {

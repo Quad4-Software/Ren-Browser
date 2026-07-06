@@ -328,6 +328,8 @@
     "notFoundTitle": "404 — Seite nicht gefunden",
     "notFoundDescription": "Dieser Knoten hat keine Seite unter dieser Adresse.",
     "internalTitle": "500 — Interner Knotenfehler",
+    "payloadTooLargeTitle": "Antwort zu groß",
+    "payloadTooLargeDescription": "Diese Seite oder Datei überschreitet das konfigurierte Größenlimit und wurde zum Schutz Ihres Geräts abgelehnt.",
     "storageFullTitle": "Speicher nicht verfügbar",
     "storageFullDescription": "{app} kann nicht auf die Festplatte schreiben. Geben Sie Speicherplatz frei oder korrigieren Sie die Berechtigungen für Ihren Profilordner.",
     "databaseCorruptTitle": "Datenbank beschädigt",

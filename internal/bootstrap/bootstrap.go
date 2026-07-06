@@ -59,6 +59,13 @@ func newWailsApp(browserSvc *app.BrowserService, pluginHost *app.PluginHost, plu
 	handler := servermw.Wrap(base, servermw.Options{
 		TrustProxy: cfg.TrustProxy,
 		BasePath:   cfg.BasePath,
+		ReadyCheck: func() bool {
+			health := browserSvc.GetStoreHealth()
+			if !health.OK {
+				return false
+			}
+			return browserSvc.GetStatus().Online
+		},
 	})
 
 	services := []application.Service{

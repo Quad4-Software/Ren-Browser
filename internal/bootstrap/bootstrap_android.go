@@ -12,6 +12,7 @@ import (
 	"renbrowser/internal/config"
 	"renbrowser/internal/paths"
 	"renbrowser/internal/rns"
+	"renbrowser/internal/safe"
 )
 
 func New(embedded embed.FS, cfg config.Runtime) (*App, error) {
@@ -46,7 +47,7 @@ func New(embedded embed.FS, cfg config.Runtime) (*App, error) {
 		pluginMgr.SetApp(wailsApp)
 	}
 
-	go func() {
+	safe.Go("android-reticulum", func() {
 		stack, err := rns.NewStack(cfg.ReticulumConfig)
 		if err != nil {
 			log.Printf("reticulum stack: %v", err)
@@ -56,7 +57,7 @@ func New(embedded embed.FS, cfg config.Runtime) (*App, error) {
 		if err := browserSvc.StartReticulum(); err != nil {
 			log.Printf("reticulum start: %v", err)
 		}
-	}()
+	})
 
 	return &App{
 		Wails:      wailsApp,
