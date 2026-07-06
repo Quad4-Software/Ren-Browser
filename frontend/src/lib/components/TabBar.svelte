@@ -280,7 +280,7 @@
                   }
                 }}
               >
-                <X size={12} />
+                <X size={14} />
               </span>
             {/if}
           </button>
@@ -309,7 +309,7 @@
     {/if}
   </div>
 
-  {#if !nativeTitlebar}
+  {#if !nativeTitlebar && !mobileUI}
     <div class="controls-slot">
       <WindowControls />
     </div>
@@ -375,7 +375,8 @@
     min-height: 2.5rem;
   }
 
-  .tabbar.native-titlebar {
+  .tabbar.native-titlebar,
+  .tabbar.mobile-ui {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -503,16 +504,32 @@
 
   .close {
     display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    width: 1.35rem;
+    height: 1.35rem;
+    margin-inline-end: -0.15rem;
+    border-radius: 6px;
     opacity: 0;
-    transition: opacity 0.12s ease;
+    cursor: pointer;
     color: var(--ren-muted);
+    transition:
+      opacity 0.12s ease,
+      background 0.12s ease,
+      color 0.12s ease;
   }
 
   .tab:hover .close,
   .tab:focus-within .close,
   .tab.active .close {
     opacity: 0.8;
+  }
+
+  .close:hover {
+    opacity: 1;
+    background: var(--ren-tab-hover);
+    color: var(--ren-fg);
   }
 
   .new-tab {

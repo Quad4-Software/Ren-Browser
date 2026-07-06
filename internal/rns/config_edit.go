@@ -11,6 +11,7 @@ import (
 	"quad4/reticulum-go/pkg/reticulumconfig"
 
 	"renbrowser/internal/brand"
+	"renbrowser/internal/paths"
 )
 
 func ReadConfigText(path string) (string, error) {
@@ -135,8 +136,24 @@ func (s *Stack) installedInterfaceNames() map[string]bool {
 	return names
 }
 
+// configTempDir returns a writable scratch directory for the temporary files
+// loadConfigFromText needs. The OS default temp dir (os.CreateTemp("", ...))
+// is not writable inside the Android app sandbox, so use a directory under
+// the app's own data root instead.
+func configTempDir() (string, error) {
+	dir := filepath.Join(paths.DataRoot(), ".reticulum-go", "tmp")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return "", err
+	}
+	return dir, nil
+}
+
 func loadConfigFromText(text string) (*common.ReticulumConfig, error) {
-	tmp, err := os.CreateTemp("", brand.TempFilePrefix+"*.conf")
+	dir, err := configTempDir()
+	if err != nil {
+		return nil, err
+	}
+	tmp, err := os.CreateTemp(dir, brand.TempFilePrefix+"*.conf")
 	if err != nil {
 		return nil, err
 	}

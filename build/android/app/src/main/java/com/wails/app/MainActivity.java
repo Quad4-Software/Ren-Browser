@@ -32,6 +32,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 import androidx.webkit.WebViewAssetLoader;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewFeature;
 
 import org.json.JSONObject;
 
@@ -117,6 +119,23 @@ public class MainActivity extends AppCompatActivity {
             WebView.setWebContentsDebuggingEnabled(true);
         }
 
+        // The Wails Android backend never calls the JS runtime.Core() bootstrap
+        // that desktop platforms inject on window creation, so window._wails.environment
+        // (read synchronously by System.IsAndroid/IsMobile/IsDesktop) is normally
+        // never set. Inject it ourselves before any page script runs, via a
+        // WebView document-start script, so environment detection works from
+        // the very first paint.
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            String envJs = "window._wails=window._wails||{};"
+                    + "window._wails.flags=window._wails.flags||{};"
+                    + "window.wails=window.wails||{};"
+                    + "window._wails.environment={\"OS\":\"android\",\"Arch\":\"" + resolveArch()
+                    + "\",\"Debug\":" + (DEBUG ? "true" : "false") + "};";
+            java.util.Set<String> allowedOrigins = new java.util.HashSet<>();
+            allowedOrigins.add(WAILS_SCHEME + "://" + WAILS_HOST);
+            WebViewCompat.addDocumentStartJavaScript(webView, envJs, allowedOrigins);
+        }
+
         // Set up asset loader for serving local assets
         assetLoader = new WebViewAssetLoader.Builder()
                 .setDomain(WAILS_HOST)
@@ -198,6 +217,18 @@ public class MainActivity extends AppCompatActivity {
 
         // Add JavaScript interface for Go communication
         webView.addJavascriptInterface(new WailsJSBridge(bridge, webView), "wails");
+    }
+
+    /** Maps the primary supported ABI to the Go/Wails architecture name. */
+    private static String resolveArch() {
+        String abi = Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : "";
+        switch (abi) {
+            case "arm64-v8a": return "arm64";
+            case "armeabi-v7a": return "arm";
+            case "x86_64": return "amd64";
+            case "x86": return "386";
+            default: return abi;
+        }
     }
 
     private void loadApplication() {

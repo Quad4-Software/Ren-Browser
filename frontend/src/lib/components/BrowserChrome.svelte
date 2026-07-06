@@ -113,7 +113,7 @@
   <div class="tool-cluster">
     {#if canIdentify}
       <button
-        class="ren-icon-btn"
+        class="ren-icon-btn always-show"
         aria-label={t("chrome.identify")}
         title={t("chrome.identifyTitle")}
         disabled={identifying}
@@ -122,7 +122,7 @@
         <Fingerprint size={16} />
       </button>
     {/if}
-    <div class="downloads-anchor">
+    <div class="downloads-anchor mobile-nav-dup">
       <button
         class="ren-icon-btn"
         class:active={downloadsOpen}
@@ -143,7 +143,7 @@
       />
     </div>
     <button
-      class="ren-icon-btn"
+      class="ren-icon-btn mobile-nav-dup"
       class:active={activePanel === "history"}
       aria-label={t("chrome.history")}
       onclick={() => onPanel("history")}
@@ -151,7 +151,7 @@
       <History size={16} />
     </button>
     <button
-      class="ren-icon-btn"
+      class="ren-icon-btn mobile-nav-dup"
       class:active={activePanel === "discovery"}
       aria-label={t("chrome.discovery")}
       onclick={() => onPanel("discovery")}
@@ -161,7 +161,7 @@
     {#each pluginPanels as panel (panel.pluginId + ":" + panel.id)}
       {@const key = panelKey(panel.pluginId, panel.id)}
       <button
-        class="ren-icon-btn"
+        class="ren-icon-btn mobile-nav-dup"
         class:active={activePanel === key}
         aria-label={panel.title}
         title={panel.title}
@@ -171,7 +171,7 @@
       </button>
     {/each}
     <button
-      class="ren-icon-btn"
+      class="ren-icon-btn mobile-nav-dup"
       class:active={activePanel === "devtools"}
       aria-label={t("chrome.devtools")}
       onclick={() => onPanel("devtools")}
@@ -179,14 +179,14 @@
       <Terminal size={16} />
     </button>
     <button
-      class="ren-icon-btn"
+      class="ren-icon-btn mobile-nav-dup"
       class:active={activePanel === "settings"}
       aria-label={t("chrome.settings")}
       onclick={() => onPanel("settings")}
     >
       <Settings size={16} />
     </button>
-    <button class="ren-icon-btn" aria-label={t("chrome.toggleTheme")} onclick={onToggleTheme}>
+    <button class="ren-icon-btn mobile-nav-dup" aria-label={t("chrome.toggleTheme")} onclick={onToggleTheme}>
       {#if themeMode === "dark"}
         <Sun size={16} />
       {:else}
@@ -195,7 +195,7 @@
     </button>
     {#if activePanel !== "browser"}
       <button
-        class="ren-icon-btn"
+        class="ren-icon-btn mobile-nav-dup"
         aria-label={t("chrome.closePanel")}
         onclick={() => onPanel("browser")}
       >
@@ -243,6 +243,13 @@
     }
 
     .nav-cluster {
+      display: none;
+    }
+
+    /* These actions (history, discovery, devtools, settings, downloads,
+       theme, close panel) are already reachable from the bottom mobile
+       nav bar, so hide the duplicates here to keep the URL bar row clean. */
+    .mobile-nav-dup {
       display: none;
     }
   }
