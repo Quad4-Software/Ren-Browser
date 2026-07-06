@@ -1,0 +1,52 @@
+# Ren Browser server mode for Docker Compose / Coolify.
+#
+# Coolify: create a "Docker Compose" resource from this repo, assign a domain to
+# the `renbrowser` service with container port 8080 (for example
+# https://renbrowser.example.com:8080). Coolify's proxy terminates TLS and
+# forwards to the service; REN_BROWSER_TRUST_PROXY defaults to true for that.
+#
+# Persistent data lives in the `renbrowser-data` volume under /data:
+#   /data/.reticulum-go/config   Reticulum mesh config (required before use)
+#   /data/.renbrowser/           Browser profile and SQLite database
+#
+# See docs/en/server-mode.md and docs/en/reticulum-setup.md.
+
+name: renbrowser
+
+services:
+  data-init:
+    image: alpine:3.23
+    volumes:
+      - renbrowser-data:/data
+    command:
+      - sh
+      - -c
+      - mkdir -p /data/.reticulum-go /data/.renbrowser && chown -R 65532:65532 /data
+    restart: "no"
+    exclude_from_hc: true
+
+  renbrowser:
+    image: ${IMAGE:-ghcr.io/quad4-software/renbrowser}:${IMAGE_TAG:-latest}
+    build:
+      context: ..
+      dockerfile: build/docker/Dockerfile.server
+    depends_on:
+      data-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    environment:
+      HOME: /data
+      WAILS_SERVER_HOST: 0.0.0.0
+      WAILS_SERVER_PORT: ${REN_BROWSER_PORT:-8080}
+      REN_BROWSER_CONFIG: /data/.reticulum-go/config
+      REN_BROWSER_TRUST_PROXY: ${REN_BROWSER_TRUST_PROXY:-true}
+      REN_BROWSER_BASE_PATH: ${REN_BROWSER_BASE_PATH:-}
+      REN_BROWSER_PUBLIC_MODE: ${REN_BROWSER_PUBLIC_MODE:-false}
+      REN_BROWSER_VERBOSE: ${REN_BROWSER_VERBOSE:-}
+    volumes:
+      - renbrowser-data:/data
+    expose:
+      - "${REN_BROWSER_PORT:-8080}"
+
+volumes:
+  renbrowser-data:
