@@ -17,7 +17,8 @@
     onDismiss: () => void;
   };
 
-  let { tabs, activeTabId, atTabLimit, onSelect, onClose, onCloseAll, onNew, onDismiss }: Props = $props();
+  let { tabs, activeTabId, atTabLimit, onSelect, onClose, onCloseAll, onNew, onDismiss }: Props =
+    $props();
 
   function previewLabel(tab: Tab): string {
     const title = tab.title.trim();

@@ -48,7 +48,10 @@
   {:else if tab.page?.error}
     <div class="thumb-state error">
       <span class="thumb-state-title">
-        {pageErrorContent(normalizePageErrorKind(tab.page.errorKind, tab.page.error), tab.page.error).title}
+        {pageErrorContent(
+          normalizePageErrorKind(tab.page.errorKind, tab.page.error),
+          tab.page.error,
+        ).title}
       </span>
     </div>
   {:else if hasPreviewHtml()}

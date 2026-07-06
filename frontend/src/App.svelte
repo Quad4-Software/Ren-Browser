@@ -1301,7 +1301,7 @@
   async function savePageCacheEnabled(value: boolean) {
     if (!value && pageCacheEnabled) {
       await ClearPageCache();
-      await refreshPageCacheStats();
+      await loadPageCacheStats();
     }
     pageCacheEnabled = value;
     await persistBrowserPrefs({ pageCacheEnabled: value });
