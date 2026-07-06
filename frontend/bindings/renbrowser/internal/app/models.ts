@@ -120,6 +120,7 @@ export interface PluginSummary {
 
 export interface RuntimeConfig {
     "publicMode": boolean;
+    "serverMode": boolean;
     "profile": string;
     "profilePath": string;
 }

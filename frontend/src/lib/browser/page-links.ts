@@ -18,13 +18,14 @@ export async function handlePageLinkClick(
     event.preventDefault();
     const destination = nodeLink.getAttribute("data-destination");
     if (!destination) {
-      return;
+      throw new Error("Link is missing a destination");
     }
     const fieldsSpec = nodeLink.getAttribute("data-fields");
     const next = await resolveMicronNavigation(root, currentURL, destination, fieldsSpec);
-    if (next) {
-      await onNavigate(next);
+    if (!next) {
+      throw new Error(`Could not resolve link destination: ${destination}`);
     }
+    await onNavigate(next);
     return;
   }
 
@@ -32,9 +33,10 @@ export async function handlePageLinkClick(
   if (nomadAnchor) {
     event.preventDefault();
     const dataUrl = nomadAnchor.getAttribute("data-nomad-url");
-    if (dataUrl) {
-      onNavigate(resolveNomadDataURL(currentURL, dataUrl));
+    if (!dataUrl) {
+      throw new Error("Link is missing a destination");
     }
+    await onNavigate(resolveNomadDataURL(currentURL, dataUrl));
     return;
   }
 
@@ -60,7 +62,7 @@ export async function handlePageLinkClick(
 
   const next = resolveLinkURL(currentURL, href);
   if (!next) {
-    return;
+    throw new Error(`Could not resolve link: ${href}`);
   }
   await onNavigate(next);
 }

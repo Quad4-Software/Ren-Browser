@@ -137,8 +137,9 @@ func (h *serverApp) run() error {
 	}()
 
 	// Wait for shutdown signal or error
-	quit := make(chan os.Signal, 1)
+	quit := make(chan os.Signal, 2)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(quit)
 
 	select {
 	case err := <-errCh:
@@ -151,12 +152,30 @@ func (h *serverApp) run() error {
 		h.app.info("Application context cancelled")
 	}
 
-	// Graceful shutdown
+	if h.broadcaster != nil {
+		h.broadcaster.closeAll()
+	}
+	if h.listener != nil {
+		_ = h.listener.Close()
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
-	if err := h.server.Shutdown(ctx); err != nil {
-		return fmt.Errorf("server shutdown error: %w", err)
+	shutdownDone := make(chan error, 1)
+	go func() {
+		shutdownDone <- h.server.Shutdown(ctx)
+	}()
+
+	select {
+	case err := <-shutdownDone:
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return fmt.Errorf("server shutdown error: %w", err)
+		}
+	case <-quit:
+		h.app.info("Force shutdown")
+		_ = h.server.Close()
+		<-shutdownDone
 	}
 
 	h.app.info("Server stopped")
@@ -232,10 +251,13 @@ func (h *serverApp) createHandler() http.Handler {
 
 // destroy stops the server and cleans up.
 func (h *serverApp) destroy() {
+	if h.broadcaster != nil {
+		h.broadcaster.closeAll()
+	}
 	if h.server != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		h.server.Shutdown(ctx)
+		_ = h.server.Shutdown(ctx)
 	}
 	h.app.cleanup()
 }

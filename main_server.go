@@ -22,6 +22,7 @@ var embeddedAssets embed.FS
 
 func main() {
 	cfg := config.ParseFlags()
+	serverlog.InitWithLevel(config.ParseLogLevel(cfg.LogLevel))
 	if cfg.ServerHost == "" {
 		cfg.ServerHost = "0.0.0.0"
 	}
@@ -31,7 +32,7 @@ func main() {
 
 	appBundle, err := bootstrap.New(embeddedAssets, cfg)
 	if err != nil {
-		serverlog.Init()
+		serverlog.InitWithLevel(config.ParseLogLevel(cfg.LogLevel))
 		serverlog.Error("server bootstrap failed", err)
 		os.Exit(1)
 	}
@@ -46,7 +47,6 @@ func main() {
 }
 
 func logServerStartup(svc *app.BrowserService, cfg config.Runtime) {
-	serverlog.Init()
 	serverlog.Banner(brand.DisplayName+" server", brand.Version, buildinfo.BuildLabel())
 
 	configPath := cfg.ReticulumConfig

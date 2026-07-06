@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
@@ -34,6 +35,7 @@ type Runtime struct {
 	AuthBruteBanMin int
 	AuthIPWhitelist string
 	AuthSessionHrs  int
+	LogLevel        string
 }
 
 func ParseFlags() Runtime {
@@ -59,6 +61,7 @@ func ParseFlags() Runtime {
 	flag.IntVar(&cfg.AuthBruteBanMin, "auth-brute-ban-minutes", 0, "Brute-force ban duration in minutes (default 15)")
 	flag.StringVar(&cfg.AuthIPWhitelist, "auth-ip-whitelist", "", "Comma-separated IPs/CIDRs that bypass auth (supports IPv6)")
 	flag.IntVar(&cfg.AuthSessionHrs, "auth-session-hours", 0, "Auth session lifetime in hours (default 168)")
+	flag.StringVar(&cfg.LogLevel, "log-level", "", "Server log level: debug, info, warn, error")
 	flag.Parse()
 	LoadDotEnv("")
 	return ApplyEnv(cfg)
@@ -165,7 +168,23 @@ func ApplyEnv(cfg Runtime) Runtime {
 	if cfg.AuthSessionHrs == 0 {
 		cfg.AuthSessionHrs = envInt("REN_BROWSER_AUTH_SESSION_HOURS", 168)
 	}
+	if cfg.LogLevel == "" {
+		cfg.LogLevel = envFirst("REN_BROWSER_LOG_LEVEL", "LOG_LEVEL")
+	}
 	return cfg
+}
+
+func ParseLogLevel(raw string) slog.Level {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "debug", "trace":
+		return slog.LevelDebug
+	case "warn", "warning":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
 }
 
 func envInt(key string, fallback int) int {

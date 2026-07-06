@@ -261,7 +261,11 @@
     if (!previewEl) {
       return;
     }
-    await handlePageLinkClick(event, previewEl, currentURL, onNavigate);
+    try {
+      await handlePageLinkClick(event, previewEl, currentURL, onNavigate);
+    } catch (err) {
+      previewError = err instanceof Error ? err.message : String(err);
+    }
   }
 </script>
 

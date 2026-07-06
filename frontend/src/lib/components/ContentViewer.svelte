@@ -159,13 +159,17 @@
     if (showSource || !contentEl) {
       return;
     }
-    await handlePageLinkClick(event, contentEl, currentURL, async (next) => {
-      if (isFileURL(next)) {
-        await runDownload(next, "file", "");
-        return;
-      }
-      onNavigate(next);
-    });
+    try {
+      await handlePageLinkClick(event, contentEl, currentURL, async (next) => {
+        if (isFileURL(next)) {
+          await runDownload(next, "file", "");
+          return;
+        }
+        onNavigate(next);
+      });
+    } catch (err) {
+      onDownloadResult({ ok: false, message: err instanceof Error ? err.message : String(err) });
+    }
   }
 </script>
 

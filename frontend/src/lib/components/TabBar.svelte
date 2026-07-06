@@ -27,6 +27,7 @@
     tabs: Tab[];
     nativeTitlebar: boolean;
     mobileUI: boolean;
+    showWindowControls?: boolean;
     tabHoverPreviews: boolean;
     splitTabId: string | null;
     splitViewOpen: boolean;
@@ -51,6 +52,7 @@
     tabs,
     nativeTitlebar,
     mobileUI,
+    showWindowControls = true,
     tabHoverPreviews,
     splitTabId,
     splitViewOpen,
@@ -408,7 +410,7 @@
     {/if}
   </div>
 
-  {#if !nativeTitlebar && !mobileUI}
+  {#if showWindowControls && !nativeTitlebar && !mobileUI}
     <div class="controls-slot" bind:this={controlsSlotEl}>
       <WindowControls />
     </div>

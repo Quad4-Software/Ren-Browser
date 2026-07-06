@@ -287,13 +287,15 @@
   let resetDbConfirmOpen = $state(false);
   let closeAllConfirmOpen = $state(false);
   let shutdownConfirmOpen = $state(false);
+  let clearHistoryConfirmOpen = $state(false);
   let publicMode = $state(false);
+  let serverMode = $state(false);
   let storeHealth = $state<StoreHealth>({ ok: true, path: "" });
   let meshOnline = $state(true);
   let splitViewOpen = $state(false);
   let splitTabId = $state<string | null>(null);
   let splitRatio = $state(52);
-  const desktopChrome = $derived(System.IsDesktop());
+  const desktopChrome = $derived(System.IsDesktop() && !serverMode);
   const layoutOverride = screenshotLayoutFromQuery();
   const mobileUI =
     layoutOverride === "mobile" ? true : layoutOverride === "desktop" ? false : System.IsMobile();
@@ -704,13 +706,21 @@
     }
   }
 
-  async function clearHistory() {
+  async function loadRuntimeConfig() {
+    const config = await GetRuntimeConfig();
+    publicMode = !!config.publicMode;
+    serverMode = !!config.serverMode;
+  }
+
+  function requestClearHistory() {
     if (!history.length) {
       return;
     }
-    if (!confirm(t("history.clearConfirm"))) {
-      return;
-    }
+    clearHistoryConfirmOpen = true;
+  }
+
+  async function confirmClearHistory() {
+    clearHistoryConfirmOpen = false;
     await ClearBrowsingHistory();
     await loadHistory();
   }
@@ -1480,11 +1490,6 @@
     }
   }
 
-  async function loadRuntimeConfig() {
-    const config = await GetRuntimeConfig();
-    publicMode = !!config.publicMode;
-  }
-
   async function loadStoreHealth() {
     const health = (await GetStoreHealth()) as StoreHealth;
     storeHealth = {
@@ -1995,6 +2000,7 @@
       {tabs}
       {nativeTitlebar}
       {mobileUI}
+      showWindowControls={desktopChrome}
       {tabHoverPreviews}
       {splitViewOpen}
       {splitTabId}
@@ -2276,7 +2282,7 @@
         </aside>
       {:else if activePanel === "history"}
         <aside class="side-pane">
-          <HistoryPanel {history} onOpen={browseURL} onClear={() => void clearHistory()} />
+          <HistoryPanel {history} onOpen={browseURL} onClear={requestClearHistory} />
         </aside>
       {:else if activePanel === "devtools"}
         <aside class="side-pane">
@@ -2391,6 +2397,15 @@
     confirmLabel={t("settings.shutdown")}
     onConfirm={confirmShutdown}
     onCancel={() => (shutdownConfirmOpen = false)}
+  />
+
+  <ConfirmDialog
+    open={clearHistoryConfirmOpen}
+    title={t("history.clear")}
+    message={t("history.clearConfirm")}
+    confirmLabel={t("history.clear")}
+    onConfirm={confirmClearHistory}
+    onCancel={() => (clearHistoryConfirmOpen = false)}
   />
 
   {#if storeErrorVisible}

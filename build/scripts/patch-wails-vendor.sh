@@ -81,51 +81,6 @@ func (a *iosApp) destroy() {\
 }' "${ios_app}"
   fi
 
-  linux_cgo_c="${app_dir}/linux_cgo.c"
-  linux_cgo_h="${app_dir}/linux_cgo.h"
-  linux_frameless_snippet="${patch_dir}/pkg/application/linux_cgo_frameless_snippet.c"
-  if [ -f "${linux_cgo_c}" ] && [ -f "${linux_frameless_snippet}" ] && ! grep -q 'window_apply_frameless' "${linux_cgo_c}"; then
-    sed -i '/^void attach_action_group_to_widget/r '"${linux_frameless_snippet}" "${linux_cgo_c}"
-  fi
-  if [ -f "${linux_cgo_h}" ] && ! grep -q 'window_apply_frameless' "${linux_cgo_h}"; then
-    sed -i '/void window_apply_pending_always_on_top/a void window_apply_frameless(GtkWindow *window, gboolean frameless, const char *title);' "${linux_cgo_h}"
-  fi
-  linux_cgo_go="${app_dir}/linux_cgo.go"
-  if [ -f "${linux_cgo_go}" ] && grep -q 'C.gtk_window_set_decorated(w.gtkWindow(), gtkBool(!frameless))' "${linux_cgo_go}" ]; then
-    sed -i '/func (w \*linuxWebviewWindow) setFrameless(frameless bool) {/,/^}$/c\
-func (w *linuxWebviewWindow) setFrameless(frameless bool) {\
-\ttitle := w.parent.options.Title\
-\tif title == "" {\
-\t\ttitle = w.parent.options.Name\
-\t}\
-\tcTitle := C.CString(title)\
-\tdefer C.free(unsafe.Pointer(cTitle))\
-\tC.window_apply_frameless(w.gtkWindow(), gtkBool(frameless), cTitle)\
-\tw.execJS(fmt.Sprintf("if(window._wails&&window._wails.flags)window._wails.flags.frameless=%v;", frameless))\
-}' "${linux_cgo_go}"
-  fi
-  linux_cgo_gtk3_go="${app_dir}/linux_cgo_gtk3.go"
-  if [ -f "${linux_cgo_gtk3_go}" ] && grep -q 'C.gtk_window_set_decorated(w.gtkWindow(), gtkBool(!frameless))' "${linux_cgo_gtk3_go}" ]; then
-    sed -i '/func (w \*linuxWebviewWindow) setFrameless(frameless bool) {/,/^}$/c\
-func (w *linuxWebviewWindow) setFrameless(frameless bool) {\
-\tif !frameless {\
-\t\tC.gtk_window_set_titlebar(w.gtkWindow(), nil)\
-\t}\
-\tC.gtk_window_set_decorated(w.gtkWindow(), gtkBool(!frameless))\
-\tif !frameless {\
-\t\ttitle := w.parent.options.Title\
-\t\tif title == "" {\
-\t\t\ttitle = w.parent.options.Name\
-\t\t}\
-\t\tcTitle := C.CString(title)\
-\t\tC.gtk_window_set_title(w.gtkWindow(), cTitle)\
-\t\tC.free(unsafe.Pointer(cTitle))\
-\t\tC.gtk_window_present(w.gtkWindow())\
-\t}\
-\tw.execJS(fmt.Sprintf("if(window._wails&&window._wails.flags)window._wails.flags.frameless=%v;", frameless))\
-}' "${linux_cgo_gtk3_go}"
-  fi
-
   prod="${app_dir}/webview_window_windows_production.go"
   if [ -f "${prod}" ]; then
     sed -i '1s/^\/\/go:build windows && production && !devtools$/\/\/go:build windows \&\& production \&\& !devtools \&\& !server/' "${prod}"
@@ -139,5 +94,61 @@ func (w *linuxWebviewWindow) setFrameless(frameless bool) {\
   popupmenu="${app_dir}/popupmenu_windows.go"
   if [ -f "${popupmenu}" ] && ! grep -q '^//go:build' "${popupmenu}"; then
     sed -i '1i //go:build windows \&\& !server\n' "${popupmenu}"
+  fi
+
+  ws_server="${app_dir}/websocket_server.go"
+  if [ -f "${ws_server}" ] && ! grep -q 'func (b \*WebSocketBroadcaster) closeAll()' "${ws_server}"; then
+    sed -i 's/b\.app\.info("WebSocket client connected"/b.app.debug("WebSocket client connected"/g' "${ws_server}"
+    sed -i 's/b\.app\.info("WebSocket client disconnected"/b.app.debug("WebSocket client disconnected"/g' "${ws_server}"
+    sed -i '/^}$/{
+      N
+      /^}\n$/{
+        /^}\n\/\/ DispatchWailsEvent implements WailsEventListener interface\./i\
+\
+// closeAll closes every active WebSocket so HTTP server shutdown is not blocked.\
+func (b *WebSocketBroadcaster) closeAll() {\
+\tb.mu.Lock()\
+\tconns := make([]*websocket.Conn, 0, len(b.clients))\
+\tfor conn := range b.clients {\
+\t\tconns = append(conns, conn)\
+\t}\
+\tb.clients = make(map[*websocket.Conn]*clientInfo)\
+\tb.windows = make(map[string]*BrowserWindow)\
+\tb.mu.Unlock()\
+\
+\tfor _, conn := range conns {\
+\t\tconn.Close(websocket.StatusGoingAway, "server shutting down")\
+\t}\
+}
+      }
+    }' "${ws_server}"
+  fi
+
+  server_app="${app_dir}/application_server.go"
+  if [ -f "${server_app}" ] && ! grep -q 'Force shutdown' "${server_app}"; then
+    sed -i 's/quit := make(chan os.Signal, 1)/quit := make(chan os.Signal, 2)/' "${server_app}"
+    sed -i '/signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)$/a\\tdefer signal.Stop(quit)' "${server_app}"
+    sed -i '/h.app.info("Application context cancelled")/a\\n\tif h.broadcaster != nil {\n\t\th.broadcaster.closeAll()\n\t}\n\tif h.listener != nil {\n\t\t_ = h.listener.Close()\n\t}' "${server_app}"
+    sed -i '/\/\/ Graceful shutdown/,/return fmt.Errorf("server shutdown error: %w", err)/c\
+\tctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)\
+\tdefer cancel()\
+\
+\tshutdownDone := make(chan error, 1)\
+\tgo func() {\
+\t\tshutdownDone <- h.server.Shutdown(ctx)\
+\t}()\
+\
+\tselect {\
+\tcase err := <-shutdownDone:\
+\t\tif err != nil \&\& !errors.Is(err, http.ErrServerClosed) {\
+\t\t\treturn fmt.Errorf("server shutdown error: %w", err)\
+\t\t}\
+\tcase <-quit:\
+\t\th.app.info("Force shutdown")\
+\t\t_ = h.server.Close()\
+\t\t<-shutdownDone\
+\t}' "${server_app}"
+    sed -i 's/func (h \*serverApp) destroy() {/func (h *serverApp) destroy() {\n\tif h.broadcaster != nil {\n\t\th.broadcaster.closeAll()\n\t}/' "${server_app}"
+    sed -i 's/h\.server\.Shutdown(ctx)/_ = h.server.Shutdown(ctx)/' "${server_app}"
   fi
 fi

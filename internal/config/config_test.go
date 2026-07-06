@@ -2,6 +2,7 @@
 package config_test
 
 import (
+	"log/slog"
 	"os"
 	"testing"
 
@@ -34,6 +35,29 @@ func TestApplyEnvOverrides(t *testing.T) {
 	}
 	if cfg.AuthBruteMax != 5 {
 		t.Fatalf("brute max = %d", cfg.AuthBruteMax)
+	}
+}
+
+func TestParseLogLevel(t *testing.T) {
+	if config.ParseLogLevel("debug") != slog.LevelDebug {
+		t.Fatal("expected debug")
+	}
+	if config.ParseLogLevel("warn") != slog.LevelWarn {
+		t.Fatal("expected warn")
+	}
+	if config.ParseLogLevel("error") != slog.LevelError {
+		t.Fatal("expected error")
+	}
+	if config.ParseLogLevel("") != slog.LevelInfo {
+		t.Fatal("empty should default to info")
+	}
+}
+
+func TestApplyEnvLogLevel(t *testing.T) {
+	t.Setenv("REN_BROWSER_LOG_LEVEL", "error")
+	cfg := config.ApplyEnv(config.Runtime{})
+	if cfg.LogLevel != "error" {
+		t.Fatalf("log level = %q", cfg.LogLevel)
 	}
 }
 

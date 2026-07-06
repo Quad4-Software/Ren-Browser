@@ -26,12 +26,21 @@ const (
 )
 
 var (
-	mu      sync.Mutex
-	useANSI bool
-	out     io.Writer = os.Stderr
+	mu       sync.Mutex
+	useANSI  bool
+	minLevel slog.Level = slog.LevelInfo
+	out      io.Writer  = os.Stderr
 )
 
 func Init() {
+	InitWithLevel(slog.LevelInfo)
+}
+
+func InitWithLevel(level slog.Level) {
+	if level == 0 {
+		level = slog.LevelInfo
+	}
+	minLevel = level
 	useANSI = ansiEnabled()
 }
 
@@ -160,14 +169,15 @@ func Emit(level, message, detail string) {
 }
 
 func skipInfo(message string) bool {
-	if os.Getenv("REN_BROWSER_VERBOSE") == "1" {
+	if minLevel <= slog.LevelDebug {
 		return false
 	}
 	switch message {
 	case "page loaded", "page cache hit", "log level":
 		return true
 	default:
-		return false
+		return strings.HasPrefix(message, "[AssetFileServerFS]") ||
+			strings.HasPrefix(message, "WebSocket client ")
 	}
 }
 
@@ -191,13 +201,17 @@ type handler struct {
 }
 
 func (h *handler) Enabled(_ context.Context, level slog.Level) bool {
-	if level == slog.LevelDebug && os.Getenv("REN_BROWSER_VERBOSE") != "1" {
-		return false
+	if os.Getenv("REN_BROWSER_VERBOSE") == "1" && level == slog.LevelDebug {
+		return true
 	}
-	return true
+	return level >= minLevel
 }
 
 func (h *handler) Handle(_ context.Context, r slog.Record) error {
+	if r.Level == slog.LevelInfo && skipInfo(r.Message) {
+		return nil
+	}
+
 	mu.Lock()
 	defer mu.Unlock()
 

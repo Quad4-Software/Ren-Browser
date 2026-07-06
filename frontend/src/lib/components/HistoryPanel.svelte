@@ -127,10 +127,7 @@
 <section class="history-panel">
   <header>
     <div class="title-row">
-      <div>
-        <h2>{t("history.title")}</h2>
-        <p>{t("history.subtitle")}</p>
-      </div>
+      <h2>{t("history.title")}</h2>
       {#if history.length > 0}
         <button
           type="button"
@@ -143,6 +140,7 @@
         </button>
       {/if}
     </div>
+    <p class="subtitle">{t("history.subtitle")}</p>
     <input
       class="search ren-input"
       type="search"
@@ -196,26 +194,26 @@
     background: var(--ren-content-bg);
   }
 
-  header h2 {
-    margin: 0 0 0.25rem;
-    font-size: 1.05rem;
-    font-weight: 600;
-  }
-
   .title-row {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    gap: 0.65rem;
+    gap: 0.75rem;
     margin-bottom: 0.25rem;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    min-width: 0;
   }
 
   .clear-btn {
     flex-shrink: 0;
-    margin-left: auto;
   }
 
-  header p {
+  .subtitle {
     margin: 0 0 0.75rem;
     color: var(--ren-muted);
     font-size: 0.88rem;
