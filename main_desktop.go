@@ -32,6 +32,8 @@ func main() {
 
 	_ = appBundle.Wails.Window.NewWithOptions(windowOpts)
 
+	maybeCaptureDesktopScreenshot()
+
 	go func() {
 		if err := appBundle.Service.StartReticulum(); err != nil {
 			log.Printf("reticulum start: %v", err)
