@@ -38,8 +38,8 @@ func encodeRequestData(req RequestData) []byte {
 const fieldKeyPrefix = "field."
 
 func classifyRequestPair(key string) (kind, name string) {
-	if strings.HasPrefix(key, fieldKeyPrefix) {
-		return "field", strings.TrimPrefix(key, fieldKeyPrefix)
+	if after, ok := strings.CutPrefix(key, fieldKeyPrefix); ok {
+		return "field", after
 	}
 	return "var", key
 }

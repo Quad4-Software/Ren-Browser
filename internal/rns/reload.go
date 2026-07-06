@@ -4,6 +4,7 @@ package rns
 import (
 	"errors"
 	"fmt"
+	"maps"
 
 	"quad4/reticulum-go/pkg/common"
 	"quad4/reticulum-go/pkg/debug"
@@ -76,9 +77,7 @@ func (s *Stack) ReloadInterfaces(cfg *common.ReticulumConfig) error {
 
 	oldCfg := s.cfg
 	oldByName := make(map[string]interfaces.Interface, len(s.running))
-	for name, iface := range s.running {
-		oldByName[name] = iface
-	}
+	maps.Copy(oldByName, s.running)
 
 	for name, oldI := range oldByName {
 		ic, inNew := cfg.Interfaces[name]

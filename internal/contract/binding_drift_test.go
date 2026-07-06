@@ -49,8 +49,8 @@ func exportedMethods(t *testing.T, ptr any) map[string]struct{} {
 	t.Helper()
 	rt := reflect.TypeOf(ptr)
 	out := make(map[string]struct{})
-	for i := 0; i < rt.NumMethod(); i++ {
-		name := rt.Method(i).Name
+	for method := range rt.Methods() {
+		name := method.Name
 		if name == "" || name[0] < 'A' || name[0] > 'Z' {
 			continue
 		}

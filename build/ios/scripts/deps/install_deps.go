@@ -259,8 +259,8 @@ func main() {
 		} else {
 			// Count iPhone devices
 			count := 0
-			lines := strings.Split(string(out), "\n")
-			for _, line := range lines {
+			lines := strings.SplitSeq(string(out), "\n")
+			for line := range lines {
 				if strings.Contains(line, "iPhone") && !strings.Contains(line, "unavailable") {
 					count++
 				}

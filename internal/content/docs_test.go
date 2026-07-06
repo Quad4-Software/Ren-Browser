@@ -119,10 +119,3 @@ func TestRenderDocsPage(t *testing.T) {
 		t.Fatalf("expected relative markdown link in source")
 	}
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

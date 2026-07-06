@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"path"
 	"regexp"
+	"slices"
 	"strings"
 
 	docassets "renbrowser/docs"
@@ -74,12 +75,7 @@ func SupportedDocsLangs() []string {
 
 func ValidDocsLang(lang string) bool {
 	lang = strings.ToLower(strings.TrimSpace(lang))
-	for _, item := range supportedDocLangs {
-		if item == lang {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(supportedDocLangs, lang)
 }
 
 func MatchDocsURL(raw string) bool {
@@ -98,11 +94,11 @@ func MatchDocsURL(raw string) bool {
 
 func ParseDocsQuery(raw string) (lang, page string) {
 	raw = strings.TrimSpace(raw)
-	idx := strings.Index(raw, "?")
-	if idx < 0 {
+	_, after, ok := strings.Cut(raw, "?")
+	if !ok {
 		return "", ""
 	}
-	values, err := url.ParseQuery(raw[idx+1:])
+	values, err := url.ParseQuery(after)
 	if err != nil {
 		return "", ""
 	}
@@ -149,10 +145,10 @@ func loadDocsMarkdown(lang, page string) (body string, title string, err error) 
 }
 
 func docsTitleFromMarkdown(body, page string) string {
-	for _, line := range strings.Split(body, "\n") {
+	for line := range strings.SplitSeq(body, "\n") {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "# ") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "# "))
+		if after, ok := strings.CutPrefix(line, "# "); ok {
+			return strings.TrimSpace(after)
 		}
 	}
 	if page != "" {

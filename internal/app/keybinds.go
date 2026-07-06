@@ -3,6 +3,7 @@ package app
 
 import (
 	"encoding/json"
+	"maps"
 )
 
 const keybindsSettingKey = "keybinds"
@@ -34,9 +35,7 @@ func mergeKeybinds(saved KeybindSettings) KeybindSettings {
 		return defaults
 	}
 	out := KeybindSettings{Bindings: map[string]string{}}
-	for action, chord := range defaults.Bindings {
-		out.Bindings[action] = chord
-	}
+	maps.Copy(out.Bindings, defaults.Bindings)
 	for action, chord := range saved.Bindings {
 		if chord != "" {
 			out.Bindings[action] = chord

@@ -23,7 +23,7 @@ func SanitizeHTML(input string) string {
 		return input
 	}
 	out := input
-	for pass := 0; pass < 3; pass++ {
+	for range 3 {
 		out = scriptBlockRe.ReplaceAllString(out, "")
 		out = scriptOpenRe.ReplaceAllString(out, "")
 	}
@@ -40,7 +40,7 @@ func SanitizeHTML(input string) string {
 
 func needsHTMLSanitize(s string) bool {
 	n := len(s)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		switch s[i] {
 		case 'j', 'J':
 			if i+10 < n && asciiEqualFold(s[i:i+11], "javascript:") {

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 package app
 
+import "maps"
+
 import "encoding/json"
 
 const themeSettingKey = "theme"
@@ -32,9 +34,7 @@ func mergeThemeSettings(saved ThemeSettings) ThemeSettings {
 	}
 	if saved.CustomTokens != nil {
 		tokens := make(map[string]string, len(saved.CustomTokens))
-		for key, value := range saved.CustomTokens {
-			tokens[key] = value
-		}
+		maps.Copy(tokens, saved.CustomTokens)
 		defaults.CustomTokens = tokens
 	}
 	defaults.CompactToolbar = saved.CompactToolbar

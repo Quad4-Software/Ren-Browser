@@ -63,12 +63,12 @@ func parseMeshURL(raw string) (PageURL, error) {
 	rest := parts[1]
 	path := rest
 	var fields map[string]string
-	if qIdx := strings.Index(rest, "?"); qIdx >= 0 {
-		path = rest[:qIdx]
-		fields = parseFieldSuffix(rest[qIdx+1:])
-	} else if idx := strings.Index(rest, "`"); idx >= 0 {
-		path = rest[:idx]
-		fields = parseBacktickFields(rest[idx+1:])
+	if before, after, ok := strings.Cut(rest, "?"); ok {
+		path = before
+		fields = parseFieldSuffix(after)
+	} else if before, after, ok := strings.Cut(rest, "`"); ok {
+		path = before
+		fields = parseBacktickFields(after)
 	}
 	return PageURL{NodeHash: node, Path: normalizePath(path), Request: parseRequestPairs(fields)}, nil
 }
@@ -77,9 +77,9 @@ func parseFieldSuffix(raw string) map[string]string {
 	if raw == "" {
 		return nil
 	}
-	if idx := strings.Index(raw, "`"); idx >= 0 {
-		out := parseQueryFields(raw[:idx])
-		for k, v := range parseBacktickFields(raw[idx+1:]) {
+	if before, after, ok := strings.Cut(raw, "`"); ok {
+		out := parseQueryFields(before)
+		for k, v := range parseBacktickFields(after) {
 			if out == nil {
 				out = make(map[string]string, 4)
 			}

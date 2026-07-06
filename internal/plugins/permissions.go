@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 package plugins
 
+import "slices"
+
 import "fmt"
 
 const (
@@ -35,12 +37,7 @@ func ValidatePermissions(perms []string) error {
 }
 
 func HasPermission(m Manifest, perm string) bool {
-	for _, p := range m.Permissions {
-		if p == perm {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(m.Permissions, perm)
 }
 
 func RequirePermission(m Manifest, perm string) error {

@@ -832,7 +832,7 @@ func (s *BrowserService) fetchWithRetry(ctx context.Context, nodeHash, path stri
 	}
 	const maxAttempts = 3
 	var last nomadnet.FetchResult
-	for attempt := 0; attempt < maxAttempts; attempt++ {
+	for attempt := range maxAttempts {
 		if attempt > 0 {
 			wait := time.Duration(attempt) * time.Second
 			select {

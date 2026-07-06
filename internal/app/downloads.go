@@ -252,8 +252,8 @@ func downloadNameFromURL(rawURL string) string {
 		return "LICENSE"
 	}
 	path := rawURL
-	if idx := strings.Index(rawURL, ":/"); idx >= 0 {
-		path = rawURL[idx+2:]
+	if _, after, ok := strings.Cut(rawURL, ":/"); ok {
+		path = after
 	}
 	if q := strings.IndexAny(path, "?`"); q >= 0 {
 		path = path[:q]

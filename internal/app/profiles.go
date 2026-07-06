@@ -22,7 +22,7 @@ type ProfileData struct {
 	Theme          ThemeSettings   `json:"theme"`
 	DownloadDir    string          `json:"downloadDir,omitempty"`
 	Nodes          []nomadnet.Node `json:"nodes,omitempty"`
-	WindowState    WindowState     `json:"windowState,omitempty"`
+	WindowState    WindowState     `json:"windowState"`
 	EnabledPlugins []string        `json:"enabledPlugins,omitempty"`
 }
 

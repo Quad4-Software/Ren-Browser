@@ -4,6 +4,7 @@ package content
 import (
 	"fmt"
 	"html"
+	"strings"
 
 	"renbrowser/internal/brand"
 )
@@ -48,19 +49,19 @@ func RenderAbout(info AboutInfo) string {
 		}{row.Label, row.Value})
 	}
 
-	var body string
+	var body strings.Builder
 	for _, row := range rows {
-		body += fmt.Sprintf(
+		body.WriteString(fmt.Sprintf(
 			`<tr><th>%s</th><td>%s</td></tr>`,
 			html.EscapeString(row.label),
 			html.EscapeString(row.value),
-		)
+		))
 	}
 
 	return `<article class="about-page">` +
 		`<h1>` + html.EscapeString(info.AppName) + `</h1>` +
 		`<p class="about-tagline">` + html.EscapeString(brand.Tagline) + `</p>` +
-		`<table class="about-table"><tbody>` + body + `</tbody></table>` +
+		`<table class="about-table"><tbody>` + body.String() + `</tbody></table>` +
 		`<p class="about-hint">Type a NomadNet URL in the address bar or open Discovery to browse the mesh. ` +
 		`<a href="docs:">Documentation</a> · <a href="license:">View license</a>.</p>` +
 		`</article>`

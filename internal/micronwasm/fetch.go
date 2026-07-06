@@ -32,7 +32,7 @@ func ParseShasums256ForFilename(text, filename string) (string, error) {
 	if strings.TrimSpace(text) == "" || strings.TrimSpace(filename) == "" {
 		return "", fmt.Errorf("empty shasums input")
 	}
-	for _, raw := range strings.Split(text, "\n") {
+	for raw := range strings.SplitSeq(text, "\n") {
 		line := strings.TrimSpace(raw)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue

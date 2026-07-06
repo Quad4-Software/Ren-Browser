@@ -39,8 +39,8 @@ func nodeHashFromURL(raw string) (string, error) {
 		return "", errors.New("not a mesh page")
 	}
 	hash := trimmed
-	if idx := strings.Index(trimmed, ":/"); idx >= 0 {
-		hash = trimmed[:idx]
+	if before, _, ok := strings.Cut(trimmed, ":/"); ok {
+		hash = before
 	}
 	hash = strings.ToLower(strings.TrimSpace(hash))
 	if len(hash) != 32 {

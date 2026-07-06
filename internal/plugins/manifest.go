@@ -29,7 +29,7 @@ type Manifest struct {
 	Main            string            `json:"main,omitempty"`
 	Backend         string            `json:"backend,omitempty"`
 	Permissions     []string          `json:"permissions,omitempty"`
-	Contributes     Contributions     `json:"contributes,omitempty"`
+	Contributes     Contributions     `json:"contributes"`
 }
 
 type Contributions struct {

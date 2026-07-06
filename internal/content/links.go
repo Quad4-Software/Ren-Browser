@@ -102,8 +102,8 @@ func resolveNomadHref(nodeHash, href string) string {
 	if strings.HasPrefix(href, "/page/") || strings.HasPrefix(href, "/file/") {
 		return nodeHash + ":" + href
 	}
-	if strings.HasPrefix(href, ":") {
-		return nodeHash + ":" + normalizeNomadPath(strings.TrimPrefix(href, ":"))
+	if after, ok := strings.CutPrefix(href, ":"); ok {
+		return nodeHash + ":" + normalizeNomadPath(after)
 	}
 	return ""
 }
