@@ -69,6 +69,7 @@
     class:sheet={variant === "sheet"}
     role="dialog"
     aria-label={t("downloads.title")}
+    tabindex="-1"
   >
     <header>
       <h2>{t("downloads.title")}</h2>
@@ -148,7 +149,7 @@
     bottom: calc(3.6rem + env(safe-area-inset-bottom));
     width: auto;
     max-height: min(55vh, 28rem);
-    z-index: 120;
+    z-index: 130;
   }
 
   header {

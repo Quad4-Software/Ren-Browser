@@ -49,6 +49,7 @@
     configPath: string;
     downloadDir: string;
     openLinksInNewTab: boolean;
+    tabHoverPreviews: boolean;
     nativeTitlebar: boolean;
     micronRenderer: MicronRendererPreference;
     micronWasmEnabled: boolean;
@@ -75,6 +76,7 @@
     onChangeDownloadDir: (dir: string) => void;
     onPickDownloadDir: () => void;
     onChangeOpenLinksInNewTab: (value: boolean) => void;
+    onChangeTabHoverPreviews: (value: boolean) => void;
     onChangeMobileDevTools: (value: boolean) => void;
     onChangeNativeTitlebar: (value: boolean) => void;
     onChangeMicronRenderer: (value: MicronRendererPreference) => void;
@@ -109,6 +111,7 @@
     configPath,
     downloadDir = $bindable(),
     openLinksInNewTab,
+    tabHoverPreviews,
     nativeTitlebar,
     micronRenderer,
     micronWasmEnabled,
@@ -131,6 +134,7 @@
     onChangeDownloadDir,
     onPickDownloadDir,
     onChangeOpenLinksInNewTab,
+    onChangeTabHoverPreviews,
     onChangeMobileDevTools,
     onChangeNativeTitlebar,
     onChangeMicronRenderer,
@@ -382,6 +386,11 @@
     {/if}
 
     {#if desktopChrome}
+      <Toggle
+        label={t("settings.tabHoverPreviews")}
+        checked={tabHoverPreviews}
+        onchange={onChangeTabHoverPreviews}
+      />
       <Toggle
         label={t("settings.nativeTitlebar")}
         checked={nativeTitlebar}

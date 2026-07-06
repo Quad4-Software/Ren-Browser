@@ -69,6 +69,7 @@
     display: none;
     position: sticky;
     bottom: 0;
+    z-index: 100;
     grid-auto-flow: column;
     grid-auto-columns: minmax(3.5rem, 1fr);
     overflow-x: auto;

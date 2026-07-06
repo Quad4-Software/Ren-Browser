@@ -7,6 +7,8 @@ import {
   expandHexColor,
   micronShellStyle,
   normalizeReticulumURL,
+  isNodeHomePage,
+  nodeHomeURL,
   orderTabsPinnedFirst,
   pinTabInList,
   reorderTabsInList,
@@ -59,6 +61,36 @@ describe("normalizeReticulumURL", () => {
   });
 });
 
+describe("nodeHomeURL", () => {
+  const hash = "abb3ebcd03cb2388a838e70c001291f9";
+  const home = `${hash}:/page/index.mu`;
+
+  it("builds index.mu for the current node", () => {
+    expect(nodeHomeURL(`${hash}:/page/about.mu`)).toBe(home);
+    expect(nodeHomeURL(`rns://${hash}/page/guide.mu`)).toBe(home);
+  });
+
+  it("returns empty when the url is not a mesh node page", () => {
+    expect(nodeHomeURL("about:")).toBe("");
+    expect(nodeHomeURL("")).toBe("");
+  });
+});
+
+describe("isNodeHomePage", () => {
+  const hash = "abb3ebcd03cb2388a838e70c001291f9";
+
+  it("matches index.mu for the node", () => {
+    expect(isNodeHomePage(`${hash}:/page/index.mu`)).toBe(true);
+    expect(isNodeHomePage(`${hash}:/page/index.mu?x=1`)).toBe(true);
+  });
+
+  it("rejects other mesh paths", () => {
+    expect(isNodeHomePage(`${hash}:/page/about.mu`)).toBe(false);
+    expect(isNodeHomePage(`${hash}:/page/guide/index.mu`)).toBe(false);
+    expect(isNodeHomePage("about:")).toBe(false);
+  });
+});
+
 describe("tabTitleFromURL", () => {
   it("uses node name when known", () => {
     expect(
@@ -96,6 +128,10 @@ describe("tabWidthForCount", () => {
 
   it("caps width when there is room", () => {
     expect(tabWidthForCount(1200, 2)).toBe(220);
+  });
+
+  it("uses compact width before layout is measured", () => {
+    expect(tabWidthForCount(0, 8)).toBe(52);
   });
 
   it("accounts for the new-tab button width via tabsAreaWidth", () => {

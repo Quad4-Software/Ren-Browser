@@ -121,8 +121,10 @@
   import {
     canOpenTab,
     MAX_TABS,
-    normalizeReticulumURL,
-    orderTabsPinnedFirst,
+  normalizeReticulumURL,
+  nodeHomeURL,
+  isNodeHomePage,
+  orderTabsPinnedFirst,
     pinTabInList,
     reorderTabsInList,
     tabTitleFromURL,
@@ -306,14 +308,17 @@
   let communitySelected = new SvelteSet<number>();
   let discoverySlowMode = $state(false);
   let mobileDevTools = $state(false);
+  let tabHoverPreviews = $state(true);
   let mobileTabsOpen = $state(false);
   let settingsSectionsCollapsed = $state<Record<string, boolean>>({});
 
   const DISCOVERY_POLL_MS = 5000;
   const DISCOVERY_POLL_SLOW_MS = 15000;
   const DISCOVERY_EVENT_DEBOUNCE_MS = 5000;
+  const DISCOVERY_EVENT_DEBOUNCE_FAST_MS = 400;
   let statusTimer: ReturnType<typeof setInterval> | undefined;
   let nodeDiscoverTimer: ReturnType<typeof setTimeout> | undefined;
+  let appForeground = $state(true);
 
   let tabs = $state<Tab[]>([{ id: randomId(), title: "", url: "", active: true }]);
 
@@ -1043,6 +1048,40 @@
     refreshTabTitles();
   }
 
+  function pauseBackgroundPolling() {
+    if (statusTimer !== undefined) {
+      clearInterval(statusTimer);
+      statusTimer = undefined;
+    }
+    if (nodeDiscoverTimer !== undefined) {
+      clearTimeout(nodeDiscoverTimer);
+      nodeDiscoverTimer = undefined;
+    }
+  }
+
+  async function resumeForegroundSync() {
+    appForeground = true;
+    await Promise.all([loadNodes(), loadInterfaces(), refreshHistoryState()]);
+    void refreshNetwork();
+    void loadStoreHealth();
+
+    const active = tabs.find((tab) => tab.active);
+    const stuck = tabs.filter((tab) => tab.loading);
+    if (stuck.length > 0) {
+      tabs = tabs.map((tab) => (tab.loading ? { ...tab, loading: false } : tab));
+      if (active?.url && stuck.some((tab) => tab.id === active.id)) {
+        void openPage(active.url, false);
+      }
+    }
+
+    restartStatusTimer();
+  }
+
+  function handleAppBackground() {
+    appForeground = false;
+    pauseBackgroundPolling();
+  }
+
   function discoveryPollInterval(): number {
     return discoverySlowMode ? DISCOVERY_POLL_SLOW_MS : DISCOVERY_POLL_MS;
   }
@@ -1058,17 +1097,19 @@
   }
 
   function scheduleLoadNodesFromEvent() {
-    if (!discoverySlowMode) {
-      void loadNodes();
+    if (!appForeground) {
       return;
     }
     if (nodeDiscoverTimer !== undefined) {
       return;
     }
+    const delay = discoverySlowMode
+      ? DISCOVERY_EVENT_DEBOUNCE_MS
+      : DISCOVERY_EVENT_DEBOUNCE_FAST_MS;
     nodeDiscoverTimer = setTimeout(() => {
       nodeDiscoverTimer = undefined;
       void loadNodes();
-    }, DISCOVERY_EVENT_DEBOUNCE_MS);
+    }, delay);
   }
 
   async function loadLogs() {
@@ -1257,6 +1298,7 @@
     discoverySlowMode = !!prefs.discoverySlowMode;
     mobileDevTools = !!prefs.mobileDevTools;
     pageCacheEnabled = prefs.pageCacheEnabled !== false;
+    tabHoverPreviews = prefs.tabHoverPreviews !== false;
     settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
     if (mobileUI && activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
@@ -1277,6 +1319,7 @@
       discoverySlowMode,
       mobileDevTools,
       pageCacheEnabled,
+      tabHoverPreviews,
       settingsSectionsCollapsed,
     };
   }
@@ -1291,6 +1334,7 @@
     discoverySlowMode?: boolean;
     mobileDevTools?: boolean;
     pageCacheEnabled?: boolean;
+    tabHoverPreviews?: boolean;
     settingsSectionsCollapsed?: Record<string, boolean>;
   }) {
     const prefs = await SetBrowserPrefs({
@@ -1306,12 +1350,18 @@
     discoverySlowMode = !!prefs.discoverySlowMode;
     mobileDevTools = !!prefs.mobileDevTools;
     pageCacheEnabled = prefs.pageCacheEnabled !== false;
+    tabHoverPreviews = prefs.tabHoverPreviews !== false;
     settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
     if (mobileUI && activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
     }
     await refreshMicronWasmState(micronWasmParserId);
     return prefs;
+  }
+
+  async function saveTabHoverPreviews(value: boolean) {
+    tabHoverPreviews = value;
+    await persistBrowserPrefs({ tabHoverPreviews: value });
   }
 
   async function savePageCacheEnabled(value: boolean) {
@@ -1462,6 +1512,20 @@
     return tabs.find((tab) => tab.url === pageUrl)?.id;
   }
 
+  function applyAsyncPageLoaded(page: PageResponse) {
+    const tabId = tabIdForPageEvent(page);
+    if (!tabId) {
+      return;
+    }
+    const target = tabs.find((tab) => tab.id === tabId);
+    if (!target?.loading) {
+      return;
+    }
+    const tabPage = pageFromResponse(page);
+    applyPageToTab(tabId, tabPage, page.url || target.url || "");
+    schedulePersistTabs();
+  }
+
   function applyAsyncPageError(page: PageResponse) {
     const tabId = tabIdForPageEvent(page);
     if (!tabId) {
@@ -1493,6 +1557,7 @@
     discoverySlowMode = !!reset.browserPrefs.discoverySlowMode;
     mobileDevTools = !!reset.browserPrefs.mobileDevTools;
     pageCacheEnabled = reset.browserPrefs.pageCacheEnabled !== false;
+    tabHoverPreviews = reset.browserPrefs.tabHoverPreviews !== false;
     if (mobileUI && activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
     }
@@ -1518,9 +1583,25 @@
   }
 
   async function downloadCurrentPage() {
-    const payload = lastRaw || html;
-    await downloadPageContent(url, contentType, payload);
-    await loadDownloads();
+    const tab = tabs.find((item) => item.active);
+    if (!tab?.url) {
+      showPluginToast(t("downloads.noPageToSave"));
+      return;
+    }
+    syncActiveTabPage();
+    const page = currentPageState();
+    const payload = page.lastRaw || page.html;
+    if (!payload.trim()) {
+      showPluginToast(t("downloads.noPageContent"));
+      return;
+    }
+    try {
+      await downloadPageContent(tab.url, page.contentType, payload);
+      await loadDownloads();
+      showPluginToast(t("downloads.saved"));
+    } catch (err) {
+      showPluginToast(err instanceof Error ? err.message : String(err));
+    }
   }
 
   function toggleDownloads() {
@@ -1551,7 +1632,13 @@
 
   function mobileHome() {
     mobileTabsOpen = false;
+    downloadsOpen = false;
     activePanel = "browser";
+    const home = nodeHomeURL(url);
+    if (!home || isNodeHomePage(url)) {
+      return;
+    }
+    void openPage(home);
   }
 
   async function openDownload(path: string) {
@@ -1775,7 +1862,8 @@
       }
     });
 
-    Events.On("page:loaded", () => {
+    Events.On("page:loaded", (event) => {
+      applyAsyncPageLoaded(event.data as PageResponse);
       void refreshHistoryState();
       void refreshNetwork();
       void loadHistory();
@@ -1788,6 +1876,25 @@
     Events.On("window:chrome", (event) => {
       const chrome = event.data as WindowChrome;
       nativeTitlebar = !!chrome.nativeTitlebar;
+    });
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void resumeForegroundSync();
+      } else {
+        handleAppBackground();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    Events.On("android:ActivityResumed", () => {
+      void resumeForegroundSync();
+    });
+    Events.On("android:ActivityPaused", () => {
+      handleAppBackground();
+    });
+    Events.On("android:ActivityStopped", () => {
+      handleAppBackground();
     });
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1819,6 +1926,7 @@
         clearTimeout(nodeDiscoverTimer);
       }
       window.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       document.removeEventListener("click", blockExternalLink, true);
       document.removeEventListener("auxclick", blockExternalLink, true);
       if (persistTimer) {
@@ -1851,6 +1959,7 @@
       {tabs}
       {nativeTitlebar}
       {mobileUI}
+      {tabHoverPreviews}
       {splitViewOpen}
       {splitTabId}
       onSelect={setActiveTab}
@@ -1927,6 +2036,7 @@
           {uiLanguage}
           onChangeUILanguage={saveUILanguage}
           {openLinksInNewTab}
+          {tabHoverPreviews}
           {nativeTitlebar}
           {micronRenderer}
           {micronWasmEnabled}
@@ -1950,6 +2060,7 @@
           onChangeDownloadDir={saveDownloadDir}
           onPickDownloadDir={pickDownloadDir}
           onChangeOpenLinksInNewTab={saveOpenLinksInNewTab}
+          onChangeTabHoverPreviews={saveTabHoverPreviews}
           onChangeMobileDevTools={saveMobileDevTools}
           onChangeNativeTitlebar={saveNativeTitlebar}
           onChangeMicronRenderer={saveMicronRenderer}

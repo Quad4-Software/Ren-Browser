@@ -85,7 +85,7 @@ export function unpinnedWidthForStrip(stripWidth: number, tabs: Tab[]): number {
   const pinnedCount = tabs.filter((tab) => tab.pinned).length;
   const unpinnedCount = tabs.length - pinnedCount;
   if (unpinnedCount <= 0) {
-    return TAB_WIDTH_MAX;
+    return TAB_WIDTH_MIN;
   }
   const pinnedTotal = pinnedCount * PINNED_TAB_WIDTH;
   const gaps = Math.max(0, tabs.length - 1) * TAB_GAP_PX;
@@ -107,7 +107,7 @@ export function tabsAreaWidth(stripWidth: number, newTabButtonWidth: number): nu
 
 export function tabWidthForCount(stripWidth: number, count: number): number {
   if (count <= 0 || stripWidth <= 0) {
-    return TAB_WIDTH_MAX;
+    return 52;
   }
   const totalGap = Math.max(0, count - 1) * TAB_GAP_PX;
   const perTab = (stripWidth - totalGap) / count;
@@ -116,6 +116,45 @@ export function tabWidthForCount(stripWidth: number, count: number): number {
 
 export function canOpenTab(count: number): boolean {
   return count < MAX_TABS;
+}
+
+const NODE_HASH_RE = /^[a-f0-9]{32}$/i;
+
+export function nodeHashFromMeshURL(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return "";
+  }
+  if (trimmed.toLowerCase().startsWith("rns://")) {
+    try {
+      const parsed = new URL(trimmed);
+      const hash = parsed.hostname.toLowerCase();
+      return NODE_HASH_RE.test(hash) ? hash : "";
+    } catch {
+      return "";
+    }
+  }
+  if (!trimmed.includes(":/")) {
+    return "";
+  }
+  const hash = trimmed.split(":/")[0]?.trim().toLowerCase() ?? "";
+  return NODE_HASH_RE.test(hash) ? hash : "";
+}
+
+export function nodeHomeURL(url: string): string {
+  const hash = nodeHashFromMeshURL(url);
+  return hash ? `${hash}:/page/index.mu` : "";
+}
+
+export function isNodeHomePage(url: string): boolean {
+  const hash = nodeHashFromMeshURL(url);
+  if (!hash) {
+    return false;
+  }
+  const rest = url.includes(":/") ? (url.split(":/")[1] ?? "") : "";
+  const path = rest.split(/[?`]/)[0] ?? "";
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return normalized === "/page/index.mu";
 }
 
 export type DiscoveredNode = {

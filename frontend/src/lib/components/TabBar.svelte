@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { Pin, Plus, X } from "@lucide/svelte";
   import { clampMenuPosition } from "$lib/browser/context-menu";
   import { MAX_TABS, TAB_GAP_PX, type Tab, tabsAreaWidth, tabWidthForTab } from "$lib/browser/url";
@@ -26,6 +27,7 @@
     tabs: Tab[];
     nativeTitlebar: boolean;
     mobileUI: boolean;
+    tabHoverPreviews: boolean;
     splitTabId: string | null;
     splitViewOpen: boolean;
     onSelect: (id: string) => void;
@@ -49,6 +51,7 @@
     tabs,
     nativeTitlebar,
     mobileUI,
+    tabHoverPreviews,
     splitTabId,
     splitViewOpen,
     onSelect,
@@ -73,22 +76,31 @@
   let menuEl = $state<HTMLDivElement | null>(null);
   let menuPos = $state({ x: 0, y: 0 });
   const DRAG_STRIP_MIN_PX = 88;
+  const CONTROLS_RESERVED_PX = 104;
 
   let tabbarEl = $state<HTMLDivElement | null>(null);
   let tabsSlotEl = $state<HTMLDivElement | null>(null);
+  let controlsSlotEl = $state<HTMLDivElement | null>(null);
   let newTabEl = $state<HTMLButtonElement | null>(null);
   let tabsSlotWidth = $state(0);
+  let controlsSlotWidth = $state(0);
   let newTabWidth = $state(0);
   let hoverTabId = $state<string | null>(null);
   let previewPos = $state({ left: 0, top: 0 });
 
   const PREVIEW_WIDTH = 220;
   const PREVIEW_OFFSET = 6;
+  const PREVIEW_HOVER_DELAY_MS = 400;
+
+  let previewTimer: ReturnType<typeof setTimeout> | undefined;
 
   const hoverTab = $derived(hoverTabId ? tabs.find((tab) => tab.id === hoverTabId) : null);
 
   const tabsRowMaxWidth = $derived(
     mobileUI ? tabsSlotWidth : Math.max(0, tabsSlotWidth - DRAG_STRIP_MIN_PX),
+  );
+  const windowControlsWidth = $derived(
+    nativeTitlebar || mobileUI ? "0px" : `${controlsSlotWidth || CONTROLS_RESERVED_PX}px`,
   );
   const tabsStripWidth = $derived(tabsAreaWidth(tabsRowMaxWidth, newTabWidth));
   const atTabLimit = $derived(tabs.length >= MAX_TABS);
@@ -128,12 +140,14 @@
   $effect(() => {
     const bar = tabbarEl;
     const slot = tabsSlotEl;
+    const controls = controlsSlotEl;
     const newBtn = newTabEl;
     if (!bar || !slot) {
       return;
     }
     const syncSizes = () => {
       tabsSlotWidth = slot.clientWidth;
+      controlsSlotWidth = controls?.offsetWidth ?? 0;
       newTabWidth = newBtn?.offsetWidth ?? 0;
     };
     const observer = new ResizeObserver(() => {
@@ -141,6 +155,9 @@
     });
     observer.observe(bar);
     observer.observe(slot);
+    if (controls) {
+      observer.observe(controls);
+    }
     if (newBtn) {
       observer.observe(newBtn);
     }
@@ -153,30 +170,53 @@
     void tabs.map((tab) => `${tab.id}:${tab.pinned}:${tab.active}`).join("|");
     const slot = tabsSlotEl;
     const newBtn = newTabEl;
+    const controls = controlsSlotEl;
     if (!slot) {
       return;
     }
     const id = requestAnimationFrame(() => {
-      tabsSlotWidth = slot.clientWidth;
-      newTabWidth = newBtn?.offsetWidth ?? 0;
+      requestAnimationFrame(() => {
+        tabsSlotWidth = slot.clientWidth;
+        controlsSlotWidth = controls?.offsetWidth ?? 0;
+        newTabWidth = newBtn?.offsetWidth ?? 0;
+      });
     });
     return () => cancelAnimationFrame(id);
   });
 
-  function handleDragStart(tabId: string) {
+  function handleDragStart(event: DragEvent, tabId: string) {
+    if ((event.target as HTMLElement).closest(".close")) {
+      event.preventDefault();
+      return;
+    }
+    hideTabPreview();
     dragId = tabId;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", tabId);
+    }
+  }
+
+  function handleDragEnd() {
+    dragId = null;
   }
 
   function handleDragOver(event: DragEvent) {
     event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = "move";
+    }
   }
 
-  function handleDrop(targetId: string) {
-    if (!dragId || dragId === targetId) {
+  function handleDrop(event: DragEvent, targetId: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    const fromId = dragId ?? event.dataTransfer?.getData("text/plain");
+    if (!fromId || fromId === targetId) {
       dragId = null;
       return;
     }
-    onReorder(dragId, targetId);
+    onReorder(fromId, targetId);
     dragId = null;
   }
 
@@ -189,21 +229,37 @@
     menu = null;
   }
 
+  function clearPreviewTimer() {
+    if (previewTimer !== undefined) {
+      clearTimeout(previewTimer);
+      previewTimer = undefined;
+    }
+  }
+
   function showTabPreview(tabId: string, target: HTMLElement) {
-    if (mobileUI) {
+    if (mobileUI || !tabHoverPreviews) {
       return;
     }
-    const rect = target.getBoundingClientRect();
-    let left = rect.left + rect.width / 2 - PREVIEW_WIDTH / 2;
-    const margin = 8;
-    left = Math.max(margin, Math.min(left, window.innerWidth - PREVIEW_WIDTH - margin));
-    hoverTabId = tabId;
-    previewPos = { left, top: rect.bottom + PREVIEW_OFFSET };
+    clearPreviewTimer();
+    previewTimer = setTimeout(() => {
+      previewTimer = undefined;
+      const rect = target.getBoundingClientRect();
+      let left = rect.left + rect.width / 2 - PREVIEW_WIDTH / 2;
+      const margin = 8;
+      left = Math.max(margin, Math.min(left, window.innerWidth - PREVIEW_WIDTH - margin));
+      hoverTabId = tabId;
+      previewPos = { left, top: rect.bottom + PREVIEW_OFFSET };
+    }, PREVIEW_HOVER_DELAY_MS);
   }
 
   function hideTabPreview() {
+    clearPreviewTimer();
     hoverTabId = null;
   }
+
+  onDestroy(() => {
+    clearPreviewTimer();
+  });
 
   function runAction(action: MenuAction) {
     if (!menu) {
@@ -259,6 +315,8 @@
   class="tabbar"
   class:native-titlebar={nativeTitlebar}
   class:mobile-ui={mobileUI}
+  class:frameless-desktop={!nativeTitlebar && !mobileUI}
+  style:--window-controls-width={windowControlsWidth}
   bind:this={tabbarEl}
 >
   <div class="tabs-slot" bind:this={tabsSlotEl}>
@@ -266,8 +324,10 @@
       <div
         class="tabs"
         role="tablist"
+        tabindex="0"
         style:--tab-gap="{TAB_GAP_PX}px"
-        style:--wails-draggable={nativeTitlebar ? "no-drag" : "no-drag"}
+        style:--wails-draggable="no-drag"
+        ondragover={handleDragOver}
       >
         {#each tabs as tab (tab.id)}
           {@const tabItemWidth = widthForTab(tab)}
@@ -283,16 +343,15 @@
             title={tab.title}
             draggable="true"
             style:--tab-width="{tabItemWidth}px"
+            style:--wails-draggable="no-drag"
             onclick={() => onSelect(tab.id)}
             oncontextmenu={(event) => openMenu(event, tab.id)}
             onmouseenter={(event) => showTabPreview(tab.id, event.currentTarget)}
             onmouseleave={hideTabPreview}
-            ondragstart={() => {
-              hideTabPreview();
-              handleDragStart(tab.id);
-            }}
+            ondragstart={(event) => handleDragStart(event, tab.id)}
+            ondragend={handleDragEnd}
             ondragover={handleDragOver}
-            ondrop={() => handleDrop(tab.id)}
+            ondrop={(event) => handleDrop(event, tab.id)}
           >
             {#if tab.pinned}
               <span class="pin-glyph" aria-hidden="true">
@@ -350,7 +409,7 @@
   </div>
 
   {#if !nativeTitlebar && !mobileUI}
-    <div class="controls-slot">
+    <div class="controls-slot" bind:this={controlsSlotEl}>
       <WindowControls />
     </div>
   {/if}
@@ -431,6 +490,13 @@
     border-bottom: 1px solid var(--ren-border);
     min-width: 0;
     min-height: 2.5rem;
+    overflow: hidden;
+  }
+
+  .tabbar.frameless-desktop {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr);
+    padding-right: calc(0.5rem + var(--window-controls-width, 6.5rem));
   }
 
   .tabbar.native-titlebar,
@@ -449,6 +515,18 @@
   .controls-slot {
     flex-shrink: 0;
     min-width: max-content;
+  }
+
+  .tabbar.frameless-desktop .controls-slot {
+    position: absolute;
+    right: 0.5rem;
+    bottom: 0;
+    z-index: 2;
+  }
+
+  .tabbar.frameless-desktop .tabs-slot {
+    grid-column: 1;
+    min-width: 0;
   }
 
   .tabs-slot {
@@ -481,9 +559,9 @@
     align-items: center;
     gap: 0.35rem;
     width: var(--tab-width);
-    min-width: var(--tab-width);
+    min-width: 0;
     max-width: var(--tab-width);
-    flex: 0 0 var(--tab-width);
+    flex: 0 1 var(--tab-width);
     border: 1px solid transparent;
     border-radius: 10px 10px 0 0;
     background: transparent;
@@ -529,6 +607,8 @@
     justify-content: center;
     padding-inline: 0.35rem;
     cursor: pointer;
+    flex: 0 0 var(--tab-width);
+    min-width: var(--tab-width);
   }
 
   .tab.pinned.active {

@@ -29,6 +29,7 @@ export interface BrowserPrefs {
     "discoverySlowMode": boolean;
     "mobileDevTools": boolean;
     "pageCacheEnabled": boolean;
+    "tabHoverPreviews": boolean;
     "settingsSectionsCollapsed": { [_ in string]?: boolean } | null;
 }
 
