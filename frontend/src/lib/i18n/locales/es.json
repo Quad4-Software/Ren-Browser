@@ -314,13 +314,13 @@
     "resetDbConfirm": "Restablecer base de datos"
   },
   "errors": {
-    "connectionFailedTitle": "Error de conexión con el servidor",
+    "connectionFailedTitle": "Error de conexión con el nodo",
     "connectionFailedDescription": "No se pudo alcanzar este nodo. Comprueba que las interfaces Reticulum estén en línea y que el destino esté disponible en la malla.",
     "connectionLostTitle": "Conexión perdida",
-    "connectionLostDescription": "El enlace con el servidor se interrumpió antes de que la página terminara de cargar.",
+    "connectionLostDescription": "El enlace con el nodo se interrumpió antes de que la página terminara de cargar.",
     "notFoundTitle": "404 — Página no encontrada",
-    "notFoundDescription": "El servidor no tiene una página en esta dirección.",
-    "internalTitle": "500 — Error interno del servidor",
+    "notFoundDescription": "Este nodo no tiene una página en esta dirección.",
+    "internalTitle": "500 — Error interno del nodo",
     "storageFullTitle": "Almacenamiento no disponible",
     "storageFullDescription": "{app} no puede escribir en el disco. Libera espacio o corrige los permisos de tu carpeta de perfil.",
     "databaseCorruptTitle": "Base de datos dañada",

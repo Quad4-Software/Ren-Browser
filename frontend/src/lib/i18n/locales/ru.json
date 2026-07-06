@@ -314,13 +314,13 @@
     "resetDbConfirm": "Сбросить базу данных"
   },
   "errors": {
-    "connectionFailedTitle": "Не удалось подключиться к серверу",
+    "connectionFailedTitle": "Не удалось подключиться к узлу",
     "connectionFailedDescription": "Не удалось достичь этого узла. Убедитесь, что интерфейсы Reticulum в сети и назначение доступно в mesh.",
     "connectionLostTitle": "Соединение потеряно",
-    "connectionLostDescription": "Связь с сервером прервалась до завершения загрузки страницы.",
+    "connectionLostDescription": "Связь с узлом прервалась до завершения загрузки страницы.",
     "notFoundTitle": "404 — Страница не найдена",
-    "notFoundDescription": "На сервере нет страницы по этому адресу.",
-    "internalTitle": "500 — Внутренняя ошибка сервера",
+    "notFoundDescription": "На этом узле нет страницы по этому адресу.",
+    "internalTitle": "500 — Внутренняя ошибка узла",
     "storageFullTitle": "Хранилище недоступно",
     "storageFullDescription": "{app} не может записывать на диск. Освободите место или исправьте права доступа к папке профиля.",
     "databaseCorruptTitle": "База данных повреждена",

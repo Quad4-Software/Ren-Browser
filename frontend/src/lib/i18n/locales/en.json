@@ -314,13 +314,13 @@
     "resetDbConfirm": "Reset database"
   },
   "errors": {
-    "connectionFailedTitle": "Connection to server failed",
+    "connectionFailedTitle": "Connection to node failed",
     "connectionFailedDescription": "Could not reach this node. Check that Reticulum interfaces are online and the destination is available on the mesh.",
     "connectionLostTitle": "Connection lost",
-    "connectionLostDescription": "The link to the server was interrupted before the page finished loading.",
+    "connectionLostDescription": "The link to the node was interrupted before the page finished loading.",
     "notFoundTitle": "404 — Page not found",
-    "notFoundDescription": "The server does not have a page at this address.",
-    "internalTitle": "500 — Internal server error",
+    "notFoundDescription": "This node does not have a page at this address.",
+    "internalTitle": "500 — Internal node error",
     "storageFullTitle": "Storage unavailable",
     "storageFullDescription": "{app} cannot write to disk. Free up space or fix permissions for your profile folder.",
     "databaseCorruptTitle": "Database corrupted",

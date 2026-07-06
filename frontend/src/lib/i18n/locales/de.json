@@ -314,13 +314,13 @@
     "resetDbConfirm": "Datenbank zurücksetzen"
   },
   "errors": {
-    "connectionFailedTitle": "Verbindung zum Server fehlgeschlagen",
+    "connectionFailedTitle": "Verbindung zum Knoten fehlgeschlagen",
     "connectionFailedDescription": "Dieser Knoten konnte nicht erreicht werden. Prüfen Sie, ob Reticulum-Schnittstellen online sind und das Ziel im Mesh verfügbar ist.",
     "connectionLostTitle": "Verbindung verloren",
-    "connectionLostDescription": "Die Verbindung zum Server wurde unterbrochen, bevor die Seite vollständig geladen wurde.",
+    "connectionLostDescription": "Die Verbindung zum Knoten wurde unterbrochen, bevor die Seite vollständig geladen wurde.",
     "notFoundTitle": "404 — Seite nicht gefunden",
-    "notFoundDescription": "Der Server hat keine Seite unter dieser Adresse.",
-    "internalTitle": "500 — Interner Serverfehler",
+    "notFoundDescription": "Dieser Knoten hat keine Seite unter dieser Adresse.",
+    "internalTitle": "500 — Interner Knotenfehler",
     "storageFullTitle": "Speicher nicht verfügbar",
     "storageFullDescription": "{app} kann nicht auf die Festplatte schreiben. Geben Sie Speicherplatz frei oder korrigieren Sie die Berechtigungen für Ihren Profilordner.",
     "databaseCorruptTitle": "Datenbank beschädigt",
