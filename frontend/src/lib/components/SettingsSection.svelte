@@ -57,6 +57,7 @@
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    min-width: 0;
   }
 
   .section-actions {
@@ -83,6 +84,10 @@
   .section-toggle h3 {
     margin: 0;
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .section-toggle h2 {

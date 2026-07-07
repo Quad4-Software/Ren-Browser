@@ -192,6 +192,7 @@
   .history-panel {
     height: 100%;
     overflow: auto;
+    overflow-x: hidden;
     padding: 1rem;
     background: var(--ren-content-bg);
   }
@@ -282,6 +283,9 @@
 
   .name {
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .meta {

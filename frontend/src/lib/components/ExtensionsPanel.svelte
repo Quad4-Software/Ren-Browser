@@ -293,6 +293,8 @@
     margin-left: 0.5rem;
     color: var(--ren-muted);
     font-size: 0.8rem;
+    overflow-wrap: anywhere;
+    word-break: break-all;
   }
 
   .perms {

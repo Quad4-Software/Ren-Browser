@@ -256,8 +256,17 @@
     align-items: center;
     justify-content: center;
     gap: 0.45rem;
+    width: 100%;
+    min-width: 0;
     padding: 0.5rem 0.75rem;
     font-size: 0.86rem;
+  }
+
+  .page-btn span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .page-btn:hover,
@@ -308,6 +317,8 @@
   }
 
   .active-head .name {
+    flex: 1;
+    min-width: 0;
     font-weight: 600;
     font-size: 0.86rem;
     overflow: hidden;
@@ -369,6 +380,8 @@
   .error-text {
     color: var(--ren-danger, #e5484d);
     font-size: 0.78rem;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .meta.success {
@@ -377,6 +390,7 @@
 
   .file-row {
     width: 100%;
+    min-width: 0;
     text-align: left;
     padding: 0.65rem 0.75rem;
     display: grid;
@@ -384,6 +398,7 @@
   }
 
   .name {
+    min-width: 0;
     font-weight: 600;
     font-size: 0.88rem;
     overflow: hidden;
@@ -392,8 +407,12 @@
   }
 
   .meta {
+    min-width: 0;
     color: var(--ren-muted);
     font-size: 0.78rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   footer {

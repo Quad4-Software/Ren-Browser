@@ -91,6 +91,8 @@
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    min-width: 0;
+    overflow: hidden;
     padding: 0.5rem 0.65rem;
     padding-top: calc(0.5rem + env(safe-area-inset-top));
     background: var(--ren-chrome-bg);
@@ -104,6 +106,7 @@
 
   .url-input {
     width: 100%;
+    min-width: 0;
     border-radius: 999px;
     background: var(--ren-surface-muted);
     border-color: var(--ren-border);

@@ -29,9 +29,15 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+    min-width: 0;
   }
 
   .label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--ren-fg);
     font-size: 0.9rem;
   }

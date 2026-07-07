@@ -103,6 +103,8 @@
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    min-width: 0;
+    overflow: hidden;
     padding: 0.45rem 0.75rem;
     border-bottom: 1px solid var(--ren-border);
     background: var(--ren-chrome-bg);
@@ -121,8 +123,12 @@
   }
 
   .count {
+    flex-shrink: 0;
     font-size: 0.78rem;
-    min-width: 5rem;
+    min-width: 3rem;
     text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 </style>

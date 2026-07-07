@@ -83,6 +83,7 @@
   import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
   import AppStoreError from "$lib/components/AppStoreError.svelte";
   import { isStoreBlockingKind } from "$lib/browser/errors";
+  import { isCompactViewport } from "$lib/browser/viewport";
   import {
     defaultTheme,
     applyTheme,
@@ -304,8 +305,16 @@
   let splitRatio = $state(52);
   const desktopChrome = $derived(System.IsDesktop() && !serverMode);
   const layoutOverride = screenshotLayoutFromQuery();
-  const mobileUI =
-    layoutOverride === "mobile" ? true : layoutOverride === "desktop" ? false : System.IsMobile();
+  let compactViewport = $state(
+    typeof window !== "undefined" ? isCompactViewport() : false,
+  );
+  const mobileUI = $derived(
+    layoutOverride === "mobile"
+      ? true
+      : layoutOverride === "desktop"
+        ? false
+        : System.IsMobile() || compactViewport,
+  );
 
   let configText = $state("");
   let configSaving = $state(false);
@@ -1156,11 +1165,20 @@
   }
 
   async function syncMobileChromeTheme(current = theme) {
-    if (!mobileUI) {
+    if (!System.IsMobile()) {
       return;
     }
     await SyncMobileChrome(mobileChromeBg(current), mobileChromeUsesLightIcons(current));
   }
+
+  $effect(() => {
+    if (!mobileUI) {
+      mobileTabsOpen = false;
+      if (splitViewOpen) {
+        closeSplitView();
+      }
+    }
+  });
 
   async function loadConfigText() {
     configError = "";
@@ -1833,6 +1851,12 @@
   }
 
   onMount(() => {
+    const onResize = () => {
+      compactViewport = isCompactViewport();
+    };
+    onResize();
+    window.addEventListener("resize", onResize, { passive: true });
+
     void loadTheme();
     void loadKeybinds();
     void loadBrowserPrefs();
@@ -2006,6 +2030,7 @@
       document.removeEventListener("visibilitychange", onVisibilityChange);
       document.removeEventListener("click", blockExternalLink, true);
       document.removeEventListener("auxclick", blockExternalLink, true);
+      window.removeEventListener("resize", onResize);
       if (persistTimer) {
         clearTimeout(persistTimer);
       }
@@ -2378,7 +2403,7 @@
     {/if}
   </main>
 
-  {#if !mobileTabsOpen || !mobileUI}
+  {#if mobileUI && !mobileTabsOpen}
     <MobileNav
       {activePanel}
       pluginPanels={pluginContributions.panels}
@@ -2470,6 +2495,9 @@
     display: grid;
     grid-template-rows: auto auto 1fr auto;
     background: var(--ren-surface-bg);
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   .app-shell.mobile-ui {
@@ -2478,6 +2506,9 @@
 
   .workspace {
     min-height: 0;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
     display: grid;
     grid-template-columns: 1fr;
   }
@@ -2562,7 +2593,7 @@
     bottom: 1.25rem;
     transform: translateX(-50%);
     z-index: 60;
-    max-width: min(32rem, calc(100vw - 2rem));
+    max-width: min(32rem, calc(100% - 2rem));
     padding: 0.55rem 0.9rem;
     border-radius: var(--ren-radius);
     background: var(--ren-chrome-bg);

@@ -109,6 +109,7 @@
 <style>
   .tabs-page {
     height: 100%;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     background: var(--ren-content-bg);
@@ -120,6 +121,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+    min-width: 0;
     padding: 0.85rem 1rem;
     border-bottom: 1px solid var(--ren-border);
     background: var(--ren-chrome-bg);
@@ -127,14 +129,20 @@
 
   h2 {
     margin: 0;
+    flex: 1;
+    min-width: 0;
     font-size: 1.05rem;
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .header-actions {
     display: flex;
     align-items: center;
     gap: 0.35rem;
+    flex-shrink: 0;
   }
 
   .new-btn {
@@ -159,11 +167,12 @@
   .tabs-grid {
     flex: 1;
     min-height: 0;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
     padding: 0.85rem;
     display: grid;
     grid-template-columns: repeat(auto-fill, 10.5rem);
-    justify-content: start;
+    justify-content: center;
     gap: 0.75rem;
     align-content: start;
     -webkit-overflow-scrolling: touch;

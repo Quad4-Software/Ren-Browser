@@ -313,7 +313,7 @@
   .add-row,
   .upload-row {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.45rem;
   }
 
@@ -358,6 +358,17 @@
   button {
     cursor: pointer;
     white-space: nowrap;
+  }
+
+  @media (max-width: 768px) {
+    .add-row,
+    .upload-row {
+      grid-template-columns: 1fr;
+    }
+
+    button {
+      white-space: normal;
+    }
   }
 
   button:disabled,

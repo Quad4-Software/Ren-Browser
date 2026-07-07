@@ -212,7 +212,7 @@
 
   {#if showCacheBanner}
     <div class="cache-banner">
-      <span>{t("content.cachedBanner", { when: cacheLabel })}</span>
+      <span class="cache-text">{t("content.cachedBanner", { when: cacheLabel })}</span>
       <div class="cache-actions">
         <button type="button" onclick={onReloadFresh}>{t("content.loadFresh")}</button>
         <button
@@ -292,6 +292,8 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    min-width: 0;
+    overflow-x: hidden;
     background: var(--ren-content-bg);
     position: relative;
   }
@@ -309,11 +311,19 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+    flex-wrap: wrap;
+    min-width: 0;
     padding: 0.55rem 1rem;
     background: color-mix(in srgb, var(--ren-accent) 12%, var(--ren-chrome-bg));
     border-bottom: 1px solid var(--ren-border);
     color: var(--ren-fg);
     font-size: 0.88rem;
+  }
+
+  .cache-text {
+    flex: 1 1 10rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .cache-banner button:not(.cache-dismiss) {
@@ -326,6 +336,7 @@
     font-size: 0.82rem;
     cursor: pointer;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .cache-actions {
@@ -357,6 +368,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+    flex-wrap: wrap;
+    min-width: 0;
     padding: 0.55rem 1rem;
     border-bottom: 1px solid var(--ren-border);
     background: var(--ren-chrome-bg);
@@ -368,6 +381,7 @@
     align-items: center;
     gap: 0.4rem;
     font-size: 0.88rem;
+    min-width: 0;
   }
 
   .back-btn {
@@ -377,6 +391,13 @@
     cursor: pointer;
     padding: 0.2rem 0.35rem;
     border-radius: 8px;
+    max-width: 100%;
+  }
+
+  .back-btn span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .back-btn:hover {
@@ -425,9 +446,31 @@
 
   .content {
     flex: 1;
+    min-width: 0;
     overflow: auto;
+    overflow-x: hidden;
     padding: 1rem 1.25rem 2rem;
     line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+
+  .content :global(img),
+  .content :global(video),
+  .content :global(canvas),
+  .content :global(svg) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .content :global(table) {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .content :global(pre) {
+    max-width: 100%;
+    overflow-x: auto;
   }
 
   .content.micron {

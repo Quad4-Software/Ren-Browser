@@ -156,6 +156,7 @@
   .discovery {
     height: 100%;
     overflow: auto;
+    overflow-x: hidden;
     padding: 1rem;
     background: var(--ren-content-bg);
   }
@@ -228,10 +229,16 @@
     justify-content: space-between;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
   }
 
   .name {
+    flex: 1;
+    min-width: 0;
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .fav {
@@ -239,7 +246,12 @@
   }
 
   .meta {
+    flex-shrink: 0;
     color: var(--ren-muted);
     font-size: 0.85em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 45%;
   }
 </style>

@@ -677,6 +677,7 @@
   .settings {
     height: 100%;
     overflow: auto;
+    overflow-x: hidden;
     padding: 1rem;
     display: grid;
     gap: 0.85rem;
@@ -809,8 +810,12 @@
 
   .download-dir {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.45rem;
+  }
+
+  .download-dir input {
+    min-width: 0;
   }
 
   .folder-btn {

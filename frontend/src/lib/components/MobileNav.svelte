@@ -78,9 +78,13 @@
     position: sticky;
     bottom: 0;
     z-index: 100;
+    width: 100%;
+    max-width: 100%;
     grid-auto-flow: column;
     grid-auto-columns: minmax(3.5rem, 1fr);
     overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
     gap: 0.1rem;
     padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom));
     background: var(--ren-chrome-bg);
@@ -91,6 +95,7 @@
     display: grid;
     justify-items: center;
     gap: 0.12rem;
+    min-width: 0;
     border: none;
     background: transparent;
     color: var(--ren-muted);
@@ -101,6 +106,13 @@
     transition:
       background 0.15s ease,
       color 0.15s ease;
+  }
+
+  button span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   button:hover {
@@ -152,9 +164,7 @@
     background: rgba(255, 255, 255, 0.2);
   }
 
-  @media (max-width: 768px) {
-    .mobile-nav {
-      display: grid;
-    }
+  :global(.app-shell.mobile-ui) .mobile-nav {
+    display: grid;
   }
 </style>
