@@ -24,7 +24,6 @@ modules:
       - install -Dm755 renbrowser -t /app/bin/
       - install -Dm644 io.quad4.renbrowser.desktop /app/share/applications/io.quad4.renbrowser.desktop
       - install -Dm644 io.quad4.renbrowser.metainfo.xml /app/share/metainfo/io.quad4.renbrowser.metainfo.xml
-      - install -Dm644 io.quad4.renbrowser.svg /app/share/icons/hicolor/scalable/apps/io.quad4.renbrowser.svg
       - install -Dm644 io.quad4.renbrowser-64.png /app/share/icons/hicolor/64x64/apps/io.quad4.renbrowser.png
       - install -Dm644 io.quad4.renbrowser-128.png /app/share/icons/hicolor/128x128/apps/io.quad4.renbrowser.png
       - install -Dm644 io.quad4.renbrowser-256.png /app/share/icons/hicolor/256x256/apps/io.quad4.renbrowser.png
