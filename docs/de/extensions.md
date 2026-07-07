@@ -51,7 +51,7 @@ Optionale Felder sind `description`, `author`, `license`, `engines`, `backend` u
 ### Engine-Einschränkung
 
 ```json
-"engines": { "renbrowser": ">=0.2.0" }
+"engines": { "renbrowser": ">=0.1.0" }
 ```
 
 Der Host lädt das Plugin nicht, wenn Ihre App-Version zu alt ist.

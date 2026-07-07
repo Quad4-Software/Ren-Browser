@@ -51,7 +51,7 @@ Los campos opcionales incluyen `description`, `author`, `license`, `engines`, `b
 ### Restricción de motor
 
 ```json
-"engines": { "renbrowser": ">=0.2.0" }
+"engines": { "renbrowser": ">=0.1.0" }
 ```
 
 El host rechaza cargar el plugin si la versión de tu aplicación es demasiado antigua.
