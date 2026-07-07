@@ -461,6 +461,8 @@
   .extensions {
     display: grid;
     gap: 0.75rem;
+    min-width: 0;
+    max-width: 100%;
   }
 
   header {
@@ -680,6 +682,19 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  @media (max-width: 640px) {
+    .actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .actions button {
+      width: 100%;
+    }
   }
 
   .error {

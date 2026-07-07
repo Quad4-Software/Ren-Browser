@@ -106,6 +106,8 @@ body {
 select,
 .ren-select {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid var(--ren-border);
   background-color: var(--ren-input-bg);
   color: var(--ren-fg);
@@ -150,6 +152,8 @@ select option,
 
 .ren-input {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid var(--ren-border);
   background: var(--ren-input-bg);
   color: var(--ren-fg);

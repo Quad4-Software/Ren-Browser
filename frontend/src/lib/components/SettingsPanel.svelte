@@ -306,7 +306,7 @@
 
 <svelte:window onkeydown={recordKeybind} />
 
-<section class="settings">
+<section class="settings" class:mobile={mobileUI}>
   <SettingsSection
     id="appearance"
     title={t("settings.appearance")}
@@ -765,6 +765,9 @@
 <style>
   .settings {
     height: 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     overflow: auto;
     overflow-x: hidden;
     padding: 1rem;
@@ -776,6 +779,7 @@
   label {
     display: grid;
     gap: 0.35rem;
+    min-width: 0;
   }
 
   .accent-picker {
@@ -820,9 +824,23 @@
     border-radius: calc(var(--ren-radius) + 2px);
     padding: 0.55rem 0.75rem;
     font: inherit;
+    max-width: 100%;
+    min-width: 0;
     transition:
       border-color 0.15s ease,
       box-shadow 0.15s ease;
+  }
+
+  input[type="text"],
+  input:not([type]) {
+    width: 100%;
+  }
+
+  .settings :global(select),
+  .settings :global(.ren-select) {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   input:focus {
@@ -844,6 +862,13 @@
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .theme-io button,
+  .theme-io .file-btn {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .reset-row {
@@ -856,12 +881,18 @@
     justify-content: space-between;
     gap: 0.75rem;
     flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .cache-row .meta {
+    flex: 1 1 8rem;
+    min-width: 0;
   }
 
   .cache-row .reset-btn {
     width: auto;
     flex: 1 1 auto;
-    min-width: 10rem;
+    min-width: 0;
   }
 
   .reset-btn {
@@ -957,14 +988,22 @@
     justify-content: space-between;
     align-items: center;
     gap: 0.75rem;
+    flex-wrap: wrap;
     border: 1px solid var(--ren-border);
     border-radius: var(--ren-radius);
     padding: 0.55rem 0.75rem;
     background: var(--ren-surface-raised);
+    min-width: 0;
+  }
+
+  .keybinds li > span {
+    flex: 1 1 8rem;
+    min-width: 0;
   }
 
   .keybind-btn {
-    min-width: 8rem;
+    min-width: 0;
+    flex: 1 1 6rem;
     text-align: center;
     cursor: pointer;
   }
@@ -997,6 +1036,7 @@
     display: flex;
     align-items: center;
     gap: 0.7rem;
+    flex-wrap: wrap;
     min-width: 0;
   }
 
@@ -1050,7 +1090,37 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     border: 1px solid transparent;
-    white-space: nowrap;
+    white-space: normal;
+    text-align: center;
+    max-width: 100%;
+  }
+
+  .settings.mobile .theme-io {
+    flex-direction: column;
+  }
+
+  .settings.mobile .theme-io button,
+  .settings.mobile .theme-io .file-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .settings.mobile .cache-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings.mobile .cache-row .reset-btn {
+    width: 100%;
+  }
+
+  .settings.mobile .keybind-btn {
+    width: 100%;
+    flex-basis: 100%;
+  }
+
+  .settings.mobile .sandbox-badge {
+    margin-left: auto;
   }
 
   .sandbox-badge.enabled {

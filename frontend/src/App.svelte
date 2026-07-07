@@ -2784,8 +2784,17 @@
     background: var(--ren-content-bg);
   }
 
+  .app-shell.mobile-ui .side-pane {
+    overflow-x: clip;
+    width: 100%;
+    max-width: 100%;
+  }
+
   .settings-page {
     height: 100%;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     overflow: hidden;
   }
 

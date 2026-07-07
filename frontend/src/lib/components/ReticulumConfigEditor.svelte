@@ -109,6 +109,8 @@
   .config-editor {
     display: grid;
     gap: 0.65rem;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .header h3 {
@@ -152,6 +154,9 @@
   }
 
   .editor {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
     min-height: 12rem;
     max-height: 40vh;
     resize: vertical;

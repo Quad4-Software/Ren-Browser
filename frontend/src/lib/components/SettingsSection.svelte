@@ -51,6 +51,8 @@
   .settings-section {
     display: grid;
     gap: 0.65rem;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .section-header {
@@ -119,5 +121,7 @@
   .section-body {
     display: grid;
     gap: 0.85rem;
+    min-width: 0;
+    max-width: 100%;
   }
 </style>

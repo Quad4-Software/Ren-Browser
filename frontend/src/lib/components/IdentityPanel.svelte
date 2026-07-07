@@ -363,6 +363,8 @@
   .identity-panel {
     display: grid;
     gap: 0.65rem;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .header h3 {
@@ -410,10 +412,13 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 0.65rem;
+    flex-wrap: wrap;
     padding: 0.6rem 0.7rem;
+    min-width: 0;
   }
 
   .body {
+    flex: 1 1 12rem;
     min-width: 0;
     display: grid;
     gap: 0.25rem;
@@ -467,6 +472,8 @@
     align-items: center;
     gap: 0.25rem;
     flex-shrink: 0;
+    flex-wrap: wrap;
+    margin-left: auto;
   }
 
   .actions .ren-btn {
@@ -487,9 +494,10 @@
   .create-row,
   .import-row {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.45rem;
     align-items: center;
+    min-width: 0;
   }
 
   .name-input {
@@ -504,9 +512,10 @@
 
   .rename-row {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     gap: 0.35rem;
     align-items: center;
+    min-width: 0;
   }
 
   .ren-btn {
@@ -514,5 +523,32 @@
     align-items: center;
     gap: 0.35rem;
     white-space: nowrap;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  @media (max-width: 640px) {
+    .card {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .actions {
+      width: 100%;
+      margin-left: 0;
+      justify-content: flex-end;
+    }
+
+    .create-row,
+    .import-row,
+    .rename-row {
+      grid-template-columns: 1fr;
+    }
+
+    .ren-btn {
+      width: 100%;
+      justify-content: center;
+      white-space: normal;
+    }
   }
 </style>

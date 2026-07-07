@@ -167,6 +167,8 @@
   .community {
     display: grid;
     gap: 0.65rem;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .header h3 {
@@ -185,8 +187,9 @@
 
   .toolbar {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.45rem;
+    min-width: 0;
   }
 
   .search {
@@ -196,6 +199,9 @@
     border-radius: calc(var(--ren-radius) + 2px);
     padding: 0.55rem 0.75rem;
     font: inherit;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .refresh-btn {
@@ -301,6 +307,9 @@
     padding: 0.6rem 0.85rem;
     font: inherit;
     cursor: pointer;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .import-btn:disabled {
