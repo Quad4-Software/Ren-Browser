@@ -530,6 +530,32 @@ jobs:
           path: dist/release/*
           if-no-files-found: error
 
+  build-extension-wasm:
+    name: Extension WASM
+    needs:
+      - version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-linux-deps: "false"
+          install-wails: "false"
+          cache-node: "false"
+
+      - name: Build micron-translator WASM
+        run: bash build/scripts/build-extension-wasm.sh dist/release
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: extension-wasm
+          path: dist/release/renbrowser-micron-translator*.wasm
+          if-no-files-found: ignore
+
   publish:
     name: Publish
     needs:
@@ -540,6 +566,7 @@ jobs:
       - build-server
       - build-server-windows-legacy
       - build-android
+      - build-extension-wasm
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
@@ -591,6 +618,7 @@ jobs:
           - Headless server binaries (Linux amd64/arm64/armv6, FreeBSD amd64/arm64, OpenBSD/NetBSD amd64, Windows amd64 `renbrowser-server-windows-amd64.exe`)
           - Windows 7/8/8.1 headless server (`renbrowser-server-windows7-amd64.exe`) when the legacy toolchain build succeeds
           - Android APK (debug for nightly/beta; signed release when keystore secrets are configured)
+          - Micron Translator extension WASM (`renbrowser-micron-translator.wasm` one-file install; `renbrowser-micron-translator-backend.wasm` raw backend when TinyGo build succeeds)
 
           See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${tag}/CHANGELOG.md) for details.
           EOF
