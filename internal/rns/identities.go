@@ -160,8 +160,7 @@ func OpenIdentityRegistry(storageDir string) (*IdentityRegistry, error) {
 	}
 
 	reg := &IdentityRegistry{storageDir: storageDir}
-	path := identityRegistryPath(storageDir)
-	raw, err := os.ReadFile(path)
+	raw, err := readStorageFile(storageDir, "identities.json")
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return nil, fmt.Errorf("read identity registry: %w", err)
@@ -229,8 +228,14 @@ func (r *IdentityRegistry) validateRegistryData() error {
 }
 
 func (r *IdentityRegistry) migrateLegacyTransportIdentity() error {
-	legacyPath := transportIdentityPath(r.storageDir)
-	ident, err := identity.FromFile(legacyPath)
+	legacyData, err := readStorageFile(r.storageDir, "transport_identity")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	ident, err := identity.FromBytes(legacyData)
 	if err != nil {
 		return nil
 	}
@@ -238,8 +243,7 @@ func (r *IdentityRegistry) migrateLegacyTransportIdentity() error {
 	if err != nil {
 		return err
 	}
-	keyPath := identityKeyPath(r.storageDir, id)
-	if err := ident.ToFile(keyPath); err != nil {
+	if err := writeIdentityToStorage(r.storageDir, id, ident); err != nil {
 		return fmt.Errorf("migrate legacy identity: %w", err)
 	}
 	r.data = identityRegistryFile{
@@ -269,8 +273,7 @@ func (r *IdentityRegistry) reconcileActiveKeyFile() error {
 	if err := ensureIdentityKeyUnderDir(r.storageDir, item.ID); err != nil {
 		return err
 	}
-	keyPath := identityKeyPath(r.storageDir, item.ID)
-	ident, err := identity.FromFile(keyPath)
+	ident, err := loadIdentityFromStorage(r.storageDir, item.ID)
 	if err != nil {
 		return fmt.Errorf("load active identity %q: %w", item.ID, err)
 	}
@@ -310,7 +313,7 @@ func (r *IdentityRegistry) LoadActive() (*identity.Identity, error) {
 	if err := ensureIdentityKeyUnderDir(r.storageDir, item.ID); err != nil {
 		return nil, err
 	}
-	return identity.FromFile(identityKeyPath(r.storageDir, item.ID))
+	return loadIdentityFromStorage(r.storageDir, item.ID)
 }
 
 func (r *IdentityRegistry) Create(name string) (IdentityRecord, error) {
@@ -326,8 +329,7 @@ func (r *IdentityRegistry) Create(name string) (IdentityRecord, error) {
 	if err != nil {
 		return IdentityRecord{}, err
 	}
-	keyPath := identityKeyPath(r.storageDir, id)
-	if err := ident.ToFile(keyPath); err != nil {
+	if err := writeIdentityToStorage(r.storageDir, id, ident); err != nil {
 		return IdentityRecord{}, fmt.Errorf("write identity key: %w", err)
 	}
 	item := identityRegistryItem{
@@ -342,12 +344,12 @@ func (r *IdentityRegistry) Create(name string) (IdentityRecord, error) {
 	if r.data.ActiveID == "" {
 		r.data.ActiveID = id
 		if err := r.syncTransportIdentityFile(ident); err != nil {
-			r.rollbackCreateLocked(id, keyPath)
+			r.rollbackCreateLocked(id)
 			return IdentityRecord{}, fmt.Errorf("sync transport identity: %w", err)
 		}
 	}
 	if err := r.persistLocked(); err != nil {
-		r.rollbackCreateLocked(id, keyPath)
+		r.rollbackCreateLocked(id)
 		return IdentityRecord{}, fmt.Errorf("persist registry: %w", err)
 	}
 	return r.recordFromItem(item), nil
@@ -378,8 +380,7 @@ func (r *IdentityRegistry) ImportFromFile(srcPath, name string) (IdentityRecord,
 	if err != nil {
 		return IdentityRecord{}, err
 	}
-	keyPath := identityKeyPath(r.storageDir, id)
-	if err := ident.ToFile(keyPath); err != nil {
+	if err := writeIdentityToStorage(r.storageDir, id, ident); err != nil {
 		return IdentityRecord{}, fmt.Errorf("write identity key: %w", err)
 	}
 	item := identityRegistryItem{
@@ -391,19 +392,19 @@ func (r *IdentityRegistry) ImportFromFile(srcPath, name string) (IdentityRecord,
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.hasHashLocked(hash) {
-		_ = os.Remove(keyPath)
+		_ = removeIdentityKeyStorage(r.storageDir, id)
 		return IdentityRecord{}, fmt.Errorf("%w: %s", ErrIdentityDuplicate, hash)
 	}
 	r.data.Items = append(r.data.Items, item)
 	if r.data.ActiveID == "" {
 		r.data.ActiveID = id
 		if err := r.syncTransportIdentityFile(ident); err != nil {
-			r.rollbackCreateLocked(id, keyPath)
+			r.rollbackCreateLocked(id)
 			return IdentityRecord{}, fmt.Errorf("sync transport identity: %w", err)
 		}
 	}
 	if err := r.persistLocked(); err != nil {
-		r.rollbackCreateLocked(id, keyPath)
+		r.rollbackCreateLocked(id)
 		return IdentityRecord{}, fmt.Errorf("persist registry: %w", err)
 	}
 	return r.recordFromItem(item), nil
@@ -426,24 +427,12 @@ func (r *IdentityRegistry) Export(id, destPath string) error {
 	if err := ensureIdentityKeyUnderDir(r.storageDir, item.ID); err != nil {
 		return err
 	}
-	src := identityKeyPath(r.storageDir, item.ID)
-	data, err := os.ReadFile(src)
+	data, err := readIdentityKeyBytes(r.storageDir, item.ID)
 	if err != nil {
 		return fmt.Errorf("read identity key: %w", err)
 	}
-	if err := validateIdentityKeyData(data); err != nil {
+	if err := atomicWriteExportFile(destPath, data); err != nil {
 		return err
-	}
-	if err := os.MkdirAll(filepath.Dir(destPath), 0o700); err != nil {
-		return fmt.Errorf("prepare export directory: %w", err)
-	}
-	tmp := destPath + ".tmp"
-	if err := os.WriteFile(tmp, data, 0o600); err != nil {
-		return fmt.Errorf("write export file: %w", err)
-	}
-	if err := os.Rename(tmp, destPath); err != nil {
-		_ = os.Remove(tmp)
-		return fmt.Errorf("finalize export file: %w", err)
 	}
 	return nil
 }
@@ -464,14 +453,14 @@ func (r *IdentityRegistry) SetActive(id string) (*identity.Identity, error) {
 	if err := ensureIdentityKeyUnderDir(r.storageDir, item.ID); err != nil {
 		return nil, err
 	}
-	ident, err := identity.FromFile(identityKeyPath(r.storageDir, item.ID))
+	ident, err := loadIdentityFromStorage(r.storageDir, item.ID)
 	if err != nil {
 		return nil, fmt.Errorf("load identity %q: %w", id, err)
 	}
 	previousID := r.data.ActiveID
 	var previousIdent *identity.Identity
 	if previousID != "" {
-		previousIdent, _ = identity.FromFile(identityKeyPath(r.storageDir, previousID))
+		previousIdent, _ = loadIdentityFromStorage(r.storageDir, previousID)
 	}
 	r.data.ActiveID = id
 	if err := r.syncTransportIdentityFile(ident); err != nil {
@@ -534,8 +523,7 @@ func (r *IdentityRegistry) Delete(id string) error {
 	if idx < 0 {
 		return ErrIdentityNotFound
 	}
-	keyPath := identityKeyPath(r.storageDir, id)
-	if err := os.Remove(keyPath); err != nil && !os.IsNotExist(err) {
+	if err := removeIdentityKeyStorage(r.storageDir, id); err != nil {
 		return fmt.Errorf("remove identity key: %w", err)
 	}
 	r.data.Items = append(r.data.Items[:idx], r.data.Items[idx+1:]...)
@@ -545,7 +533,7 @@ func (r *IdentityRegistry) Delete(id string) error {
 	return nil
 }
 
-func (r *IdentityRegistry) rollbackCreateLocked(id, keyPath string) {
+func (r *IdentityRegistry) rollbackCreateLocked(id string) {
 	for i, item := range r.data.Items {
 		if item.ID == id {
 			r.data.Items = append(r.data.Items[:i], r.data.Items[i+1:]...)
@@ -558,7 +546,7 @@ func (r *IdentityRegistry) rollbackCreateLocked(id, keyPath string) {
 			r.data.ActiveID = r.data.Items[0].ID
 		}
 	}
-	_ = os.Remove(keyPath)
+	_ = removeIdentityKeyStorage(r.storageDir, id)
 }
 
 func (r *IdentityRegistry) hasHashLocked(hash string) bool {
@@ -574,16 +562,11 @@ func (r *IdentityRegistry) syncTransportIdentityFile(ident *identity.Identity) e
 	if ident == nil {
 		return errors.New("nil identity")
 	}
-	path := transportIdentityPath(r.storageDir)
-	tmp := path + ".tmp"
-	if err := ident.ToFile(tmp); err != nil {
+	privateKey, err := ident.GetPrivateKey()
+	if err != nil {
 		return err
 	}
-	if err := os.Rename(tmp, path); err != nil {
-		_ = os.Remove(tmp)
-		return err
-	}
-	return nil
+	return atomicWriteStorageFile(r.storageDir, "transport_identity", privateKey, 0o600)
 }
 
 func (r *IdentityRegistry) persist() error {
@@ -600,16 +583,7 @@ func (r *IdentityRegistry) persistLocked() error {
 	if err != nil {
 		return err
 	}
-	path := identityRegistryPath(r.storageDir)
-	tmp := path + ".tmp"
-	if err := os.WriteFile(tmp, raw, 0o600); err != nil {
-		return err
-	}
-	if err := os.Rename(tmp, path); err != nil {
-		_ = os.Remove(tmp)
-		return err
-	}
-	return nil
+	return atomicWriteStorageFile(r.storageDir, "identities.json", raw, 0o600)
 }
 
 func (r *IdentityRegistry) findItem(id string) (identityRegistryItem, bool) {
