@@ -326,13 +326,6 @@
     "badgeTampered": "Изменено",
     "badgeTamperedHint": "Файлы расширения были изменены вне RenBrowser. Включите снова, чтобы принять текущие файлы.",
     "securityTitle": "Оценка безопасности (риск: {level})",
-    "badgeUnsigned": "Без подписи",
-    "badgeSigned": "Подписано",
-    "badgeTrusted": "Доверенное",
-    "badgeInvalid": "Недействительная подпись",
-    "badgeTampered": "Изменено",
-    "badgeTamperedHint": "Файлы расширения были изменены вне RenBrowser. Включите снова, чтобы принять текущие файлы.",
-    "securityTitle": "Оценка безопасности (риск: {level})",
     "permission": {
       "storage.plugin": "Хранить данные для этого расширения",
       "events.subscribe": "Слушать события браузера",

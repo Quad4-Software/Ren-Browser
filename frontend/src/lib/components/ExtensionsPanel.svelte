@@ -591,10 +591,6 @@
     word-break: normal;
   }
 
-  .perms {
-    font-family: var(--ren-mono, monospace);
-  }
-
   .security-findings {
     margin: 0.25rem 0 0;
     padding-left: 1.1rem;

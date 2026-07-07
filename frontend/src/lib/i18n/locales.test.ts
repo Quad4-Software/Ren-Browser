@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { flattenMessageKeys, listLocaleCatalogs } from "./catalog";
+import { flattenMessageKeys, getMessageByFlatKey, listLocaleCatalogs } from "./catalog";
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from "./locales";
 
 const localesDir = join(dirname(fileURLToPath(import.meta.url)), "locales");
@@ -46,12 +46,8 @@ describe("locale catalogs", () => {
     it(`${entry.code}.json has no empty translation values`, () => {
       const keys = flattenMessageKeys(localeFiles[entry.code] as never);
       for (const key of keys) {
-        const parts = key.split(".");
-        let current: unknown = localeFiles[entry.code];
-        for (const part of parts) {
-          current = (current as Record<string, unknown>)[part];
-        }
-        expect(current, `empty value for ${entry.code}.${key}`).not.toBe("");
+        const value = getMessageByFlatKey(localeFiles[entry.code] as never, key);
+        expect(value, `empty value for ${entry.code}.${key}`).not.toBe("");
       }
     });
   }
@@ -64,12 +60,8 @@ describe("locale catalogs", () => {
     const templateKeys = flattenMessageKeys(template as never);
     expect(templateKeys).toEqual(baseKeys);
     for (const key of templateKeys) {
-      const parts = key.split(".");
-      let current: unknown = template;
-      for (const part of parts) {
-        current = (current as Record<string, unknown>)[part];
-      }
-      expect(current, `template value for ${key}`).toBe("");
+      const value = getMessageByFlatKey(template as never, key);
+      expect(value, `template value for ${key}`).toBe("");
     }
   });
 });

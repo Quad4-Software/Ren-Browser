@@ -70,7 +70,7 @@ func VerifyZipSignature(zipPath string) SignatureInfo {
 				return SignatureInfo{Present: true, Error: openErr.Error()}
 			}
 			rsgData, err = io.ReadAll(rc)
-			rc.Close()
+			_ = rc.Close() // #nosec G104 -- read complete or error handled below
 			if err != nil {
 				return SignatureInfo{Present: true, Error: err.Error()}
 			}
@@ -163,7 +163,7 @@ func canonicalDirPayload(dir string) ([]byte, error) {
 	for _, name := range names {
 		data, readErr := os.ReadFile(filepath.Join(dir, filepath.FromSlash(name))) // #nosec G304 -- under validated plugin dir
 		if readErr != nil {
-			w.Close()
+			_ = w.Close() // #nosec G104 -- cleanup after read failure
 			return nil, readErr
 		}
 		header := &zip.FileHeader{
@@ -173,11 +173,11 @@ func canonicalDirPayload(dir string) ([]byte, error) {
 		header.SetModTime(fixedZipModTime)
 		writer, createErr := w.CreateHeader(header)
 		if createErr != nil {
-			w.Close()
+			_ = w.Close() // #nosec G104 -- cleanup after zip header failure
 			return nil, createErr
 		}
 		if _, writeErr := writer.Write(data); writeErr != nil {
-			w.Close()
+			_ = w.Close() // #nosec G104 -- cleanup after zip write failure
 			return nil, writeErr
 		}
 	}
@@ -220,13 +220,13 @@ func canonicalZipPayload(files []*zip.File) ([]byte, error) {
 	for _, item := range entries {
 		rc, err := item.file.Open()
 		if err != nil {
-			w.Close()
+			_ = w.Close() // #nosec G104 -- cleanup after zip open failure
 			return nil, err
 		}
 		data, err := io.ReadAll(rc)
-		rc.Close()
+		_ = rc.Close() // #nosec G104 -- read complete or error handled below
 		if err != nil {
-			w.Close()
+			_ = w.Close() // #nosec G104 -- cleanup after zip read failure
 			return nil, err
 		}
 		header := &zip.FileHeader{
@@ -236,11 +236,11 @@ func canonicalZipPayload(files []*zip.File) ([]byte, error) {
 		header.SetModTime(fixedZipModTime)
 		writer, err := w.CreateHeader(header)
 		if err != nil {
-			w.Close()
+			_ = w.Close() // #nosec G104 -- cleanup after zip header failure
 			return nil, err
 		}
 		if _, err := writer.Write(data); err != nil {
-			w.Close()
+			_ = w.Close() // #nosec G104 -- cleanup after zip write failure
 			return nil, err
 		}
 	}
@@ -298,9 +298,9 @@ func EmbedSignatureInZip(zipPath string, rsgData []byte) error {
 			continue
 		}
 		if err := copyZipEntry(writer, f, clean); err != nil {
-			writer.Close()
-			out.Close()
-			os.Remove(tmpPath)
+			_ = writer.Close()     // #nosec G104 -- cleanup after zip copy failure
+			_ = out.Close()        // #nosec G104 -- cleanup after zip copy failure
+			_ = os.Remove(tmpPath) // #nosec G104 -- cleanup after zip copy failure
 			return err
 		}
 		wrote[clean] = struct{}{}
@@ -312,24 +312,24 @@ func EmbedSignatureInZip(zipPath string, rsgData []byte) error {
 	header.SetModTime(fixedZipModTime)
 	entry, err := writer.CreateHeader(header)
 	if err != nil {
-		writer.Close()
-		out.Close()
-		os.Remove(tmpPath)
+		_ = writer.Close()     // #nosec G104 -- cleanup after zip header failure
+		_ = out.Close()        // #nosec G104 -- cleanup after zip header failure
+		_ = os.Remove(tmpPath) // #nosec G104 -- cleanup after zip header failure
 		return err
 	}
 	if _, err := entry.Write(rsgData); err != nil {
-		writer.Close()
-		out.Close()
-		os.Remove(tmpPath)
+		_ = writer.Close()     // #nosec G104 -- cleanup after signature write failure
+		_ = out.Close()        // #nosec G104 -- cleanup after signature write failure
+		_ = os.Remove(tmpPath) // #nosec G104 -- cleanup after signature write failure
 		return err
 	}
 	if err := writer.Close(); err != nil {
-		out.Close()
-		os.Remove(tmpPath)
+		_ = out.Close()        // #nosec G104 -- cleanup after zip close failure
+		_ = os.Remove(tmpPath) // #nosec G104 -- cleanup after zip close failure
 		return err
 	}
 	if err := out.Close(); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath) // #nosec G104 -- cleanup after file close failure
 		return err
 	}
 	return os.Rename(tmpPath, zipPath)

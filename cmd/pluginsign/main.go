@@ -149,7 +149,7 @@ func signWasm(identity, wasmPath, output string) error {
 	if strings.TrimSpace(output) != "" {
 		outPath = output
 	}
-	return os.WriteFile(outPath, signed, 0o600)
+	return os.WriteFile(outPath, signed, 0o600) // #nosec G703 -- output path from CLI flag or source wasm path
 }
 
 func signPayload(identity string, payload []byte) ([]byte, error) {
@@ -160,7 +160,7 @@ func signPayload(identity string, payload []byte) ([]byte, error) {
 	tmpPath := tmp.Name()
 	defer os.Remove(tmpPath)
 	if _, err := tmp.Write(payload); err != nil {
-		tmp.Close()
+		_ = tmp.Close() // #nosec G104 -- cleanup after write failure
 		return nil, err
 	}
 	if err := tmp.Close(); err != nil {
@@ -170,7 +170,7 @@ func signPayload(identity string, payload []byte) ([]byte, error) {
 	if rnid == "" {
 		rnid = "rnid"
 	}
-	cmd := exec.Command(rnid, "-i", identity, "-s", tmpPath) // #nosec G204 -- explicit signing tool
+	cmd := exec.Command(rnid, "-i", identity, "-s", tmpPath) // #nosec G204 G702 -- explicit signing tool and operator-controlled paths
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

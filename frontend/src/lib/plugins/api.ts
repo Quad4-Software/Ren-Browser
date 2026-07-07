@@ -85,6 +85,19 @@ function emptyPluginSignature(): PluginSignatureInfo {
   return { present: false, valid: false, trusted: false };
 }
 
+function normalizeSecurityAssessment(
+  raw: BindingPluginInstallPreview["security"] | undefined,
+): PluginSecurityAssessment {
+  if (!raw) {
+    return emptySecurityAssessment();
+  }
+  return {
+    riskLevel: raw.riskLevel ?? "low",
+    score: raw.score ?? 0,
+    findings: raw.findings ?? [],
+  };
+}
+
 function normalizeInstallPreview(raw: BindingPluginInstallPreview): PluginInstallPreview {
   return {
     id: raw.id ?? "",
@@ -95,7 +108,7 @@ function normalizeInstallPreview(raw: BindingPluginInstallPreview): PluginInstal
     networkEndpoints: raw.networkEndpoints ?? [],
     requiresNetworkFetch: raw.requiresNetworkFetch ?? false,
     signature: raw.signature ?? emptyPluginSignature(),
-    security: raw.security ?? emptySecurityAssessment(),
+    security: normalizeSecurityAssessment(raw.security),
     i18nLocales: raw.i18nLocales ?? [],
   };
 }

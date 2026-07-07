@@ -101,6 +101,27 @@ export function flattenMessageKeys(tree: MessageTree, prefix = ""): string[] {
   return keys.sort();
 }
 
+export function getMessageByFlatKey(tree: MessageTree, flatKey: string): string | undefined {
+  let found: string | undefined;
+  const walk = (node: MessageTree, prefix: string) => {
+    for (const [name, value] of Object.entries(node)) {
+      if (name.startsWith("_")) {
+        continue;
+      }
+      const path = prefix ? `${prefix}.${name}` : name;
+      if (typeof value === "string") {
+        if (path === flatKey) {
+          found = value;
+        }
+      } else {
+        walk(value, path);
+      }
+    }
+  };
+  walk(tree, "");
+  return found;
+}
+
 export function listLocaleCatalogs(): Record<LocaleCode, MessageTree> {
   return catalogs;
 }

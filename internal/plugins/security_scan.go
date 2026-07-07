@@ -162,7 +162,7 @@ func scanSuspiciousCode(manifest Manifest, dir string, embedded map[string][]byt
 			if err != nil || d.IsDir() {
 				return nil
 			}
-			data, readErr := os.ReadFile(path) // #nosec G304 -- plugin dir from validated install path
+			data, readErr := os.ReadFile(path) // #nosec G304 G122 -- plugin dir from validated install path
 			if readErr != nil {
 				return nil
 			}

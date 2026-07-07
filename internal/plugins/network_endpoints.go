@@ -67,7 +67,7 @@ func CollectNetworkEndpoints(manifest Manifest, dir string, embedded map[string]
 			if !shouldScanNetworkFile(path) {
 				return nil
 			}
-			data, readErr := os.ReadFile(path) // #nosec G304 -- plugin preview dir from validated extract
+			data, readErr := os.ReadFile(path) // #nosec G304 G122 -- plugin preview dir from validated extract
 			if readErr != nil {
 				return nil
 			}
