@@ -25,6 +25,9 @@ describe("bindings contract drift", () => {
       "SetBrowserPrefs",
       "FetchCommunityInterfaces",
       "ImportCommunityInterfaces",
+      "ListIdentities",
+      "CreateIdentity",
+      "SetActiveIdentity",
       "GetTabs",
       "SaveTabs",
     ] as const;

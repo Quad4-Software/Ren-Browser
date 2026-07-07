@@ -8,6 +8,7 @@
   import CommunityInterfaces, {
     type CommunityInterface,
   } from "$lib/components/CommunityInterfaces.svelte";
+  import IdentityPanel from "$lib/components/IdentityPanel.svelte";
   import ExtensionsPanel from "$lib/components/ExtensionsPanel.svelte";
   import SettingsSection from "$lib/components/SettingsSection.svelte";
   import type { MicronRendererPreference } from "$lib/micron/render-page";
@@ -638,6 +639,15 @@
       onToggle={onCommunityToggle}
       onImport={onCommunityImport}
     />
+  </SettingsSection>
+
+  <SettingsSection
+    id="identity"
+    title={t("identity.title")}
+    collapsed={sectionCollapsed("identity")}
+    onToggle={toggleSettingsSection}
+  >
+    <IdentityPanel showTitle={false} />
   </SettingsSection>
 
   <SettingsSection

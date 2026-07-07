@@ -2,8 +2,8 @@
 package rns
 
 import (
+	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sync"
 
@@ -18,14 +18,15 @@ import (
 )
 
 type Stack struct {
-	mu        sync.RWMutex
-	cfg       *common.ReticulumConfig
-	transport *transport.Transport
-	identity  *identity.Identity
-	handler   *nomadnet.AnnounceHandler
-	browser   *nomadnet.Browser
-	running   map[string]interfaces.Interface
-	started   bool
+	mu         sync.RWMutex
+	cfg        *common.ReticulumConfig
+	transport  *transport.Transport
+	identity   *identity.Identity
+	identities *IdentityRegistry
+	handler    *nomadnet.AnnounceHandler
+	browser    *nomadnet.Browser
+	running    map[string]interfaces.Interface
+	started    bool
 }
 
 func NewStack(configPath string) (*Stack, error) {
@@ -37,7 +38,7 @@ func NewStack(configPath string) (*Stack, error) {
 	debug.Init()
 
 	tr := transport.NewTransport(cfg)
-	ident, err := ensureTransportIdentity(tr, cfg)
+	reg, ident, err := ensureTransportIdentity(tr, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -46,12 +47,13 @@ func NewStack(configPath string) (*Stack, error) {
 	tr.RegisterAnnounceHandler(handler)
 
 	return &Stack{
-		cfg:       cfg,
-		transport: tr,
-		identity:  ident,
-		handler:   handler,
-		browser:   nomadnet.NewBrowser(tr, handler),
-		running:   make(map[string]interfaces.Interface),
+		cfg:        cfg,
+		transport:  tr,
+		identity:   ident,
+		identities: reg,
+		handler:    handler,
+		browser:    nomadnet.NewBrowser(tr, handler),
+		running:    make(map[string]interfaces.Interface),
 	}, nil
 }
 
@@ -62,17 +64,48 @@ func transportStorageDir(cfg *common.ReticulumConfig) string {
 	return filepath.Join(DefaultConfigDir(), "storage")
 }
 
-func ensureTransportIdentity(tr *transport.Transport, cfg *common.ReticulumConfig) (*identity.Identity, error) {
+func ensureTransportIdentity(tr *transport.Transport, cfg *common.ReticulumConfig) (*IdentityRegistry, *identity.Identity, error) {
 	storageDir := transportStorageDir(cfg)
-	if err := os.MkdirAll(storageDir, 0o700); err != nil {
-		return nil, fmt.Errorf("storage dir: %w", err)
-	}
-	ident, err := identity.LoadOrCreateTransportIdentity(storageDir)
+	reg, err := OpenIdentityRegistry(storageDir)
 	if err != nil {
-		return nil, fmt.Errorf("transport identity: %w", err)
+		return nil, nil, fmt.Errorf("identity registry: %w", err)
+	}
+	ident, err := reg.LoadActive()
+	if err != nil {
+		return nil, nil, fmt.Errorf("transport identity: %w", err)
 	}
 	tr.SetIdentity(ident)
-	return ident, nil
+	return reg, ident, nil
+}
+
+func (s *Stack) Identities() *IdentityRegistry {
+	return s.identities
+}
+
+func (s *Stack) SwitchIdentity(id string) error {
+	if s.identities == nil {
+		return errors.New("identity registry not initialized")
+	}
+	ident, err := s.identities.SetActive(id)
+	if err != nil {
+		return err
+	}
+	s.mu.Lock()
+	s.identity = ident
+	if s.transport != nil {
+		s.transport.SetIdentity(ident)
+	}
+	s.mu.Unlock()
+	return nil
+}
+
+func (s *Stack) IdentityHash() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.identity == nil {
+		return ""
+	}
+	return s.identity.GetHexHash()
 }
 
 func (s *Stack) Identify(nodeHash string) error {

@@ -3,6 +3,7 @@
 
 export type {
     CommunityInterface,
+    IdentityRecord,
     InterfaceInfo,
     Stack,
     Status

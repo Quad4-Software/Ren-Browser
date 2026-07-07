@@ -14,6 +14,17 @@ export interface CommunityInterface {
     "installed": boolean;
 }
 
+/**
+ * IdentityRecord describes a stored transport identity for the settings UI.
+ */
+export interface IdentityRecord {
+    "id": string;
+    "name": string;
+    "hash": string;
+    "createdAt": number;
+    "active": boolean;
+}
+
 export interface InterfaceInfo {
     "name": string;
     "type": string;

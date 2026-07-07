@@ -72,6 +72,14 @@ export function ConfigPath(): $CancellablePromise<string> {
     return $Call.ByID(1926139322);
 }
 
+export function CreateIdentity(name: string): $CancellablePromise<rns$0.IdentityRecord> {
+    return $Call.ByID(269382333, name);
+}
+
+export function DeleteIdentity(id: string): $CancellablePromise<void> {
+    return $Call.ByID(2149079298, id);
+}
+
 export function DevLog(level: string, message: string, detail: string): $CancellablePromise<void> {
     return $Call.ByID(2873310536, level, message, detail);
 }
@@ -94,6 +102,10 @@ export function DownloadToDir(rawURL: string): $CancellablePromise<string> {
 
 export function ExportDevLogs(): $CancellablePromise<string> {
     return $Call.ByID(3106065651);
+}
+
+export function ExportIdentity(id: string): $CancellablePromise<void> {
+    return $Call.ByID(3132317735, id);
 }
 
 export function ExportProfile(): $CancellablePromise<string> {
@@ -212,6 +224,10 @@ export function ImportCommunityInterfaces(configs: string[] | null): $Cancellabl
     return $Call.ByID(473619687, configs);
 }
 
+export function ImportIdentity(name: string): $CancellablePromise<rns$0.IdentityRecord> {
+    return $Call.ByID(2319287248, name);
+}
+
 export function ImportProfile(jsonData: string): $CancellablePromise<void> {
     return $Call.ByID(1524005335, jsonData);
 }
@@ -234,6 +250,10 @@ export function ListActiveDownloads(): $CancellablePromise<$models.ActiveDownloa
 
 export function ListDownloads(): $CancellablePromise<$models.DownloadItem[] | null> {
     return $Call.ByID(457843428);
+}
+
+export function ListIdentities(): $CancellablePromise<rns$0.IdentityRecord[] | null> {
+    return $Call.ByID(620987465);
 }
 
 export function ListInterfaces(): $CancellablePromise<rns$0.InterfaceInfo[] | null> {
@@ -280,6 +300,14 @@ export function PickDownloadDir(): $CancellablePromise<string> {
     return $Call.ByID(3989255669);
 }
 
+export function PickIdentityExportPath(): $CancellablePromise<string> {
+    return $Call.ByID(2225234049);
+}
+
+export function PickIdentityFile(): $CancellablePromise<string> {
+    return $Call.ByID(4139839554);
+}
+
 export function PickPluginDir(): $CancellablePromise<string> {
     return $Call.ByID(1804809056);
 }
@@ -314,6 +342,10 @@ export function ReloadReticulumConfig(): $CancellablePromise<string> {
 
 export function RemoveFavorite(url: string): $CancellablePromise<string[] | null> {
     return $Call.ByID(1692284655, url);
+}
+
+export function RenameIdentity(id: string, name: string): $CancellablePromise<rns$0.IdentityRecord> {
+    return $Call.ByID(1794798215, id, name);
 }
 
 export function RenderRaw(path: string, raw: string): $CancellablePromise<$models.PageResponse> {
@@ -367,6 +399,10 @@ export function SaveTextToDownloadDir(filename: string, content: string): $Cance
 
 export function SaveWindowState(state: $models.WindowState): $CancellablePromise<$models.WindowState> {
     return $Call.ByID(3316457255, state);
+}
+
+export function SetActiveIdentity(id: string): $CancellablePromise<rns$0.IdentityRecord> {
+    return $Call.ByID(935246237, id);
 }
 
 export function SetApp(app: application$0.App | null): $CancellablePromise<void> {
