@@ -22,9 +22,9 @@ type Status struct {
 
 // Options controls whether Landlock is attempted and which paths are whitelisted.
 type Options struct {
-	NoLandlock    bool
-	ForceLandlock bool
-	ServerMode    bool
+	NoLandlock      bool
+	ForceLandlock   bool
+	ServerMode      bool
 	DataDir         string
 	ReticulumDir    string
 	ReticulumConfig string
