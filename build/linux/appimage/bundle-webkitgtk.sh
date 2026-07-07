@@ -99,10 +99,26 @@ bundle_elf_dependencies() {
   local elf="$1"
   [ -f "$elf" ] || return 0
 
-  local lib
+  local lib needed
   while IFS= read -r lib; do
     install_helper_library "$lib"
   done < <(ldd "$elf" 2>/dev/null | awk '/=> \// { print $3 } /^\// { print $1 }')
+
+  while IFS= read -r needed; do
+    [ -n "$needed" ] || continue
+    if is_host_glibc_stack_lib "$needed"; then
+      continue
+    fi
+    if lib_already_in_appdir "$needed" || [ -n "${BUNDLED_HELPER_LIBS[$needed]:-}" ]; then
+      continue
+    fi
+    for dir in "/usr/lib/${arch}-linux-gnu" /usr/lib64 /usr/lib "/lib/${arch}-linux-gnu" /lib64 /lib; do
+      if [ -e "${dir}/${needed}" ]; then
+        install_helper_library "$(readlink -f "${dir}/${needed}")"
+        break
+      fi
+    done
+  done < <(readelf -d "$elf" 2>/dev/null | awk '/\(NEEDED\)/ { gsub(/[\[\]"]/, "", $5); print $5 }')
 }
 
 bundle_helper_libraries() {
@@ -114,6 +130,74 @@ bundle_helper_libraries() {
     bundle_elf_dependencies "$helper"
   done
 }
+
+set_helper_rpath() {
+  local helper="$1"
+  local rpath="$2"
+  if ! command -v patchelf >/dev/null 2>&1; then
+    printf 'Warning: patchelf not found; cannot set RPATH on %s\n' "$(basename "$helper")" >&2
+    return 0
+  fi
+  patchelf --set-rpath "$rpath" "$helper"
+  printf 'Set RPATH %s on %s\n' "$rpath" "$(basename "$helper")"
+}
+
+patch_helper_rpaths() {
+  local helper_dir="$1"
+  local rpath="$2"
+  local helper
+  for helper in "${helper_dir}"/WebKit*Process; do
+    [ -x "$helper" ] || continue
+    set_helper_rpath "$helper" "$rpath"
+  done
+}
+
+verify_helper_dependencies() {
+  local helper="$1"
+  local missing=0
+  local needed
+  while IFS= read -r needed; do
+    [ -n "$needed" ] || continue
+    if is_host_glibc_stack_lib "$needed"; then
+      continue
+    fi
+    if lib_already_in_appdir "$needed"; then
+      continue
+    fi
+    printf 'Missing bundled dependency for %s: %s\n' "$(basename "$helper")" "$needed" >&2
+    missing=1
+  done < <(readelf -d "$helper" 2>/dev/null | awk '/\(NEEDED\)/ { gsub(/[\[\]"]/, "", $5); print $5 }')
+  return "$missing"
+}
+
+verify_bundled_helpers() {
+  local failed=0
+  local helper_dir helper
+  for helper_dir in \
+    "${APPDIR}/usr/lib/${arch}-linux-gnu/webkitgtk-6.0" \
+    "${APPDIR}/usr/lib/webkitgtk-6.0"; do
+    [ -d "$helper_dir" ] || continue
+    for helper in "${helper_dir}"/WebKit*Process; do
+      [ -x "$helper" ] || continue
+      if ! verify_helper_dependencies "$helper"; then
+        failed=1
+      fi
+    done
+  done
+  if [ "$failed" -ne 0 ]; then
+    printf 'WebKit helper dependency verification failed\n' >&2
+    exit 1
+  fi
+}
+
+printf 'Bundling shared libraries from build-host WebKit helpers\n'
+bundle_helper_libraries "$webkit_dir"
+
+mapfile -t webkit_gtk_libs < <(find "$APPDIR"/usr/lib* \( -name 'libwebkit*.so*' -o -name 'libjavascriptcoregtk*.so*' \) -type f 2>/dev/null || true)
+for lib in "${webkit_gtk_libs[@]}"; do
+  printf 'Bundling shared libraries for %s\n' "$(basename "$lib")"
+  bundle_elf_dependencies "$lib"
+done
 
 # Debian/Ubuntu WebKit builds hard-code the multiarch helper directory.
 install_helpers "${APPDIR}/usr/lib/${arch}-linux-gnu/webkitgtk-6.0"
@@ -127,6 +211,15 @@ bundle_helper_libraries "${APPDIR}/usr/lib/${arch}-linux-gnu/webkitgtk-6.0"
 if [ -d "${APPDIR}/usr/lib/webkitgtk-6.0" ]; then
   bundle_helper_libraries "${APPDIR}/usr/lib/webkitgtk-6.0"
 fi
+
+# WebKit helper subprocesses run inside a bubblewrap sandbox that does not
+# inherit LD_LIBRARY_PATH from AppRun; they must resolve bundled libs via RPATH.
+patch_helper_rpaths "${APPDIR}/usr/lib/${arch}-linux-gnu/webkitgtk-6.0" '$ORIGIN/../..'
+if [ -d "${APPDIR}/usr/lib/webkitgtk-6.0" ]; then
+  patch_helper_rpaths "${APPDIR}/usr/lib/webkitgtk-6.0" '$ORIGIN/..'
+fi
+
+verify_bundled_helpers
 
 printf 'Patching libwebkit paths for AppImage relocation\n'
 find "$APPDIR"/usr/lib* -name 'libwebkit*.so*' -type f -exec sed -i -e 's|/usr|././|g' '{}' +
@@ -182,7 +275,7 @@ if [ "${#leancrypto_libs[@]}" -gt 0 ]; then
   for lib in "${leancrypto_libs[@]}"; do
     base="$(basename "$lib")"
     src=""
-    for dir in /usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib /lib/x86_64-linux-gnu /lib64 /lib; do
+    for dir in "/usr/lib/${arch}-linux-gnu" /usr/lib64 /usr/lib "/lib/${arch}-linux-gnu" /lib64 /lib; do
       if [ -f "${dir}/${base}" ]; then
         src="${dir}/${base}"
         break

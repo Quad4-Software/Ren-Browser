@@ -83,7 +83,7 @@ runs:
           libgtk-4-dev libwebkitgtk-6.0-dev \
           libgtk-3-dev libwebkit2gtk-4.1-dev \
           bubblewrap xdg-dbus-proxy \
-          curl librsvg2-bin
+          curl librsvg2-bin patchelf
         pkg-config --modversion gtk4
         pkg-config --modversion webkitgtk-6.0
 
