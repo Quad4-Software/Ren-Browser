@@ -224,6 +224,9 @@
     "downloadFailed": "Error al descargar",
     "cancel": "Cancelar descarga",
     "dismiss": "Descartar",
+    "retry": "Reintentar descarga",
+    "retrying": "Reintentando ({attempt}/{max})\u2026",
+    "interrupted": "Interrumpida; se reanudar\u00e1 cuando la app est\u00e9 activa",
     "etaLeft": "{eta} restante"
   },
   "content": {

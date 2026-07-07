@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-export type ActiveDownloadStatus = "pending" | "downloading" | "completed" | "failed" | "canceled";
+export type ActiveDownloadStatus =
+  "pending" | "downloading" | "retrying" | "completed" | "failed" | "canceled" | "interrupted";
 
 export type ActiveDownloadRow = {
   id: string;
@@ -10,6 +11,8 @@ export type ActiveDownloadRow = {
   total: number;
   status: ActiveDownloadStatus;
   error?: string;
+  attempt?: number;
+  maxAttempts?: number;
   startedAt: number;
   updatedAt: number;
 };
@@ -43,7 +46,7 @@ export function withProgress(rows: ActiveDownloadRow[]): DownloadProgressView[] 
         speedBps = prev.speedBps > 0 ? prev.speedBps * 0.6 + instant * 0.4 : instant;
       }
     }
-    if (row.status === "downloading" || row.status === "pending") {
+    if (row.status === "downloading" || row.status === "pending" || row.status === "retrying") {
       samples.set(row.id, { at: row.updatedAt, received: row.received, speedBps });
     } else {
       samples.delete(row.id);

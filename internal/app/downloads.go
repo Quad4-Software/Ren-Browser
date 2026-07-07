@@ -119,26 +119,7 @@ func (s *BrowserService) PickDownloadDir() (string, error) {
 }
 
 func (s *BrowserService) DownloadToDir(rawURL string) (string, error) {
-	dir := s.GetDownloadDir()
-	name := downloadNameFromURL(rawURL)
-	id := s.downloads.start(rawURL, name)
-	tracker := &downloadTracker{mgr: s.downloads, id: id}
-	fetch, err := s.fetchFileTracked(rawURL, tracker)
-	if err != nil {
-		s.downloads.fail(id, err.Error())
-		return "", err
-	}
-	if fetch.FileName != "" {
-		name = sanitizeDownloadFilename(fetch.FileName)
-	}
-	dest, err := writeDownloadBytes(dir, name, fetch.Body)
-	if err != nil {
-		s.downloads.fail(id, err.Error())
-		return "", err
-	}
-	s.downloads.complete(id, dest, int64(len(fetch.Body)))
-	s.recordDownload(dest)
-	return dest, nil
+	return s.executeDownload(rawURL)
 }
 
 func (s *BrowserService) SaveTextToDownloadDir(filename, content string) (string, error) {

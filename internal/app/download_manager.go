@@ -17,9 +17,11 @@ type DownloadStatus string
 const (
 	DownloadStatusPending     DownloadStatus = "pending"
 	DownloadStatusDownloading DownloadStatus = "downloading"
+	DownloadStatusRetrying    DownloadStatus = "retrying"
 	DownloadStatusCompleted   DownloadStatus = "completed"
 	DownloadStatusFailed      DownloadStatus = "failed"
 	DownloadStatusCanceled    DownloadStatus = "canceled"
+	DownloadStatusInterrupted DownloadStatus = "interrupted"
 )
 
 // completedRetention is how long a finished download stays in the active
@@ -32,16 +34,18 @@ const completedRetention = 5 * time.Second
 // drive the downloads panel's progress list, speed/ETA readouts, and the
 // badge counter on the download icon.
 type ActiveDownload struct {
-	ID        string         `json:"id"`
-	URL       string         `json:"url"`
-	Name      string         `json:"name"`
-	Path      string         `json:"path,omitempty"`
-	Received  int64          `json:"received"`
-	Total     int64          `json:"total"`
-	Status    DownloadStatus `json:"status"`
-	Error     string         `json:"error,omitempty"`
-	StartedAt int64          `json:"startedAt"`
-	UpdatedAt int64          `json:"updatedAt"`
+	ID          string         `json:"id"`
+	URL         string         `json:"url"`
+	Name        string         `json:"name"`
+	Path        string         `json:"path,omitempty"`
+	Received    int64          `json:"received"`
+	Total       int64          `json:"total"`
+	Status      DownloadStatus `json:"status"`
+	Error       string         `json:"error,omitempty"`
+	Attempt     int            `json:"attempt"`
+	MaxAttempts int            `json:"maxAttempts"`
+	StartedAt   int64          `json:"startedAt"`
+	UpdatedAt   int64          `json:"updatedAt"`
 
 	cancel context.CancelFunc
 }
@@ -67,12 +71,13 @@ func (m *downloadManager) start(url, name string) string {
 	id := fmt.Sprintf("dl-%d", m.nextID)
 	now := time.Now().UnixMilli()
 	m.items[id] = &ActiveDownload{
-		ID:        id,
-		URL:       url,
-		Name:      name,
-		Status:    DownloadStatusPending,
-		StartedAt: now,
-		UpdatedAt: now,
+		ID:          id,
+		URL:         url,
+		Name:        name,
+		Status:      DownloadStatusPending,
+		MaxAttempts: downloadMaxAttempts,
+		StartedAt:   now,
+		UpdatedAt:   now,
 	}
 	m.order = append([]string{id}, m.order...)
 	m.mu.Unlock()
@@ -234,6 +239,59 @@ func (m *downloadManager) list() []ActiveDownload {
 		}
 	}
 	return out
+}
+
+func (m *downloadManager) setAttempt(id string, attempt int) {
+	m.mu.Lock()
+	if d, ok := m.items[id]; ok {
+		d.Attempt = attempt
+		d.UpdatedAt = time.Now().UnixMilli()
+	}
+	m.mu.Unlock()
+}
+
+func (m *downloadManager) setStatus(id string, status DownloadStatus) {
+	m.mu.Lock()
+	if d, ok := m.items[id]; ok {
+		d.Status = status
+		d.UpdatedAt = time.Now().UnixMilli()
+	}
+	m.mu.Unlock()
+	m.notify()
+}
+
+func (m *downloadManager) setName(id, name string) {
+	m.mu.Lock()
+	if d, ok := m.items[id]; ok {
+		d.Name = name
+		d.UpdatedAt = time.Now().UnixMilli()
+	}
+	m.mu.Unlock()
+}
+
+func (m *downloadManager) runningCount() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	count := 0
+	for _, d := range m.items {
+		switch d.Status {
+		case DownloadStatusPending, DownloadStatusDownloading, DownloadStatusRetrying:
+			count++
+		}
+	}
+	return count
+}
+
+func (m *downloadManager) findByID(id string) (ActiveDownload, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	d, ok := m.items[id]
+	if !ok {
+		return ActiveDownload{}, false
+	}
+	cp := *d
+	cp.cancel = nil
+	return cp, true
 }
 
 func (m *downloadManager) notify() {

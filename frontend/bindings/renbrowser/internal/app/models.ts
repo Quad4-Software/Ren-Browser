@@ -34,6 +34,8 @@ export interface ActiveDownload {
     "total": number;
     "status": DownloadStatus;
     "error"?: string;
+    "attempt": number;
+    "maxAttempts": number;
     "startedAt": number;
     "updatedAt": number;
 }
@@ -85,9 +87,11 @@ export enum DownloadStatus {
 
     DownloadStatusPending = "pending",
     DownloadStatusDownloading = "downloading",
+    DownloadStatusRetrying = "retrying",
     DownloadStatusCompleted = "completed",
     DownloadStatusFailed = "failed",
     DownloadStatusCanceled = "canceled",
+    DownloadStatusInterrupted = "interrupted",
 };
 
 export type HistoryEntry = store$0.HistoryEntry;

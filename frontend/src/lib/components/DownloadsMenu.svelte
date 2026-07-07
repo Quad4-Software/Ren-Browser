@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Download, FolderOpen, X } from "@lucide/svelte";
+  import { Download, FolderOpen, RotateCcw, X } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
   import {
@@ -28,6 +28,7 @@
     onOpenFolder: () => void;
     onCancelActive?: (id: string) => void;
     onDismissActive?: (id: string) => void;
+    onRetryActive?: (id: string) => void;
     onClose: () => void;
   };
 
@@ -42,6 +43,7 @@
     onOpenFolder,
     onCancelActive = () => {},
     onDismissActive = () => {},
+    onRetryActive = () => {},
     onClose,
   }: Props = $props();
 
@@ -118,6 +120,23 @@
                   >
                     <X size={13} />
                   </button>
+                {:else if item.status === "failed" || item.status === "interrupted"}
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    aria-label={t("downloads.retry")}
+                    onclick={() => onRetryActive(item.id)}
+                  >
+                    <RotateCcw size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    aria-label={t("downloads.dismiss")}
+                    onclick={() => onDismissActive(item.id)}
+                  >
+                    <X size={13} />
+                  </button>
                 {:else}
                   <button
                     type="button"
@@ -131,6 +150,15 @@
               </div>
               {#if item.status === "failed"}
                 <span class="error-text">{item.error || t("downloads.downloadFailed")}</span>
+              {:else if item.status === "interrupted"}
+                <span class="meta">{t("downloads.interrupted")}</span>
+              {:else if item.status === "retrying"}
+                <span class="meta"
+                  >{t("downloads.retrying", {
+                    attempt: item.attempt ?? 1,
+                    max: item.maxAttempts ?? 1,
+                  })}</span
+                >
               {:else if item.status === "canceled"}
                 <span class="meta">{t("downloads.canceled")}</span>
               {:else if item.status === "completed"}

@@ -162,6 +162,9 @@ func NewBrowserServiceWithOptions(stack *rns.Stack, app *application.App, opts S
 		svc.bindPersistence()
 	}
 	_ = svc.GetDownloadDir()
+	if stack != nil {
+		svc.resumePendingDownloads()
+	}
 	return svc, nil
 }
 
@@ -173,6 +176,7 @@ func (s *BrowserService) AttachStack(stack *rns.Stack) {
 	s.stack = stack
 	s.mu.Unlock()
 	s.bindPersistence()
+	s.resumePendingDownloads()
 }
 
 func (s *BrowserService) bindPersistence() {
@@ -486,34 +490,20 @@ func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) Pa
 		}
 	}
 
-	if !skipCache && s.GetBrowserPrefs().PageCacheEnabled {
-		if entry, ok := s.pageCache.Get(parsed.NodeHash, parsed.Path, parsed.Request); ok {
-			rendered := content.Render(parsed.Path, entry.Body, parsed.NodeHash)
-			resp := PageResponse{
-				URL:         url,
-				NodeHash:    parsed.NodeHash,
-				Path:        parsed.Path,
-				ContentType: rendered.Kind,
-				HTML:        rendered.HTML,
-				Raw:         rendered.Raw,
-				PageFG:      rendered.PageFG,
-				PageBG:      rendered.PageBG,
-				FromCache:   true,
-				CachedAt:    entry.StoredAt.UnixMilli(),
-				Hops:        s.hopsForNode(parsed.NodeHash),
-			}
-			s.setLastPage(resp)
-			s.recordNetwork(resp)
-			s.log("info", "page cache hit", url)
-			if s.app != nil {
-				s.app.Event.Emit("page:loaded", resp)
-			}
-			return resp
-		}
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
+
+	if !skipCache && s.GetBrowserPrefs().PageCacheEnabled {
+		if entry, ok := s.pageCache.Get(parsed.NodeHash, parsed.Path, parsed.Request); ok {
+			if entry.IsStale(cache.DefaultPageCacheMaxAge) {
+				if fresh := s.tryRefreshCachedPage(ctx, url, parsed, entry); fresh != nil {
+					return *fresh
+				}
+				return s.pageResponseFromCache(url, parsed, entry)
+			}
+			return s.pageResponseFromCache(url, parsed, entry)
+		}
+	}
 
 	fetchPath, fetchReq, cancelled := s.runFetchHooks(parsed.NodeHash, parsed.Path, parsed.Request)
 	if cancelled {
@@ -668,6 +658,26 @@ func (s *BrowserService) CancelDownload(id string) bool {
 // active downloads list without affecting any file already written to disk.
 func (s *BrowserService) DismissDownload(id string) {
 	s.downloads.dismiss(id)
+}
+
+// RetryDownload restarts a failed download using the same mesh URL.
+func (s *BrowserService) RetryDownload(id string) bool {
+	item, ok := s.downloads.findByID(id)
+	if !ok {
+		return false
+	}
+	if item.Status != DownloadStatusFailed && item.Status != DownloadStatusInterrupted {
+		return false
+	}
+	s.downloads.dismiss(id)
+	s.startBackgroundDownload(item.URL, item.Name)
+	return true
+}
+
+// ResumePendingDownloads restarts downloads that were interrupted before they
+// finished (for example when Android battery optimization paused the app).
+func (s *BrowserService) ResumePendingDownloads() {
+	s.resumePendingDownloads()
 }
 
 // fileFetchHooks reports every stage transition and byte-progress update of

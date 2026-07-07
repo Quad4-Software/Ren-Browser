@@ -15,10 +15,19 @@ type pageKey struct {
 	suffix string
 }
 
+const DefaultPageCacheMaxAge = 24 * time.Hour
+
 type Entry struct {
 	Body        []byte
 	ContentType string
 	StoredAt    time.Time
+}
+
+func (e Entry) IsStale(maxAge time.Duration) bool {
+	if maxAge <= 0 {
+		return false
+	}
+	return time.Since(e.StoredAt) > maxAge
 }
 
 type PageCache struct {

@@ -1,10 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { mount } from "svelte";
 import DownloadsMenu from "./DownloadsMenu.svelte";
-import {
-  expectsEllipsis,
-  expectsNoHorizontalScroll,
-} from "$lib/browser/layout-regression";
+import { expectsEllipsis, expectsNoHorizontalScroll } from "$lib/browser/layout-regression";
 import { cleanupMount, mountInBody } from "$lib/test/svelte-mount";
 
 const noop = () => {};

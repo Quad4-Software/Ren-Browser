@@ -9,7 +9,7 @@ import (
 
 const (
 	DefaultMaxPageBytes     = 8 * 1024 * 1024
-	DefaultMaxFileBytes     = 128 * 1024 * 1024
+	DefaultMaxFileBytes     = 0
 	DefaultMaxAssetBytes    = 32 * 1024 * 1024
 	DefaultMaxTabFieldBytes = 256 * 1024
 )
@@ -19,7 +19,7 @@ func MaxPageBytes() int {
 }
 
 func MaxFileBytes() int {
-	return envBytes("REN_BROWSER_MAX_FILE_BYTES", DefaultMaxFileBytes)
+	return envFileBytes("REN_BROWSER_MAX_FILE_BYTES", DefaultMaxFileBytes)
 }
 
 func MaxAssetBytes() int {
@@ -44,6 +44,18 @@ func envBytes(key string, fallback int) int {
 	}
 	n, err := strconv.Atoi(raw)
 	if err != nil || n <= 0 {
+		return fallback
+	}
+	return n
+}
+
+func envFileBytes(key string, fallback int) int {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 0 {
 		return fallback
 	}
 	return n

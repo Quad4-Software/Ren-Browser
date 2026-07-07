@@ -224,6 +224,9 @@
     "downloadFailed": "",
     "cancel": "",
     "dismiss": "",
+    "retry": "",
+    "retrying": "",
+    "interrupted": "",
     "etaLeft": ""
   },
   "content": {

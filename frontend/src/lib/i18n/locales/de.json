@@ -224,6 +224,9 @@
     "downloadFailed": "Download fehlgeschlagen",
     "cancel": "Download abbrechen",
     "dismiss": "Verwerfen",
+    "retry": "Download wiederholen",
+    "retrying": "Erneuter Versuch ({attempt}/{max})\u2026",
+    "interrupted": "Unterbrochen \u2014 wird fortgesetzt, wenn die App aktiv ist",
     "etaLeft": "noch {eta}"
   },
   "content": {

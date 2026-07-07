@@ -5,12 +5,12 @@
 package main
 
 import (
-	_ "renbrowser/internal/webkit"
 	"embed"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	_ "renbrowser/internal/webkit"
 	"strings"
 
 	"renbrowser/internal/bootstrap"

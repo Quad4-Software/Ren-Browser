@@ -224,6 +224,9 @@
     "downloadFailed": "Download failed",
     "cancel": "Cancel download",
     "dismiss": "Dismiss",
+    "retry": "Retry download",
+    "retrying": "Retrying ({attempt}/{max})\u2026",
+    "interrupted": "Interrupted \u2014 will resume when the app is active",
     "etaLeft": "{eta} left"
   },
   "content": {

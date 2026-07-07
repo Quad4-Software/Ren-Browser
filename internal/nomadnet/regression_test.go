@@ -11,8 +11,11 @@ import (
 func TestMaxFetchBytesDiffersForFiles(t *testing.T) {
 	page := limits.MaxFetchBytes("/page/index.mu")
 	file := limits.MaxFetchBytes("/file/music/song.mp3")
-	if page >= file {
-		t.Fatalf("page=%d file=%d; file limit should exceed page limit", page, file)
+	if page <= 0 {
+		t.Fatalf("page=%d; page limit should be positive", page)
+	}
+	if file != 0 {
+		t.Fatalf("file=%d; file downloads should be unlimited by default", file)
 	}
 }
 

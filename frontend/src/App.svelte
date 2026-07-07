@@ -45,7 +45,8 @@
     OpenURL,
     OpenFreshURL,
     PickDownloadDir,
-    ResetSettings,
+    ResumePendingDownloads,
+    RetryDownload,
     ResetDatabase,
     ReloadReticulumConfig,
     SaveTabs,
@@ -306,9 +307,7 @@
   let splitRatio = $state(52);
   const desktopChrome = $derived(System.IsDesktop() && !serverMode);
   const layoutOverride = screenshotLayoutFromQuery();
-  let compactViewport = $state(
-    typeof window !== "undefined" ? isCompactViewport() : false,
-  );
+  let compactViewport = $state(typeof window !== "undefined" ? isCompactViewport() : false);
   const mobileUI = $derived(
     resolveMobileUI({
       layoutOverride,
@@ -1104,6 +1103,8 @@
     await Promise.all([loadNodes(), loadInterfaces(), refreshHistoryState()]);
     void refreshNetwork();
     void loadStoreHealth();
+    void ResumePendingDownloads();
+    void loadActiveDownloads();
 
     const active = tabs.find((tab) => tab.active);
     const stuck = tabs.filter((tab) => tab.loading);
@@ -1649,6 +1650,12 @@
     activeDownloads = activeDownloads.filter((item) => item.id !== id);
   }
 
+  async function retryActiveDownload(id: string) {
+    if (await RetryDownload(id)) {
+      await loadActiveDownloads();
+    }
+  }
+
   async function saveDownloadDir(dir: string) {
     downloadDir = await SetDownloadDir(dir);
     await loadDownloads();
@@ -2107,6 +2114,7 @@
       onOpenDownloadFolder={openDownloadFolder}
       onCancelDownload={cancelActiveDownload}
       onDismissDownload={dismissActiveDownload}
+      onRetryDownload={retryActiveDownload}
       onIdentify={requestIdentify}
       onPanel={setPanel}
       onToggleTheme={toggleTheme}
@@ -2430,6 +2438,7 @@
       onOpenFolder={openDownloadFolder}
       onCancelActive={cancelActiveDownload}
       onDismissActive={dismissActiveDownload}
+      onRetryActive={retryActiveDownload}
       onClose={() => (downloadsOpen = false)}
     />
   {/if}

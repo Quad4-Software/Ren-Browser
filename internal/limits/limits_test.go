@@ -9,8 +9,8 @@ import (
 )
 
 func TestMaxFetchBytesFilePath(t *testing.T) {
-	if got := limits.MaxFetchBytes("/file/music/song.mp3"); got != limits.DefaultMaxFileBytes {
-		t.Fatalf("got %d want %d", got, limits.DefaultMaxFileBytes)
+	if got := limits.MaxFetchBytes("/file/music/song.mp3"); got != 0 {
+		t.Fatalf("got %d want unlimited (0)", got)
 	}
 }
 
@@ -45,7 +45,21 @@ func TestTruncateString(t *testing.T) {
 
 func TestEnvOverrideClearsOnEmpty(t *testing.T) {
 	_ = os.Unsetenv("REN_BROWSER_MAX_FILE_BYTES")
-	if got := limits.MaxFileBytes(); got != limits.DefaultMaxFileBytes {
-		t.Fatalf("got %d want default", got)
+	if got := limits.MaxFileBytes(); got != 0 {
+		t.Fatalf("got %d want unlimited default", got)
+	}
+}
+
+func TestEnvOverrideFileBytesZeroMeansUnlimited(t *testing.T) {
+	t.Setenv("REN_BROWSER_MAX_FILE_BYTES", "0")
+	if got := limits.MaxFileBytes(); got != 0 {
+		t.Fatalf("got %d want 0", got)
+	}
+}
+
+func TestEnvOverrideFileBytesSetsLimit(t *testing.T) {
+	t.Setenv("REN_BROWSER_MAX_FILE_BYTES", "4096")
+	if got := limits.MaxFileBytes(); got != 4096 {
+		t.Fatalf("got %d want 4096", got)
 	}
 }

@@ -316,6 +316,21 @@ export function ResolveMicronLink(currentURL: string, destination: string, field
     return $Call.ByID(1146851467, currentURL, destination, fieldsSpec, inputs);
 }
 
+/**
+ * ResumePendingDownloads restarts downloads that were interrupted before they
+ * finished (for example when Android battery optimization paused the app).
+ */
+export function ResumePendingDownloads(): $CancellablePromise<void> {
+    return $Call.ByID(3521280428);
+}
+
+/**
+ * RetryDownload restarts a failed download using the same mesh URL.
+ */
+export function RetryDownload(id: string): $CancellablePromise<boolean> {
+    return $Call.ByID(1783106127, id);
+}
+
 export function SaveDownload(rawURL: string, destPath: string): $CancellablePromise<void> {
     return $Call.ByID(2853347910, rawURL, destPath);
 }

@@ -46,6 +46,7 @@
     onOpenDownloadFolder: () => void;
     onCancelDownload?: (id: string) => void;
     onDismissDownload?: (id: string) => void;
+    onRetryDownload?: (id: string) => void;
     onIdentify: () => void;
   };
 
@@ -75,12 +76,15 @@
     onOpenDownloadFolder,
     onCancelDownload = () => {},
     onDismissDownload = () => {},
+    onRetryDownload = () => {},
     onIdentify,
   }: Props = $props();
 
   const activeDownloadCount = $derived(
-    activeDownloads.filter((item) => item.status === "pending" || item.status === "downloading")
-      .length,
+    activeDownloads.filter(
+      (item) =>
+        item.status === "pending" || item.status === "downloading" || item.status === "retrying",
+    ).length,
   );
 
   function submit(event: Event) {
@@ -159,6 +163,7 @@
         onOpenFolder={onOpenDownloadFolder}
         onCancelActive={onCancelDownload}
         onDismissActive={onDismissDownload}
+        onRetryActive={onRetryDownload}
         onClose={onCloseDownloads}
       />
     </div>
