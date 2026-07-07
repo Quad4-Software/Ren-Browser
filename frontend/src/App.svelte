@@ -84,6 +84,7 @@
   import AppStoreError from "$lib/components/AppStoreError.svelte";
   import { isStoreBlockingKind } from "$lib/browser/errors";
   import { isCompactViewport } from "$lib/browser/viewport";
+  import { resolveMobileUI } from "$lib/browser/mobile-layout";
   import {
     defaultTheme,
     applyTheme,
@@ -309,11 +310,11 @@
     typeof window !== "undefined" ? isCompactViewport() : false,
   );
   const mobileUI = $derived(
-    layoutOverride === "mobile"
-      ? true
-      : layoutOverride === "desktop"
-        ? false
-        : System.IsMobile() || compactViewport,
+    resolveMobileUI({
+      layoutOverride,
+      isMobilePlatform: System.IsMobile(),
+      compactViewport,
+    }),
   );
 
   let configText = $state("");
