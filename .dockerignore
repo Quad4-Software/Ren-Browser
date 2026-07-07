@@ -21,6 +21,14 @@ node_modules/
 # Fetched at image build via fetch-micron-wasm.mjs / prebuild
 frontend/public/vendor/micron-parser-go/
 
+# Extension examples and plugin WASM (not used by server image; dist bundle kept)
+extensions/
+*.wasm
+!frontend/dist/**/*.wasm
+
+# Plugin test fixtures (tests use extensions/ when present)
+internal/plugins/testdata/
+
 # Vendored deps: Dockerfile.server uses go mod download, not vendor/
 vendor/
 third_party/

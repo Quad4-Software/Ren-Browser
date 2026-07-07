@@ -17,6 +17,9 @@ frontend/node_modules
 frontend/.svelte-kit
 frontend/public/vendor/micron-parser-go/
 
+# WASM modules (fetched at build or TinyGo output; built in release CI)
+*.wasm
+
 # Root workspace (pnpm hoists tooling here)
 node_modules/
 
@@ -45,6 +48,7 @@ coverage.out
 coverage.html
 *.test
 **/testdata/fuzz/
+internal/plugins/testdata/**/*.wasm
 third_party/reticulum-go/
 
 # OS
