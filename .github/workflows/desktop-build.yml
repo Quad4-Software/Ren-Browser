@@ -655,8 +655,12 @@ jobs:
           version="${{ needs.version.outputs.version }}"
           tag="${{ needs.version.outputs.tag }}"
           channel="${{ inputs.channel }}"
+          warning=""
+          if [ "$channel" = "nightly" ] || [ "$channel" = "beta" ]; then
+            warning=$'> [!WARNING]\n> This build may be unstable. It can include regressions, unfinished changes, or breaking behavior. Use a release build for production.\n\n'
+          fi
           cat > release-notes.md <<EOF
-          ## Ren Browser ${version}
+          ${warning}## Ren Browser ${version}
 
           Channel: **${channel}**
           Commit: \`${{ github.sha }}\`
