@@ -97,7 +97,7 @@ func (s *Stack) Start() error {
 		if !ifaceCfg.Enabled {
 			continue
 		}
-		iface, err := interfaces.NewFromConfig(name, ifaceCfg)
+		iface, err := interfaces.NewFromConfig(name, EffectiveInterfaceConfig(ifaceCfg))
 		if err != nil {
 			if s.cfg.PanicOnInterfaceErr {
 				return fmt.Errorf("interface %s: %w", name, err)

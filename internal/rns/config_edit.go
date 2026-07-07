@@ -167,7 +167,12 @@ func loadConfigFromText(text string) (*common.ReticulumConfig, error) {
 	if err := tmp.Close(); err != nil {
 		return nil, err
 	}
-	return reticulumconfig.LoadConfig(path)
+	cfg, err := reticulumconfig.LoadConfig(path)
+	if err != nil {
+		return nil, err
+	}
+	migrateInterfaceConfigs(cfg)
+	return cfg, nil
 }
 
 func parseInterfaceFragment(snippet string) (map[string]*common.InterfaceConfig, error) {
@@ -179,6 +184,9 @@ func parseInterfaceFragment(snippet string) (map[string]*common.InterfaceConfig,
 	}
 	if len(cfg.Interfaces) == 0 {
 		return nil, fmt.Errorf("no interface found in snippet")
+	}
+	for name, iface := range cfg.Interfaces {
+		cfg.Interfaces[name] = EffectiveInterfaceConfig(iface)
 	}
 	return cfg.Interfaces, nil
 }
@@ -211,5 +219,9 @@ func normalizeConfigSnippet(snippet string) string {
 		}
 		out = append(out, line)
 	}
-	return strings.Join(out, "\n")
+	normalized := strings.Join(out, "\n")
+	if usesBackboneTCPFallback() {
+		normalized = rewriteBackboneSnippetToTCP(normalized)
+	}
+	return normalized
 }

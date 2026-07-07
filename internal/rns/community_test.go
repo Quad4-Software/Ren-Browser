@@ -41,6 +41,27 @@ func TestFilterTCPClientInterfaces(t *testing.T) {
 	}
 }
 
+func TestFilterSeedableInterfaces(t *testing.T) {
+	items := []CommunityInterface{
+		{Name: "a", Type: "TCPClientInterface", Config: "[[a]]"},
+		{Name: "b", Type: "backbone", TypeName: "BackboneInterface", Config: "[[b]]\n  type = BackboneInterface\n  remote = x.example\n  target_port = 4242"},
+		{Name: "c", Type: "TCPServerInterface", Config: "[[c]]"},
+	}
+	out := FilterSeedableInterfaces(items)
+	if usesBackboneTCPFallback() {
+		if len(out) != 2 {
+			t.Fatalf("len = %d, want 2", len(out))
+		}
+		if out[1].Name != "b" || out[1].TypeName != "TCPClientInterface" {
+			t.Fatalf("backbone item = %+v", out[1])
+		}
+		return
+	}
+	if len(out) != 1 || out[0].Name != "a" {
+		t.Fatalf("desktop seed = %+v", out)
+	}
+}
+
 func TestLoadBundledCommunityInterfaces(t *testing.T) {
 	items, err := loadBundledCommunityInterfaces(map[string]bool{"Beleth RNS Hub": true})
 	if err != nil {

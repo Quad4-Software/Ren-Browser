@@ -95,10 +95,11 @@ func (s *Stack) ListInterfaces() []InterfaceInfo {
 		if cfg == nil {
 			continue
 		}
+		effective := EffectiveInterfaceConfig(cfg)
 		st := stats[name]
 		out = append(out, InterfaceInfo{
 			Name:    name,
-			Type:    cfg.Type,
+			Type:    effective.Type,
 			Enabled: cfg.Enabled,
 			Online:  cfg.Enabled && online[name],
 			TxBytes: st.tx,

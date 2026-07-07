@@ -25,6 +25,8 @@ func sliceEqual(a, b []string) bool {
 }
 
 func interfaceConfigsEqualForReload(a, b *common.InterfaceConfig) bool {
+	a = EffectiveInterfaceConfig(a)
+	b = EffectiveInterfaceConfig(b)
 	if a == nil && b == nil {
 		return true
 	}
@@ -99,7 +101,7 @@ func (s *Stack) ReloadInterfaces(cfg *common.ReticulumConfig) error {
 		if _, ok := s.running[name]; ok {
 			continue
 		}
-		niface, err := interfaces.NewFromConfig(name, ic)
+		niface, err := interfaces.NewFromConfig(name, EffectiveInterfaceConfig(ic))
 		if err != nil {
 			if cfg.PanicOnInterfaceErr {
 				return fmt.Errorf("interface %s: %w", name, err)

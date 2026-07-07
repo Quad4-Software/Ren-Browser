@@ -67,7 +67,7 @@ func fetchLiveCommunityInterfaces(installed map[string]bool) ([]CommunityInterfa
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
 		return nil, fmt.Errorf("decode directory: %w", err)
 	}
-	return markInstalledCommunityItems(payload.Data, installed), nil
+	return AdaptCommunityItemsForPlatform(markInstalledCommunityItems(payload.Data, installed)), nil
 }
 
 func loadBundledCommunityInterfaces(installed map[string]bool) ([]CommunityInterface, error) {
@@ -75,7 +75,7 @@ func loadBundledCommunityInterfaces(installed map[string]bool) ([]CommunityInter
 	if err := json.Unmarshal(bundledCommunityDirectory, &payload); err != nil {
 		return nil, fmt.Errorf("decode bundled directory: %w", err)
 	}
-	return markInstalledCommunityItems(payload.Data, installed), nil
+	return AdaptCommunityItemsForPlatform(markInstalledCommunityItems(payload.Data, installed)), nil
 }
 
 func markInstalledCommunityItems(items []CommunityInterface, installed map[string]bool) []CommunityInterface {

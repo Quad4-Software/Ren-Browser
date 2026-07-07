@@ -66,7 +66,7 @@ func seedCommunityInterfaces(cfg *common.ReticulumConfig) {
 	if err != nil {
 		return
 	}
-	tcp := FilterTCPClientInterfaces(items.Items)
+	tcp := FilterSeedableInterfaces(items.Items)
 	if len(tcp) == 0 {
 		return
 	}
@@ -112,6 +112,11 @@ func loadConfig(override string) (*common.ReticulumConfig, error) {
 		return nil, err
 	}
 	applyRenBrowserDefaults(cfg)
+	if migrateInterfaceConfigs(cfg) {
+		if err := reticulumconfig.SaveConfig(cfg); err != nil {
+			return nil, err
+		}
+	}
 	cfg.ConfigPath = filepath.Clean(path)
 	return cfg, nil
 }
