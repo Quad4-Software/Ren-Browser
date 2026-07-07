@@ -8,6 +8,7 @@ export type TabPage = {
   errorKind?: string;
   durationMs: number;
   lastRaw: string;
+  path?: string;
   pageFg?: string;
   pageBg?: string;
   fromCache?: boolean;
@@ -267,11 +268,17 @@ export function expandHexColor(color: string): string {
   return c;
 }
 
+export function micronPageColors(pageFg?: string, pageBg?: string): { fg: string; bg: string } {
+  return {
+    bg: pageBg?.trim() ? `#${expandHexColor(pageBg)}` : "#000000",
+    fg: pageFg?.trim() ? `#${expandHexColor(pageFg)}` : "#ffffff",
+  };
+}
+
 export function micronShellStyle(contentType: string, pageFg?: string, pageBg?: string): string {
   if (contentType !== "micron") {
     return "";
   }
-  const bg = pageBg ? `#${expandHexColor(pageBg)}` : "#000000";
-  const fg = pageFg ? `#${expandHexColor(pageFg)}` : "#ffffff";
+  const { fg, bg } = micronPageColors(pageFg, pageBg);
   return `background:${bg};color:${fg}`;
 }

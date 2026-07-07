@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Download, FolderOpen, RotateCcw, X } from "@lucide/svelte";
+  import { Download, FolderOpen, RotateCcw, Trash2, X } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
   import {
@@ -29,6 +29,9 @@
     onCancelActive?: (id: string) => void;
     onDismissActive?: (id: string) => void;
     onRetryActive?: (id: string) => void;
+    retryingIds?: ReadonlySet<string>;
+    onClearHistory?: () => void;
+    clearingHistory?: boolean;
     onClose: () => void;
   };
 
@@ -44,6 +47,9 @@
     onCancelActive = () => {},
     onDismissActive = () => {},
     onRetryActive = () => {},
+    retryingIds,
+    onClearHistory = () => {},
+    clearingHistory = false,
     onClose,
   }: Props = $props();
 
@@ -96,7 +102,20 @@
     tabindex="-1"
   >
     <header>
-      <h2>{t("downloads.title")}</h2>
+      <div class="header-row">
+        <h2>{t("downloads.title")}</h2>
+        {#if downloads.length > 0}
+          <button
+            type="button"
+            class="clear-history-btn"
+            aria-label={t("downloads.clearHistory")}
+            disabled={clearingHistory}
+            onclick={onClearHistory}
+          >
+            <Trash2 size={14} />
+          </button>
+        {/if}
+      </div>
       <button type="button" class="page-btn" onclick={onDownloadPage}>
         <Download size={14} />
         <span>{t("downloads.saveCurrentPage")}</span>
@@ -108,50 +127,59 @@
         <ul class="active-list">
           {#each active as item (item.id)}
             {@const percent = progressPercent(item)}
-            <li class="active-row" class:error={item.status === "failed"}>
+            <li
+              class="active-row"
+              class:error={item.status === "failed" || item.status === "canceled"}
+            >
               <div class="active-head">
-                <span class="name" class:pending={item.status === "pending"}>{item.name}</span>
-                {#if item.status === "pending" || item.status === "downloading"}
-                  <button
-                    type="button"
-                    class="icon-btn"
-                    aria-label={t("downloads.cancel")}
-                    onclick={() => onCancelActive(item.id)}
-                  >
-                    <X size={13} />
-                  </button>
-                {:else if item.status === "failed" || item.status === "interrupted"}
-                  <button
-                    type="button"
-                    class="icon-btn"
-                    aria-label={t("downloads.retry")}
-                    onclick={() => onRetryActive(item.id)}
-                  >
-                    <RotateCcw size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    class="icon-btn"
-                    aria-label={t("downloads.dismiss")}
-                    onclick={() => onDismissActive(item.id)}
-                  >
-                    <X size={13} />
-                  </button>
-                {:else}
-                  <button
-                    type="button"
-                    class="icon-btn"
-                    aria-label={t("downloads.dismiss")}
-                    onclick={() => onDismissActive(item.id)}
-                  >
-                    <X size={13} />
-                  </button>
-                {/if}
+                <span class="name" class:pending={item.status === "pending"} title={item.name}
+                  >{item.name}</span
+                >
+                <div class="active-actions">
+                  {#if item.status === "pending" || item.status === "downloading" || item.status === "retrying"}
+                    <button
+                      type="button"
+                      class="icon-btn"
+                      aria-label={t("downloads.cancel")}
+                      onclick={() => onCancelActive(item.id)}
+                    >
+                      <X size={13} />
+                    </button>
+                  {:else if item.status === "failed" || item.status === "interrupted" || item.status === "canceled"}
+                    <button
+                      type="button"
+                      class="icon-btn"
+                      class:spinning={retryingIds?.has(item.id)}
+                      aria-label={t("downloads.retry")}
+                      disabled={retryingIds?.has(item.id)}
+                      onclick={() => onRetryActive(item.id)}
+                    >
+                      <RotateCcw size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      class="icon-btn"
+                      aria-label={t("downloads.dismiss")}
+                      onclick={() => onDismissActive(item.id)}
+                    >
+                      <X size={13} />
+                    </button>
+                  {:else}
+                    <button
+                      type="button"
+                      class="icon-btn"
+                      aria-label={t("downloads.dismiss")}
+                      onclick={() => onDismissActive(item.id)}
+                    >
+                      <X size={13} />
+                    </button>
+                  {/if}
+                </div>
               </div>
               {#if item.status === "failed"}
                 <span class="error-text">{item.error || t("downloads.downloadFailed")}</span>
               {:else if item.status === "interrupted"}
-                <span class="meta">{t("downloads.interrupted")}</span>
+                <span class="error-text">{item.error || t("downloads.interrupted")}</span>
               {:else if item.status === "retrying"}
                 <span class="meta"
                   >{t("downloads.retrying", {
@@ -192,7 +220,7 @@
           {#each downloads as item (item.path)}
             <li>
               <button type="button" class="file-row" onclick={() => onOpenFile(item.path)}>
-                <span class="name">{item.name}</span>
+                <span class="name" title={item.name}>{item.name}</span>
                 <span class="meta">{formatBytes(item.size)} · {formatWhen(item.modifiedAt)}</span>
               </button>
             </li>
@@ -259,6 +287,38 @@
     border-bottom: 1px solid var(--ren-border);
   }
 
+  .header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .clear-history-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ren-muted);
+    cursor: pointer;
+  }
+
+  .clear-history-btn:hover:not(:disabled) {
+    background: var(--ren-tab-hover);
+    color: var(--ren-fg);
+  }
+
+  .clear-history-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+
   h2 {
     margin: 0;
     font-size: 0.95rem;
@@ -307,7 +367,9 @@
   .list {
     flex: 1;
     min-height: 0;
-    overflow: auto;
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   ul {
@@ -342,6 +404,14 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .active-actions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.1rem;
   }
 
   .active-head .name {
@@ -372,9 +442,24 @@
     cursor: pointer;
   }
 
-  .icon-btn:hover {
+  .icon-btn:hover:not(:disabled) {
     background: var(--ren-tab-hover);
     color: var(--ren-fg);
+  }
+
+  .icon-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .icon-btn.spinning :global(svg) {
+    animation: retry-spin 0.85s linear infinite;
+  }
+
+  @keyframes retry-spin {
+    to {
+      transform: rotate(-360deg);
+    }
   }
 
   .progress-track {
@@ -419,10 +504,12 @@
   .file-row {
     width: 100%;
     min-width: 0;
+    max-width: 100%;
     text-align: left;
     padding: 0.65rem 0.75rem;
     display: grid;
     gap: 0.2rem;
+    overflow: hidden;
   }
 
   .name {

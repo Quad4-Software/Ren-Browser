@@ -1,5 +1,9 @@
+<!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import type { Component } from "svelte";
+  import CrashPage from "$lib/components/CrashPage.svelte";
+  import { crashErrorMessage } from "$lib/browser/crash-log";
+  import { Shutdown } from "../bindings/renbrowser/internal/app/browserservice";
 
   type Props = {
     Root: Component;
@@ -7,14 +11,30 @@
 
   let { Root }: Props = $props();
   let fault = $state<string | null>(null);
+  let faultCause = $state<unknown>(null);
+  let closing = $state(false);
 
   function onerror(error: unknown) {
-    fault = error instanceof Error ? error.message : "Unexpected render error";
+    faultCause = error;
+    fault = crashErrorMessage(error);
   }
 
   function retry() {
     fault = null;
+    faultCause = null;
     location.reload();
+  }
+
+  async function closeApp() {
+    if (closing) {
+      return;
+    }
+    closing = true;
+    try {
+      await Shutdown();
+    } catch {
+      window.close();
+    }
   }
 </script>
 
@@ -22,40 +42,12 @@
   <Root />
 
   {#snippet failed()}
-    <div class="boot-fault">
-      <h1>Ren Browser hit a rendering error</h1>
-      {#if fault}
-        <p>{fault}</p>
-      {/if}
-      <button type="button" onclick={retry}>Reload</button>
-    </div>
+    <CrashPage
+      message={fault ?? ""}
+      cause={faultCause}
+      {closing}
+      onReload={retry}
+      onClose={() => void closeApp()}
+    />
   {/snippet}
 </svelte:boundary>
-
-<style>
-  .boot-fault {
-    padding: 24px;
-    color: #f3f4f6;
-    font-family: system-ui, sans-serif;
-    line-height: 1.5;
-  }
-
-  .boot-fault h1 {
-    margin: 0 0 12px;
-    font-size: 1.1rem;
-  }
-
-  .boot-fault p {
-    margin: 0 0 16px;
-    color: #9ca3af;
-  }
-
-  .boot-fault button {
-    border: 1px solid #3f3f46;
-    background: #18181b;
-    color: #f3f4f6;
-    border-radius: 8px;
-    padding: 8px 14px;
-    cursor: pointer;
-  }
-</style>

@@ -57,6 +57,8 @@ func PluginHandler(provider PluginAssetProvider, next http.Handler) http.Handler
 				ctype = "application/javascript"
 			case ".wasm":
 				ctype = "application/wasm"
+			case ".json":
+				ctype = "application/json"
 			default:
 				ctype = "application/octet-stream"
 			}

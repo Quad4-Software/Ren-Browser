@@ -52,6 +52,9 @@ export interface InstalledPlugin {
     "dir": string;
     "enabled": boolean;
     "error"?: string;
+    "grantedPermissions"?: string[] | null;
+    "tampered"?: boolean;
+    "integrityHash"?: string;
 }
 
 export interface Manager {
@@ -69,6 +72,7 @@ export interface Manifest {
     "main"?: string;
     "backend"?: string;
     "permissions"?: string[] | null;
+    "network"?: PluginNetwork | null;
     "contributes": Contributions;
 }
 
@@ -89,6 +93,10 @@ export interface PanelContribView {
     "location"?: string;
 }
 
+export interface PluginNetwork {
+    "endpoints"?: string[] | null;
+}
+
 export interface RendererContrib {
     "id": string;
     "label": string;
@@ -106,6 +114,18 @@ export interface RendererContribView {
     "priority"?: number;
 }
 
+export interface SecurityAssessment {
+    "riskLevel": string;
+    "score": number;
+    "findings": SecurityFinding[] | null;
+}
+
+export interface SecurityFinding {
+    "id": string;
+    "severity": string;
+    "message": string;
+}
+
 export interface SettingsContrib {
     "id": string;
     "title": string;
@@ -117,6 +137,15 @@ export interface SettingsContribView {
     "id": string;
     "title": string;
     "entry": string;
+}
+
+export interface SignatureInfo {
+    "present": boolean;
+    "valid": boolean;
+    "signer"?: string;
+    "signerName"?: string;
+    "trusted": boolean;
+    "error"?: string;
 }
 
 export interface ThemeContrib {

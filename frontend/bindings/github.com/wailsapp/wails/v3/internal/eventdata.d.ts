@@ -23,6 +23,7 @@ declare module "@wailsio/runtime" {
             "node:discovered": nomadnet$0.Node[] | null;
             "page:error": app$0.PageResponse;
             "page:loaded": app$0.PageResponse;
+            "plugin:error": string;
             "plugin:loaded": plugins$0.Manifest;
             "plugin:scheme": { [_ in string]?: string } | null;
             "plugin:unloaded": plugins$0.Manifest;

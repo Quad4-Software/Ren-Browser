@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: MIT
 import { describe, expect, it } from "vitest";
-import { isFileURL, pageDownloadName } from "./download";
+import {
+  downloadFailureMessage,
+  isDownloadCanceledError,
+  isFileURL,
+  pageDownloadName,
+  truncateDownloadLabel,
+  canceledDownloadToast,
+} from "./download";
 
 describe("pageDownloadName", () => {
   it("uses the path leaf for mesh pages", () => {
@@ -27,6 +34,70 @@ describe("pageDownloadName", () => {
     expect(pageDownloadName(base, "markdown")).toBe("page.md");
     expect(pageDownloadName(base, "html")).toBe("page.html");
     expect(pageDownloadName(base, "plaintext")).toBe("page.txt");
+  });
+});
+
+describe("isDownloadCanceledError", () => {
+  it("detects plain context canceled errors", () => {
+    expect(isDownloadCanceledError(new Error("context canceled"))).toBe(true);
+    expect(isDownloadCanceledError("download canceled")).toBe(true);
+  });
+
+  it("detects wails runtime error payloads", () => {
+    expect(
+      isDownloadCanceledError(
+        JSON.stringify({ message: "context canceled", cause: {}, kind: "RuntimeError" }),
+      ),
+    ).toBe(true);
+  });
+
+  it("ignores real download failures", () => {
+    expect(isDownloadCanceledError(new Error("node response timed out"))).toBe(false);
+  });
+});
+
+describe("downloadFailureMessage", () => {
+  it("returns empty text for canceled downloads", () => {
+    expect(downloadFailureMessage(new Error("context canceled"), "fallback")).toBe("");
+  });
+
+  it("unwraps wails runtime error messages", () => {
+    expect(
+      downloadFailureMessage(
+        JSON.stringify({ message: "permission denied", kind: "RuntimeError" }),
+        "fallback",
+      ),
+    ).toBe("permission denied");
+  });
+});
+
+describe("truncateDownloadLabel", () => {
+  it("truncates long filenames for toasts", () => {
+    const longName = "a".repeat(60) + ".zip";
+    const truncated = truncateDownloadLabel(longName);
+    expect(truncated.length).toBeLessThanOrEqual(48);
+    expect(truncated.endsWith("\u2026")).toBe(true);
+  });
+
+  it("keeps short filenames unchanged", () => {
+    expect(truncateDownloadLabel("guide.zip")).toBe("guide.zip");
+  });
+});
+
+describe("canceledDownloadToast", () => {
+  const translate = (key: string, params?: Record<string, string>) => {
+    if (key === "downloads.canceledNamed" && params?.name) {
+      return `Canceled: ${params.name}`;
+    }
+    return "Canceled";
+  };
+
+  it("includes the truncated download name", () => {
+    expect(canceledDownloadToast("guide.zip", translate)).toBe("Canceled: guide.zip");
+  });
+
+  it("falls back when the name is missing", () => {
+    expect(canceledDownloadToast("", translate)).toBe("Canceled");
   });
 });
 

@@ -8,6 +8,34 @@ export type Disposable = {
   dispose(): void;
 };
 
+export type ActivePageSnapshot = {
+  url: string;
+  path: string;
+  contentType: string;
+  html: string;
+  raw: string;
+};
+
+export type RenderedPageSnapshot = {
+  html: string;
+  contentType: string;
+  raw: string;
+  pageFg?: string;
+  pageBg?: string;
+};
+
+export type PluginHTTPRequest = {
+  method?: string;
+  url: string;
+  headers?: Record<string, string>;
+  body?: string;
+};
+
+export type PluginHTTPResponse = {
+  statusCode: number;
+  body: string;
+};
+
 export type PluginContext = {
   pluginId: string;
   subscriptions: {
@@ -21,12 +49,32 @@ export type PluginContext = {
     getCurrentURL(): string;
     navigate(url: string): void;
   };
+  content: {
+    getActivePage(): ActivePageSnapshot;
+    updateActivePage(patch: Partial<ActivePageSnapshot>): void;
+    renderRaw(path: string, raw: string): Promise<RenderedPageSnapshot>;
+  };
+  network?: {
+    fetch(req: PluginHTTPRequest): Promise<PluginHTTPResponse>;
+  };
+  wasm?: {
+    call(exportName: string, input: unknown): Promise<Record<string, unknown>>;
+  };
   events: {
     on(event: string, fn: (data: unknown) => void): Disposable;
     emit(event: string, data: unknown): void;
   };
   ui: {
     showToast(message: string): void;
+  };
+  capabilities: {
+    networkFetch: boolean;
+    wasmBackend: boolean;
+  };
+  i18n: {
+    locale: string;
+    t(key: string, params?: Record<string, string | number>): string;
+    onChange(listener: () => void): () => void;
   };
 };
 

@@ -2,10 +2,12 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import { Pin, Plus, X } from "@lucide/svelte";
+  import { handleTitlebarDoubleClick } from "$lib/browser/window-actions";
   import { clampMenuPosition } from "$lib/browser/context-menu";
   import { MAX_TABS, TAB_GAP_PX, type Tab, tabsAreaWidth, tabWidthForTab } from "$lib/browser/url";
   import TabPreviewThumb from "$lib/components/TabPreviewThumb.svelte";
   import WindowControls from "$lib/components/WindowControls.svelte";
+  import type { MicronEffectiveEngine } from "$lib/micron/render-page";
   import { t } from "$lib/i18n/i18n.svelte";
 
   type MenuAction =
@@ -29,6 +31,7 @@
     mobileUI: boolean;
     showWindowControls?: boolean;
     tabHoverPreviews: boolean;
+    micronEngine?: MicronEffectiveEngine;
     splitTabId: string | null;
     splitViewOpen: boolean;
     onSelect: (id: string) => void;
@@ -46,6 +49,7 @@
     onCloseRight: (id: string) => void;
     onCloseAll: () => void;
     onTogglePin: (id: string) => void;
+    onWindowChromeError?: (message: string) => void;
   };
 
   let {
@@ -54,6 +58,7 @@
     mobileUI,
     showWindowControls = true,
     tabHoverPreviews,
+    micronEngine = "js",
     splitTabId,
     splitViewOpen,
     onSelect,
@@ -71,6 +76,7 @@
     onCloseRight,
     onCloseAll,
     onTogglePin,
+    onWindowChromeError = () => {},
   }: Props = $props();
 
   let dragId = $state<string | null>(null);
@@ -90,7 +96,7 @@
   let hoverTabId = $state<string | null>(null);
   let previewPos = $state({ left: 0, top: 0 });
 
-  const PREVIEW_WIDTH = 220;
+  const PREVIEW_WIDTH = 280;
   const PREVIEW_OFFSET = 6;
   const PREVIEW_HOVER_DELAY_MS = 400;
 
@@ -309,6 +315,16 @@
         break;
     }
   }
+
+  async function handleDragStripDoubleClick() {
+    if (nativeTitlebar || mobileUI) {
+      return;
+    }
+    const result = await handleTitlebarDoubleClick();
+    if (!result.ok) {
+      onWindowChromeError(result.error || t("window.actionFailed"));
+    }
+  }
 </script>
 
 <svelte:window onclick={closeMenu} />
@@ -342,7 +358,7 @@
             class:dragging={dragId === tab.id}
             role="tab"
             aria-selected={tab.active}
-            title={tab.title}
+            title={tabHoverPreviews ? undefined : tab.title}
             draggable="true"
             style:--tab-width="{tabItemWidth}px"
             style:--wails-draggable="no-drag"
@@ -406,6 +422,7 @@
         class="drag-strip"
         style:--wails-draggable={nativeTitlebar ? "no-drag" : "drag"}
         aria-hidden="true"
+        ondblclick={handleDragStripDoubleClick}
       ></div>
     {/if}
   </div>
@@ -471,7 +488,12 @@
     style:top="{previewPos.top}px"
     role="tooltip"
   >
-    <TabPreviewThumb tab={hoverTab} label={hoverTab.title} class="tab-preview-thumb" />
+    <TabPreviewThumb
+      tab={hoverTab}
+      label={hoverTab.title}
+      class="tab-preview-thumb"
+      {micronEngine}
+    />
     <div class="tab-preview-footer">
       <span class="tab-preview-title">{hoverTab.title || hoverTab.url || t("tab.new")}</span>
       {#if hoverTab.url && hoverTab.url !== hoverTab.title}
@@ -732,7 +754,7 @@
   .tab-preview-popover {
     position: fixed;
     z-index: 950;
-    width: 220px;
+    width: 280px;
     border: 1px solid var(--ren-border);
     border-radius: calc(var(--ren-radius) + 2px);
     background: var(--ren-chrome-bg);
@@ -743,8 +765,12 @@
 
   :global(.tab-preview-thumb.thumb) {
     width: 100%;
-    height: 10.5rem;
+    height: 14rem;
     border-bottom: 1px solid var(--ren-border);
+  }
+
+  :global(.tab-preview-thumb.thumb .thumb-viewport) {
+    min-height: 14rem;
   }
 
   .tab-preview-footer {

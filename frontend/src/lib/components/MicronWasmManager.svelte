@@ -11,6 +11,7 @@
     removeMicronWasmParser,
     type MicronWasmParserListEntry,
   } from "$lib/micron/wasm-store";
+  import { formatBindingError } from "$lib/browser/binding-errors.js";
   import {
     invalidateNomadMicronWasmPreload,
     isMicronWasmBundled,
@@ -75,7 +76,7 @@
       await refreshList();
       await activateParser(id);
     } catch (err) {
-      error = err instanceof Error ? err.message : String(err);
+      error = formatBindingError(err, t("micronWasm.loadFailed"));
     } finally {
       busy = false;
     }
@@ -94,7 +95,7 @@
       await refreshList();
       await activateParser(id);
     } catch (err) {
-      error = err instanceof Error ? err.message : String(err);
+      error = formatBindingError(err, t("micronWasm.loadFailed"));
     } finally {
       busy = false;
       input.value = "";
@@ -117,7 +118,7 @@
       const next = selectedParserId === parserId ? fallback : selectedParserId;
       await activateParser(next);
     } catch (err) {
-      error = err instanceof Error ? err.message : String(err);
+      error = formatBindingError(err, t("micronWasm.loadFailed"));
     } finally {
       busy = false;
     }

@@ -122,6 +122,7 @@ func registerEvents() {
 	application.RegisterEvent[app.StoreHealth]("store:health")
 	application.RegisterEvent[plugins.Manifest]("plugin:loaded")
 	application.RegisterEvent[plugins.Manifest]("plugin:unloaded")
+	application.RegisterEvent[string]("plugin:error")
 	application.RegisterEvent[map[string]string]("plugin:scheme")
 }
 

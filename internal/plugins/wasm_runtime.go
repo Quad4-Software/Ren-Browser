@@ -6,60 +6,96 @@ import (
 	"fmt"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/tetratelabs/wazero"
-	"github.com/tetratelabs/wazero/api"
 )
-
-const wasmTimeout = 500 * time.Millisecond
 
 type WasmRuntime struct {
 	mu      sync.Mutex
 	runtime wazero.Runtime
-	modules map[string]api.Module
+	modules map[string]*wasmPlugin
 }
 
 func NewWasmRuntime() *WasmRuntime {
 	return &WasmRuntime{
 		runtime: wazero.NewRuntime(context.Background()),
-		modules: make(map[string]api.Module),
+		modules: make(map[string]*wasmPlugin),
 	}
 }
 
-func (rt *WasmRuntime) LoadRenderer(pluginID, wasmPath string, manifest Manifest) (Renderer, error) {
+func (rt *WasmRuntime) LoadPlugin(pluginID, wasmPath string, manifest Manifest, granted []string) (*wasmPlugin, error) {
+	return rt.LoadPluginWithFetch(pluginID, wasmPath, manifest, granted, nil)
+}
+
+func (rt *WasmRuntime) LoadPluginWithFetch(pluginID, wasmPath string, manifest Manifest, granted []string, fetch func(WasmHTTPRequest) (WasmHTTPResponse, error)) (*wasmPlugin, error) {
 	data, err := os.ReadFile(wasmPath) // #nosec G304 -- plugin wasm from managed dir
 	if err != nil {
 		return nil, err
 	}
-	mod, err := rt.loadModule(pluginID, data)
-	if err != nil {
-		return nil, err
-	}
-	return &wasmRenderer{pluginID: pluginID, manifest: manifest, mod: mod}, nil
+	return rt.loadPlugin(pluginID, data, manifest, granted, fetch)
 }
 
-func (rt *WasmRuntime) loadModule(pluginID string, data []byte) (api.Module, error) {
+func (rt *WasmRuntime) loadPlugin(pluginID string, data []byte, manifest Manifest, granted []string, fetch func(WasmHTTPRequest) (WasmHTTPResponse, error)) (*wasmPlugin, error) {
 	rt.mu.Lock()
 	defer rt.mu.Unlock()
-	if mod, ok := rt.modules[pluginID]; ok {
-		return mod, nil
+	if existing, ok := rt.modules[pluginID]; ok {
+		return existing, nil
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	networkFetch := HasGrantedPermission(granted, PermNetworkFetch)
+	host := newWasmHost(pluginID, manifest, networkFetch, fetch)
+	ctx, cancel := context.WithTimeout(context.Background(), wasmLoadTimeout)
 	defer cancel()
-	mod, err := rt.runtime.InstantiateWithConfig(ctx, data, wazero.NewModuleConfig())
+
+	_, err := rt.runtime.NewHostModuleBuilder(wasmHostModule).
+		NewFunctionBuilder().
+		WithFunc(host.httpFetch).
+		Export("http_fetch").
+		Instantiate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("instantiate wasm host: %w", err)
+	}
+
+	mod, err := rt.runtime.InstantiateWithConfig(ctx, data, wazero.NewModuleConfig().WithName(pluginID))
+	if err != nil {
+		return nil, fmt.Errorf("instantiate wasm plugin: %w", err)
+	}
+	if init := mod.ExportedFunction("_initialize"); init != nil {
+		if _, err := init.Call(ctx); err != nil {
+			return nil, fmt.Errorf("wasm initialize: %w", err)
+		}
+	}
+
+	wp := &wasmPlugin{
+		pluginID: pluginID,
+		manifest: manifest,
+		mod:      mod,
+		host:     host,
+	}
+	rt.modules[pluginID] = wp
+	return wp, nil
+}
+
+func (rt *WasmRuntime) Get(pluginID string) (*wasmPlugin, bool) {
+	rt.mu.Lock()
+	defer rt.mu.Unlock()
+	wp, ok := rt.modules[pluginID]
+	return wp, ok
+}
+
+func (rt *WasmRuntime) LoadRenderer(pluginID, wasmPath string, manifest Manifest, granted []string) (Renderer, error) {
+	wp, err := rt.LoadPlugin(pluginID, wasmPath, manifest, granted)
 	if err != nil {
 		return nil, err
 	}
-	rt.modules[pluginID] = mod
-	return mod, nil
+	return wasmRendererAdapter{plugin: wp}, nil
 }
 
 func (rt *WasmRuntime) Close() error {
 	rt.mu.Lock()
 	defer rt.mu.Unlock()
-	for id, mod := range rt.modules {
-		_ = mod.Close(context.Background())
+	for id, wp := range rt.modules {
+		_ = wp.mod.Close(context.Background())
 		delete(rt.modules, id)
 	}
 	if rt.runtime != nil {
@@ -71,106 +107,43 @@ func (rt *WasmRuntime) Close() error {
 func (rt *WasmRuntime) Unload(pluginID string) {
 	rt.mu.Lock()
 	defer rt.mu.Unlock()
-	if mod, ok := rt.modules[pluginID]; ok {
-		_ = mod.Close(context.Background())
+	if wp, ok := rt.modules[pluginID]; ok {
+		_ = wp.mod.Close(context.Background())
 		delete(rt.modules, pluginID)
 	}
 }
 
 func (rt *WasmRuntime) BeforeFetchHook(pluginID string) BeforeFetchHook {
-	return func(ctx FetchContext) (FetchHookResult, error) {
-		return FetchHookResult{}, nil
+	wp, ok := rt.Get(pluginID)
+	if !ok {
+		return func(ctx FetchContext) (FetchHookResult, error) {
+			return FetchHookResult{}, nil
+		}
 	}
+	return wp.BeforeFetchHook()
 }
 
 func (rt *WasmRuntime) AfterFetchHook(pluginID string) AfterFetchHook {
-	return func(ctx FetchContext, body []byte) ([]byte, error) {
-		return body, nil
-	}
-}
-
-type wasmRenderer struct {
-	pluginID string
-	manifest Manifest
-	mod      api.Module
-}
-
-func (w *wasmRenderer) ID() string {
-	for _, r := range w.manifest.Contributes.Renderers {
-		return w.pluginID + "." + r.ID
-	}
-	return w.pluginID + ".wasm"
-}
-
-func (w *wasmRenderer) Priority() int {
-	for _, r := range w.manifest.Contributes.Renderers {
-		if r.Priority > 0 {
-			return r.Priority
+	wp, ok := rt.Get(pluginID)
+	if !ok {
+		return func(ctx FetchContext, body []byte) ([]byte, error) {
+			return body, nil
 		}
 	}
-	return 50
+	return wp.AfterFetchHook()
 }
 
-func (w *wasmRenderer) PluginID() string { return w.pluginID }
-
-func (w *wasmRenderer) Match(path string, body []byte, detected string) bool {
-	for _, r := range w.manifest.Contributes.Renderers {
-		for _, ext := range r.Extensions {
-			if ext != "" && hasSuffixFold(path, ext) {
-				return true
-			}
-		}
-		for _, mime := range r.MIME {
-			if mime != "" && detected == mime {
-				return true
-			}
-		}
+func (rt *WasmRuntime) loadPluginForTest(pluginID string, data []byte, manifest Manifest, granted []string, fetch func(WasmHTTPRequest) (WasmHTTPResponse, error)) (*wasmPlugin, error) {
+	rt.mu.Lock()
+	if wp, ok := rt.modules[pluginID]; ok {
+		rt.mu.Unlock()
+		return wp, nil
 	}
-	return false
+	rt.mu.Unlock()
+	return rt.loadPlugin(pluginID, data, manifest, granted, fetch)
 }
 
-func (w *wasmRenderer) Render(path string, body []byte, nodeHash string) (Rendered, error) {
-	fn := w.mod.ExportedFunction("render")
-	if fn == nil {
-		return Rendered{}, fmt.Errorf("wasm module missing render export")
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), wasmTimeout)
-	defer cancel()
-	_, err := fn.Call(ctx,
-		api.EncodeU32(uint32(len(path))),     // #nosec G115 -- wasm ABI length hint
-		api.EncodeU32(uint32(len(body))),     // #nosec G115 -- wasm ABI length hint
-		api.EncodeU32(uint32(len(nodeHash))), // #nosec G115 -- wasm ABI length hint
-	)
-	if err != nil {
-		return Rendered{}, fmt.Errorf("wasm render failed: %w", err)
-	}
-	htmlOut := fmt.Sprintf("<pre class=\"plaintext\">wasm render stub (%d bytes)</pre>", len(body))
-	htmlOut = SanitizePluginHTML(htmlOut, w.manifest)
-	return Rendered{Kind: "html", HTML: htmlOut, Raw: string(body)}, nil
-}
-
-func hasSuffixFold(path, suffix string) bool {
-	if len(path) < len(suffix) {
-		return false
-	}
-	return equalFold(path[len(path)-len(suffix):], suffix)
-}
-
-func equalFold(a, b string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := 0; i < len(a); i++ {
-		ca, cb := a[i], b[i]
-		if ca >= 'A' && ca <= 'Z' {
-			ca += 'a' - 'A'
-		}
-		if cb >= 'A' && cb <= 'Z' {
-			cb += 'a' - 'A'
-		}
-		if ca != cb {
-			return false
-		}
-	}
-	return true
+// LoadPluginForTest loads a wasm plugin with an optional HTTP fetch stub.
+func (rt *WasmRuntime) LoadPluginForTest(pluginID string, data []byte, manifest Manifest, fetch func(WasmHTTPRequest) (WasmHTTPResponse, error)) (*wasmPlugin, error) {
+	return rt.loadPluginForTest(pluginID, data, manifest, DefaultGrantedPermissions(manifest), fetch)
 }

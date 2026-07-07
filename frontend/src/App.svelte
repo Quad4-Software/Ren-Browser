@@ -36,6 +36,7 @@
     ImportTheme,
     ListActiveDownloads,
     ListDownloads,
+    ClearDownloadHistory,
     ListInterfaces,
     ListNodes,
     ListSystemFonts,
@@ -45,9 +46,9 @@
     OpenURL,
     OpenFreshURL,
     PickDownloadDir,
-    ResumePendingDownloads,
     RetryDownload,
     ResetDatabase,
+    ResetSettings,
     ReloadReticulumConfig,
     SaveTabs,
     SaveReticulumConfigText,
@@ -81,6 +82,7 @@
   import MobileUrlBar from "$lib/components/MobileUrlBar.svelte";
   import MobileTabsPage from "$lib/components/MobileTabsPage.svelte";
   import DownloadsMenu from "$lib/components/DownloadsMenu.svelte";
+  import PluginPanelHost from "$lib/components/PluginPanelHost.svelte";
   import ConfirmDialog from "$lib/components/ConfirmDialog.svelte";
   import AppStoreError from "$lib/components/AppStoreError.svelte";
   import { isStoreBlockingKind } from "$lib/browser/errors";
@@ -115,7 +117,7 @@
     findPanel,
     parsePanelKey,
   } from "$lib/plugins/registry.js";
-  import { getContributions as fetchContributions } from "$lib/plugins/api.js";
+  import { getContributions as fetchContributions, listPlugins } from "$lib/plugins/api.js";
   import { PluginsDir } from "../bindings/renbrowser/internal/app/pluginhost.js";
   import {
     activateAllPlugins,
@@ -123,9 +125,17 @@
     handlePluginScheme,
   } from "$lib/plugins/lifecycle.js";
   import { dispatchPluginCommand, matchPluginKeybind } from "$lib/plugins/command-dispatch.js";
+  import { pluginLabel } from "$lib/plugins/plugin-label.js";
   import type { ActivePanel, ContributionsSnapshot } from "$lib/plugins/api-types.js";
-  import PluginPanelHost from "$lib/components/PluginPanelHost.svelte";
-  import { downloadPageContent } from "$lib/browser/download";
+  import { formatBindingError } from "$lib/browser/binding-errors.js";
+  import {
+    downloadPageContent,
+    downloadFailureMessage,
+    canceledDownloadToast,
+    isDownloadCanceledError,
+    pageDownloadName,
+    type DownloadResult,
+  } from "$lib/browser/download";
   import { blockExternalLinkPointerEvent } from "$lib/browser/navigation-guard";
   import {
     canOpenTab,
@@ -249,6 +259,7 @@
   let pluginToast = $state("");
   let pluginToastIsError = $state(false);
   let pluginsDir = $state("");
+  let pluginGrantedById = $state<Record<string, string[]>>({});
   let url = $state("");
   let loading = $state(false);
   let html = $state("");
@@ -273,12 +284,15 @@
   let downloadDir = $state("");
   let downloads = $state<DownloadRow[]>([]);
   let activeDownloads = $state<ActiveDownloadRow[]>([]);
+  let retryingDownloadIds = new SvelteSet<string>();
+  let clearingDownloadHistory = $state(false);
   const activeDownloadViews = $derived(withProgress(activeDownloads));
   let downloadsOpen = $state(false);
   let findOpen = $state(false);
   let canGoBack = $state(false);
   let canGoForward = $state(false);
   let lastRaw = $state("");
+  let pagePath = $state("");
   let fromCache = $state(false);
   let cachedAt = $state(0);
   let showSource = $state(false);
@@ -406,16 +420,66 @@
     }, duration);
   }
 
+  function pluginHostOpts(pluginId?: string) {
+    const granted = pluginId ? (pluginGrantedById[pluginId] ?? []) : [];
+    return {
+      getCurrentURL: () => url,
+      navigate: (next: string) => void browseURL(next),
+      showToast: showPluginToast,
+      getActivePage: () => ({
+        url,
+        path: pagePath,
+        contentType,
+        html,
+        raw: lastRaw,
+      }),
+      updateActivePage: (
+        patch: Partial<{
+          url: string;
+          path: string;
+          contentType: string;
+          html: string;
+          raw: string;
+        }>,
+      ) => {
+        const next = { ...currentPageState() };
+        if (patch.html !== undefined) {
+          next.html = patch.html;
+        }
+        if (patch.contentType !== undefined) {
+          next.contentType = patch.contentType;
+        }
+        if (patch.raw !== undefined) {
+          next.lastRaw = patch.raw;
+        }
+        if (patch.path !== undefined) {
+          next.path = patch.path;
+        }
+        applyPageState(next);
+        syncActiveTabPage();
+        schedulePersistTabs();
+      },
+      networkFetch: granted.includes("network.fetch"),
+      wasmBackend: true,
+      onPluginError: (pluginId: string, message: string) => {
+        showPluginToast(
+          `Extension ${pluginId} failed: ${formatBindingError(message, "Extension failed")}`,
+          { isError: true },
+        );
+      },
+    };
+  }
+
   async function bootPlugins() {
     pluginsDir = (await PluginsDir()) ?? "";
+    const rows = await listPlugins();
+    pluginGrantedById = Object.fromEntries(
+      (rows ?? []).map((row) => [row.id, row.grantedPermissions ?? []]),
+    );
     const snapshot = await fetchContributions();
     setContributions(snapshot);
     pluginContributions = getContributionsSnapshot();
-    await activateAllPlugins({
-      getCurrentURL: () => url,
-      navigate: (next) => void browseURL(next),
-      showToast: showPluginToast,
-    });
+    await activateAllPlugins(pluginHostOpts());
   }
 
   async function reloadPlugins() {
@@ -431,6 +495,7 @@
       errorKind: "",
       durationMs: 0,
       lastRaw: "",
+      path: "",
       pageFg: "",
       pageBg: "",
       fromCache: false,
@@ -448,6 +513,7 @@
       errorKind: page.errorKind ?? "",
       durationMs: page.durationMs ?? 0,
       lastRaw: page.raw ?? "",
+      path: page.path ?? "",
       pageFg: page.pageFg ?? "",
       pageBg: page.pageBg ?? "",
       fromCache: page.fromCache ?? false,
@@ -465,6 +531,7 @@
       errorKind,
       durationMs,
       lastRaw,
+      path: pagePath,
       pageFg,
       pageBg,
       fromCache,
@@ -481,6 +548,7 @@
     errorKind = page.errorKind ?? "";
     durationMs = page.durationMs ?? 0;
     lastRaw = page.lastRaw ?? "";
+    pagePath = page.path ?? "";
     pageFg = page.pageFg ?? "";
     pageBg = page.pageBg ?? "";
     fromCache = page.fromCache ?? false;
@@ -1010,7 +1078,7 @@
       }
       const failed = {
         ...emptyPage(),
-        error: err instanceof Error ? err.message : String(err),
+        error: formatBindingError(err, "Request failed"),
         errorKind: "internal",
       };
       applyPageToTab(tabId, failed, normalized);
@@ -1103,7 +1171,6 @@
     await Promise.all([loadNodes(), loadInterfaces(), refreshHistoryState()]);
     void refreshNetwork();
     void loadStoreHealth();
-    void ResumePendingDownloads();
     void loadActiveDownloads();
 
     const active = tabs.find((tab) => tab.active);
@@ -1187,7 +1254,7 @@
     try {
       configText = await GetReticulumConfigText();
     } catch (err) {
-      configError = err instanceof Error ? err.message : String(err);
+      configError = formatBindingError(err, "Request failed");
     }
   }
 
@@ -1199,7 +1266,7 @@
       await loadInterfaces();
       await loadCommunityInterfaces();
     } catch (err) {
-      configError = err instanceof Error ? err.message : String(err);
+      configError = formatBindingError(err, "Request failed");
     } finally {
       configSaving = false;
     }
@@ -1234,7 +1301,7 @@
       await loadInterfaces();
       await loadCommunityInterfaces();
     } catch (err) {
-      configError = err instanceof Error ? err.message : String(err);
+      configError = formatBindingError(err, "Request failed");
     } finally {
       configSaving = false;
     }
@@ -1252,7 +1319,7 @@
       communityFromBundle = !!result?.fromBundle;
     } catch (err) {
       communityFromBundle = false;
-      communityError = err instanceof Error ? err.message : String(err);
+      communityError = formatBindingError(err, "Request failed");
     } finally {
       communityLoading = false;
     }
@@ -1282,7 +1349,7 @@
       await loadConfigText();
       await loadCommunityInterfaces();
     } catch (err) {
-      communityError = err instanceof Error ? err.message : String(err);
+      communityError = formatBindingError(err, "Request failed");
     } finally {
       communityImporting = false;
     }
@@ -1515,7 +1582,7 @@
       await IdentifyToNode(url);
       await openPage(url, false, { skipCache: true });
     } catch (err) {
-      error = err instanceof Error ? err.message : String(err);
+      error = formatBindingError(err, "Request failed");
       errorKind = "internal";
     } finally {
       identifying = false;
@@ -1559,7 +1626,7 @@
       storeHealth = {
         ok: false,
         kind: "database_corrupt",
-        detail: err instanceof Error ? err.message : String(err),
+        detail: formatBindingError(err, "Request failed"),
         path: storeHealth.path,
       };
     }
@@ -1642,7 +1709,19 @@
   }
 
   async function cancelActiveDownload(id: string) {
-    await CancelDownload(id);
+    const item = activeDownloads.find((entry) => entry.id === id);
+    try {
+      const ok = await CancelDownload(id);
+      if (ok) {
+        showPluginToast(canceledDownloadToast(item?.name, t));
+        return;
+      }
+      showPluginToast(t("downloads.cancelFailed"), { isError: true });
+    } catch (err) {
+      showPluginToast(formatBindingError(err, t("downloads.cancelFailed")), {
+        isError: true,
+      });
+    }
   }
 
   async function dismissActiveDownload(id: string) {
@@ -1651,8 +1730,26 @@
   }
 
   async function retryActiveDownload(id: string) {
-    if (await RetryDownload(id)) {
-      await loadActiveDownloads();
+    if (retryingDownloadIds.has(id)) {
+      return;
+    }
+    retryingDownloadIds.add(id);
+    try {
+      const result = await RetryDownload(id);
+      if (result?.ok) {
+        await loadActiveDownloads();
+        showPluginToast(t("downloads.retryStarted"));
+        return;
+      }
+      showPluginToast(formatBindingError(result?.error, t("downloads.retryFailed")), {
+        isError: true,
+      });
+    } catch (err) {
+      showPluginToast(formatBindingError(err, t("downloads.retryFailed")), {
+        isError: true,
+      });
+    } finally {
+      retryingDownloadIds.delete(id);
     }
   }
 
@@ -1666,9 +1763,41 @@
     await loadDownloads();
   }
 
-  function handleDownloadResult(result: { ok: boolean; message: string; pending?: boolean }) {
+  async function clearDownloadHistory() {
+    if (clearingDownloadHistory) {
+      return;
+    }
+    clearingDownloadHistory = true;
+    try {
+      const result = await ClearDownloadHistory();
+      if (result?.ok) {
+        downloads = [];
+        showPluginToast(t("downloads.historyCleared"));
+        return;
+      }
+      showPluginToast(formatBindingError(result?.error, t("downloads.clearHistoryFailed")), {
+        isError: true,
+      });
+    } catch (err) {
+      showPluginToast(formatBindingError(err, t("downloads.clearHistoryFailed")), {
+        isError: true,
+      });
+    } finally {
+      clearingDownloadHistory = false;
+    }
+  }
+
+  function handleDownloadResult(result: DownloadResult) {
+    if (result.canceled) {
+      showPluginToast(canceledDownloadToast(result.name, t));
+      return;
+    }
     if (result.ok && !result.pending) {
       void loadDownloads();
+    }
+    if (result.pending) {
+      showPluginToast(result.message);
+      return;
     }
     showPluginToast(result.message, { isError: !result.ok });
   }
@@ -1691,7 +1820,13 @@
       await loadDownloads();
       showPluginToast(t("downloads.saved"));
     } catch (err) {
-      showPluginToast(err instanceof Error ? err.message : String(err), { isError: true });
+      if (isDownloadCanceledError(err)) {
+        showPluginToast(canceledDownloadToast(pageDownloadName(tab.url, page.contentType), t));
+        return;
+      }
+      showPluginToast(downloadFailureMessage(err, t("downloads.downloadFailed")), {
+        isError: true,
+      });
     }
   }
 
@@ -1902,6 +2037,23 @@
     Events.On("plugin:unloaded", () => {
       void reloadPlugins();
     });
+    Events.On("plugin:error", (event) => {
+      try {
+        const data = JSON.parse(String((event as { data?: string }).data ?? "")) as {
+          pluginId?: string;
+          message?: string;
+        };
+        if (data.pluginId && data.message) {
+          showPluginToast(
+            `Extension ${data.pluginId} disabled: ${formatBindingError(data.message, "Extension failed")}`,
+            { isError: true },
+          );
+        }
+      } catch {
+        // Ignore malformed plugin error payloads.
+      }
+      void reloadPlugins();
+    });
     Events.On("plugin:scheme", async (event) => {
       const data = event.data as { pluginId?: string; url?: string; handler?: string };
       if (!data?.pluginId || !data.url) {
@@ -2071,6 +2223,7 @@
       {mobileUI}
       showWindowControls={desktopChrome}
       {tabHoverPreviews}
+      micronEngine={effectiveMicronEngine}
       {splitViewOpen}
       {splitTabId}
       onSelect={setActiveTab}
@@ -2088,6 +2241,7 @@
       onCloseRight={closeTabsToRight}
       onCloseAll={requestCloseAllTabs}
       onTogglePin={togglePinTab}
+      onWindowChromeError={(message) => showPluginToast(message, { isError: true })}
     />
 
     <BrowserChrome
@@ -2115,6 +2269,9 @@
       onCancelDownload={cancelActiveDownload}
       onDismissDownload={dismissActiveDownload}
       onRetryDownload={retryActiveDownload}
+      {retryingDownloadIds}
+      onClearDownloadHistory={clearDownloadHistory}
+      {clearingDownloadHistory}
       onIdentify={requestIdentify}
       onPanel={setPanel}
       onToggleTheme={toggleTheme}
@@ -2283,6 +2440,9 @@
               currentURL={url}
               {findOpen}
               micronEngine={effectiveMicronEngine}
+              mobileGestures={mobileUI && activePanel === "browser" && !mobileTabsOpen}
+              {canGoBack}
+              onBack={goBack}
               onFindClose={() => (findOpen = false)}
               onNavigate={openPage}
               onRetry={() => openPage(url)}
@@ -2401,11 +2561,9 @@
           <PluginPanelHost
             pluginId={activePluginPanel.pluginId}
             panelId={activePluginPanel.id}
-            title={activePluginPanel.title}
+            title={pluginLabel(activePluginPanel.pluginId, activePluginPanel.title)}
             entry={activePluginPanel.entry}
-            getCurrentURL={() => url}
-            navigate={(next) => void browseURL(next)}
-            showToast={showPluginToast}
+            {...pluginHostOpts(activePluginPanel.pluginId)}
           />
         </aside>
       {/if}
@@ -2439,6 +2597,9 @@
       onCancelActive={cancelActiveDownload}
       onDismissActive={dismissActiveDownload}
       onRetryActive={retryActiveDownload}
+      retryingIds={retryingDownloadIds}
+      onClearHistory={clearDownloadHistory}
+      clearingHistory={clearingDownloadHistory}
       onClose={() => (downloadsOpen = false)}
     />
   {/if}

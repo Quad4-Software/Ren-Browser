@@ -23,7 +23,27 @@
     hops: number;
     interface?: string;
     error?: string;
+    source?: string;
+    pluginId?: string;
+    method?: string;
+    statusCode?: number;
   };
+
+  function networkSourceLabel(row: NetworkEntry): string {
+    if (row.source === "plugin") {
+      const plugin = row.pluginId ? ` ${row.pluginId}` : "";
+      const method = row.method ? ` ${row.method}` : "";
+      return `${t("devtools.pluginFetch")}${plugin}${method}`.trim();
+    }
+    return row.interface || "—";
+  }
+
+  function networkPathLabel(row: NetworkEntry): string {
+    if (row.source === "plugin") {
+      return row.url || row.path;
+    }
+    return row.path;
+  }
 
   type Props = {
     logs: LogEntry[];
@@ -207,6 +227,7 @@
               <th>{t("devtools.path")}</th>
               <th>{t("devtools.hops")}</th>
               <th>{t("devtools.interface")}</th>
+              <th>{t("devtools.status")}</th>
               <th>ms</th>
               <th>{t("devtools.bytes")}</th>
               <th>{t("devtools.cache")}</th>
@@ -215,11 +236,12 @@
           </thead>
           <tbody>
             {#each network as row (row.time + row.url)}
-              <tr>
+              <tr data-source={row.source ?? "page"}>
                 <td>{formatTime(row.time)}</td>
-                <td>{row.path}</td>
-                <td>{formatHops(row.hops ?? -1)}</td>
-                <td>{row.interface || "—"}</td>
+                <td>{networkPathLabel(row)}</td>
+                <td>{row.source === "plugin" ? "—" : formatHops(row.hops ?? -1)}</td>
+                <td>{networkSourceLabel(row)}</td>
+                <td>{row.source === "plugin" ? row.statusCode || "—" : "—"}</td>
                 <td>{row.durationMs}</td>
                 <td>{row.bytes}</td>
                 <td>{row.fromCache ? t("common.yes") : t("common.no")}</td>

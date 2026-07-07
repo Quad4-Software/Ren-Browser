@@ -29,7 +29,12 @@ type Manifest struct {
 	Main            string            `json:"main,omitempty"`
 	Backend         string            `json:"backend,omitempty"`
 	Permissions     []string          `json:"permissions,omitempty"`
+	Network         *PluginNetwork    `json:"network,omitempty"`
 	Contributes     Contributions     `json:"contributes"`
+}
+
+type PluginNetwork struct {
+	Endpoints []string `json:"endpoints,omitempty"`
 }
 
 type Contributions struct {

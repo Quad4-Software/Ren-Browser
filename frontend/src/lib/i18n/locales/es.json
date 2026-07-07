@@ -251,7 +251,10 @@
     "emptyDescription": "Introduce una dirección en la barra de arriba o abre Descubrir para explorar la malla.",
     "viewSource": "Ver código fuente",
     "downloadPage": "Descargar página",
-    "multilineHint": "Pulse Intro de nuevo para ampliar a varias líneas"
+    "multilineHint": "Pulse Intro de nuevo para ampliar a varias líneas",
+    "pullToRefresh": "Desliza hacia abajo para actualizar",
+    "releaseToRefresh": "Suelta para actualizar",
+    "swipeBack": "Atrás"
   },
   "find": {
     "placeholder": "Buscar en la página",

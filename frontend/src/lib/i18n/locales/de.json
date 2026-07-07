@@ -251,7 +251,10 @@
     "emptyDescription": "Geben Sie eine Adresse in der Leiste oben ein oder öffnen Sie Entdecken, um das Mesh zu durchsuchen.",
     "viewSource": "Quelltext anzeigen",
     "downloadPage": "Seite herunterladen",
-    "multilineHint": "Eingabetaste erneut drücken, um auf mehrere Zeilen zu erweitern"
+    "multilineHint": "Eingabetaste erneut drücken, um auf mehrere Zeilen zu erweitern",
+    "pullToRefresh": "Zum Aktualisieren ziehen",
+    "releaseToRefresh": "Loslassen zum Aktualisieren",
+    "swipeBack": "Zurück"
   },
   "find": {
     "placeholder": "Auf Seite suchen",

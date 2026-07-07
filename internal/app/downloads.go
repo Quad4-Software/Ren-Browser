@@ -154,6 +154,24 @@ func (s *BrowserService) ListDownloads() []DownloadItem {
 	return out
 }
 
+// DownloadHistoryClearResult reports whether the on-disk download list was cleared.
+type DownloadHistoryClearResult struct {
+	OK    bool   `json:"ok"`
+	Error string `json:"error,omitempty"`
+}
+
+// ClearDownloadHistory removes saved download history entries from the profile.
+// Files already on disk are not deleted.
+func (s *BrowserService) ClearDownloadHistory() DownloadHistoryClearResult {
+	if s.store == nil {
+		return DownloadHistoryClearResult{Error: "download history unavailable"}
+	}
+	if err := s.store.SetSetting(downloadHistoryKey, ""); err != nil {
+		return DownloadHistoryClearResult{Error: err.Error()}
+	}
+	return DownloadHistoryClearResult{OK: true}
+}
+
 func (s *BrowserService) OpenDownloadPath(path string) error {
 	if err := s.validateDownloadPath(path); err != nil {
 		return err

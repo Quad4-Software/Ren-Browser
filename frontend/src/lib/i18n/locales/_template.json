@@ -251,7 +251,10 @@
     "emptyDescription": "",
     "viewSource": "",
     "downloadPage": "",
-    "multilineHint": ""
+    "multilineHint": "",
+    "pullToRefresh": "",
+    "releaseToRefresh": "",
+    "swipeBack": ""
   },
   "find": {
     "placeholder": "",

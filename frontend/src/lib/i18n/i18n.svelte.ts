@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: MIT
-import { detectOSLocale, setCatalogLocale, translate, type TranslateParams } from "./catalog";
+import {
+  detectOSLocale,
+  setCatalogLocale,
+  translate,
+  translatePermission,
+  type TranslateParams,
+} from "./catalog";
+import { refreshPluginI18nLocales } from "../plugins/plugin-i18n.js";
 import { type LocaleCode, resolveLocale } from "./locales";
 
 const locale = $state<{ code: LocaleCode }>({
@@ -15,9 +22,15 @@ export function t(key: string, params?: TranslateParams): string {
   return translate(key, params);
 }
 
+export function tPermission(perm: string): string {
+  void locale.code;
+  return translatePermission(perm);
+}
+
 export function setUILocale(localeTag: string): LocaleCode {
   const resolved = setCatalogLocale(localeTag);
   locale.code = resolved;
+  void refreshPluginI18nLocales(resolved);
   return resolved;
 }
 

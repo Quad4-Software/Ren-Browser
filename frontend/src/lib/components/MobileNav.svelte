@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Compass, Download, History, Home, Settings, Terminal } from "@lucide/svelte";
+  import { pluginLabel } from "$lib/plugins/plugin-label.js";
   import type { ActivePanel, PluginPanelContribution } from "$lib/plugins/api-types.js";
   import { panelKey } from "$lib/plugins/registry.js";
   import { t } from "$lib/i18n/i18n.svelte";
@@ -56,8 +57,8 @@
   {#each pluginPanels as panel (panel.pluginId + ":" + panel.id)}
     {@const key = panelKey(panel.pluginId, panel.id)}
     <button class:active={activePanel === key} onclick={() => onPanel(key)}>
-      <span class="plugin-dot">{panel.title.slice(0, 1)}</span>
-      <span>{panel.title}</span>
+      <span class="plugin-dot">{pluginLabel(panel.pluginId, panel.title).slice(0, 1)}</span>
+      <span>{pluginLabel(panel.pluginId, panel.title)}</span>
     </button>
   {/each}
   {#if mobileDevTools}

@@ -69,6 +69,23 @@ func TestUniqueFilePath(t *testing.T) {
 	}
 }
 
+func TestClearDownloadHistory(t *testing.T) {
+	svc := newTestBrowserService(t)
+	if _, err := svc.SaveTextToDownloadDir("page.mu", "hello"); err != nil {
+		t.Fatal(err)
+	}
+	if len(svc.ListDownloads()) != 1 {
+		t.Fatal("expected one download in history")
+	}
+	result := svc.ClearDownloadHistory()
+	if !result.OK {
+		t.Fatalf("result=%#v", result)
+	}
+	if len(svc.ListDownloads()) != 0 {
+		t.Fatal("expected history cleared")
+	}
+}
+
 func TestListDownloads(t *testing.T) {
 	home, err := os.UserHomeDir()
 	if err != nil {

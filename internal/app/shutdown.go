@@ -27,8 +27,11 @@ func (s *BrowserService) shutdown(quitApp bool) {
 		wailsApp := s.app
 		s.mu.Unlock()
 
+		_, _ = s.capturePrimaryWindowState()
+
 		if downloads != nil {
-			downloads.cancelAll()
+			downloads.shutdownInFlight(downloadInterruptedText)
+			s.persistDownloadRecovery(downloads.list())
 		}
 		_ = s.StopReticulum()
 		if stack != nil && stack.Browser() != nil {

@@ -48,6 +48,9 @@ func (s *BrowserService) removePendingDownloadJob(url string) {
 }
 
 func (s *BrowserService) loadPendingDownloadJobs() []pendingDownloadJob {
+	if s.store == nil {
+		return nil
+	}
 	raw, err := s.store.GetSetting(pendingDownloadsKey)
 	if err != nil || strings.TrimSpace(raw) == "" {
 		return nil
@@ -67,6 +70,9 @@ func (s *BrowserService) loadPendingDownloadJobs() []pendingDownloadJob {
 }
 
 func (s *BrowserService) savePendingDownloadJobs(jobs []pendingDownloadJob) {
+	if s.store == nil {
+		return
+	}
 	if len(jobs) == 0 {
 		_ = s.store.SetSetting(pendingDownloadsKey, "")
 		return
@@ -76,11 +82,4 @@ func (s *BrowserService) savePendingDownloadJobs(jobs []pendingDownloadJob) {
 		return
 	}
 	_ = s.store.SetSetting(pendingDownloadsKey, string(raw))
-}
-
-func (s *BrowserService) resumePendingDownloads() {
-	jobs := s.loadPendingDownloadJobs()
-	for _, job := range jobs {
-		s.startBackgroundDownload(job.URL, job.Name)
-	}
 }

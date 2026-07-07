@@ -1,18 +1,35 @@
 // SPDX-License-Identifier: MIT
 import { Events } from "@wailsio/runtime";
+import { RenderRaw } from "../../../bindings/renbrowser/internal/app/browserservice.js";
 import {
+  AddTrustedPublisher,
   DisablePlugin,
   EnablePlugin,
   GetContributions,
   GetPluginStorage,
   InstallPluginFromDir,
+  InstallPluginFromWasm,
   InstallPluginFromZip,
   InvokeCommand,
   ListPlugins,
+  PluginFetch,
+  PluginWasmCall,
+  PreviewPluginInstallFromDir,
+  PreviewPluginInstallFromWasm,
+  PreviewPluginInstallFromZip,
   SetPluginStorage,
   UninstallPlugin,
 } from "../../../bindings/renbrowser/internal/app/pluginhost.js";
-import type { ContributionsSnapshot, PluginContext, PluginModule } from "./api-types.js";
+import type { PluginInstallPreview as BindingPluginInstallPreview } from "../../../bindings/renbrowser/internal/app/models.js";
+import type {
+  ActivePageSnapshot,
+  ContributionsSnapshot,
+  PluginContext,
+  PluginHTTPRequest,
+  PluginModule,
+  RenderedPageSnapshot,
+} from "./api-types.js";
+import type { PluginI18n } from "./plugin-i18n.js";
 
 export async function listPlugins() {
   return ListPlugins();
@@ -26,12 +43,95 @@ export async function disablePlugin(id: string) {
   return DisablePlugin(id);
 }
 
-export async function installFromZip(path: string) {
-  return InstallPluginFromZip(path);
+export type PluginSignatureInfo = {
+  present: boolean;
+  valid: boolean;
+  signer?: string;
+  signerName?: string;
+  trusted: boolean;
+  error?: string;
+};
+
+export type PluginSecurityFinding = {
+  id: string;
+  severity: string;
+  message: string;
+};
+
+export type PluginSecurityAssessment = {
+  riskLevel: string;
+  score: number;
+  findings: PluginSecurityFinding[];
+};
+
+export type PluginInstallPreview = {
+  id: string;
+  name: string;
+  version: string;
+  description?: string;
+  permissions: string[];
+  networkEndpoints: string[];
+  requiresNetworkFetch: boolean;
+  signature: PluginSignatureInfo;
+  security: PluginSecurityAssessment;
+  i18nLocales: string[];
+};
+
+function emptySecurityAssessment(): PluginSecurityAssessment {
+  return { riskLevel: "low", score: 0, findings: [] };
 }
 
-export async function installFromDir(path: string) {
-  return InstallPluginFromDir(path);
+function emptyPluginSignature(): PluginSignatureInfo {
+  return { present: false, valid: false, trusted: false };
+}
+
+function normalizeInstallPreview(raw: BindingPluginInstallPreview): PluginInstallPreview {
+  return {
+    id: raw.id ?? "",
+    name: raw.name ?? "",
+    version: raw.version ?? "",
+    description: raw.description,
+    permissions: raw.permissions ?? [],
+    networkEndpoints: raw.networkEndpoints ?? [],
+    requiresNetworkFetch: raw.requiresNetworkFetch ?? false,
+    signature: raw.signature ?? emptyPluginSignature(),
+    security: raw.security ?? emptySecurityAssessment(),
+    i18nLocales: raw.i18nLocales ?? [],
+  };
+}
+
+export async function previewInstallFromZip(path: string): Promise<PluginInstallPreview> {
+  return normalizeInstallPreview(await PreviewPluginInstallFromZip(path));
+}
+
+export async function previewInstallFromDir(path: string): Promise<PluginInstallPreview> {
+  return normalizeInstallPreview(await PreviewPluginInstallFromDir(path));
+}
+
+export async function previewInstallFromWasm(path: string): Promise<PluginInstallPreview> {
+  return normalizeInstallPreview(await PreviewPluginInstallFromWasm(path));
+}
+
+export type PluginInstallChoices = {
+  dontShowAgain: boolean;
+  trustPublisher: boolean;
+  grantedPermissions: string[];
+};
+
+export async function installFromZip(path: string, granted: string[] = []) {
+  return InstallPluginFromZip(path, granted);
+}
+
+export async function installFromDir(path: string, granted: string[] = []) {
+  return InstallPluginFromDir(path, granted);
+}
+
+export async function installFromWasm(path: string, granted: string[] = []) {
+  return InstallPluginFromWasm(path, granted);
+}
+
+export async function trustPublisher(identity: string, name = "") {
+  return AddTrustedPublisher(identity, name);
 }
 
 export async function uninstallPlugin(id: string) {
@@ -83,10 +183,15 @@ export function createPluginContext(
     getCurrentURL: () => string;
     navigate: (url: string) => void;
     showToast: (message: string) => void;
+    getActivePage: () => ActivePageSnapshot;
+    updateActivePage: (patch: Partial<ActivePageSnapshot>) => void;
+    networkFetch?: boolean;
+    wasmBackend?: boolean;
+    i18n: PluginI18n;
   },
 ): PluginContext {
   const disposables: Array<{ dispose(): void }> = [];
-  return {
+  const ctx: PluginContext = {
     pluginId,
     subscriptions: {
       add(disposable) {
@@ -106,11 +211,32 @@ export function createPluginContext(
       getCurrentURL: opts.getCurrentURL,
       navigate: opts.navigate,
     },
+    content: {
+      getActivePage: opts.getActivePage,
+      updateActivePage: opts.updateActivePage,
+      async renderRaw(path, raw): Promise<RenderedPageSnapshot> {
+        const page = await RenderRaw(path, raw);
+        return {
+          html: page.html ?? "",
+          contentType: page.contentType ?? "",
+          raw: page.raw ?? raw,
+          pageFg: page.pageFg,
+          pageBg: page.pageBg,
+        };
+      },
+    },
     events: {
       on(event, fn) {
         const full = event.includes(":") ? event : `plugin:${pluginId}:${event}`;
         const cancel = Events.On(full, (payload) => {
-          fn((payload as { data?: unknown }).data ?? payload);
+          void (async () => {
+            try {
+              fn((payload as { data?: unknown }).data ?? payload);
+            } catch (err) {
+              const { reportPluginFailure } = await import("./plugin-errors.js");
+              await reportPluginFailure(pluginId, `event:${event}`, err);
+            }
+          })();
         });
         return { dispose: () => cancel() };
       },
@@ -122,7 +248,44 @@ export function createPluginContext(
     ui: {
       showToast: opts.showToast,
     },
+    capabilities: {
+      networkFetch: opts.networkFetch === true,
+      wasmBackend: opts.wasmBackend === true,
+    },
+    i18n: opts.i18n,
   };
+  if (opts.networkFetch) {
+    ctx.network = {
+      async fetch(req: PluginHTTPRequest) {
+        const resp = await PluginFetch(pluginId, {
+          method: req.method ?? "",
+          url: req.url,
+          headers: req.headers ?? {},
+          body: req.body ?? "",
+        });
+        return {
+          statusCode: resp.statusCode ?? 0,
+          body: resp.body ?? "",
+        };
+      },
+    };
+  }
+  if (opts.wasmBackend) {
+    ctx.wasm = {
+      async call(exportName, input) {
+        const raw = await PluginWasmCall(pluginId, exportName, JSON.stringify(input ?? {}));
+        if (!raw) {
+          return {};
+        }
+        try {
+          return JSON.parse(raw) as Record<string, unknown>;
+        } catch {
+          return { body: raw };
+        }
+      },
+    };
+  }
+  return ctx;
 }
 
 export type { PluginModule };

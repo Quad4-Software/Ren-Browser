@@ -56,12 +56,24 @@ export function ClearDevLogs(): $CancellablePromise<void> {
     return $Call.ByID(1245444528);
 }
 
+/**
+ * ClearDownloadHistory removes saved download history entries from the profile.
+ * Files already on disk are not deleted.
+ */
+export function ClearDownloadHistory(): $CancellablePromise<$models.DownloadHistoryClearResult> {
+    return $Call.ByID(3846703956);
+}
+
 export function ClearPageCache(): $CancellablePromise<number> {
     return $Call.ByID(3956852603);
 }
 
 export function ConfigPath(): $CancellablePromise<string> {
     return $Call.ByID(1926139322);
+}
+
+export function DevLog(level: string, message: string, detail: string): $CancellablePromise<void> {
+    return $Call.ByID(2873310536, level, message, detail);
 }
 
 /**
@@ -268,6 +280,10 @@ export function PickPluginDir(): $CancellablePromise<string> {
     return $Call.ByID(1804809056);
 }
 
+export function PickPluginWasm(): $CancellablePromise<string> {
+    return $Call.ByID(4240931193);
+}
+
 export function PickPluginZip(): $CancellablePromise<string> {
     return $Call.ByID(972349000);
 }
@@ -282,6 +298,10 @@ export function ProfileName(): $CancellablePromise<string> {
 
 export function ProfilePath(): $CancellablePromise<string> {
     return $Call.ByID(1012136267);
+}
+
+export function RecordPluginNetworkFetch(pluginID: string, method: string, rawURL: string, statusCode: number, bytes: number, durationMs: number, errMsg: string): $CancellablePromise<void> {
+    return $Call.ByID(587455595, pluginID, method, rawURL, statusCode, bytes, durationMs, errMsg);
 }
 
 export function ReloadReticulumConfig(): $CancellablePromise<string> {
@@ -317,17 +337,11 @@ export function ResolveMicronLink(currentURL: string, destination: string, field
 }
 
 /**
- * ResumePendingDownloads restarts downloads that were interrupted before they
- * finished (for example when Android battery optimization paused the app).
+ * RetryDownload restarts a failed, interrupted, or canceled download from the
+ * beginning. The source URL must still be known; the filename is recovered from
+ * the download entry, a stale path, or the URL when needed.
  */
-export function ResumePendingDownloads(): $CancellablePromise<void> {
-    return $Call.ByID(3521280428);
-}
-
-/**
- * RetryDownload restarts a failed download using the same mesh URL.
- */
-export function RetryDownload(id: string): $CancellablePromise<boolean> {
+export function RetryDownload(id: string): $CancellablePromise<$models.DownloadRetryResult> {
     return $Call.ByID(1783106127, id);
 }
 

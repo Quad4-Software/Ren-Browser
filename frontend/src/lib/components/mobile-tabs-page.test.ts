@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { mount, tick, type ComponentProps } from "svelte";
+import { mount, type ComponentProps } from "svelte";
 import MobileTabsPage from "./MobileTabsPage.svelte";
 import type { Tab } from "$lib/browser/url";
 import {

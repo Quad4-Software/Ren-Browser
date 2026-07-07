@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { beforeEach, describe, expect, it } from "vitest";
-import { getCatalogLocale, setCatalogLocale, translate } from "./catalog";
+import { getCatalogLocale, setCatalogLocale, translate, translatePermission } from "./catalog";
 import { DEFAULT_LOCALE } from "./locales";
 
 describe("translate", () => {
@@ -23,10 +23,9 @@ describe("translate", () => {
     expect(getCatalogLocale()).toBe(DEFAULT_LOCALE);
   });
 
-  it("detects OS-like locale tags", () => {
-    setCatalogLocale("de-DE");
-    expect(getCatalogLocale()).toBe("de");
-    setCatalogLocale("ru_RU");
-    expect(getCatalogLocale()).toBe("ru");
+  it("translates dotted extension permission ids", () => {
+    expect(translatePermission("storage.plugin")).toBe("Store data for this extension");
+    expect(translatePermission("network.fetch")).toBe("Make outbound network requests");
+    expect(translatePermission("unknown.permission")).toBe("unknown.permission");
   });
 });

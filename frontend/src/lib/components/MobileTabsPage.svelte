@@ -207,9 +207,14 @@
   }
 
   :global(.preview.thumb) {
+    width: 100%;
     min-height: 6.5rem;
     height: 6.5rem;
     border-bottom: 1px solid var(--ren-border);
+  }
+
+  :global(.preview.thumb .thumb-viewport) {
+    min-height: 6.5rem;
   }
 
   .card-footer {

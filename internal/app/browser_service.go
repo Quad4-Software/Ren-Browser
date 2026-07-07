@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -67,6 +68,10 @@ type NetworkEntry struct {
 	Hops       int    `json:"hops"`
 	Interface  string `json:"interface,omitempty"`
 	Error      string `json:"error,omitempty"`
+	Source     string `json:"source,omitempty"`
+	PluginID   string `json:"pluginId,omitempty"`
+	Method     string `json:"method,omitempty"`
+	StatusCode int    `json:"statusCode,omitempty"`
 }
 
 type HistoryState struct {
@@ -89,25 +94,30 @@ type ThemeSettings struct {
 }
 
 type BrowserService struct {
-	mu           sync.RWMutex
-	stack        *rns.Stack
-	app          *application.App
-	store        *store.Store
-	storePath    string
-	profileName  string
-	publicMode   bool
-	resetWindow  bool
-	pageCache    *cache.PageCache
-	devLogs      []DevLogEntry
-	networkLog   []NetworkEntry
-	theme        ThemeSettings
-	history      []string
-	histIdx      int
-	lastPage     PageResponse
-	plugins      *plugins.Manager
-	downloads    *downloadManager
-	shuttingDown bool
-	shutdownOnce sync.Once
+	mu                     sync.RWMutex
+	stack                  *rns.Stack
+	app                    *application.App
+	store                  *store.Store
+	storePath              string
+	profileName            string
+	publicMode             bool
+	resetWindow            bool
+	pageCache              *cache.PageCache
+	devLogs                []DevLogEntry
+	networkLog             []NetworkEntry
+	theme                  ThemeSettings
+	history                []string
+	histIdx                int
+	lastPage               PageResponse
+	plugins                *plugins.Manager
+	downloads              *downloadManager
+	shuttingDown           bool
+	shutdownOnce           sync.Once
+	downloadsReconcileOnce sync.Once
+
+	windowPersistOnce  sync.Once
+	windowCaptureMu    sync.Mutex
+	windowCaptureTimer *time.Timer
 }
 
 type ServiceOptions struct {
@@ -149,6 +159,7 @@ func NewBrowserServiceWithOptions(stack *rns.Stack, app *application.App, opts S
 		downloads:   newDownloadManager(),
 	}
 	svc.downloads.onChange = func(items []ActiveDownload) {
+		svc.persistDownloadRecovery(items)
 		if svc.app != nil {
 			svc.app.Event.Emit("downloads:active", items)
 		}
@@ -163,7 +174,7 @@ func NewBrowserServiceWithOptions(stack *rns.Stack, app *application.App, opts S
 	}
 	_ = svc.GetDownloadDir()
 	if stack != nil {
-		svc.resumePendingDownloads()
+		svc.reconcileDownloadsOnce()
 	}
 	return svc, nil
 }
@@ -176,7 +187,13 @@ func (s *BrowserService) AttachStack(stack *rns.Stack) {
 	s.stack = stack
 	s.mu.Unlock()
 	s.bindPersistence()
-	s.resumePendingDownloads()
+	s.reconcileDownloadsOnce()
+}
+
+func (s *BrowserService) reconcileDownloadsOnce() {
+	s.downloadsReconcileOnce.Do(func() {
+		s.reconcileDownloadsOnStartup()
+	})
 }
 
 func (s *BrowserService) bindPersistence() {
@@ -208,6 +225,7 @@ func (s *BrowserService) SetApp(app *application.App) {
 	s.mu.Lock()
 	s.app = app
 	s.mu.Unlock()
+	s.ensureWindowPersistence()
 	s.bindPersistence()
 	s.emitStoreHealth()
 }
@@ -660,26 +678,6 @@ func (s *BrowserService) DismissDownload(id string) {
 	s.downloads.dismiss(id)
 }
 
-// RetryDownload restarts a failed download using the same mesh URL.
-func (s *BrowserService) RetryDownload(id string) bool {
-	item, ok := s.downloads.findByID(id)
-	if !ok {
-		return false
-	}
-	if item.Status != DownloadStatusFailed && item.Status != DownloadStatusInterrupted {
-		return false
-	}
-	s.downloads.dismiss(id)
-	s.startBackgroundDownload(item.URL, item.Name)
-	return true
-}
-
-// ResumePendingDownloads restarts downloads that were interrupted before they
-// finished (for example when Android battery optimization paused the app).
-func (s *BrowserService) ResumePendingDownloads() {
-	s.resumePendingDownloads()
-}
-
 // fileFetchHooks reports every stage transition and byte-progress update of
 // a /file/ fetch to the app's dev log console, so a failed or stalled
 // download is visible immediately instead of surfacing only as a single
@@ -887,6 +885,45 @@ func (s *BrowserService) recordNetwork(page PageResponse) {
 	if s.app != nil {
 		s.app.Event.Emit("network:entry", entry)
 	}
+}
+
+func (s *BrowserService) RecordPluginNetworkFetch(pluginID, method, rawURL string, statusCode, bytes int, durationMs int64, errMsg string) {
+	path := rawURL
+	if parsed, err := url.Parse(rawURL); err == nil && parsed != nil {
+		if parsed.Host != "" {
+			path = parsed.Host + parsed.Path
+		}
+		if path == "" {
+			path = "/"
+		}
+	}
+	entry := NetworkEntry{
+		Time:       time.Now().UnixMilli(),
+		URL:        rawURL,
+		Path:       path,
+		DurationMs: durationMs,
+		Bytes:      bytes,
+		Hops:       -1,
+		Interface:  "plugin",
+		Source:     "plugin",
+		PluginID:   pluginID,
+		Method:     method,
+		StatusCode: statusCode,
+		Error:      errMsg,
+	}
+	s.mu.Lock()
+	s.networkLog = append(s.networkLog, entry)
+	if len(s.networkLog) > 300 {
+		s.networkLog = s.networkLog[len(s.networkLog)-300:]
+	}
+	s.mu.Unlock()
+	if s.app != nil {
+		s.app.Event.Emit("network:entry", entry)
+	}
+}
+
+func (s *BrowserService) DevLog(level, message, detail string) {
+	s.log(level, message, detail)
 }
 
 func (s *BrowserService) log(level, message, detail string) {

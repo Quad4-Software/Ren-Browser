@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -13,6 +14,8 @@ import (
 )
 
 const windowStateKey = "windowState"
+
+const windowCaptureDelay = 250 * time.Millisecond
 
 type WindowState struct {
 	X         int  `json:"x"`
@@ -76,15 +79,33 @@ func (s *BrowserService) ResetWindowState() WindowState {
 	return defaultWindowState()
 }
 
-func (s *BrowserService) CaptureWindowState() (WindowState, error) {
+func (s *BrowserService) primaryWindow() application.Window {
 	if s.app == nil {
-		return WindowState{}, errors.New("window state is only available in desktop mode")
+		return nil
 	}
-	window := s.app.Window.Current()
+	windows := s.app.Window.GetAll()
+	if len(windows) == 0 {
+		return nil
+	}
+	var primary application.Window
+	minID := uint(^uint(0))
+	for _, window := range windows {
+		if id := window.ID(); id < minID {
+			minID = id
+			primary = window
+		}
+	}
+	return primary
+}
+
+func (s *BrowserService) captureWindowState(window application.Window) (WindowState, error) {
 	if window == nil {
 		return WindowState{}, errors.New("window unavailable")
 	}
 	width, height := window.Size()
+	if width <= 0 || height <= 0 {
+		return WindowState{}, errors.New("window size unavailable")
+	}
 	x, y := window.Position()
 	state := WindowState{
 		X:         x,
@@ -97,11 +118,36 @@ func (s *BrowserService) CaptureWindowState() (WindowState, error) {
 	return state, nil
 }
 
+func (s *BrowserService) capturePrimaryWindowState() (WindowState, error) {
+	if s.app == nil {
+		return WindowState{}, errors.New("window state is only available in desktop mode")
+	}
+	return s.captureWindowState(s.primaryWindow())
+}
+
+func (s *BrowserService) CaptureWindowState() (WindowState, error) {
+	return s.capturePrimaryWindowState()
+}
+
+func (s *BrowserService) scheduleCaptureWindowState() {
+	if s.app == nil || s.resetWindow {
+		return
+	}
+	s.windowCaptureMu.Lock()
+	defer s.windowCaptureMu.Unlock()
+	if s.windowCaptureTimer != nil {
+		s.windowCaptureTimer.Stop()
+	}
+	s.windowCaptureTimer = time.AfterFunc(windowCaptureDelay, func() {
+		_, _ = s.capturePrimaryWindowState()
+	})
+}
+
 func (s *BrowserService) ToggleFullscreen() error {
 	if s.app == nil {
 		return errors.New("fullscreen is only available in desktop mode")
 	}
-	window := s.app.Window.Current()
+	window := s.primaryWindow()
 	if window == nil {
 		return errors.New("window unavailable")
 	}
@@ -150,14 +196,34 @@ func (s *BrowserService) InitialWindowOptions(frameless bool, reset bool) applic
 		opts.Y = state.Y
 		opts.InitialPosition = application.WindowXY
 	}
+	if state.Maximized {
+		opts.StartState = application.WindowStateMaximised
+	}
 	return opts
 }
 
-func (s *BrowserService) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
-	if s.app == nil {
-		return nil
+func (s *BrowserService) ensureWindowPersistence() {
+	if s.app == nil || s.resetWindow {
+		return
 	}
-	s.attachWindowPersistence(s.app.Window.Current())
+	s.windowPersistOnce.Do(func() {
+		s.app.Window.OnCreate(func(window application.Window) {
+			if window.ID() != 1 {
+				return
+			}
+			s.attachWindowPersistence(window)
+		})
+		if window := s.primaryWindow(); window != nil {
+			s.attachWindowPersistence(window)
+		}
+		s.app.OnShutdown(func() {
+			_, _ = s.capturePrimaryWindowState()
+		})
+	})
+}
+
+func (s *BrowserService) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
+	s.ensureWindowPersistence()
 	return nil
 }
 
@@ -166,9 +232,15 @@ func (s *BrowserService) attachWindowPersistence(window application.Window) {
 		return
 	}
 	window.OnWindowEvent(events.Common.WindowDidMove, func(*application.WindowEvent) {
-		_, _ = s.CaptureWindowState()
+		s.scheduleCaptureWindowState()
 	})
 	window.OnWindowEvent(events.Common.WindowDidResize, func(*application.WindowEvent) {
-		_, _ = s.CaptureWindowState()
+		s.scheduleCaptureWindowState()
+	})
+	window.OnWindowEvent(events.Common.WindowLostFocus, func(*application.WindowEvent) {
+		s.scheduleCaptureWindowState()
+	})
+	window.OnWindowEvent(events.Common.WindowClosing, func(*application.WindowEvent) {
+		_, _ = s.captureWindowState(window)
 	})
 }

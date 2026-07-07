@@ -3,6 +3,9 @@
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as plugins$0 from "../plugins/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as rns$0 from "../rns/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -68,11 +71,27 @@ export interface DevLogEntry {
     "detail"?: string;
 }
 
+/**
+ * DownloadHistoryClearResult reports whether the on-disk download list was cleared.
+ */
+export interface DownloadHistoryClearResult {
+    "ok": boolean;
+    "error"?: string;
+}
+
 export interface DownloadItem {
     "name": string;
     "path": string;
     "size": number;
     "modifiedAt": number;
+}
+
+/**
+ * DownloadRetryResult reports whether a user-initiated download retry started.
+ */
+export interface DownloadRetryResult {
+    "ok": boolean;
+    "error"?: string;
 }
 
 /**
@@ -123,6 +142,10 @@ export interface NetworkEntry {
     "hops": number;
     "interface"?: string;
     "error"?: string;
+    "source"?: string;
+    "pluginId"?: string;
+    "method"?: string;
+    "statusCode"?: number;
 }
 
 export interface PageCacheStats {
@@ -148,6 +171,31 @@ export interface PageResponse {
     "errorKind"?: string;
 }
 
+export interface PluginHTTPRequest {
+    "method": string;
+    "url": string;
+    "headers"?: { [_ in string]?: string } | null;
+    "body"?: string;
+}
+
+export interface PluginHTTPResponse {
+    "statusCode": number;
+    "body": string;
+}
+
+export interface PluginInstallPreview {
+    "id": string;
+    "name": string;
+    "version": string;
+    "description"?: string;
+    "permissions": string[] | null;
+    "networkEndpoints": string[] | null;
+    "requiresNetworkFetch": boolean;
+    "signature": plugins$0.SignatureInfo;
+    "security": plugins$0.SecurityAssessment;
+    "i18nLocales": string[] | null;
+}
+
 export interface PluginSummary {
     "id": string;
     "name": string;
@@ -155,6 +203,11 @@ export interface PluginSummary {
     "description"?: string;
     "enabled": boolean;
     "error"?: string;
+    "sizeBytes": number;
+    "signature": plugins$0.SignatureInfo;
+    "security": plugins$0.SecurityAssessment;
+    "tampered": boolean;
+    "grantedPermissions": string[] | null;
 }
 
 export interface RuntimeConfig {

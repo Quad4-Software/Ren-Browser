@@ -6,7 +6,7 @@
   "description": "Demo URL scheme and sidebar panel",
   "author": "Ren Browser",
   "license": "MIT",
-  "engines": { "renbrowser": ">=0.2.0" },
+  "engines": { "renbrowser": ">=0.1.0" },
   "main": "main.js",
   "permissions": ["storage.plugin", "events.emit"],
   "contributes": {

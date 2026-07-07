@@ -18,7 +18,18 @@
   import PageErrorState from "$lib/components/PageErrorState.svelte";
   import { displayName } from "$lib/brand";
   import { t } from "$lib/i18n/i18n.svelte";
-  import { downloadPageContent, isFileURL } from "$lib/browser/download";
+  import {
+    downloadFailureMessage,
+    downloadPageContent,
+    isDownloadCanceledError,
+    isFileURL,
+    pageDownloadName,
+    type DownloadResult,
+  } from "$lib/browser/download";
+  import {
+    attachMobileGestures,
+    type MobileGestureProgress,
+  } from "$lib/browser/mobile-gestures.js";
 
   type Props = {
     html: string;
@@ -40,7 +51,10 @@
     onReloadFresh: () => void;
     onShowSourceChange: (show: boolean) => void;
     onFindClose?: () => void;
-    onDownloadResult?: (result: { ok: boolean; message: string; pending?: boolean }) => void;
+    onDownloadResult?: (result: DownloadResult) => void;
+    mobileGestures?: boolean;
+    canGoBack?: boolean;
+    onBack?: () => void;
   };
 
   let {
@@ -64,12 +78,22 @@
     onShowSourceChange,
     onFindClose = () => {},
     onDownloadResult = () => {},
+    mobileGestures = false,
+    canGoBack = false,
+    onBack = () => {},
   }: Props = $props();
 
+  let viewerEl: HTMLElement | undefined = $state();
   let contentEl: HTMLElement | undefined = $state();
   let menu = $state<{ x: number; y: number } | null>(null);
   let dismissedCacheKey = $state("");
   let multilineHintVisible = $state(false);
+  let gesture = $state<MobileGestureProgress>({
+    pullOffset: 0,
+    pullTriggered: false,
+    backOffset: 0,
+    backTriggered: false,
+  });
 
   const cacheBannerKey = $derived(`${fromCache}:${cachedAt}`);
   const isMicron = $derived(contentType === "micron");
@@ -126,6 +150,15 @@
   const cacheLabel = $derived(
     cachedAt > 0 ? new Date(cachedAt).toLocaleString() : t("common.recently"),
   );
+  const gestureTransform = $derived.by(() => {
+    if (gesture.backOffset > 0) {
+      return `translateX(${gesture.backOffset}px)`;
+    }
+    if (gesture.pullOffset > 0) {
+      return `translateY(${gesture.pullOffset}px)`;
+    }
+    return "";
+  });
 
   function openMenu(event: MouseEvent) {
     event.preventDefault();
@@ -151,7 +184,19 @@
       });
     } catch (err) {
       console.error("[ContentViewer] download failed", url, err);
-      onDownloadResult({ ok: false, message: err instanceof Error ? err.message : String(err) });
+      if (isDownloadCanceledError(err)) {
+        onDownloadResult({
+          ok: false,
+          message: "",
+          canceled: true,
+          name: pageDownloadName(url, contentTypeForSave),
+        });
+        return;
+      }
+      onDownloadResult({
+        ok: false,
+        message: downloadFailureMessage(err, t("downloads.downloadFailed")),
+      });
     }
   }
 
@@ -178,7 +223,19 @@
       });
     } catch (err) {
       console.error("[ContentViewer] link click failed", err);
-      onDownloadResult({ ok: false, message: err instanceof Error ? err.message : String(err) });
+      if (isDownloadCanceledError(err)) {
+        onDownloadResult({
+          ok: false,
+          message: "",
+          canceled: true,
+          name: pageDownloadName(currentURL, contentType),
+        });
+        return;
+      }
+      onDownloadResult({
+        ok: false,
+        message: downloadFailureMessage(err, t("downloads.downloadFailed")),
+      });
     }
   }
 
@@ -205,67 +262,118 @@
 
     return () => expansion.teardown();
   });
+
+  $effect(() => {
+    const surface = viewerEl;
+    const enabled = mobileGestures;
+    if (!surface || !enabled) {
+      gesture = {
+        pullOffset: 0,
+        pullTriggered: false,
+        backOffset: 0,
+        backTriggered: false,
+      };
+      return;
+    }
+
+    const attachment = attachMobileGestures(surface, {
+      getCanGoBack: () => canGoBack,
+      getScrollTop: () => contentEl?.scrollTop ?? 0,
+      isActive: () => !loading && !showSource,
+      onRefresh: onRetry,
+      onBack,
+      onProgress: (progress) => {
+        gesture = progress;
+      },
+    });
+
+    return () => attachment.teardown();
+  });
 </script>
 
-<section class="viewer" class:micron={isMicron && !showSource} class:about={isInternalPage}>
-  <PageFindBar open={findOpen && !showSource} onClose={onFindClose} contentRoot={contentEl} />
-
-  {#if showCacheBanner}
-    <div class="cache-banner">
-      <span class="cache-text">{t("content.cachedBanner", { when: cacheLabel })}</span>
-      <div class="cache-actions">
-        <button type="button" onclick={onReloadFresh}>{t("content.loadFresh")}</button>
-        <button
-          type="button"
-          class="cache-dismiss"
-          aria-label={t("content.dismissCache")}
-          onclick={() => (dismissedCacheKey = cacheBannerKey)}
-        >
-          <X size={17} />
-        </button>
-      </div>
-    </div>
-  {/if}
-
-  {#if showSource && canViewSource}
-    <div class="source-bar">
-      <button type="button" class="back-btn" onclick={() => onShowSourceChange(false)}>
-        <ArrowLeft size={14} />
-        <span>{t("content.backToPage")}</span>
-      </button>
-      <span class="source-label">
-        <FileCode size={14} />
-        {t("content.pageSource")}
-      </span>
-    </div>
-    <pre class="source-view" oncontextmenu={openMenu}>{raw}</pre>
-  {:else if loading}
-    <div class="progress" aria-hidden="true"></div>
-    <div class="state">{t("content.loadingPage")}</div>
-  {:else if error}
-    <PageErrorState {error} {errorKind} {currentURL} {onRetry} />
-  {:else if displayHtml}
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<section
+  class="viewer"
+  class:micron={isMicron && !showSource}
+  class:about={isInternalPage}
+  class:mobile-gestures={mobileGestures}
+  bind:this={viewerEl}
+>
+  {#if mobileGestures && gesture.backOffset > 0}
     <div
-      class="content"
-      class:micron={isMicron}
-      data-content-type={contentType}
-      style={shellStyle}
-      bind:this={contentEl}
-      onclick={handleClick}
-      oncontextmenu={openMenu}
-      role="document"
-    >
-      {@html displayHtml}
-    </div>
-  {:else}
-    <div class="state">
-      <EmptyState title={displayName} description={t("content.emptyDescription")}>
-        <Globe size={22} />
-      </EmptyState>
+      class="gesture-back-indicator"
+      class:triggered={gesture.backTriggered}
+      aria-hidden="true"
+    ></div>
+  {/if}
+
+  {#if mobileGestures && gesture.pullOffset > 0}
+    <div class="gesture-pull-indicator" class:triggered={gesture.pullTriggered} aria-hidden="true">
+      <span
+        >{gesture.pullTriggered ? t("content.releaseToRefresh") : t("content.pullToRefresh")}</span
+      >
     </div>
   {/if}
+
+  <div class="gesture-body" style:transform={gestureTransform}>
+    <PageFindBar open={findOpen && !showSource} onClose={onFindClose} contentRoot={contentEl} />
+
+    {#if showCacheBanner}
+      <div class="cache-banner">
+        <span class="cache-text">{t("content.cachedBanner", { when: cacheLabel })}</span>
+        <div class="cache-actions">
+          <button type="button" onclick={onReloadFresh}>{t("content.loadFresh")}</button>
+          <button
+            type="button"
+            class="cache-dismiss"
+            aria-label={t("content.dismissCache")}
+            onclick={() => (dismissedCacheKey = cacheBannerKey)}
+          >
+            <X size={17} />
+          </button>
+        </div>
+      </div>
+    {/if}
+
+    {#if showSource && canViewSource}
+      <div class="source-bar">
+        <button type="button" class="back-btn" onclick={() => onShowSourceChange(false)}>
+          <ArrowLeft size={14} />
+          <span>{t("content.backToPage")}</span>
+        </button>
+        <span class="source-label">
+          <FileCode size={14} />
+          {t("content.pageSource")}
+        </span>
+      </div>
+      <pre class="source-view" oncontextmenu={openMenu}>{raw}</pre>
+    {:else if loading}
+      <div class="progress" aria-hidden="true"></div>
+      <div class="state">{t("content.loadingPage")}</div>
+    {:else if error}
+      <PageErrorState {error} {errorKind} {currentURL} {onRetry} />
+    {:else if displayHtml}
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <div
+        class="content"
+        class:micron={isMicron}
+        data-content-type={contentType}
+        style={shellStyle}
+        bind:this={contentEl}
+        onclick={handleClick}
+        oncontextmenu={openMenu}
+        role="document"
+      >
+        {@html displayHtml}
+      </div>
+    {:else}
+      <div class="state">
+        <EmptyState title={displayName} description={t("content.emptyDescription")}>
+          <Globe size={22} />
+        </EmptyState>
+      </div>
+    {/if}
+  </div>
 </section>
 
 {#if multilineHintVisible}
@@ -296,6 +404,62 @@
     overflow-x: hidden;
     background: var(--ren-content-bg);
     position: relative;
+  }
+
+  .viewer.mobile-gestures {
+    touch-action: pan-y;
+  }
+
+  .gesture-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    will-change: transform;
+  }
+
+  .gesture-pull-indicator,
+  .gesture-back-indicator {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .gesture-pull-indicator {
+    top: 0.35rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ren-chrome-bg) 88%, transparent);
+    border: 1px solid var(--ren-border);
+    color: var(--ren-muted);
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .gesture-pull-indicator.triggered {
+    color: var(--ren-accent);
+    border-color: color-mix(in srgb, var(--ren-accent) 45%, var(--ren-border));
+  }
+
+  .gesture-back-indicator {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 4px;
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--ren-accent) 70%, transparent),
+      transparent
+    );
+    opacity: 0.55;
+  }
+
+  .gesture-back-indicator.triggered {
+    width: 6px;
+    opacity: 1;
   }
 
   .viewer.micron {

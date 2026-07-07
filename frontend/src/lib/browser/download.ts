@@ -3,6 +3,7 @@ import {
   DownloadToDir,
   SaveTextToDownloadDir,
 } from "../../../bindings/renbrowser/internal/app/browserservice.js";
+import { errorText, formatBindingError, unwrapBindingErrorMessage } from "./binding-errors.js";
 
 export function downloadText(filename: string, text: string, mime = "text/plain") {
   const blob = new Blob([text], { type: mime });
@@ -73,6 +74,55 @@ export async function downloadMeshFile(url: string): Promise<string> {
 
 export async function savePageToDownloadDir(filename: string, text: string): Promise<string> {
   return await SaveTextToDownloadDir(filename, text);
+}
+
+export type DownloadResult = {
+  ok: boolean;
+  message: string;
+  pending?: boolean;
+  canceled?: boolean;
+  name?: string;
+};
+
+const canceledDownloadLabelMax = 48;
+
+export function truncateDownloadLabel(name: string, max = canceledDownloadLabelMax): string {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return "";
+  }
+  if (trimmed.length <= max) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, max - 1)}\u2026`;
+}
+
+export function canceledDownloadToast(
+  name: string | undefined,
+  translate: (key: string, params?: Record<string, string>) => string,
+): string {
+  const label = truncateDownloadLabel(name ?? "");
+  if (!label) {
+    return translate("downloads.canceled");
+  }
+  return translate("downloads.canceledNamed", { name: label });
+}
+
+function isCanceledMessage(text: string): boolean {
+  const lower = text.toLowerCase();
+  return lower.includes("context canceled") || lower === "download canceled";
+}
+
+export function isDownloadCanceledError(err: unknown): boolean {
+  const message = unwrapBindingErrorMessage(errorText(err)).toLowerCase();
+  return isCanceledMessage(message);
+}
+
+export function downloadFailureMessage(err: unknown, fallback: string): string {
+  if (isDownloadCanceledError(err)) {
+    return "";
+  }
+  return formatBindingError(err, fallback);
 }
 
 export async function downloadPageContent(

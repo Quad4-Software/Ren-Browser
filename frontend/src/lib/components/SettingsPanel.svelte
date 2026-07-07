@@ -277,6 +277,7 @@
     <label>
       <span>{t("language.title")}</span>
       <select
+        class="ren-select"
         value={uiLanguage}
         onchange={(event) => onChangeUILanguage((event.currentTarget as HTMLSelectElement).value)}
       >
@@ -295,6 +296,7 @@
     <label>
       <span>{t("settings.themeMode")}</span>
       <select
+        class="ren-select"
         value={theme.mode}
         onchange={(event) =>
           update("mode", (event.currentTarget as HTMLSelectElement).value as ThemeSettings["mode"])}
@@ -318,6 +320,7 @@
     <label>
       <span>{t("settings.fontFamily")}</span>
       <select
+        class="ren-select"
         value={theme.fontFamily}
         onchange={(event) => update("fontFamily", (event.currentTarget as HTMLSelectElement).value)}
       >
@@ -461,6 +464,7 @@
     <label>
       <span>{t("settings.micronRenderer")}</span>
       <select
+        class="ren-select"
         value={micronRenderer}
         onchange={(event) =>
           onChangeMicronRenderer(
@@ -724,7 +728,6 @@
   }
 
   input,
-  select,
   button {
     border: 1px solid var(--ren-border);
     background: var(--ren-input-bg);
@@ -737,31 +740,10 @@
       box-shadow 0.15s ease;
   }
 
-  input:focus,
-  select:focus {
+  input:focus {
     outline: none;
     border-color: var(--ren-focus);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--ren-focus) 28%, transparent);
-  }
-
-  select {
-    appearance: none;
-    background-image:
-      linear-gradient(45deg, transparent 50%, var(--ren-muted) 50%),
-      linear-gradient(135deg, var(--ren-muted) 50%, transparent 50%);
-    background-position:
-      calc(100% - 16px) calc(50% - 2px),
-      calc(100% - 11px) calc(50% - 2px);
-    background-size:
-      5px 5px,
-      5px 5px;
-    background-repeat: no-repeat;
-    padding-right: 2rem;
-  }
-
-  select option {
-    background: var(--ren-input-bg);
-    color: var(--ren-fg);
   }
 
   input[type="color"] {

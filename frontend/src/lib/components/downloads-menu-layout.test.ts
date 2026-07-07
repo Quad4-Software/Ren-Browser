@@ -15,6 +15,35 @@ describe("DownloadsMenu layout regressions", () => {
     instance = null;
   });
 
+  it("truncates long download names in the dropdown layout", async () => {
+    const longName = "Do Androids Dream of Electric Sheep (2008) - Philip K. Dick.epub".repeat(2);
+    instance = await mountInBody(DownloadsMenu, {
+      open: true,
+      downloads: [
+        {
+          name: longName,
+          path: `/tmp/${longName}`,
+          size: 1024,
+          modifiedAt: 1_700_000_000,
+        },
+      ],
+      downloadDir: "/home/user/Downloads",
+      variant: "dropdown",
+      onDownloadPage: noop,
+      onOpenFile: noop,
+      onOpenFolder: noop,
+      onClose: noop,
+    });
+
+    const menu = document.querySelector(".menu:not(.sheet)");
+    expect(menu).not.toBeNull();
+    expectsNoHorizontalScroll(menu!);
+
+    const name = document.querySelector(".file-row .name");
+    expect(name).not.toBeNull();
+    expectsEllipsis(name!, { requireMinWidthZero: true });
+  });
+
   it("truncates long download names in the sheet layout", async () => {
     const longName = "very-long-download-name-that-should-not-expand-the-menu".repeat(2) + ".zip";
     document.body.style.width = "360px";
@@ -75,5 +104,29 @@ describe("DownloadsMenu layout regressions", () => {
     const name = document.querySelector(".active-head .name");
     expect(name).not.toBeNull();
     expectsEllipsis(name!, { requireMinWidthZero: true });
+  });
+
+  it("shows a clear-history control when saved downloads exist", async () => {
+    instance = await mountInBody(DownloadsMenu, {
+      open: true,
+      downloads: [
+        {
+          name: "guide.zip",
+          path: "/tmp/guide.zip",
+          size: 1024,
+          modifiedAt: 1_700_000_000,
+        },
+      ],
+      downloadDir: "/home/user/Downloads",
+      variant: "dropdown",
+      onDownloadPage: noop,
+      onOpenFile: noop,
+      onOpenFolder: noop,
+      onClose: noop,
+    });
+
+    const clearBtn = document.querySelector(".clear-history-btn");
+    expect(clearBtn).not.toBeNull();
+    expect(clearBtn!.getAttribute("aria-label")).toBeTruthy();
   });
 });

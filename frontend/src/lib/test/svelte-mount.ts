@@ -1,6 +1,7 @@
 import { flushSync, mount, tick, unmount, type Component, type ComponentProps } from "svelte";
 
-export async function mountInBody<T extends Component>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- test helper accepts arbitrary Svelte components
+export async function mountInBody<T extends Component<any>>(
   component: T,
   props: ComponentProps<T>,
 ): Promise<ReturnType<typeof mount>> {

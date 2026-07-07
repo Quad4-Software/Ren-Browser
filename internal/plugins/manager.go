@@ -31,24 +31,33 @@ type PluginStateStore interface {
 	DeletePlugin(id string) error
 	GetPluginSetting(pluginID, key string) (string, error)
 	SetPluginSetting(pluginID, key, value string) error
+	GetSetting(key string) (string, error)
+	SetSetting(key string, value string) error
 }
 
 type InstalledPlugin struct {
-	Manifest Manifest `json:"manifest"`
-	Dir      string   `json:"dir"`
-	Enabled  bool     `json:"enabled"`
-	Error    string   `json:"error,omitempty"`
+	Manifest           Manifest `json:"manifest"`
+	Dir                string   `json:"dir"`
+	Enabled            bool     `json:"enabled"`
+	Error              string   `json:"error,omitempty"`
+	GrantedPermissions []string `json:"grantedPermissions,omitempty"`
+	Tampered           bool     `json:"tampered,omitempty"`
+	IntegrityHash      string   `json:"integrityHash,omitempty"`
 }
 
+type PluginNetworkRecorder func(pluginID, method, url string, statusCode, bytes int, durationMs int64, errMsg string)
+
 type Manager struct {
-	mu      sync.RWMutex
-	reg     *Registry
-	store   PluginStateStore
-	storage *Storage
-	wasm    *WasmRuntime
-	dir     string
-	app     *application.App
-	plugins map[string]InstalledPlugin
+	mu              sync.RWMutex
+	reg             *Registry
+	store           PluginStateStore
+	storage         *Storage
+	wasm            *WasmRuntime
+	dir             string
+	app             *application.App
+	devLog          DevLogFunc
+	networkRecorder PluginNetworkRecorder
+	plugins         map[string]InstalledPlugin
 }
 
 func NewManager(store PluginStateStore) *Manager {
@@ -61,6 +70,10 @@ func NewManager(store PluginStateStore) *Manager {
 		dir:     paths.Join(".renbrowser", "plugins"),
 		plugins: make(map[string]InstalledPlugin),
 	}
+}
+
+func (m *Manager) Store() PluginStateStore {
+	return m.store
 }
 
 func (m *Manager) Registry() *Registry {
@@ -111,14 +124,41 @@ func (m *Manager) LoadAll() error {
 			continue
 		}
 		enabled := true
+		granted := DefaultGrantedPermissions(manifest)
+		var settings RuntimeSettings
 		if row, ok := stateMap[manifest.ID]; ok {
 			enabled = row.Enabled
+			settings = ParseRuntimeSettings(row.SettingsJSON)
+			if len(settings.GrantedPermissions) > 0 {
+				granted = NormalizeGrantedPermissions(manifest, settings.GrantedPermissions)
+			}
 		} else {
-			_ = m.store.UpsertPlugin(manifest.ID, true, "{}")
+			settings = RuntimeSettings{GrantedPermissions: granted}
 		}
+
+		var integrityErr string
+		settings, okIntegrity, integrityErr := m.verifyIntegrityOnLoad(manifest.ID, dir, settings)
+		if !okIntegrity {
+			enabled = false
+		}
+		_ = m.saveRuntimeSettings(manifest.ID, enabled, settings)
+
 		m.mu.Lock()
-		m.plugins[manifest.ID] = InstalledPlugin{Manifest: manifest, Dir: dir, Enabled: enabled}
+		m.plugins[manifest.ID] = InstalledPlugin{
+			Manifest:           manifest,
+			Dir:                dir,
+			Enabled:            enabled,
+			GrantedPermissions: granted,
+			Tampered:           settings.Tampered,
+			IntegrityHash:      settings.IntegrityHash,
+			Error:              integrityErr,
+		}
 		m.mu.Unlock()
+		if !okIntegrity {
+			_ = m.store.SetPluginEnabled(manifest.ID, false)
+			m.logPlugin(manifest.ID, "integrity", "error", integrityErr, "")
+			continue
+		}
 		if enabled {
 			if err := m.enableLocked(manifest.ID); err != nil {
 				m.mu.Lock()
@@ -128,6 +168,8 @@ func (m *Manager) LoadAll() error {
 				m.plugins[manifest.ID] = p
 				m.mu.Unlock()
 				_ = m.store.SetPluginEnabled(manifest.ID, false)
+				m.logPlugin(manifest.ID, "enable", "error", err.Error(), "")
+				m.emitPluginError(manifest.ID, "enable", err.Error())
 			}
 		}
 	}
@@ -158,14 +200,42 @@ func (m *Manager) Enable(id string) error {
 		m.mu.Unlock()
 		return fmt.Errorf("plugin %q not found", id)
 	}
-	if err := m.enableLocked(id); err != nil {
-		m.mu.Unlock()
+	dir := p.Dir
+	manifest := p.Manifest
+	m.mu.Unlock()
+
+	settings := m.loadRuntimeSettings(id)
+	settings, err := m.establishIntegrityHash(dir, settings)
+	if err != nil {
 		return err
+	}
+	if err := m.saveRuntimeSettings(id, true, settings); err != nil {
+		return err
+	}
+
+	m.mu.Lock()
+	p, ok = m.plugins[id]
+	if !ok {
+		m.mu.Unlock()
+		return fmt.Errorf("plugin %q not found", id)
+	}
+	m.mu.Unlock()
+
+	if err := m.enableLocked(id); err != nil {
+		_ = m.FailPlugin(id, "enable", err)
+		return err
+	}
+	m.mu.Lock()
+	p, ok = m.plugins[id]
+	if !ok {
+		m.mu.Unlock()
+		return fmt.Errorf("plugin %q not found", id)
 	}
 	p.Enabled = true
 	p.Error = ""
+	p.Tampered = false
+	p.IntegrityHash = settings.IntegrityHash
 	m.plugins[id] = p
-	manifest := p.Manifest
 	m.mu.Unlock()
 	_ = m.store.SetPluginEnabled(id, true)
 	m.emitLoaded(manifest)
@@ -209,7 +279,11 @@ func (m *Manager) Uninstall(id string) error {
 	return nil
 }
 
-func (m *Manager) InstallFromDir(src string) (InstalledPlugin, error) {
+func (m *Manager) InstallFromDir(src string, granted []string) (InstalledPlugin, error) {
+	sig := VerifyDirSignature(src)
+	if err := RequireValidSignature(sig); err != nil {
+		return InstalledPlugin{}, err
+	}
 	manifest, err := LoadManifest(src)
 	if err != nil {
 		return InstalledPlugin{}, err
@@ -217,6 +291,7 @@ func (m *Manager) InstallFromDir(src string) (InstalledPlugin, error) {
 	if err := ValidatePermissions(manifest.Permissions); err != nil {
 		return InstalledPlugin{}, err
 	}
+	granted = NormalizeGrantedPermissions(manifest, granted)
 	dest := filepath.Join(m.dir, manifest.ID)
 	if err := os.RemoveAll(dest); err != nil {
 		return InstalledPlugin{}, err
@@ -224,9 +299,20 @@ func (m *Manager) InstallFromDir(src string) (InstalledPlugin, error) {
 	if err := copyDir(src, dest); err != nil {
 		return InstalledPlugin{}, err
 	}
-	_ = m.store.UpsertPlugin(manifest.ID, true, "{}")
+	settings := RuntimeSettings{GrantedPermissions: granted}
+	settings, err = m.establishIntegrityHash(dest, settings)
+	if err != nil {
+		return InstalledPlugin{}, err
+	}
+	_ = m.store.UpsertPlugin(manifest.ID, true, settings.JSON())
 	m.mu.Lock()
-	m.plugins[manifest.ID] = InstalledPlugin{Manifest: manifest, Dir: dest, Enabled: true}
+	m.plugins[manifest.ID] = InstalledPlugin{
+		Manifest:           manifest,
+		Dir:                dest,
+		Enabled:            true,
+		GrantedPermissions: granted,
+		IntegrityHash:      settings.IntegrityHash,
+	}
 	m.mu.Unlock()
 	if err := m.Enable(manifest.ID); err != nil {
 		return InstalledPlugin{}, err
@@ -238,7 +324,11 @@ func (m *Manager) InstallFromDir(src string) (InstalledPlugin, error) {
 	return p, nil
 }
 
-func (m *Manager) InstallFromZip(zipPath string) (InstalledPlugin, error) {
+func (m *Manager) InstallFromZip(zipPath string, granted []string) (InstalledPlugin, error) {
+	sig := VerifyZipSignature(zipPath)
+	if err := RequireValidSignature(sig); err != nil {
+		return InstalledPlugin{}, err
+	}
 	info, err := os.Stat(zipPath)
 	if err != nil {
 		return InstalledPlugin{}, err
@@ -303,7 +393,66 @@ func (m *Manager) InstallFromZip(zipPath string) (InstalledPlugin, error) {
 	if err := ValidateManifest(manifest); err != nil {
 		return InstalledPlugin{}, err
 	}
-	return m.InstallFromDir(tmpDir)
+	return m.InstallFromDir(tmpDir, granted)
+}
+
+func (m *Manager) InstallFromWasm(wasmPath string, granted []string) (InstalledPlugin, error) {
+	info, err := os.Stat(wasmPath)
+	if err != nil {
+		return InstalledPlugin{}, err
+	}
+	if info.Size() > maxWasmBundleBytes {
+		return InstalledPlugin{}, fmt.Errorf("wasm module too large")
+	}
+	data, err := os.ReadFile(wasmPath) // #nosec G304 -- path from desktop file picker
+	if err != nil {
+		return InstalledPlugin{}, err
+	}
+	sig := VerifyWasmSignature(data)
+	if err := RequireValidSignature(sig); err != nil {
+		return InstalledPlugin{}, err
+	}
+	bundle, err := ParseWasmBundle(data)
+	if err != nil {
+		return InstalledPlugin{}, err
+	}
+	if err := bundle.ValidateEmbedded(); err != nil {
+		return InstalledPlugin{}, err
+	}
+	if err := ValidatePermissions(bundle.Manifest.Permissions); err != nil {
+		return InstalledPlugin{}, err
+	}
+	granted = NormalizeGrantedPermissions(bundle.Manifest, granted)
+	dest := filepath.Join(m.dir, bundle.Manifest.ID)
+	if err := os.RemoveAll(dest); err != nil {
+		return InstalledPlugin{}, err
+	}
+	if err := writeWasmBundle(dest, bundle); err != nil {
+		return InstalledPlugin{}, err
+	}
+	settings := RuntimeSettings{GrantedPermissions: granted}
+	settings, err = m.establishIntegrityHash(dest, settings)
+	if err != nil {
+		return InstalledPlugin{}, err
+	}
+	_ = m.store.UpsertPlugin(bundle.Manifest.ID, true, settings.JSON())
+	m.mu.Lock()
+	m.plugins[bundle.Manifest.ID] = InstalledPlugin{
+		Manifest:           bundle.Manifest,
+		Dir:                dest,
+		Enabled:            true,
+		GrantedPermissions: granted,
+		IntegrityHash:      settings.IntegrityHash,
+	}
+	m.mu.Unlock()
+	if err := m.Enable(bundle.Manifest.ID); err != nil {
+		return InstalledPlugin{}, err
+	}
+	p, ok := m.Get(bundle.Manifest.ID)
+	if !ok {
+		return InstalledPlugin{}, fmt.Errorf("plugin %q missing after install", bundle.Manifest.ID)
+	}
+	return p, nil
 }
 
 func (m *Manager) InvokeCommand(pluginID, commandID string, args map[string]string) error {
@@ -357,22 +506,31 @@ func (m *Manager) enableLocked(id string) error {
 	if err := ValidatePermissions(p.Manifest.Permissions); err != nil {
 		return err
 	}
+	activated := false
+	defer func() {
+		if !activated {
+			m.disableLocked(id)
+		}
+	}()
 	m.reg.RegisterManifest(p.Manifest)
 	m.reg.RegisterContributions(id, p.Manifest.Contributes)
 	if p.Manifest.Backend != "" {
 		wasmPath := filepath.Join(p.Dir, p.Manifest.Backend)
-		renderer, err := m.wasm.LoadRenderer(id, wasmPath, p.Manifest)
+		fetch := func(req WasmHTTPRequest) (WasmHTTPResponse, error) {
+			return m.PluginHTTPFetch(id, req)
+		}
+		wp, err := m.wasm.LoadPluginWithFetch(id, wasmPath, p.Manifest, p.GrantedPermissions, fetch)
 		if err != nil {
 			return err
 		}
-		m.reg.RegisterRenderer(renderer)
-	}
-	if HasPermission(p.Manifest, PermNetworkFetch) {
-		if hook := m.wasm.BeforeFetchHook(id); hook != nil {
-			m.reg.RegisterBeforeFetch(id, hook)
+		if len(p.Manifest.Contributes.Renderers) > 0 {
+			m.reg.RegisterRenderer(wasmRendererAdapter{plugin: wp})
 		}
-		if hook := m.wasm.AfterFetchHook(id); hook != nil {
-			m.reg.RegisterAfterFetch(id, hook)
+		if wp.hasExport("before_fetch") {
+			m.reg.RegisterBeforeFetch(id, m.wrapBeforeFetch(id, wp.BeforeFetchHook()))
+		}
+		if wp.hasExport("after_fetch") {
+			m.reg.RegisterAfterFetch(id, m.wrapAfterFetch(id, wp.AfterFetchHook()))
 		}
 	}
 	for _, scheme := range p.Manifest.Contributes.URLSchemes {
@@ -386,12 +544,42 @@ func (m *Manager) enableLocked(id string) error {
 			}, true
 		})
 	}
+	activated = true
 	return nil
 }
 
 func (m *Manager) disableLocked(id string) {
 	m.reg.UnregisterPlugin(id)
 	m.wasm.Unload(id)
+}
+
+func (m *Manager) WasmCall(pluginID, exportName, input string) (string, error) {
+	p, ok := m.Get(pluginID)
+	if !ok || !p.Enabled {
+		return "", fmt.Errorf("plugin %q not enabled", pluginID)
+	}
+	if strings.TrimSpace(p.Manifest.Backend) == "" {
+		return "", fmt.Errorf("plugin %q has no wasm backend", pluginID)
+	}
+	if wasmExportNeedsNetwork(exportName) {
+		if err := RequireGrantedPermission(p.GrantedPermissions, p.Manifest, PermNetworkFetch); err != nil {
+			return "", err
+		}
+	}
+	wp, ok := m.wasm.Get(pluginID)
+	if !ok {
+		return "", fmt.Errorf("plugin %q wasm module not loaded", pluginID)
+	}
+	if wasmExportNeedsNetwork(exportName) {
+		beginWasmFetchBudget(pluginID, wasmMaxFetchesPerCall)
+		defer endWasmFetchBudget(pluginID)
+	}
+	out, err := wp.CallExport(exportName, []byte(input))
+	if err != nil {
+		m.LogPluginError(pluginID, "wasm:"+exportName, err.Error(), "")
+		return "", err
+	}
+	return string(out), nil
 }
 
 func (m *Manager) emitLoaded(manifest Manifest) {

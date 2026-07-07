@@ -17,6 +17,7 @@
   import DownloadsMenu, { type DownloadRow } from "$lib/components/DownloadsMenu.svelte";
   import type { DownloadProgressView } from "$lib/browser/download-progress";
   import { t } from "$lib/i18n/i18n.svelte";
+  import { pluginLabel } from "$lib/plugins/plugin-label.js";
   import type { ActivePanel, PluginPanelContribution } from "$lib/plugins/api-types.js";
   import { panelKey } from "$lib/plugins/registry.js";
 
@@ -47,6 +48,9 @@
     onCancelDownload?: (id: string) => void;
     onDismissDownload?: (id: string) => void;
     onRetryDownload?: (id: string) => void;
+    retryingDownloadIds?: ReadonlySet<string>;
+    onClearDownloadHistory?: () => void;
+    clearingDownloadHistory?: boolean;
     onIdentify: () => void;
   };
 
@@ -77,6 +81,9 @@
     onCancelDownload = () => {},
     onDismissDownload = () => {},
     onRetryDownload = () => {},
+    retryingDownloadIds,
+    onClearDownloadHistory = () => {},
+    clearingDownloadHistory = false,
     onIdentify,
   }: Props = $props();
 
@@ -164,6 +171,9 @@
         onCancelActive={onCancelDownload}
         onDismissActive={onDismissDownload}
         onRetryActive={onRetryDownload}
+        retryingIds={retryingDownloadIds}
+        onClearHistory={onClearDownloadHistory}
+        clearingHistory={clearingDownloadHistory}
         onClose={onCloseDownloads}
       />
     </div>
@@ -188,11 +198,11 @@
       <button
         class="ren-icon-btn mobile-nav-dup"
         class:active={activePanel === key}
-        aria-label={panel.title}
-        title={panel.title}
+        aria-label={pluginLabel(panel.pluginId, panel.title)}
+        title={pluginLabel(panel.pluginId, panel.title)}
         onclick={() => onPanel(key)}
       >
-        <span class="plugin-icon">{panel.title.slice(0, 1)}</span>
+        <span class="plugin-icon">{pluginLabel(panel.pluginId, panel.title).slice(0, 1)}</span>
       </button>
     {/each}
     <button

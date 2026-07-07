@@ -69,6 +69,22 @@ export function translate(key: string, params?: TranslateParams, locale = active
   return interpolate(value, params);
 }
 
+export function translatePermission(perm: string, locale = activeLocale): string {
+  const lookup = (code: LocaleCode): string | undefined => {
+    const extensions = catalogs[code].extensions;
+    if (!extensions || typeof extensions === "string") {
+      return undefined;
+    }
+    const labels = extensions.permission;
+    if (!labels || typeof labels === "string") {
+      return undefined;
+    }
+    const value = labels[perm];
+    return typeof value === "string" ? value : undefined;
+  };
+  return lookup(locale) ?? lookup(DEFAULT_LOCALE) ?? perm;
+}
+
 export function flattenMessageKeys(tree: MessageTree, prefix = ""): string[] {
   const keys: string[] = [];
   for (const [name, value] of Object.entries(tree)) {

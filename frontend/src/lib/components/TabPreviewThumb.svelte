@@ -1,17 +1,33 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { LoaderCircle } from "@lucide/svelte";
-  import { type Tab } from "$lib/browser/url";
+  import { expandHexColor, micronPageColors, type Tab } from "$lib/browser/url";
   import { normalizePageErrorKind, pageErrorContent } from "$lib/browser/errors";
+  import {
+    PREVIEW_REF_HEIGHT,
+    PREVIEW_REF_WIDTH,
+    previewScaleForBox,
+    wrapPreviewSrcdoc,
+  } from "$lib/browser/preview-srcdoc";
+  import {
+    parseMicronHeaderColors,
+    renderClientMicronPage,
+    usesClientMicronRenderer,
+    type MicronEffectiveEngine,
+  } from "$lib/micron/render-page";
   import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
     tab: Tab;
     label?: string;
     class?: string;
+    micronEngine?: MicronEffectiveEngine;
   };
 
-  let { tab, label = "", class: className = "" }: Props = $props();
+  let { tab, label = "", class: className = "", micronEngine = "js" }: Props = $props();
+
+  let thumbEl = $state<HTMLDivElement | null>(null);
+  let boxWidth = $state(0);
 
   function previewLabel(): string {
     const title = tab.title.trim();
@@ -25,18 +41,99 @@
     return t("tab.new");
   }
 
-  function hasPreviewHtml(): boolean {
-    return !!tab.page?.html?.trim() && !tab.page?.error;
-  }
+  const isMicron = $derived(tab.page?.contentType === "micron");
+
+  const previewHtml = $derived.by(() => {
+    const page = tab.page;
+    if (!page || page.error) {
+      return "";
+    }
+    const serverHtml = page.html?.trim() ?? "";
+    if (serverHtml) {
+      return serverHtml;
+    }
+    if (
+      isMicron &&
+      page.lastRaw?.trim() &&
+      usesClientMicronRenderer(micronEngine) &&
+      tab.url.trim()
+    ) {
+      try {
+        return renderClientMicronPage(tab.url, page.lastRaw, micronEngine);
+      } catch {
+        return "";
+      }
+    }
+    return "";
+  });
+
+  const hasPreviewHtml = $derived(previewHtml.length > 0);
+
+  const previewColors = $derived.by(() => {
+    const page = tab.page;
+    if (!page) {
+      return { fg: "", bg: "" };
+    }
+    let fg = page.pageFg ?? "";
+    let bg = page.pageBg ?? "";
+    if (isMicron && page.lastRaw?.trim()) {
+      try {
+        const parsed = parseMicronHeaderColors(page.lastRaw);
+        if (parsed.fg) {
+          fg = parsed.fg;
+        }
+        if (parsed.bg) {
+          bg = parsed.bg;
+        }
+      } catch {
+        // keep stored page colors
+      }
+    }
+    if (isMicron) {
+      return micronPageColors(fg, bg);
+    }
+    return {
+      fg: fg.trim() ? `#${expandHexColor(fg)}` : "",
+      bg: bg.trim() ? `#${expandHexColor(bg)}` : "",
+    };
+  });
+
+  const previewSrcdoc = $derived(
+    hasPreviewHtml
+      ? wrapPreviewSrcdoc(previewHtml, {
+          fg: previewColors.fg,
+          bg: previewColors.bg,
+        })
+      : "",
+  );
+
+  const previewScale = $derived(previewScaleForBox(boxWidth));
 
   const displayLabel = $derived(label || previewLabel());
+
+  $effect(() => {
+    const el = thumbEl;
+    if (!el) {
+      return;
+    }
+    const sync = () => {
+      boxWidth = el.clientWidth;
+    };
+    sync();
+    const observer = new ResizeObserver(() => {
+      sync();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  });
 </script>
 
 <div
+  bind:this={thumbEl}
   class="thumb {className}"
-  class:has-html={hasPreviewHtml()}
-  style:background={tab.page?.pageBg || "var(--ren-surface-muted)"}
-  style:color={tab.page?.pageFg || "var(--ren-fg)"}
+  class:has-html={hasPreviewHtml}
+  style:background={previewColors.bg || "var(--ren-surface-muted)"}
+  style:color={previewColors.fg || "var(--ren-fg)"}
 >
   {#if tab.loading}
     <div class="thumb-state">
@@ -54,14 +151,19 @@
         ).title}
       </span>
     </div>
-  {:else if hasPreviewHtml()}
-    <iframe
-      class="thumb-iframe"
-      title={displayLabel}
-      srcdoc={tab.page?.html ?? ""}
-      sandbox=""
-      tabindex="-1"
-    ></iframe>
+  {:else if hasPreviewHtml}
+    <div class="thumb-viewport" aria-hidden="true">
+      <iframe
+        class="thumb-iframe"
+        title={displayLabel}
+        srcdoc={previewSrcdoc}
+        sandbox=""
+        tabindex="-1"
+        style:width="{PREVIEW_REF_WIDTH}px"
+        style:height="{PREVIEW_REF_HEIGHT}px"
+        style:transform="scale({previewScale})"
+      ></iframe>
+    </div>
   {:else}
     <span class="thumb-title">{displayLabel}</span>
   {/if}
@@ -73,6 +175,8 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    min-height: 0;
     background: var(--ren-surface-muted);
   }
 
@@ -80,11 +184,19 @@
     padding: 0;
   }
 
+  .thumb-viewport {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+    overflow: hidden;
+  }
+
   .thumb-iframe {
-    width: 400%;
-    height: 400%;
+    position: absolute;
+    top: 0;
+    left: 0;
     border: none;
-    transform: scale(0.25);
     transform-origin: top left;
     pointer-events: none;
     background: transparent;

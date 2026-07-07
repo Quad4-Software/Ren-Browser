@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
-import { createPluginContext } from "./api.js";
+import { formatBindingError } from "$lib/browser/binding-errors.js";
+import { getUILocale } from "$lib/i18n/i18n.svelte";
+import { createPluginContext, listPlugins } from "./api.js";
 import { loadPluginModule, clearPluginModuleCache } from "./loader.js";
+import { reportPluginFailure } from "./plugin-errors.js";
+import { clearPluginI18n, ensurePluginI18n, preloadPluginI18n } from "./plugin-i18n.js";
 import type { PluginContext, PluginModule } from "./api-types.js";
 import { getContributionsSnapshot } from "./registry.js";
 
@@ -8,6 +12,11 @@ type LifecycleOpts = {
   getCurrentURL: () => string;
   navigate: (url: string) => void;
   showToast: (message: string) => void;
+  getActivePage: () => import("./api-types.js").ActivePageSnapshot;
+  updateActivePage: (patch: Partial<import("./api-types.js").ActivePageSnapshot>) => void;
+  networkFetch?: boolean;
+  wasmBackend?: boolean;
+  onPluginError?: (pluginId: string, message: string) => void;
 };
 
 const active = new Map<string, { ctx: PluginContext; mod: PluginModule }>();
@@ -21,8 +30,15 @@ export async function activateAllPlugins(opts: LifecycleOpts) {
   for (const scheme of snapshot.urlSchemes) {
     pluginIds.add(scheme.pluginId);
   }
+  const rows = await listPlugins();
+  const grantedById = new Map((rows ?? []).map((row) => [row.id, row.grantedPermissions ?? []]));
+  await preloadPluginI18n(pluginIds, getUILocale());
   for (const pluginId of pluginIds) {
-    await activatePlugin(pluginId, "main.js", opts);
+    const granted = grantedById.get(pluginId) ?? [];
+    await activatePlugin(pluginId, "main.js", {
+      ...opts,
+      networkFetch: granted.includes("network.fetch"),
+    });
   }
 }
 
@@ -33,12 +49,22 @@ export async function activatePlugin(pluginId: string, entry: string, opts: Life
   let mod: PluginModule;
   try {
     mod = await loadPluginModule(pluginId, entry);
-  } catch {
+  } catch (err) {
+    opts.onPluginError?.(pluginId, formatBindingError(err, "Extension failed"));
+    await reportPluginFailure(pluginId, "load", err);
     return;
   }
-  const ctx = createPluginContext(pluginId, opts);
-  if (mod.activate) {
-    await mod.activate(ctx);
+  const ctx = createPluginContext(pluginId, {
+    ...opts,
+    i18n: await ensurePluginI18n(pluginId, getUILocale()),
+  });
+  try {
+    if (mod.activate) {
+      await mod.activate(ctx);
+    }
+  } catch (err) {
+    await reportPluginFailure(pluginId, "activate", err);
+    return;
   }
   active.set(pluginId, { ctx, mod });
 }
@@ -48,11 +74,16 @@ export async function deactivatePlugin(pluginId: string) {
   if (!item) {
     return;
   }
-  if (item.mod.deactivate) {
-    await item.mod.deactivate();
+  try {
+    if (item.mod.deactivate) {
+      await item.mod.deactivate();
+    }
+  } catch {
+    // Ignore teardown errors while unloading a broken plugin.
   }
   active.delete(pluginId);
   clearPluginModuleCache(pluginId);
+  clearPluginI18n(pluginId);
 }
 
 export async function deactivateAllPlugins() {
@@ -64,14 +95,30 @@ export async function deactivateAllPlugins() {
 export async function handlePluginScheme(pluginId: string, handler: string, url: string) {
   const item = active.get(pluginId);
   if (!item?.mod.handleScheme) {
-    const mod = await loadPluginModule(pluginId, "main.js");
+    let mod: PluginModule;
+    try {
+      mod = await loadPluginModule(pluginId, "main.js");
+    } catch (err) {
+      await reportPluginFailure(pluginId, "scheme", err);
+      return null;
+    }
     if (!mod.handleScheme) {
       return null;
     }
-    return mod.handleScheme(url);
+    try {
+      return await mod.handleScheme(url);
+    } catch (err) {
+      await reportPluginFailure(pluginId, "scheme", err);
+      return null;
+    }
   }
-  if (handler && item.mod.handleScheme) {
-    return item.mod.handleScheme(url);
+  try {
+    if (handler && item.mod.handleScheme) {
+      return await item.mod.handleScheme(url);
+    }
+    return (await item.mod.handleScheme?.(url)) ?? null;
+  } catch (err) {
+    await reportPluginFailure(pluginId, "scheme", err);
+    return null;
   }
-  return item.mod.handleScheme?.(url) ?? null;
 }

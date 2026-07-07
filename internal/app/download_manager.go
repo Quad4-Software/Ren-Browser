@@ -102,6 +102,10 @@ func (m *downloadManager) reportProgress(id string, received, total int64) {
 		m.mu.Unlock()
 		return
 	}
+	if d.Status == DownloadStatusCanceled {
+		m.mu.Unlock()
+		return
+	}
 	firstByte := d.Received == 0 && received > 0
 	d.Received = received
 	if total > 0 {
@@ -144,7 +148,7 @@ func (m *downloadManager) complete(id, path string, size int64) {
 func (m *downloadManager) fail(id, errMsg string) {
 	m.mu.Lock()
 	d, ok := m.items[id]
-	if ok && d.Status == DownloadStatusCanceled {
+	if ok && (d.Status == DownloadStatusCanceled || d.Status == DownloadStatusInterrupted) {
 		m.mu.Unlock()
 		return
 	}
@@ -179,7 +183,6 @@ func (m *downloadManager) cancel(id string) bool {
 		cancelFn()
 	}
 	m.notify()
-	time.AfterFunc(completedRetention, func() { m.remove(id) })
 	return true
 }
 
@@ -299,6 +302,20 @@ func (m *downloadManager) notify() {
 		return
 	}
 	m.onChange(m.list())
+}
+
+func (m *downloadManager) markFailedUnlessCanceled(id string, err error) {
+	if err == nil {
+		return
+	}
+	m.mu.Lock()
+	d, ok := m.items[id]
+	if !ok || d.Status == DownloadStatusCanceled || d.Status == DownloadStatusInterrupted {
+		m.mu.Unlock()
+		return
+	}
+	m.mu.Unlock()
+	m.fail(id, err.Error())
 }
 
 // downloadTracker binds a fetch in progress to a single ActiveDownload

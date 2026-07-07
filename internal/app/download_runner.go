@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+var ErrDownloadCanceled = errors.New("download canceled")
+
 const (
 	downloadMaxAttempts = 4
 	downloadRetryBase   = 2 * time.Second
@@ -77,8 +79,20 @@ func (s *BrowserService) runTrackedDownload(id, rawURL, name string) (string, er
 		}
 	}
 
-	s.downloads.fail(id, lastErr.Error())
-	return "", lastErr
+	return "", trackedDownloadFailure(s.downloads, id, lastErr)
+}
+
+func trackedDownloadFailure(m *downloadManager, id string, lastErr error) error {
+	m.markFailedUnlessCanceled(id, lastErr)
+	if lastErr == nil {
+		return nil
+	}
+	if errors.Is(lastErr, context.Canceled) {
+		if item, ok := m.findByID(id); ok && item.Status == DownloadStatusCanceled {
+			return ErrDownloadCanceled
+		}
+	}
+	return lastErr
 }
 
 func (s *BrowserService) startBackgroundDownload(rawURL, name string) {

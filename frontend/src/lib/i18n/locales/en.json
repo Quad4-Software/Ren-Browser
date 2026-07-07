@@ -251,7 +251,10 @@
     "emptyDescription": "Enter an address in the bar above or open Discovery to browse the mesh.",
     "viewSource": "View Source",
     "downloadPage": "Download Page",
-    "multilineHint": "Press Enter again to expand to multi-line"
+    "multilineHint": "Press Enter again to expand to multi-line",
+    "pullToRefresh": "Pull to refresh",
+    "releaseToRefresh": "Release to refresh",
+    "swipeBack": "Go back"
   },
   "find": {
     "placeholder": "Find in page",

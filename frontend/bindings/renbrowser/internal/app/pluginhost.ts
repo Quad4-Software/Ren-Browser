@@ -13,6 +13,10 @@ import * as plugins$0 from "../plugins/models.js";
 // @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
+export function AddTrustedPublisher(identity: string, name: string): $CancellablePromise<void> {
+    return $Call.ByID(3376618265, identity, name);
+}
+
 export function DisablePlugin(id: string): $CancellablePromise<void> {
     return $Call.ByID(3180758000, id);
 }
@@ -37,12 +41,16 @@ export function GetPluginStorage(id: string, key: string): $CancellablePromise<s
     return $Call.ByID(1097936333, id, key);
 }
 
-export function InstallPluginFromDir(path: string): $CancellablePromise<plugins$0.InstalledPlugin> {
-    return $Call.ByID(2184559862, path);
+export function InstallPluginFromDir(path: string, granted: string[] | null): $CancellablePromise<plugins$0.InstalledPlugin> {
+    return $Call.ByID(2184559862, path, granted);
 }
 
-export function InstallPluginFromZip(path: string): $CancellablePromise<plugins$0.InstalledPlugin> {
-    return $Call.ByID(116692350, path);
+export function InstallPluginFromWasm(path: string, granted: string[] | null): $CancellablePromise<plugins$0.InstalledPlugin> {
+    return $Call.ByID(2371803351, path, granted);
+}
+
+export function InstallPluginFromZip(path: string, granted: string[] | null): $CancellablePromise<plugins$0.InstalledPlugin> {
+    return $Call.ByID(116692350, path, granted);
 }
 
 export function InvokeCommand(pluginID: string, commandID: string, args: { [_ in string]?: string } | null): $CancellablePromise<void> {
@@ -53,8 +61,32 @@ export function ListPlugins(): $CancellablePromise<$models.PluginSummary[] | nul
     return $Call.ByID(4090050199);
 }
 
+export function PluginFetch(pluginID: string, req: $models.PluginHTTPRequest): $CancellablePromise<$models.PluginHTTPResponse> {
+    return $Call.ByID(3758822454, pluginID, req);
+}
+
+export function PluginWasmCall(pluginID: string, exportName: string, input: string): $CancellablePromise<string> {
+    return $Call.ByID(461073302, pluginID, exportName, input);
+}
+
 export function PluginsDir(): $CancellablePromise<string> {
     return $Call.ByID(3400877522);
+}
+
+export function PreviewPluginInstallFromDir(path: string): $CancellablePromise<$models.PluginInstallPreview> {
+    return $Call.ByID(3298796050, path);
+}
+
+export function PreviewPluginInstallFromWasm(path: string): $CancellablePromise<$models.PluginInstallPreview> {
+    return $Call.ByID(815049747, path);
+}
+
+export function PreviewPluginInstallFromZip(path: string): $CancellablePromise<$models.PluginInstallPreview> {
+    return $Call.ByID(3520722914, path);
+}
+
+export function ReportPluginError(pluginID: string, phase: string, message: string, detail: string): $CancellablePromise<void> {
+    return $Call.ByID(4147480270, pluginID, phase, message, detail);
 }
 
 export function SetPluginStorage(id: string, key: string, value: string): $CancellablePromise<void> {

@@ -13,6 +13,7 @@
 
 :root,
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --ren-font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   --ren-font-size: 14px;
   --ren-radius: 12px;
@@ -40,6 +41,7 @@
 }
 
 :root[data-theme="light"] {
+  color-scheme: light;
   --ren-accent: #2563eb;
   --ren-accent-hover: #3b82f6;
   --ren-chrome-bg: #ffffff;
@@ -102,7 +104,46 @@ body {
 }
 
 select,
-option {
+.ren-select {
+  width: 100%;
+  border: 1px solid var(--ren-border);
+  background-color: var(--ren-input-bg);
+  color: var(--ren-fg);
+  border-radius: calc(var(--ren-radius) + 2px);
+  padding: 0.55rem 2rem 0.55rem 0.75rem;
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ren-muted) 50%),
+    linear-gradient(135deg, var(--ren-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) calc(50% - 2px),
+    calc(100% - 11px) calc(50% - 2px);
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+select:focus,
+.ren-select:focus {
+  outline: none;
+  border-color: var(--ren-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ren-focus) 28%, transparent);
+}
+
+select:disabled,
+.ren-select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+select option,
+.ren-select option {
   background: var(--ren-input-bg);
   color: var(--ren-fg);
 }

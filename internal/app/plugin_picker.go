@@ -34,3 +34,20 @@ func (s *BrowserService) PickPluginDir() (string, error) {
 	}
 	return result, nil
 }
+
+func (s *BrowserService) PickPluginWasm() (string, error) {
+	if s.app == nil {
+		return "", errors.New("file picker unavailable in server mode")
+	}
+	result, err := s.app.Dialog.OpenFile().
+		CanChooseDirectories(false).
+		CanChooseFiles(true).
+		SetTitle("Select extension module").
+		AddFilter("RenBrowser extension module", "*.wasm").
+		AddFilter("WebAssembly module", "*.wasm").
+		PromptForSingleSelection()
+	if err != nil {
+		return "", err
+	}
+	return result, nil
+}

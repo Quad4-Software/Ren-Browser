@@ -29,7 +29,7 @@ func TestInstallFromZip(t *testing.T) {
 	manager := plugins.NewManager(database)
 	manager.SetPluginsDirForTest(pluginsDir)
 
-	installed, err := manager.InstallFromZip(zipPath)
+	installed, err := manager.InstallFromZip(zipPath, nil)
 	if err != nil {
 		t.Fatalf("install: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestInstallFromZipRejectsPathTraversal(t *testing.T) {
 
 	manager := plugins.NewManager(database)
 	manager.SetPluginsDirForTest(filepath.Join(tmp, "plugins"))
-	if _, err := manager.InstallFromZip(zipPath); err == nil {
+	if _, err := manager.InstallFromZip(zipPath, nil); err == nil {
 		t.Fatal("expected path traversal zip to be rejected")
 	}
 }

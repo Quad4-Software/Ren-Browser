@@ -5,6 +5,7 @@
   import { Download } from "@lucide/svelte";
   import { handlePageLinkClick } from "$lib/browser/page-links";
   import { downloadPageContent, downloadText } from "$lib/browser/download";
+  import { formatBindingError } from "$lib/browser/binding-errors.js";
   import { micronShellStyle } from "$lib/browser/url";
   import {
     ensureMicronWasmReady,
@@ -144,7 +145,7 @@
       pageBg = colors.bg;
       previewError = "";
     } catch (err) {
-      previewError = err instanceof Error ? err.message : String(err);
+      previewError = formatBindingError(err, "Preview failed");
       previewHtml = "";
     }
   }
@@ -265,7 +266,7 @@
       await handlePageLinkClick(event, previewEl, currentURL, onNavigate);
     } catch (err) {
       console.error("[MicronEditor] link click failed", err);
-      previewError = err instanceof Error ? err.message : String(err);
+      previewError = formatBindingError(err, "Preview failed");
     }
   }
 </script>
@@ -309,7 +310,7 @@
         <div class="preview-controls">
           <label class="parser-select">
             <span class="parser-label">{t("editor.parser")}</span>
-            <select value={parserChoice} onchange={onParserChange}>
+            <select class="ren-select" value={parserChoice} onchange={onParserChange}>
               {#each parserOptions as option (option.value)}
                 <option value={option.value}>{option.label}</option>
               {/each}
@@ -502,12 +503,11 @@
   .parser-select select {
     max-width: 14rem;
     min-width: 0;
-    border: 1px solid color-mix(in srgb, #ffffff 18%, transparent);
-    border-radius: 0.35rem;
-    background: color-mix(in srgb, #ffffff 8%, transparent);
-    color: #fff;
+    width: auto;
     font-size: 0.78rem;
-    padding: 0.2rem 0.35rem;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    padding-left: 0.35rem;
   }
 
   .export-btn {
