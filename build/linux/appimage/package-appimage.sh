@@ -62,6 +62,8 @@ chmod +x "${GTK_PLUGIN}"
 "${ROOT}/build/linux/appimage/bundle-webkitgtk.sh" "${APPDIR}"
 chmod +x "${ROOT}/build/linux/appimage/strip-gpu-libs.sh"
 "${ROOT}/build/linux/appimage/strip-gpu-libs.sh" "${APPDIR}"
+chmod +x "${ROOT}/build/linux/appimage/configure-fontconfig.sh"
+"${ROOT}/build/linux/appimage/configure-fontconfig.sh" "${APPDIR}"
 
 rm -f "${OUTPUT}"
 "${APPIMAGETOOL}" --appimage-extract-and-run -n "${APPDIR}" "${OUTPUT}"
