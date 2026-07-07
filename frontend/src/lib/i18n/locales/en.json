@@ -144,13 +144,20 @@
     "shutdownHint": "Stop mesh networking and close the app.",
     "shutdownConfirm": "Shut down the application? Mesh connections will stop.",
     "security": "Security",
+    "sandboxSubtitle": "Process filesystem sandbox",
     "sandboxType": "Process sandbox",
     "sandboxState": "State",
     "sandboxEnabled": "Enabled",
     "sandboxDisabled": "Disabled",
     "sandboxReason": "Reason",
     "sandboxTypeLandlock": "Landlock LSM",
-    "sandboxTypeNone": "None"
+    "sandboxTypeNone": "None",
+    "sandboxActiveHint": "Filesystem access is limited to application data, caches, and system libraries.",
+    "sandboxReasonDesktopWebkit": "Disabled on the desktop app because WebKitGTK uses a nested process sandbox that conflicts with Landlock.",
+    "sandboxReasonUnsupportedKernel": "Disabled because this kernel does not support Landlock (Linux 5.13+ required).",
+    "sandboxReasonNoLandlockFlag": "Disabled by the --no-landlock startup flag.",
+    "sandboxReasonEnvDisabled": "Disabled by the REN_BROWSER_LANDLOCK environment variable.",
+    "sandboxReasonUnsupportedPlatform": "Landlock is only available on Linux."
   },
   "keybinds": {
     "focusUrl": "Focus address bar",

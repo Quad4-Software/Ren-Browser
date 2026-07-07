@@ -144,13 +144,20 @@
     "shutdownHint": "",
     "shutdownConfirm": "",
     "security": "",
+    "sandboxSubtitle": "",
     "sandboxType": "",
     "sandboxState": "",
     "sandboxEnabled": "",
     "sandboxDisabled": "",
     "sandboxReason": "",
     "sandboxTypeLandlock": "",
-    "sandboxTypeNone": ""
+    "sandboxTypeNone": "",
+    "sandboxActiveHint": "",
+    "sandboxReasonDesktopWebkit": "",
+    "sandboxReasonUnsupportedKernel": "",
+    "sandboxReasonNoLandlockFlag": "",
+    "sandboxReasonEnvDisabled": "",
+    "sandboxReasonUnsupportedPlatform": ""
   },
   "keybinds": {
     "focusUrl": "",

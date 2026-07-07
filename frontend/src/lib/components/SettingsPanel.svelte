@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { FolderOpen, Network, RefreshCw } from "@lucide/svelte";
+  import { FolderOpen, Network, RefreshCw, ShieldCheck, ShieldOff } from "@lucide/svelte";
   import Toggle from "$lib/components/Toggle.svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import MicronWasmManager from "$lib/components/MicronWasmManager.svelte";
@@ -189,6 +189,28 @@
       return t("settings.sandboxTypeLandlock");
     }
     return t("settings.sandboxTypeNone");
+  }
+
+  function sandboxReasonLabel(reason?: string): string {
+    if (!reason) {
+      return "";
+    }
+    if (reason.includes("WebKitGTK")) {
+      return t("settings.sandboxReasonDesktopWebkit");
+    }
+    if (reason.includes("kernel does not support Landlock")) {
+      return t("settings.sandboxReasonUnsupportedKernel");
+    }
+    if (reason.includes("--no-landlock")) {
+      return t("settings.sandboxReasonNoLandlockFlag");
+    }
+    if (reason.includes("_LANDLOCK")) {
+      return t("settings.sandboxReasonEnvDisabled");
+    }
+    if (reason.startsWith("not supported on")) {
+      return t("settings.sandboxReasonUnsupportedPlatform");
+    }
+    return reason;
   }
 
   function update<K extends keyof ThemeSettings>(key: K, value: ThemeSettings[K]) {
@@ -684,24 +706,33 @@
     collapsed={sectionCollapsed("security")}
     onToggle={toggleSettingsSection}
   >
-    <dl class="sandbox-status">
-      <div>
-        <dt>{t("settings.sandboxType")}</dt>
-        <dd>{sandboxTypeLabel(sandboxStatus.type)}</dd>
-      </div>
-      <div>
-        <dt>{t("settings.sandboxState")}</dt>
-        <dd class:enabled={sandboxStatus.enabled} class:disabled={!sandboxStatus.enabled}>
-          {sandboxStatus.enabled ? t("settings.sandboxEnabled") : t("settings.sandboxDisabled")}
-        </dd>
-      </div>
-      {#if !sandboxStatus.enabled && sandboxStatus.reason}
-        <div>
-          <dt>{t("settings.sandboxReason")}</dt>
-          <dd class="sandbox-reason">{sandboxStatus.reason}</dd>
+    <div class="sandbox-card" class:active={sandboxStatus.enabled}>
+      <div class="sandbox-head">
+        <span class="sandbox-icon" aria-hidden="true">
+          {#if sandboxStatus.enabled}
+            <ShieldCheck size={20} strokeWidth={2} />
+          {:else}
+            <ShieldOff size={20} strokeWidth={2} />
+          {/if}
+        </span>
+        <div class="sandbox-copy">
+          <span class="sandbox-name">{sandboxTypeLabel(sandboxStatus.type)}</span>
+          <span class="sandbox-subtitle">{t("settings.sandboxSubtitle")}</span>
         </div>
+        <span
+          class="sandbox-badge"
+          class:enabled={sandboxStatus.enabled}
+          class:disabled={!sandboxStatus.enabled}
+        >
+          {sandboxStatus.enabled ? t("settings.sandboxEnabled") : t("settings.sandboxDisabled")}
+        </span>
+      </div>
+      {#if sandboxReasonLabel(sandboxStatus.reason)}
+        <p class="sandbox-note">{sandboxReasonLabel(sandboxStatus.reason)}</p>
+      {:else if sandboxStatus.enabled}
+        <p class="sandbox-note active">{t("settings.sandboxActiveHint")}</p>
       {/if}
-    </dl>
+    </div>
   </SettingsSection>
 
   {#if !publicMode}
@@ -938,40 +969,103 @@
     font-size: 0.8rem;
   }
 
-  .sandbox-status {
-    margin: 0;
+  .sandbox-card {
+    border: 1px solid var(--ren-border);
+    border-radius: calc(var(--ren-radius) + 2px);
+    background: var(--ren-surface-raised);
+    padding: 0.85rem 0.9rem;
     display: grid;
-    gap: 0.55rem;
+    gap: 0.65rem;
   }
 
-  .sandbox-status div {
-    display: grid;
-    gap: 0.2rem;
+  .sandbox-card.active {
+    border-color: color-mix(in srgb, var(--ren-success, #3d9a5f) 35%, var(--ren-border));
+    background: color-mix(in srgb, var(--ren-success, #3d9a5f) 6%, var(--ren-surface-raised));
   }
 
-  .sandbox-status dt {
-    margin: 0;
+  .sandbox-head {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 0;
+  }
+
+  .sandbox-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    border: 1px solid var(--ren-border);
+    background: color-mix(in srgb, var(--ren-muted) 10%, transparent);
     color: var(--ren-muted);
-    font-size: 0.85rem;
   }
 
-  .sandbox-status dd {
-    margin: 0;
-    font-size: 0.95rem;
-  }
-
-  .sandbox-status dd.enabled {
+  .sandbox-card.active .sandbox-icon {
     color: var(--ren-success, #3d9a5f);
+    border-color: color-mix(in srgb, var(--ren-success, #3d9a5f) 40%, var(--ren-border));
+    background: color-mix(in srgb, var(--ren-success, #3d9a5f) 12%, transparent);
   }
 
-  .sandbox-status dd.disabled {
+  .sandbox-copy {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .sandbox-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ren-fg);
+    line-height: 1.25;
+  }
+
+  .sandbox-subtitle {
+    font-size: 0.8rem;
     color: var(--ren-muted);
+    line-height: 1.35;
   }
 
-  .sandbox-reason {
-    font-family: var(--ren-mono, monospace);
-    font-size: 0.85rem;
-    word-break: break-word;
+  .sandbox-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.18rem 0.55rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+
+  .sandbox-badge.enabled {
+    color: var(--ren-success, #3d9a5f);
+    border-color: color-mix(in srgb, var(--ren-success, #3d9a5f) 45%, transparent);
+    background: color-mix(in srgb, var(--ren-success, #3d9a5f) 12%, transparent);
+  }
+
+  .sandbox-badge.disabled {
+    color: var(--ren-muted);
+    border-color: var(--ren-border);
+    background: color-mix(in srgb, var(--ren-muted) 10%, transparent);
+  }
+
+  .sandbox-note {
+    margin: 0;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--ren-border);
+    color: var(--ren-muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+
+  .sandbox-note.active {
+    color: color-mix(in srgb, var(--ren-success, #3d9a5f) 75%, var(--ren-muted));
   }
 
   :global(.spin) {

@@ -144,13 +144,20 @@
     "shutdownHint": "Mesh-Netzwerkverbindung beenden und die App schließen.",
     "shutdownConfirm": "Anwendung herunterfahren? Mesh-Verbindungen werden beendet.",
     "security": "Sicherheit",
+    "sandboxSubtitle": "Prozess-Dateisystem-Sandbox",
     "sandboxType": "Prozess-Sandbox",
     "sandboxState": "Status",
     "sandboxEnabled": "Aktiv",
     "sandboxDisabled": "Deaktiviert",
     "sandboxReason": "Grund",
     "sandboxTypeLandlock": "Landlock LSM",
-    "sandboxTypeNone": "Keine"
+    "sandboxTypeNone": "Keine",
+    "sandboxActiveHint": "Dateizugriff ist auf Anwendungsdaten, Caches und Systembibliotheken beschränkt.",
+    "sandboxReasonDesktopWebkit": "Auf der Desktop-App deaktiviert, weil WebKitGTK eine verschachtelte Prozess-Sandbox nutzt, die mit Landlock kollidiert.",
+    "sandboxReasonUnsupportedKernel": "Deaktiviert, weil dieser Kernel Landlock nicht unterstützt (Linux 5.13+ erforderlich).",
+    "sandboxReasonNoLandlockFlag": "Durch die Startoption --no-landlock deaktiviert.",
+    "sandboxReasonEnvDisabled": "Durch die Umgebungsvariable REN_BROWSER_LANDLOCK deaktiviert.",
+    "sandboxReasonUnsupportedPlatform": "Landlock ist nur unter Linux verfügbar."
   },
   "keybinds": {
     "focusUrl": "Adressleiste fokussieren",

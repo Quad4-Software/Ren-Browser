@@ -144,13 +144,20 @@
     "shutdownHint": "Остановить mesh-сеть и закрыть приложение.",
     "shutdownConfirm": "Выключить приложение? Mesh-соединения будут остановлены.",
     "security": "Безопасность",
+    "sandboxSubtitle": "Песочница файловой системы процесса",
     "sandboxType": "Песочница процесса",
     "sandboxState": "Состояние",
     "sandboxEnabled": "Включена",
     "sandboxDisabled": "Отключена",
     "sandboxReason": "Причина",
     "sandboxTypeLandlock": "Landlock LSM",
-    "sandboxTypeNone": "Нет"
+    "sandboxTypeNone": "Нет",
+    "sandboxActiveHint": "Доступ к файловой системе ограничен данными приложения, кэшем и системными библиотеками.",
+    "sandboxReasonDesktopWebkit": "Отключено в настольном приложении: WebKitGTK использует вложенную песочницу процессов, несовместимую с Landlock.",
+    "sandboxReasonUnsupportedKernel": "Отключено: ядро не поддерживает Landlock (требуется Linux 5.13+).",
+    "sandboxReasonNoLandlockFlag": "Отключено флагом запуска --no-landlock.",
+    "sandboxReasonEnvDisabled": "Отключено переменной окружения REN_BROWSER_LANDLOCK.",
+    "sandboxReasonUnsupportedPlatform": "Landlock доступен только в Linux."
   },
   "keybinds": {
     "focusUrl": "Фокус на адресной строке",
