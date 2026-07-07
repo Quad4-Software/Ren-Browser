@@ -66,7 +66,7 @@ func seedCommunityInterfaces(cfg *common.ReticulumConfig) {
 	if err != nil {
 		return
 	}
-	tcp := FilterSeedableInterfaces(items.Items)
+	tcp := FilterSeedableInterfaces(items.Items) // FIXME(user1): seed BackboneInterface directly when client mode is native
 	if len(tcp) == 0 {
 		return
 	}
@@ -112,7 +112,7 @@ func loadConfig(override string) (*common.ReticulumConfig, error) {
 		return nil, err
 	}
 	applyRenBrowserDefaults(cfg)
-	if migrateInterfaceConfigs(cfg) {
+	if migrateInterfaceConfigs(cfg) { // FIXME(user1): remove migration when backbone client configs are native
 		if err := reticulumconfig.SaveConfig(cfg); err != nil {
 			return nil, err
 		}

@@ -186,7 +186,7 @@ func parseInterfaceFragment(snippet string) (map[string]*common.InterfaceConfig,
 		return nil, fmt.Errorf("no interface found in snippet")
 	}
 	for name, iface := range cfg.Interfaces {
-		cfg.Interfaces[name] = EffectiveInterfaceConfig(iface)
+		cfg.Interfaces[name] = EffectiveInterfaceConfig(iface) // FIXME(user1): drop when BackboneClientInterface is vendored
 	}
 	return cfg.Interfaces, nil
 }
@@ -220,7 +220,7 @@ func normalizeConfigSnippet(snippet string) string {
 		out = append(out, line)
 	}
 	normalized := strings.Join(out, "\n")
-	if usesBackboneTCPFallback() {
+	if usesBackboneTCPFallback() { // FIXME(user1): remove snippet rewrite when backbone import is native
 		normalized = rewriteBackboneSnippetToTCP(normalized)
 	}
 	return normalized

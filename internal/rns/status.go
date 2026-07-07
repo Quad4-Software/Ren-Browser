@@ -95,7 +95,7 @@ func (s *Stack) ListInterfaces() []InterfaceInfo {
 		if cfg == nil {
 			continue
 		}
-		effective := EffectiveInterfaceConfig(cfg)
+		effective := EffectiveInterfaceConfig(cfg) // FIXME(user1): show cfg.Type once BackboneClientInterface is vendored
 		st := stats[name]
 		out = append(out, InterfaceInfo{
 			Name:    name,

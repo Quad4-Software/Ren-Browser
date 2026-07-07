@@ -97,7 +97,7 @@ func (s *Stack) Start() error {
 		if !ifaceCfg.Enabled {
 			continue
 		}
-		iface, err := interfaces.NewFromConfig(name, EffectiveInterfaceConfig(ifaceCfg))
+		iface, err := interfaces.NewFromConfig(name, EffectiveInterfaceConfig(ifaceCfg)) // FIXME(user1): drop EffectiveInterfaceConfig when BackboneClientInterface is vendored
 		if err != nil {
 			if s.cfg.PanicOnInterfaceErr {
 				return fmt.Errorf("interface %s: %w", name, err)

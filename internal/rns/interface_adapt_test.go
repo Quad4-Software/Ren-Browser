@@ -27,25 +27,36 @@ func TestBackboneToTCPClient(t *testing.T) {
 	}
 }
 
-func TestBackboneToTCPClientUsesAddressFallback(t *testing.T) {
+func TestBackboneToTCPClientUsesPortFallback(t *testing.T) {
 	cfg := &common.InterfaceConfig{
-		Type:    "BackboneInterface",
-		Address: "mesh.example.net",
-		Port:    7822,
+		Type:       "BackboneInterface",
+		TargetHost: "rns.example.net",
+		Port:       7822,
 	}
 	adapted, ok := backboneToTCPClient(cfg)
 	if !ok {
 		t.Fatal("expected conversion")
 	}
-	if adapted.TargetHost != "mesh.example.net" || adapted.TargetPort != 7822 {
-		t.Fatalf("target = %s:%d", adapted.TargetHost, adapted.TargetPort)
+	if adapted.TargetPort != 7822 {
+		t.Fatalf("targetPort = %d", adapted.TargetPort)
+	}
+}
+
+func TestBackboneToTCPClientIgnoresListenAddress(t *testing.T) {
+	cfg := &common.InterfaceConfig{
+		Type:    "BackboneInterface",
+		Address: "127.0.0.1",
+		Port:    4242,
+	}
+	if _, ok := backboneToTCPClient(cfg); ok {
+		t.Fatal("expected no conversion for listen-only backbone config")
 	}
 }
 
 func TestBackboneToTCPClientMissingHost(t *testing.T) {
 	cfg := &common.InterfaceConfig{Type: "BackboneInterface", TargetPort: 4242}
 	if _, ok := backboneToTCPClient(cfg); ok {
-		t.Fatal("expected no conversion without host")
+		t.Fatal("expected no conversion without target_host")
 	}
 }
 
@@ -73,14 +84,10 @@ func TestParseInterfaceFragmentBackboneSnippet(t *testing.T) {
 	if cfg == nil {
 		t.Fatal("missing MichMesh interface")
 	}
-	if usesBackboneTCPFallback() {
-		if cfg.Type != "TCPClientInterface" {
-			t.Fatalf("type = %q, want TCPClientInterface on android", cfg.Type)
-		}
-		if cfg.TargetHost != "michmesh.example" || cfg.TargetPort != 4242 {
-			t.Fatalf("target = %s:%d", cfg.TargetHost, cfg.TargetPort)
-		}
-	} else if cfg.Type != "BackboneInterface" {
-		t.Fatalf("type = %q, want BackboneInterface on desktop", cfg.Type)
+	if cfg.Type != "TCPClientInterface" {
+		t.Fatalf("type = %q, want TCPClientInterface", cfg.Type)
+	}
+	if cfg.TargetHost != "michmesh.example" || cfg.TargetPort != 4242 {
+		t.Fatalf("target = %s:%d", cfg.TargetHost, cfg.TargetPort)
 	}
 }

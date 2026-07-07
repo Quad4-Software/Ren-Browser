@@ -7,22 +7,23 @@ import (
 	"quad4/reticulum-go/pkg/common"
 )
 
+// FIXME(user1): Remove this entire workaround once vendored Reticulum-Go ships
+// BackboneClientInterface and RenBrowser no longer needs to rewrite backbone configs.
+// Until then, community backbone entries (remote/target_host) dial out as TCPClientInterface.
+
+func usesBackboneTCPFallback() bool { return true }
+
 func isBackboneInterfaceType(t string) bool {
 	lower := strings.ToLower(strings.TrimSpace(t))
 	return lower == "backboneinterface" || strings.Contains(lower, "backbone")
 }
 
+// FIXME(user1): Replace with BackboneClientInterface from Reticulum-Go when ready.
 func backboneToTCPClient(cfg *common.InterfaceConfig) (*common.InterfaceConfig, bool) {
 	if cfg == nil || !isBackboneInterfaceType(cfg.Type) {
 		return cfg, false
 	}
 	host := strings.TrimSpace(cfg.TargetHost)
-	if host == "" {
-		host = strings.TrimSpace(cfg.Address)
-	}
-	if host == "" {
-		host = strings.TrimSpace(cfg.TargetAddress)
-	}
 	port := cfg.TargetPort
 	if port == 0 {
 		port = cfg.Port
@@ -40,6 +41,7 @@ func backboneToTCPClient(cfg *common.InterfaceConfig) (*common.InterfaceConfig, 
 }
 
 // EffectiveInterfaceConfig returns the runtime interface config for the current platform.
+// FIXME(user1): Drop this shim when BackboneClientInterface is available in Reticulum-Go.
 func EffectiveInterfaceConfig(cfg *common.InterfaceConfig) *common.InterfaceConfig {
 	if cfg == nil || !usesBackboneTCPFallback() {
 		return cfg
@@ -51,6 +53,7 @@ func EffectiveInterfaceConfig(cfg *common.InterfaceConfig) *common.InterfaceConf
 	return adapted
 }
 
+// FIXME(user1): Remove after BackboneClientInterface lands; migrates saved backbone client configs.
 func migrateInterfaceConfigs(cfg *common.ReticulumConfig) bool {
 	if cfg == nil || !usesBackboneTCPFallback() {
 		return false
@@ -67,6 +70,7 @@ func migrateInterfaceConfigs(cfg *common.ReticulumConfig) bool {
 	return changed
 }
 
+// FIXME(user1): Remove when backbone snippets can stay BackboneInterface in config files.
 func rewriteBackboneSnippetToTCP(snippet string) string {
 	lines := strings.Split(snippet, "\n")
 	for i, line := range lines {
@@ -93,6 +97,7 @@ func IsBackboneInterface(item CommunityInterface) bool {
 	return strings.Contains(tn, "backbone")
 }
 
+// FIXME(user1): Remove when community directory can expose BackboneClientInterface natively.
 func AdaptCommunityBackboneItem(item CommunityInterface) CommunityInterface {
 	item.Type = "tcp"
 	item.TypeName = "TCPClientInterface"

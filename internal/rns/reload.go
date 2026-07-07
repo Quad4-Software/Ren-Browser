@@ -25,8 +25,8 @@ func sliceEqual(a, b []string) bool {
 }
 
 func interfaceConfigsEqualForReload(a, b *common.InterfaceConfig) bool {
-	a = EffectiveInterfaceConfig(a)
-	b = EffectiveInterfaceConfig(b)
+	a = EffectiveInterfaceConfig(a) // FIXME(user1): drop when BackboneClientInterface is vendored
+	b = EffectiveInterfaceConfig(b) // FIXME(user1): drop when BackboneClientInterface is vendored
 	if a == nil && b == nil {
 		return true
 	}
@@ -101,7 +101,7 @@ func (s *Stack) ReloadInterfaces(cfg *common.ReticulumConfig) error {
 		if _, ok := s.running[name]; ok {
 			continue
 		}
-		niface, err := interfaces.NewFromConfig(name, EffectiveInterfaceConfig(ic))
+		niface, err := interfaces.NewFromConfig(name, EffectiveInterfaceConfig(ic)) // FIXME(user1): drop EffectiveInterfaceConfig when BackboneClientInterface is vendored
 		if err != nil {
 			if cfg.PanicOnInterfaceErr {
 				return fmt.Errorf("interface %s: %w", name, err)

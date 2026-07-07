@@ -48,17 +48,11 @@ func TestFilterSeedableInterfaces(t *testing.T) {
 		{Name: "c", Type: "TCPServerInterface", Config: "[[c]]"},
 	}
 	out := FilterSeedableInterfaces(items)
-	if usesBackboneTCPFallback() {
-		if len(out) != 2 {
-			t.Fatalf("len = %d, want 2", len(out))
-		}
-		if out[1].Name != "b" || out[1].TypeName != "TCPClientInterface" {
-			t.Fatalf("backbone item = %+v", out[1])
-		}
-		return
+	if len(out) != 2 {
+		t.Fatalf("len = %d, want 2", len(out))
 	}
-	if len(out) != 1 || out[0].Name != "a" {
-		t.Fatalf("desktop seed = %+v", out)
+	if out[1].Name != "b" || out[1].TypeName != "TCPClientInterface" {
+		t.Fatalf("backbone item = %+v", out[1])
 	}
 }
 
