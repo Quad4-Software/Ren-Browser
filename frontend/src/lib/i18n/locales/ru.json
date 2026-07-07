@@ -142,7 +142,15 @@
     "application": "Приложение",
     "shutdown": "Выключить",
     "shutdownHint": "Остановить mesh-сеть и закрыть приложение.",
-    "shutdownConfirm": "Выключить приложение? Mesh-соединения будут остановлены."
+    "shutdownConfirm": "Выключить приложение? Mesh-соединения будут остановлены.",
+    "security": "Безопасность",
+    "sandboxType": "Песочница процесса",
+    "sandboxState": "Состояние",
+    "sandboxEnabled": "Включена",
+    "sandboxDisabled": "Отключена",
+    "sandboxReason": "Причина",
+    "sandboxTypeLandlock": "Landlock LSM",
+    "sandboxTypeNone": "Нет"
   },
   "keybinds": {
     "focusUrl": "Фокус на адресной строке",

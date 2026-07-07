@@ -40,6 +40,12 @@
     rxBytes: number;
   };
 
+  type SandboxStatusRow = {
+    type: string;
+    enabled: boolean;
+    reason?: string;
+  };
+
   type Props = {
     theme: ThemeSettings;
     systemFonts: string[];
@@ -72,6 +78,7 @@
     pageCacheMax: number;
     pageCacheClearing: boolean;
     pageCacheEnabled: boolean;
+    sandboxStatus: SandboxStatusRow;
     onChange: (theme: ThemeSettings) => void;
     onChangeKeybinds: (keybinds: KeybindSettings) => void;
     onChangeUILanguage: (value: string) => void;
@@ -168,11 +175,19 @@
     pageCacheMax = 128,
     pageCacheClearing = false,
     pageCacheEnabled = true,
+    sandboxStatus = { type: "none", enabled: false },
   }: Props = $props();
 
   let recordingAction = $state<KeybindAction | null>(null);
 
   const keybindActions = KEYBIND_ACTIONS;
+
+  function sandboxTypeLabel(type: string): string {
+    if (type === "landlock") {
+      return t("settings.sandboxTypeLandlock");
+    }
+    return t("settings.sandboxTypeNone");
+  }
 
   function update<K extends keyof ThemeSettings>(key: K, value: ThemeSettings[K]) {
     theme = { ...theme, [key]: value };
@@ -660,6 +675,32 @@
     </ul>
   </SettingsSection>
 
+  <SettingsSection
+    id="security"
+    title={t("settings.security")}
+    collapsed={sectionCollapsed("security")}
+    onToggle={toggleSettingsSection}
+  >
+    <dl class="sandbox-status">
+      <div>
+        <dt>{t("settings.sandboxType")}</dt>
+        <dd>{sandboxTypeLabel(sandboxStatus.type)}</dd>
+      </div>
+      <div>
+        <dt>{t("settings.sandboxState")}</dt>
+        <dd class:enabled={sandboxStatus.enabled} class:disabled={!sandboxStatus.enabled}>
+          {sandboxStatus.enabled ? t("settings.sandboxEnabled") : t("settings.sandboxDisabled")}
+        </dd>
+      </div>
+      {#if !sandboxStatus.enabled && sandboxStatus.reason}
+        <div>
+          <dt>{t("settings.sandboxReason")}</dt>
+          <dd class="sandbox-reason">{sandboxStatus.reason}</dd>
+        </div>
+      {/if}
+    </dl>
+  </SettingsSection>
+
   {#if !publicMode}
     <SettingsSection
       id="application"
@@ -892,6 +933,42 @@
 
   .meta {
     font-size: 0.8rem;
+  }
+
+  .sandbox-status {
+    margin: 0;
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .sandbox-status div {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .sandbox-status dt {
+    margin: 0;
+    color: var(--ren-muted);
+    font-size: 0.85rem;
+  }
+
+  .sandbox-status dd {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .sandbox-status dd.enabled {
+    color: var(--ren-success, #3d9a5f);
+  }
+
+  .sandbox-status dd.disabled {
+    color: var(--ren-muted);
+  }
+
+  .sandbox-reason {
+    font-family: var(--ren-mono, monospace);
+    font-size: 0.85rem;
+    word-break: break-word;
   }
 
   :global(.spin) {

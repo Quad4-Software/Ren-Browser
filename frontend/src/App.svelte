@@ -28,6 +28,7 @@
     GetReticulumConfigText,
     GetPageCacheStats,
     GetRuntimeConfig,
+    GetSandboxStatus,
     GoBack,
     GoForward,
     HistoryState,
@@ -241,6 +242,12 @@
     path: string;
   };
 
+  type SandboxStatus = {
+    type: string;
+    enabled: boolean;
+    reason?: string;
+  };
+
   type HistoryEntry = {
     id: number;
     url: string;
@@ -315,6 +322,7 @@
   let publicMode = $state(false);
   let serverMode = $state(false);
   let storeHealth = $state<StoreHealth>({ ok: true, path: "" });
+  let sandboxStatus = $state<SandboxStatus>({ type: "none", enabled: false });
   let meshOnline = $state(true);
   let splitViewOpen = $state(false);
   let splitTabId = $state<string | null>(null);
@@ -1599,6 +1607,15 @@
     };
   }
 
+  async function loadSandboxStatus() {
+    const status = await GetSandboxStatus();
+    sandboxStatus = {
+      type: status.type ?? "none",
+      enabled: !!status.enabled,
+      reason: status.reason,
+    };
+  }
+
   function requestResetDatabase() {
     resetDbConfirmOpen = true;
   }
@@ -2028,6 +2045,7 @@
     void loadCommunityInterfaces();
     void refreshNetwork();
     void loadStoreHealth();
+    void loadSandboxStatus();
     void loadRuntimeConfig();
     void bootPlugins();
 
@@ -2304,6 +2322,7 @@
           {interfaces}
           {configPath}
           {pluginsDir}
+          {sandboxStatus}
           bind:downloadDir
           {uiLanguage}
           onChangeUILanguage={saveUILanguage}

@@ -142,7 +142,15 @@
     "application": "Anwendung",
     "shutdown": "Herunterfahren",
     "shutdownHint": "Mesh-Netzwerkverbindung beenden und die App schließen.",
-    "shutdownConfirm": "Anwendung herunterfahren? Mesh-Verbindungen werden beendet."
+    "shutdownConfirm": "Anwendung herunterfahren? Mesh-Verbindungen werden beendet.",
+    "security": "Sicherheit",
+    "sandboxType": "Prozess-Sandbox",
+    "sandboxState": "Status",
+    "sandboxEnabled": "Aktiv",
+    "sandboxDisabled": "Deaktiviert",
+    "sandboxReason": "Grund",
+    "sandboxTypeLandlock": "Landlock LSM",
+    "sandboxTypeNone": "Keine"
   },
   "keybinds": {
     "focusUrl": "Adressleiste fokussieren",

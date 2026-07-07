@@ -16,6 +16,7 @@ import (
 	"renbrowser/internal/bootstrap"
 	"renbrowser/internal/config"
 	"renbrowser/internal/safe"
+	"renbrowser/internal/sandbox"
 )
 
 //go:embed all:frontend/dist
@@ -24,6 +25,7 @@ var embeddedAssets embed.FS
 func main() {
 	cfg := config.ParseFlags()
 	relocateForAppImage(&cfg)
+	sandbox.Apply(sandbox.OptionsFromRuntime(cfg))
 
 	appBundle, err := bootstrap.New(embeddedAssets, cfg)
 	if err != nil {

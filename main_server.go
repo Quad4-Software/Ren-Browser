@@ -14,6 +14,7 @@ import (
 	"renbrowser/internal/brand"
 	"renbrowser/internal/buildinfo"
 	"renbrowser/internal/config"
+	"renbrowser/internal/sandbox"
 	"renbrowser/internal/serverlog"
 )
 
@@ -23,6 +24,7 @@ var embeddedAssets embed.FS
 func main() {
 	cfg := config.ParseFlags()
 	serverlog.InitWithLevel(config.ParseLogLevel(cfg.LogLevel))
+	sandbox.Apply(sandbox.OptionsFromRuntime(cfg))
 	if cfg.ServerHost == "" {
 		cfg.ServerHost = "0.0.0.0"
 	}

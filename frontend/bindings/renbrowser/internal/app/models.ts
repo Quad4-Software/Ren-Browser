@@ -9,6 +9,9 @@ import * as plugins$0 from "../plugins/models.js";
 import * as rns$0 from "../rns/models.js";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as sandbox$0 from "../sandbox/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as store$0 from "../store/models.js";
 
 export interface AboutInfo {
@@ -216,6 +219,11 @@ export interface RuntimeConfig {
     "profile": string;
     "profilePath": string;
 }
+
+/**
+ * SandboxStatus describes process-level filesystem sandboxing.
+ */
+export type SandboxStatus = sandbox$0.Status;
 
 export interface SettingsReset {
     "theme": ThemeSettings;

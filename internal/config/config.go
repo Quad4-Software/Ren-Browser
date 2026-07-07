@@ -27,6 +27,8 @@ type Runtime struct {
 	PublicMode      bool
 	ResetWindow     bool
 	NativeTitlebar  bool
+	NoLandlock      bool
+	Landlock        bool
 	Auth            bool
 	AuthReset       bool
 	NoBruteForce    bool
@@ -53,6 +55,8 @@ func ParseFlags() Runtime {
 	flag.BoolVar(&cfg.PublicMode, "public-mode", false, "Store favorites, history, and tabs in the browser (localStorage) instead of the server database")
 	flag.BoolVar(&cfg.ResetWindow, "reset-window", false, "Ignore saved window size and position on startup")
 	flag.BoolVar(&cfg.NativeTitlebar, "native-titlebar", false, "Use the native OS title bar instead of custom window controls")
+	flag.BoolVar(&cfg.NoLandlock, "no-landlock", false, "Disable Landlock LSM filesystem sandbox (Linux)")
+	flag.BoolVar(&cfg.Landlock, "landlock", false, "Force Landlock LSM sandbox on Linux even when auto-detection would skip it")
 	flag.BoolVar(&cfg.Auth, "auth", false, "Enable HTTP basic auth for server mode (prompts to set password on first run)")
 	flag.BoolVar(&cfg.AuthReset, "auth-reset", false, "Reset server auth password and prompt for a new one")
 	flag.BoolVar(&cfg.NoBruteForce, "no-bruteforce-protection", false, "Disable login brute-force IP bans (server mode)")

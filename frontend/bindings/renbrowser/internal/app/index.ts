@@ -33,6 +33,7 @@ export type {
     PluginInstallPreview,
     PluginSummary,
     RuntimeConfig,
+    SandboxStatus,
     SettingsReset,
     StoreHealth,
     TabSnapshot,

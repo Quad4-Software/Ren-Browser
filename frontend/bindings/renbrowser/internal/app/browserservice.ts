@@ -164,6 +164,10 @@ export function GetRuntimeConfig(): $CancellablePromise<$models.RuntimeConfig> {
     return $Call.ByID(1108835153);
 }
 
+export function GetSandboxStatus(): $CancellablePromise<$models.SandboxStatus> {
+    return $Call.ByID(767251062);
+}
+
 export function GetStatus(): $CancellablePromise<rns$0.Status> {
     return $Call.ByID(3416137943);
 }

@@ -142,7 +142,15 @@
     "application": "Application",
     "shutdown": "Shut down",
     "shutdownHint": "Stop mesh networking and close the app.",
-    "shutdownConfirm": "Shut down the application? Mesh connections will stop."
+    "shutdownConfirm": "Shut down the application? Mesh connections will stop.",
+    "security": "Security",
+    "sandboxType": "Process sandbox",
+    "sandboxState": "State",
+    "sandboxEnabled": "Enabled",
+    "sandboxDisabled": "Disabled",
+    "sandboxReason": "Reason",
+    "sandboxTypeLandlock": "Landlock LSM",
+    "sandboxTypeNone": "None"
   },
   "keybinds": {
     "focusUrl": "Focus address bar",

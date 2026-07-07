@@ -142,7 +142,15 @@
     "application": "Aplicación",
     "shutdown": "Apagar",
     "shutdownHint": "Detener la red mesh y cerrar la aplicación.",
-    "shutdownConfirm": "¿Apagar la aplicación? Las conexiones mesh se detendrán."
+    "shutdownConfirm": "¿Apagar la aplicación? Las conexiones mesh se detendrán.",
+    "security": "Seguridad",
+    "sandboxType": "Sandbox del proceso",
+    "sandboxState": "Estado",
+    "sandboxEnabled": "Activado",
+    "sandboxDisabled": "Desactivado",
+    "sandboxReason": "Motivo",
+    "sandboxTypeLandlock": "Landlock LSM",
+    "sandboxTypeNone": "Ninguno"
   },
   "keybinds": {
     "focusUrl": "Enfocar barra de direcciones",
