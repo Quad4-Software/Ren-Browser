@@ -104,4 +104,3 @@ func TestOptionsFromRuntime(t *testing.T) {
 		t.Fatal("expected plugins dir")
 	}
 }
-
