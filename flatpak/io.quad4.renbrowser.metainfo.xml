@@ -2,13 +2,17 @@
 <component type="desktop-application">
   <id>io.quad4.renbrowser</id>
   <metadata_license>CC0-1.0</metadata_license>
-  <project_license>LicenseRef-proprietary</project_license>
+  <project_license>MIT</project_license>
   <name>Ren Browser</name>
   <summary>Reticulum browser for NomadNet pages</summary>
   <description>
     <p>Ren Browser is a Micron-first mesh browser for NomadNet, built with Wails (Go) and Svelte.</p>
   </description>
   <launchable type="desktop-id">io.quad4.renbrowser.desktop</launchable>
+  <categories>
+    <category>Network</category>
+    <category>Utility</category>
+  </categories>
   <url type="homepage">https://quad4.io</url>
   <developer id="io.quad4">
     <name>Quad4</name>
