@@ -1,0 +1,45 @@
+{
+  "manifestVersion": 1,
+  "id": "renbrowser.micron-translator",
+  "name": "Micron Translator",
+  "version": "1.0.0",
+  "description": "Translate Micron (.mu) pages via Google Translate or LibreTranslate",
+  "author": "Ren Browser",
+  "license": "MIT",
+  "engines": { "renbrowser": ">=0.1.0" },
+  "main": "main.js",
+  "backend": "translator.wasm",
+  "permissions": [
+    "storage.plugin",
+    "events.subscribe",
+    "navigation.read",
+    "network.fetch"
+  ],
+  "network": {
+    "endpoints": [
+      "https://translate.googleapis.com/",
+      "https://libretranslate.com/",
+      "User-configured LibreTranslate instance URL"
+    ]
+  },
+  "contributes": {
+    "panels": [{
+      "id": "translator",
+      "title": "%panels.translator%",
+      "entry": "main.js",
+      "location": "sidebar"
+    }],
+    "commands": [
+      {
+        "id": "translate-page",
+        "title": "%commands.translatePage%",
+        "keybind": "mod+shift+t"
+      },
+      {
+        "id": "restore-original",
+        "title": "%commands.restoreOriginal%",
+        "keybind": "mod+shift+r"
+      }
+    ]
+  }
+}

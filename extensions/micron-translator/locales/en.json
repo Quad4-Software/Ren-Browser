@@ -1,0 +1,36 @@
+{
+  "panels": {
+    "translator": "Micron Translator"
+  },
+  "commands": {
+    "translatePage": "Translate Micron page",
+    "restoreOriginal": "Restore original Micron page"
+  },
+  "toast": {
+    "openMicronPage": "Open a Micron page to translate",
+    "networkRequired": "Network access is disabled for this extension. Reinstall or enable the network.fetch permission.",
+    "translating": "Translating page...",
+    "translated": "Page translated",
+    "noOriginal": "No saved original for this page",
+    "restored": "Original page restored"
+  },
+  "panel": {
+    "title": "Micron Translator",
+    "hint": "Translate the active .mu page. Markup is preserved and visible text is sent to the selected translation service.",
+    "backend": "Backend",
+    "backendGoogle": "Google Translate (public)",
+    "backendLibre": "LibreTranslate",
+    "targetLang": "Target language",
+    "sourceLang": "Source language",
+    "sourceLangPlaceholder": "auto",
+    "libreUrl": "LibreTranslate instance URL",
+    "libreApiKey": "LibreTranslate API key (optional)",
+    "translate": "Translate current page",
+    "restore": "Restore original",
+    "save": "Save settings",
+    "settingsSaved": "Settings saved",
+    "translating": "Translating...",
+    "translationApplied": "Translation applied",
+    "originalRestored": "Original restored"
+  }
+}
