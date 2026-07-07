@@ -179,6 +179,55 @@ jobs:
           path: dist/release/*
           if-no-files-found: error
 
+  build-flatpak:
+    name: Linux Flatpak (amd64)
+    needs:
+      - version
+      - frontend
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      REN_BROWSER_FRONTEND_PREBUILT: "1"
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Fetch frontend artifact
+        uses: ./.github/actions/fetch-frontend-artifact
+        with:
+          artifact-name: ${{ needs.frontend.outputs.artifact_name }}
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-linux-deps: "true"
+          cache-node: "false"
+
+      - name: Setup Flatpak
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends flatpak flatpak-builder
+          flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+      - name: Build Flatpak bundle
+        run: task linux:flatpak:bundle ARCH=amd64
+
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release
+          cp build/flatpak/io.quad4.renbrowser.flatpak dist/release/renbrowser-linux-amd64.flatpak
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: flatpak-amd64
+          path: dist/release/*
+          if-no-files-found: error
+
   build-windows:
     name: Windows (amd64)
     needs:
@@ -561,6 +610,7 @@ jobs:
     needs:
       - version
       - build-linux
+      - build-flatpak
       - build-windows
       - build-macos
       - build-server
@@ -613,6 +663,7 @@ jobs:
 
           ### Assets
           - Linux amd64/arm64 AppImage, plain binary, .deb, and .rpm
+          - Linux amd64 Flatpak bundle when flatpak-builder succeeds
           - Windows amd64 portable executable and NSIS installer (MSIX when packaging succeeds)
           - macOS universal .app (zip)
           - Headless server binaries (Linux amd64/arm64/armv6, FreeBSD amd64/arm64, OpenBSD/NetBSD amd64, Windows amd64 `renbrowser-server-windows-amd64.exe`)
