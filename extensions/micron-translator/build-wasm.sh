@@ -19,7 +19,7 @@ echo "build-wasm: wrote ${out}"
 
 bundle_out="${root}/renbrowser.micron-translator.wasm"
 if command -v go >/dev/null 2>&1; then
-  (cd "${root}/bundle" && go run . -root ".." -wasm "../translator.wasm" -out "../renbrowser.micron-translator.wasm")
+  (cd "${root}/bundle" && go run -tags wasmbundle . -root ".." -wasm "../translator.wasm" -out "../renbrowser.micron-translator.wasm")
 else
   echo "build-wasm: go not found; skipping bundled ${bundle_out}" >&2
 fi

@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: MIT
+
+//go:build !wasmbundle
+
 package plugins
 
 import (

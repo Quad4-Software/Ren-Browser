@@ -31,9 +31,11 @@ if ! install_tinygo; then
   exit 0
 fi
 
-if ! bash "${ext}/build-wasm.sh"; then
-  echo "build-extension-wasm: skipping (build-wasm.sh failed)" >&2
-  exit 0
+build_ok=0
+if bash "${ext}/build-wasm.sh"; then
+  build_ok=1
+else
+  echo "build-extension-wasm: build-wasm.sh failed; staging any wasm outputs" >&2
 fi
 
 staged=0
@@ -49,6 +51,10 @@ fi
 if [ "$staged" -eq 0 ]; then
   echo "build-extension-wasm: skipping (no wasm outputs)" >&2
   exit 0
+fi
+
+if [ "$build_ok" -eq 0 ]; then
+  echo "build-extension-wasm: staged partial wasm outputs" >&2
 fi
 
 echo "build-extension-wasm: staged extension wasm in ${out_dir}"
