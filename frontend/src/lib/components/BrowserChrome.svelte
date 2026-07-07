@@ -203,7 +203,9 @@
         title={pluginLabel(panel.pluginId, panel.title)}
         onclick={() => onPanel(key)}
       >
-        <PluginLucideIcon name={panel.icon} size={16} class="plugin-icon" />
+        <span class="plugin-icon">
+          <PluginLucideIcon name={panel.icon} size={16} />
+        </span>
       </button>
     {/each}
     <button
@@ -313,6 +315,9 @@
     }
   }
   .plugin-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 0.72rem;
     font-weight: 700;
     line-height: 1;

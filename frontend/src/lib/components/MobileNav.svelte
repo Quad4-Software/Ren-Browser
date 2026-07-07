@@ -58,7 +58,9 @@
   {#each pluginPanels as panel (panel.pluginId + ":" + panel.id)}
     {@const key = panelKey(panel.pluginId, panel.id)}
     <button class:active={activePanel === key} onclick={() => onPanel(key)}>
-      <PluginLucideIcon name={panel.icon} size={18} class="plugin-dot" />
+      <span class="plugin-dot">
+        <PluginLucideIcon name={panel.icon} size={18} />
+      </span>
       <span>{pluginLabel(panel.pluginId, panel.title)}</span>
     </button>
   {/each}
