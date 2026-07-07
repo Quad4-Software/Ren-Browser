@@ -285,7 +285,9 @@
     "ariaLabel": "Archivo de configuración de Reticulum",
     "reload": "Recargar",
     "export": "Exportar",
-    "save": "Guardar y reiniciar interfaces"
+    "save": "Guardar y reiniciar interfaces",
+    "openFolder": "Abrir carpeta de configuración",
+    "openFolderFailed": "No se pudo abrir la carpeta de configuración"
   },
   "extensions": {
     "title": "Extensiones",
@@ -302,6 +304,7 @@
     "noExtensions": "Sin extensiones",
     "noExtensionsDescription": "Instala un .renplugin.zip, un módulo .wasm empaquetado o copia una carpeta en el directorio de plugins.",
     "uninstall": "Desinstalar",
+    "dismissWarning": "Descartar advertencia",
     "uninstallTitle": "Desinstalar extensión",
     "uninstallMessage": "¿Eliminar {name} ({id})? Esta acción no se puede deshacer.",
     "uninstallConfirm": "¿Desinstalar la extensión {id}?",

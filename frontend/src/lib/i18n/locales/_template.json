@@ -285,7 +285,9 @@
     "ariaLabel": "",
     "reload": "",
     "export": "",
-    "save": ""
+    "save": "",
+    "openFolder": "",
+    "openFolderFailed": ""
   },
   "extensions": {
     "title": "",
@@ -303,6 +305,7 @@
     "noExtensions": "",
     "noExtensionsDescription": "",
     "uninstall": "",
+    "dismissWarning": "",
     "uninstallTitle": "",
     "uninstallMessage": "",
     "uninstallConfirm": "",

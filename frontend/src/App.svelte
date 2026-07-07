@@ -60,6 +60,7 @@
     SetLogLevel,
     SetNativeTitlebar,
     SetTheme,
+    ShowConfigDir,
     ShowDownloadDir,
     Shutdown,
     SyncMobileChrome,
@@ -1894,6 +1895,15 @@
     downloadsOpen = false;
   }
 
+  async function openConfigFolder() {
+    configError = "";
+    try {
+      await ShowConfigDir();
+    } catch (err) {
+      configError = formatBindingError(err, t("config.openFolderFailed"));
+    }
+  }
+
   async function saveKeybinds(next: KeybindSettings) {
     keybinds = mergeKeybinds((await SetKeybinds(next)) as KeybindSettings);
   }
@@ -2386,6 +2396,7 @@
           }}
           onConfigSave={() => void saveConfigText()}
           onConfigReload={() => void reloadConfigFromDisk()}
+          onOpenConfigDir={() => void openConfigFolder()}
           onClearPageCache={() => void clearPageCache()}
           onChangePageCacheEnabled={(value) => void savePageCacheEnabled(value)}
           {pageCacheEntries}
@@ -2432,6 +2443,7 @@
                   }}
                   onSave={() => void saveConfigText()}
                   onReload={() => void reloadConfigFromDisk()}
+                  onOpenConfigDir={() => void openConfigFolder()}
                 />
               </section>
             {/if}

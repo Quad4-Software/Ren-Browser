@@ -81,17 +81,33 @@ export function parsePluginI18nRef(value: string): string | null {
   return trimmed.slice(1, -1);
 }
 
+function humanizePluginKey(key: string): string {
+  const last = key.split(".").pop() ?? key;
+  return last.replace(/[-_]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function fallbackPluginLabel(title: string): string {
+  const key = parsePluginI18nRef(title);
+  if (!key) {
+    return title;
+  }
+  return humanizePluginKey(key);
+}
+
 export function resolvePluginLabel(pluginId: string, title: string, locale: LocaleCode): string {
   const key = parsePluginI18nRef(title);
   if (!key) {
     return title;
   }
   const catalogs = catalogsByPlugin.get(pluginId);
-  if (!catalogs) {
-    return title;
+  if (!catalogs || Object.keys(catalogs).length === 0) {
+    return fallbackPluginLabel(title);
   }
   const translated = translateFromCatalogs(catalogs, key, locale);
-  return translated === key ? title.replaceAll("%", "") : translated;
+  if (translated === key) {
+    return fallbackPluginLabel(title);
+  }
+  return translated;
 }
 
 export async function loadPluginCatalogs(
@@ -123,7 +139,11 @@ function createPluginI18nInstance(pluginId: string, locale: LocaleCode): PluginI
     },
     t(key: string, params?: TranslateParams) {
       const catalogs = catalogsByPlugin.get(pluginId) ?? {};
-      return translateFromCatalogs(catalogs, key, activeLocale, params);
+      const translated = translateFromCatalogs(catalogs, key, activeLocale, params);
+      if (translated !== key) {
+        return translated;
+      }
+      return humanizePluginKey(key);
     },
     onChange(listener: () => void) {
       listeners.add(listener);

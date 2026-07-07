@@ -54,7 +54,7 @@
   let previewError = $state("");
   let previewEl: HTMLElement | undefined = $state();
   let menu = $state<{ x: number; y: number } | null>(null);
-  let renderTimer: ReturnType<typeof setTimeout> | undefined;
+  let renderRaf: number | undefined;
   let sourceInput: HTMLTextAreaElement | undefined = $state();
   let splitEl = $state<HTMLDivElement | null>(null);
   let dividerEl = $state<HTMLButtonElement | null>(null);
@@ -157,12 +157,13 @@
   }
 
   function scheduleRender() {
-    if (renderTimer) {
-      clearTimeout(renderTimer);
+    if (renderRaf !== undefined) {
+      cancelAnimationFrame(renderRaf);
     }
-    renderTimer = setTimeout(() => {
+    renderRaf = requestAnimationFrame(() => {
+      renderRaf = undefined;
       void renderPreviewNow();
-    }, 200);
+    });
   }
 
   async function onParserChange(event: Event) {
@@ -215,8 +216,8 @@
     void micronWasmReady;
     scheduleRender();
     return () => {
-      if (renderTimer) {
-        clearTimeout(renderTimer);
+      if (renderRaf !== undefined) {
+        cancelAnimationFrame(renderRaf);
       }
     };
   });

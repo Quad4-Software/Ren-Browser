@@ -3,9 +3,27 @@ package app
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"renbrowser/internal/rns"
 )
+
+func (s *BrowserService) ShowConfigDir() error {
+	path := s.ConfigPath()
+	if path == "" {
+		return fmt.Errorf("config path not set")
+	}
+	dir := filepath.Dir(path)
+	info, err := os.Stat(dir)
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("config directory not found")
+	}
+	return platformOpenPath(dir)
+}
 
 func (s *BrowserService) GetReticulumConfigText() (string, error) {
 	path := s.ConfigPath()

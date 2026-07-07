@@ -1,6 +1,5 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { onMount } from "svelte";
   import { createPluginContext } from "$lib/plugins/api.js";
   import { ensurePluginI18n } from "$lib/plugins/plugin-i18n.js";
   import { getUILocale } from "$lib/i18n/i18n.svelte";
@@ -39,11 +38,18 @@
 
   let error = $state("");
   let panelEl: HTMLElement | undefined = $state();
+  const locale = $derived(getUILocale());
 
-  onMount(() => {
+  $effect(() => {
+    const activeLocale = locale;
+    const mountEl = panelEl;
+    if (!mountEl) {
+      return;
+    }
     let cancelled = false;
     void (async () => {
       try {
+        error = "";
         const mod = await loadPluginModule(pluginId, entry);
         if (cancelled) {
           return;
@@ -56,17 +62,20 @@
           updateActivePage,
           networkFetch,
           wasmBackend,
-          i18n: await ensurePluginI18n(pluginId, getUILocale()),
+          i18n: await ensurePluginI18n(pluginId, activeLocale),
         });
         if (mod.activate) {
           await mod.activate(ctx);
         }
         if (!cancelled && mod.mount && panelEl) {
-          await mod.mount(panelEl);
+          mountEl.replaceChildren();
+          await mod.mount(mountEl);
         }
       } catch (err) {
-        error = formatBindingError(err, "Extension panel failed to load");
-        await reportPluginFailure(pluginId, "panel", err);
+        if (!cancelled) {
+          error = formatBindingError(err, "Extension panel failed to load");
+          await reportPluginFailure(pluginId, "panel", err);
+        }
       }
     })();
     return () => {

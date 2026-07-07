@@ -405,6 +405,10 @@ export function SetTheme(theme: $models.ThemeSettings): $CancellablePromise<$mod
     return $Call.ByID(1442035638, theme);
 }
 
+export function ShowConfigDir(): $CancellablePromise<void> {
+    return $Call.ByID(1798308007);
+}
+
 export function ShowDownloadDir(): $CancellablePromise<void> {
     return $Call.ByID(1423237973);
 }

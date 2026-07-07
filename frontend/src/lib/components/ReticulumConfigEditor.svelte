@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { FolderOpen } from "@lucide/svelte";
   import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
@@ -10,6 +11,7 @@
     onChange: (text: string) => void;
     onSave: () => void;
     onReload: () => void;
+    onOpenConfigDir?: () => void;
     onExport?: () => void;
     showTitle?: boolean;
   };
@@ -22,6 +24,7 @@
     onChange,
     onSave,
     onReload,
+    onOpenConfigDir,
     onExport,
     showTitle = true,
   }: Props = $props();
@@ -45,10 +48,38 @@
   {#if showTitle}
     <div class="header">
       <h3>{t("config.title")}</h3>
-      <p class="hint">{configPath}</p>
+      {#if configPath}
+        <div class="path-row">
+          <p class="hint">{configPath}</p>
+          {#if onOpenConfigDir}
+            <button
+              type="button"
+              class="folder-btn"
+              aria-label={t("config.openFolder")}
+              title={t("config.openFolder")}
+              onclick={onOpenConfigDir}
+            >
+              <FolderOpen size={16} />
+            </button>
+          {/if}
+        </div>
+      {/if}
     </div>
   {:else if configPath}
-    <p class="hint path-only">{configPath}</p>
+    <div class="path-row path-only">
+      <p class="hint">{configPath}</p>
+      {#if onOpenConfigDir}
+        <button
+          type="button"
+          class="folder-btn"
+          aria-label={t("config.openFolder")}
+          title={t("config.openFolder")}
+          onclick={onOpenConfigDir}
+        >
+          <FolderOpen size={16} />
+        </button>
+      {/if}
+    </div>
   {/if}
 
   <textarea
@@ -95,8 +126,29 @@
     word-break: break-all;
   }
 
+  .path-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.45rem;
+    align-items: start;
+  }
+
+  .path-row .hint {
+    margin: 0;
+    min-width: 0;
+  }
+
   .path-only {
     margin: 0;
+  }
+
+  .folder-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    padding-inline: 0.55rem;
+    flex: 0 0 auto;
   }
 
   .editor {

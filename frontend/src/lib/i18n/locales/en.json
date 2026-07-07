@@ -285,7 +285,9 @@
     "ariaLabel": "Reticulum configuration file",
     "reload": "Reload",
     "export": "Export",
-    "save": "Save and restart interfaces"
+    "save": "Save and restart interfaces",
+    "openFolder": "Open config folder",
+    "openFolderFailed": "Could not open config folder"
   },
   "extensions": {
     "title": "Extensions",
@@ -303,6 +305,7 @@
     "noExtensions": "No extensions",
     "noExtensionsDescription": "Install a .renplugin.zip, a bundled .wasm module, or copy a folder into the plugins directory.",
     "uninstall": "Uninstall",
+    "dismissWarning": "Dismiss warning",
     "uninstallTitle": "Uninstall extension",
     "uninstallMessage": "Remove {name} ({id})? This cannot be undone.",
     "uninstallConfirm": "Uninstall extension {id}?",

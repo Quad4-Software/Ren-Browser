@@ -100,6 +100,7 @@
     onConfigChange: (text: string) => void;
     onConfigSave: () => void;
     onConfigReload: () => void;
+    onOpenConfigDir?: () => void;
     onCommunityRefresh: () => void;
     onCommunityFilter: (value: string) => void;
     onCommunityToggle: (id: number) => void;
@@ -161,6 +162,7 @@
     onConfigChange,
     onConfigSave,
     onConfigReload,
+    onOpenConfigDir,
     onCommunityRefresh,
     onCommunityFilter,
     onCommunityToggle,
@@ -631,6 +633,7 @@
       onChange={onConfigChange}
       onSave={onConfigSave}
       onReload={onConfigReload}
+      {onOpenConfigDir}
     />
   </SettingsSection>
 

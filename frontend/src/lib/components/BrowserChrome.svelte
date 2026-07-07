@@ -18,6 +18,7 @@
   import type { DownloadProgressView } from "$lib/browser/download-progress";
   import { t } from "$lib/i18n/i18n.svelte";
   import { pluginLabel } from "$lib/plugins/plugin-label.js";
+  import PluginLucideIcon from "$lib/components/PluginLucideIcon.svelte";
   import type { ActivePanel, PluginPanelContribution } from "$lib/plugins/api-types.js";
   import { panelKey } from "$lib/plugins/registry.js";
 
@@ -202,7 +203,7 @@
         title={pluginLabel(panel.pluginId, panel.title)}
         onclick={() => onPanel(key)}
       >
-        <span class="plugin-icon">{pluginLabel(panel.pluginId, panel.title).slice(0, 1)}</span>
+        <PluginLucideIcon name={panel.icon} size={16} class="plugin-icon" />
       </button>
     {/each}
     <button

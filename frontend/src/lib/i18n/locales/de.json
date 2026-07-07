@@ -285,7 +285,9 @@
     "ariaLabel": "Reticulum-Konfigurationsdatei",
     "reload": "Neu laden",
     "export": "Exportieren",
-    "save": "Speichern und Schnittstellen neu starten"
+    "save": "Speichern und Schnittstellen neu starten",
+    "openFolder": "Konfigurationsordner öffnen",
+    "openFolderFailed": "Konfigurationsordner konnte nicht geöffnet werden"
   },
   "extensions": {
     "title": "Erweiterungen",
@@ -302,6 +304,7 @@
     "noExtensions": "Keine Erweiterungen",
     "noExtensionsDescription": "Installieren Sie eine .renplugin.zip, ein gebündeltes .wasm-Modul oder kopieren Sie einen Ordner in das Plugin-Verzeichnis.",
     "uninstall": "Deinstallieren",
+    "dismissWarning": "Warnung ausblenden",
     "uninstallTitle": "Erweiterung deinstallieren",
     "uninstallMessage": "{name} ({id}) entfernen? Dies kann nicht rückgängig gemacht werden.",
     "uninstallConfirm": "Erweiterung {id} deinstallieren?",

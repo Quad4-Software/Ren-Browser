@@ -29,6 +29,7 @@ describe("plugin i18n", () => {
     await loadPluginCatalogs(pluginId, "en");
     expect(resolvePluginLabel(pluginId, "%panels.translator%", "en")).toBe("Translator panel");
     expect(resolvePluginLabel(pluginId, "Literal title", "en")).toBe("Literal title");
+    expect(resolvePluginLabel(pluginId, "%panels.missing%", "de")).toBe("Missing");
 
     vi.unstubAllGlobals();
     clearPluginI18n();

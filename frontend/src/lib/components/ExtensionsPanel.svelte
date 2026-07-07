@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { ChevronDown, Cpu, FolderOpen, Package, Plus } from "@lucide/svelte";
+  import { ChevronDown, Cpu, FolderOpen, Package, Plus, X } from "@lucide/svelte";
   import { System } from "@wailsio/runtime";
   import Toggle from "$lib/components/Toggle.svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
@@ -33,6 +33,11 @@
     isPluginNetworkInstallWarningSkipped,
     setPluginNetworkInstallWarningSkipped,
   } from "$lib/plugins/plugin-install-warning.js";
+  import {
+    dismissPluginFinding,
+    isPluginFindingDismissed,
+    clearDismissedPluginFindings,
+  } from "$lib/plugins/plugin-security-dismiss.js";
   import { formatBindingError } from "$lib/browser/binding-errors.js";
   import { formatBytes } from "$lib/browser/download-progress";
   import { t } from "$lib/i18n/i18n.svelte";
@@ -62,8 +67,28 @@
     preview: PluginInstallPreview;
   } | null>(null);
   let networkInstalling = $state(false);
+  let dismissedFindings = $state<Record<string, true>>({});
 
   type InstallMethod = "zip" | "dir" | "wasm";
+
+  function findingKey(pluginId: string, findingId: string): string {
+    return `${pluginId}:${findingId}`;
+  }
+
+  function visibleFindings(plugin: PluginRow) {
+    return (plugin.security?.findings ?? []).filter((finding) => {
+      if (!finding.id) {
+        return true;
+      }
+      const key = findingKey(plugin.id, finding.id);
+      return !dismissedFindings[key] && !isPluginFindingDismissed(plugin.id, finding.id);
+    });
+  }
+
+  function dismissFinding(pluginId: string, findingId: string) {
+    dismissPluginFinding(pluginId, findingId);
+    dismissedFindings = { ...dismissedFindings, [findingKey(pluginId, findingId)]: true };
+  }
 
   async function previewInstall(
     method: InstallMethod,
@@ -202,6 +227,7 @@
     error = "";
     try {
       await uninstallPlugin(plugin.id);
+      clearDismissedPluginFindings(plugin.id);
       uninstallTarget = null;
       await refresh();
       onChanged?.();
@@ -371,10 +397,20 @@
             {#if plugin.error}
               <p class="error" role="alert">{formatBindingError(plugin.error)}</p>
             {/if}
-            {#if plugin.security?.findings?.length}
+            {#if visibleFindings(plugin).length}
               <ul class="security-findings">
-                {#each plugin.security.findings as finding (finding.id)}
-                  <li data-severity={finding.severity}>{finding.message}</li>
+                {#each visibleFindings(plugin) as finding (finding.id)}
+                  <li data-severity={finding.severity}>
+                    <span class="finding-text">{finding.message}</span>
+                    <button
+                      type="button"
+                      class="finding-dismiss"
+                      aria-label={t("extensions.dismissWarning")}
+                      onclick={() => dismissFinding(plugin.id, finding.id)}
+                    >
+                      <X size={14} />
+                    </button>
+                  </li>
                 {/each}
               </ul>
             {/if}
@@ -593,11 +629,43 @@
 
   .security-findings {
     margin: 0.25rem 0 0;
-    padding-left: 1.1rem;
+    padding: 0;
+    list-style: none;
     display: grid;
     gap: 0.25rem;
     font-size: 0.8rem;
     color: var(--ren-muted);
+  }
+
+  .security-findings li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    justify-content: space-between;
+  }
+
+  .finding-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .finding-dismiss {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    opacity: 0.75;
+    padding: 0.1rem;
+    border-radius: var(--ren-radius);
+    cursor: pointer;
+  }
+
+  .finding-dismiss:hover {
+    opacity: 1;
+    background: color-mix(in srgb, currentColor 12%, transparent);
   }
 
   .security-findings li[data-severity="high"] {

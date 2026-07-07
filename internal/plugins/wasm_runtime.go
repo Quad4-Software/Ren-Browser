@@ -11,9 +11,12 @@ import (
 )
 
 type WasmRuntime struct {
-	mu      sync.Mutex
-	runtime wazero.Runtime
-	modules map[string]*wasmPlugin
+	mu         sync.Mutex
+	runtime    wazero.Runtime
+	modules    map[string]*wasmPlugin
+	hostRouter *wasmHostRouter
+	hostOnce   sync.Once
+	hostInit   error
 }
 
 func NewWasmRuntime() *WasmRuntime {
@@ -21,6 +24,18 @@ func NewWasmRuntime() *WasmRuntime {
 		runtime: wazero.NewRuntime(context.Background()),
 		modules: make(map[string]*wasmPlugin),
 	}
+}
+
+func (rt *WasmRuntime) ensureHostModule(ctx context.Context) error {
+	rt.hostOnce.Do(func() {
+		rt.hostRouter = newWasmHostRouter()
+		_, rt.hostInit = rt.runtime.NewHostModuleBuilder(wasmHostModule).
+			NewFunctionBuilder().
+			WithFunc(rt.hostRouter.httpFetch).
+			Export("http_fetch").
+			Instantiate(ctx)
+	})
+	return rt.hostInit
 }
 
 func (rt *WasmRuntime) LoadPlugin(pluginID, wasmPath string, manifest Manifest, granted []string) (*wasmPlugin, error) {
@@ -47,21 +62,20 @@ func (rt *WasmRuntime) loadPlugin(pluginID string, data []byte, manifest Manifes
 	ctx, cancel := context.WithTimeout(context.Background(), wasmLoadTimeout)
 	defer cancel()
 
-	_, err := rt.runtime.NewHostModuleBuilder(wasmHostModule).
-		NewFunctionBuilder().
-		WithFunc(host.httpFetch).
-		Export("http_fetch").
-		Instantiate(ctx)
-	if err != nil {
+	if err := rt.ensureHostModule(ctx); err != nil {
 		return nil, fmt.Errorf("instantiate wasm host: %w", err)
 	}
+	rt.hostRouter.register(pluginID, host)
 
 	mod, err := rt.runtime.InstantiateWithConfig(ctx, data, wazero.NewModuleConfig().WithName(pluginID))
 	if err != nil {
+		rt.hostRouter.unregister(pluginID)
 		return nil, fmt.Errorf("instantiate wasm plugin: %w", err)
 	}
 	if init := mod.ExportedFunction("_initialize"); init != nil {
 		if _, err := init.Call(ctx); err != nil {
+			_ = mod.Close(context.Background())
+			rt.hostRouter.unregister(pluginID)
 			return nil, fmt.Errorf("wasm initialize: %w", err)
 		}
 	}
@@ -98,6 +112,11 @@ func (rt *WasmRuntime) Close() error {
 		_ = wp.mod.Close(context.Background())
 		delete(rt.modules, id)
 	}
+	if rt.hostRouter != nil {
+		rt.hostRouter = newWasmHostRouter()
+	}
+	rt.hostOnce = sync.Once{}
+	rt.hostInit = nil
 	if rt.runtime != nil {
 		return rt.runtime.Close(context.Background())
 	}
@@ -110,6 +129,9 @@ func (rt *WasmRuntime) Unload(pluginID string) {
 	if wp, ok := rt.modules[pluginID]; ok {
 		_ = wp.mod.Close(context.Background())
 		delete(rt.modules, pluginID)
+	}
+	if rt.hostRouter != nil {
+		rt.hostRouter.unregister(pluginID)
 	}
 }
 
