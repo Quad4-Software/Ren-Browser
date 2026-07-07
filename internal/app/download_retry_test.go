@@ -4,6 +4,7 @@ package app
 import (
 	"context"
 	"errors"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -132,8 +133,18 @@ func TestResolveDownloadFilenameFromStalePath(t *testing.T) {
 }
 
 func TestFindExistingDownloadPath(t *testing.T) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	dir, err := os.MkdirTemp(home, "renbrowser-dl-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
+
 	svc := newTestBrowserService(t)
-	dir := svc.GetDownloadDir()
+	svc.SetDownloadDir(dir)
 	path := filepath.Join(dir, "guide.zip")
 	if err := writeTestFile(path); err != nil {
 		t.Fatal(err)
