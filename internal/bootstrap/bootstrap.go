@@ -90,6 +90,9 @@ func newWailsApp(browserSvc *app.BrowserService, pluginHost *app.PluginHost, plu
 		Windows: application.WindowsOptions{
 			DisableQuitOnLastWindowClosed: false,
 		},
+		Linux: application.LinuxOptions{
+			ProgramName: brand.Slug,
+		},
 		Server: application.ServerOptions{
 			Host:            cfg.ServerHost,
 			Port:            cfg.ServerPort,

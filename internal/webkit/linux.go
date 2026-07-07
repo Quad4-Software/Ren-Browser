@@ -72,7 +72,10 @@ func disableNestedWebKitSandboxIfNeeded() {
 	if os.Getenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS") != "" {
 		return
 	}
-	if runningInFlatpak() {
+	// AppImages run outside Flatpak's portal-based WebKit launcher and cannot
+	// mount transient AppImage paths into bwrap. Flatpak must keep WebKit's
+	// sandbox enabled so WebKitNetworkProcess/WebKitWebProcess spawn via portal.
+	if runningInAppImage() {
 		_ = os.Setenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1")
 	}
 }
