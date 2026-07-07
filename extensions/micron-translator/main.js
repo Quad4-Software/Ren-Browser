@@ -229,7 +229,7 @@ async function bindPanel(panel, ctx) {
       await translateActivePage(ctx);
       setPanelStatus(panel, t("panel.translationApplied"));
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = ctx.ui.formatError(err, t("toast.translationFailed"));
       setPanelStatus(panel, message);
       ctx.ui.showToast(message);
     } finally {
@@ -246,7 +246,7 @@ async function bindPanel(panel, ctx) {
       await restoreActivePage(ctx);
       setPanelStatus(panel, t("panel.originalRestored"));
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = ctx.ui.formatError(err, t("toast.translationFailed"));
       setPanelStatus(panel, message);
       ctx.ui.showToast(message);
     } finally {
@@ -277,7 +277,7 @@ export function activate(ctx) {
   ctx.subscriptions.add(
     ctx.events.on(`plugin:${PLUGIN_ID}:command:translate-page`, () => {
       void translateActivePage(ctx).catch((err) => {
-        ctx.ui.showToast(err instanceof Error ? err.message : String(err));
+        ctx.ui.showToast(ctx.ui.formatError(err, ctx.i18n.t("toast.translationFailed")));
       });
     }),
   );
@@ -285,7 +285,7 @@ export function activate(ctx) {
   ctx.subscriptions.add(
     ctx.events.on(`plugin:${PLUGIN_ID}:command:restore-original`, () => {
       void restoreActivePage(ctx).catch((err) => {
-        ctx.ui.showToast(err instanceof Error ? err.message : String(err));
+        ctx.ui.showToast(ctx.ui.formatError(err, ctx.i18n.t("toast.restoreFailed")));
       });
     }),
   );

@@ -22,8 +22,9 @@ type Status struct {
 
 // Options controls whether Landlock is attempted and which paths are whitelisted.
 type Options struct {
-	NoLandlock      bool
-	ForceLandlock   bool
+	NoLandlock    bool
+	ForceLandlock bool
+	ServerMode    bool
 	DataDir         string
 	ReticulumDir    string
 	ReticulumConfig string
@@ -73,6 +74,9 @@ func Requested(opts Options) bool {
 	if opts.ForceLandlock {
 		return true
 	}
+	if !opts.ServerMode {
+		return false
+	}
 	return KernelSupported()
 }
 
@@ -104,6 +108,8 @@ func Apply(opts Options) {
 		s.Reason = "disabled by --no-landlock"
 	case DisabledByEnv():
 		s.Reason = "disabled by " + brand.EnvPrefix + "_LANDLOCK"
+	case !opts.ServerMode && !opts.ForceLandlock && envLandlockOverride() == nil:
+		s.Reason = "auto-disabled on desktop (WebKitGTK nested sandbox)"
 	case !s.Requested:
 		s.Reason = "auto-disabled (kernel does not support Landlock)"
 	default:

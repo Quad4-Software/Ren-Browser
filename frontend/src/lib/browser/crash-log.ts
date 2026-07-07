@@ -1,20 +1,9 @@
 // SPDX-License-Identifier: MIT
 
+import { formatBindingError } from "$lib/browser/binding-errors.js";
+
 export function crashErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message.trim() || error.name || "Error";
-  }
-  if (typeof error === "string") {
-    return error.trim() || "Error";
-  }
-  if (error == null) {
-    return "Unknown error";
-  }
-  try {
-    return JSON.stringify(error);
-  } catch {
-    return String(error);
-  }
+  return formatBindingError(error, "Unknown error");
 }
 
 export function buildCrashDebugLog(message: string, cause?: unknown): string {

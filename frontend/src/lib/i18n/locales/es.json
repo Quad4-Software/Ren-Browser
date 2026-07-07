@@ -415,6 +415,10 @@
     "databaseCorruptDescription": "No se pudieron leer los datos locales de tu perfil. Restablecer la base de datos elimina las pestañas guardadas, el historial, los favoritos y los ajustes.",
     "unknownTitle": "No se pudo abrir la página",
     "unknownDescription": "Algo salió mal al cargar esta página.",
+    "extensionPermissionNotGranted": "{plugin} necesita {permission}. Actívelo en Extensiones.",
+    "extensionPermissionLacks": "{plugin} no incluye el permiso {permission}.",
+    "extensionNetworkLimit": "La extensión superó el límite de solicitudes de red ({limit} solicitudes).",
+    "extensionNotFound": "No se encontró la extensión \"{plugin}\".",
     "tryAgain": "Reintentar",
     "resetDatabase": "Restablecer base de datos",
     "connectionLostEvent": "Conexión perdida"

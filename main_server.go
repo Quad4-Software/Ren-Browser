@@ -24,7 +24,9 @@ var embeddedAssets embed.FS
 func main() {
 	cfg := config.ParseFlags()
 	serverlog.InitWithLevel(config.ParseLogLevel(cfg.LogLevel))
-	sandbox.Apply(sandbox.OptionsFromRuntime(cfg))
+	opts := sandbox.OptionsFromRuntime(cfg)
+	opts.ServerMode = true
+	sandbox.Apply(opts)
 	if cfg.ServerHost == "" {
 		cfg.ServerHost = "0.0.0.0"
 	}

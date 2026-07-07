@@ -415,6 +415,10 @@
     "databaseCorruptDescription": "",
     "unknownTitle": "",
     "unknownDescription": "",
+    "extensionPermissionNotGranted": "",
+    "extensionPermissionLacks": "",
+    "extensionNetworkLimit": "",
+    "extensionNotFound": "",
     "tryAgain": "",
     "resetDatabase": "",
     "connectionLostEvent": ""

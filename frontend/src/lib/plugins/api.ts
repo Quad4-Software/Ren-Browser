@@ -30,6 +30,7 @@ import type {
   RenderedPageSnapshot,
 } from "./api-types.js";
 import type { PluginI18n } from "./plugin-i18n.js";
+import { formatBindingError, toBindingError } from "$lib/browser/binding-errors.js";
 
 export async function listPlugins() {
   return ListPlugins();
@@ -228,14 +229,18 @@ export function createPluginContext(
       getActivePage: opts.getActivePage,
       updateActivePage: opts.updateActivePage,
       async renderRaw(path, raw): Promise<RenderedPageSnapshot> {
-        const page = await RenderRaw(path, raw);
-        return {
-          html: page.html ?? "",
-          contentType: page.contentType ?? "",
-          raw: page.raw ?? raw,
-          pageFg: page.pageFg,
-          pageBg: page.pageBg,
-        };
+        try {
+          const page = await RenderRaw(path, raw);
+          return {
+            html: page.html ?? "",
+            contentType: page.contentType ?? "",
+            raw: page.raw ?? raw,
+            pageFg: page.pageFg,
+            pageBg: page.pageBg,
+          };
+        } catch (err) {
+          throw toBindingError(err, "Could not render page");
+        }
       },
     },
     events: {
@@ -260,6 +265,8 @@ export function createPluginContext(
     },
     ui: {
       showToast: opts.showToast,
+      formatError: (err: unknown, fallback = "Extension failed") =>
+        formatBindingError(err, fallback),
     },
     capabilities: {
       networkFetch: opts.networkFetch === true,
@@ -270,31 +277,45 @@ export function createPluginContext(
   if (opts.networkFetch) {
     ctx.network = {
       async fetch(req: PluginHTTPRequest) {
-        const resp = await PluginFetch(pluginId, {
-          method: req.method ?? "",
-          url: req.url,
-          headers: req.headers ?? {},
-          body: req.body ?? "",
-        });
-        return {
-          statusCode: resp.statusCode ?? 0,
-          body: resp.body ?? "",
-        };
+        try {
+          const resp = await PluginFetch(pluginId, {
+            method: req.method ?? "",
+            url: req.url,
+            headers: req.headers ?? {},
+            body: req.body ?? "",
+          });
+          return {
+            statusCode: resp.statusCode ?? 0,
+            body: resp.body ?? "",
+          };
+        } catch (err) {
+          throw toBindingError(err, "Network request failed");
+        }
       },
     };
   }
   if (opts.wasmBackend) {
     ctx.wasm = {
       async call(exportName, input) {
-        const raw = await PluginWasmCall(pluginId, exportName, JSON.stringify(input ?? {}));
+        let raw: string;
+        try {
+          raw = await PluginWasmCall(pluginId, exportName, JSON.stringify(input ?? {}));
+        } catch (err) {
+          throw toBindingError(err, "Extension call failed");
+        }
         if (!raw) {
           return {};
         }
+        let parsed: Record<string, unknown>;
         try {
-          return JSON.parse(raw) as Record<string, unknown>;
+          parsed = JSON.parse(raw) as Record<string, unknown>;
         } catch {
           return { body: raw };
         }
+        if (typeof parsed.error === "string" && parsed.error.trim()) {
+          throw new Error(formatBindingError(parsed.error, "Extension call failed"));
+        }
+        return parsed;
       },
     };
   }

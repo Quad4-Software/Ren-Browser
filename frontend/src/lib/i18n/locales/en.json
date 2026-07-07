@@ -415,6 +415,10 @@
     "databaseCorruptDescription": "Your local profile data could not be read. Resetting the database removes saved tabs, history, favorites, and settings.",
     "unknownTitle": "Could not open page",
     "unknownDescription": "Something went wrong while loading this page.",
+    "extensionPermissionNotGranted": "{plugin} needs {permission}. Enable it in Extensions settings.",
+    "extensionPermissionLacks": "{plugin} does not include the {permission} permission.",
+    "extensionNetworkLimit": "Extension exceeded the network request limit ({limit} requests).",
+    "extensionNotFound": "Extension \"{plugin}\" was not found.",
     "tryAgain": "Try again",
     "resetDatabase": "Reset database",
     "connectionLostEvent": "Connection lost"

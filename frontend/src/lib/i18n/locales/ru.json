@@ -415,6 +415,10 @@
     "databaseCorruptDescription": "Не удалось прочитать локальные данные профиля. Сброс базы данных удалит сохранённые вкладки, историю, избранное и настройки.",
     "unknownTitle": "Не удалось открыть страницу",
     "unknownDescription": "При загрузке этой страницы произошла ошибка.",
+    "extensionPermissionNotGranted": "{plugin} требует разрешение: {permission}. Включите его в настройках расширений.",
+    "extensionPermissionLacks": "У расширения {plugin} нет разрешения {permission}.",
+    "extensionNetworkLimit": "Расширение превысило лимит сетевых запросов ({limit}).",
+    "extensionNotFound": "Расширение \"{plugin}\" не найдено.",
     "tryAgain": "Повторить",
     "resetDatabase": "Сбросить базу данных",
     "connectionLostEvent": "Соединение потеряно"

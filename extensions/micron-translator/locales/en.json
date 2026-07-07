@@ -11,6 +11,8 @@
     "networkRequired": "Network access is disabled for this extension. Reinstall or enable the network.fetch permission.",
     "translating": "Translating page...",
     "translated": "Page translated",
+    "translationFailed": "Translation failed",
+    "restoreFailed": "Could not restore the original page",
     "noOriginal": "No saved original for this page",
     "restored": "Original page restored"
   },

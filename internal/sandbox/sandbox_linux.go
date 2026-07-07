@@ -11,6 +11,7 @@ import (
 	"sync"
 	"unsafe"
 
+	"github.com/adrg/xdg"
 	"golang.org/x/sys/unix"
 )
 
@@ -46,6 +47,11 @@ func probeLandlock() bool {
 }
 
 func applyPlatform(opts Options) error {
+	if !opts.ServerMode {
+		if os.Getenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS") == "" {
+			_ = os.Setenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1")
+		}
+	}
 	if err := unix.Prctl(unix.PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0); err != nil {
 		return fmt.Errorf("PR_SET_NO_NEW_PRIVS: %w", err)
 	}
@@ -136,9 +142,11 @@ var landlockSystemFiles = []landlockRule{
 	{"/etc/hosts", landlockReadOnlyFile},
 	{"/etc/ssl/cert.pem", landlockReadOnlyFile},
 	{"/etc/ssl/certs", landlockReadAccess},
+	{"/etc/ca-certificates", landlockReadAccess},
 	{"/proc/self", landlockReadOnlyFile},
 	{"/dev/null", landlockReadOnlyFile},
 	{"/dev/urandom", landlockReadOnlyFile},
+	{"/dev/dri", landlockReadAccess},
 }
 
 func collectReadRoots(opts Options) []string {
@@ -150,6 +158,7 @@ func collectReadRoots(opts Options) []string {
 		"/bin":   {},
 		"/sbin":  {},
 		"/proc":  {},
+		"/sys":   {},
 		"/opt":   {},
 	}
 	for _, path := range opts.ExtraReadPaths {
@@ -179,13 +188,20 @@ func collectWriteRoots(opts Options) []string {
 		"/var/tmp",
 		"/dev/shm",
 		"/run",
-	}
-	if cache := existingDir(os.Getenv("XDG_CACHE_HOME")); cache != "" {
-		candidates = append(candidates, cache)
+		stringsTrim(xdg.CacheHome),
+		stringsTrim(xdg.ConfigHome),
+		stringsTrim(xdg.DataHome),
+		stringsTrim(xdg.StateHome),
+		stringsTrim(os.Getenv("XDG_RUNTIME_DIR")),
 	}
 	home, err := os.UserHomeDir()
 	if err == nil && home != "" {
-		candidates = append(candidates, filepath.Join(home, ".cache"))
+		candidates = append(candidates,
+			filepath.Join(home, ".cache"),
+			filepath.Join(home, ".config"),
+			filepath.Join(home, ".local", "share"),
+			filepath.Join(home, ".local", "state"),
+		)
 	}
 
 	seen := make(map[string]struct{})

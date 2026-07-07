@@ -66,6 +66,7 @@ export type PluginContext = {
   };
   ui: {
     showToast(message: string): void;
+    formatError(err: unknown, fallback?: string): string;
   };
   capabilities: {
     networkFetch: boolean;

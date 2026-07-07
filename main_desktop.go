@@ -25,7 +25,9 @@ var embeddedAssets embed.FS
 func main() {
 	cfg := config.ParseFlags()
 	relocateForAppImage(&cfg)
-	sandbox.Apply(sandbox.OptionsFromRuntime(cfg))
+	opts := sandbox.OptionsFromRuntime(cfg)
+	opts.ServerMode = false
+	sandbox.Apply(opts)
 
 	appBundle, err := bootstrap.New(embeddedAssets, cfg)
 	if err != nil {

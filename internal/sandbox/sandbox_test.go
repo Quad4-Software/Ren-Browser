@@ -21,6 +21,35 @@ func TestRequested_DisabledByFlag(t *testing.T) {
 	}
 }
 
+func TestRequested_DesktopNotAuto(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("linux only")
+	}
+	if !KernelSupported() {
+		t.Skip("landlock not supported")
+	}
+	if Requested(Options{ServerMode: false}) {
+		t.Fatal("desktop should not auto-enable landlock")
+	}
+	if !Requested(Options{ServerMode: true}) {
+		t.Fatal("server should auto-enable landlock when supported")
+	}
+}
+
+func TestApply_DesktopSkipped(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("linux only")
+	}
+	Apply(Options{ServerMode: false})
+	st := CurrentStatus()
+	if st.Enabled {
+		t.Fatal("expected landlock disabled on desktop by default")
+	}
+	if st.Reason == "" {
+		t.Fatal("expected desktop skip reason")
+	}
+}
+
 func TestRequested_DisabledByEnv(t *testing.T) {
 	t.Setenv("REN_BROWSER_LANDLOCK", "0")
 	if Requested(Options{}) {
@@ -41,6 +70,9 @@ func TestRequested_ForceEnv(t *testing.T) {
 	}
 	if !Requested(Options{}) {
 		t.Fatal("expected requested when REN_BROWSER_LANDLOCK=1 on Linux")
+	}
+	if !Requested(Options{ServerMode: false}) {
+		t.Fatal("expected env override on desktop too")
 	}
 }
 
@@ -145,6 +177,7 @@ func TestLandlockHelper(t *testing.T) {
 
 	opts := Options{
 		ForceLandlock: true,
+		ServerMode:    true,
 		DataDir:       allowedDir,
 	}
 	if err := unix.Prctl(unix.PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0); err != nil {

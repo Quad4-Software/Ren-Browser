@@ -415,6 +415,10 @@
     "databaseCorruptDescription": "Ihre lokalen Profildaten konnten nicht gelesen werden. Das Zurücksetzen der Datenbank entfernt gespeicherte Tabs, Verlauf, Favoriten und Einstellungen.",
     "unknownTitle": "Seite konnte nicht geöffnet werden",
     "unknownDescription": "Beim Laden dieser Seite ist etwas schiefgelaufen.",
+    "extensionPermissionNotGranted": "{plugin} benötigt {permission}. Aktivieren Sie diese Berechtigung in den Erweiterungen.",
+    "extensionPermissionLacks": "{plugin} enthält die Berechtigung {permission} nicht.",
+    "extensionNetworkLimit": "Die Erweiterung hat das Netzwerkanfragelimit ({limit} Anfragen) überschritten.",
+    "extensionNotFound": "Erweiterung \"{plugin}\" wurde nicht gefunden.",
     "tryAgain": "Erneut versuchen",
     "resetDatabase": "Datenbank zurücksetzen",
     "connectionLostEvent": "Verbindung verloren"
