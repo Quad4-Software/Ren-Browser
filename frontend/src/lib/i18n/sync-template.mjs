@@ -4,14 +4,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const localesDir = join(dirname(fileURLToPath(import.meta.url)), "locales");
-const en = JSON.parse(readFileSync(join(localesDir, "en.json"), "utf8")) as Record<string, unknown>;
+const en = JSON.parse(readFileSync(join(localesDir, "en.json"), "utf8"));
 
-function templateize(value: unknown): unknown {
+function templateize(value) {
   if (typeof value === "string") {
     return "";
   }
-  const out: Record<string, unknown> = {};
-  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+  const out = {};
+  for (const [key, nested] of Object.entries(value)) {
     if (key.startsWith("_")) {
       continue;
     }
