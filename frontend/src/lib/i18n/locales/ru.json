@@ -92,6 +92,7 @@
     "micronEditor": "Micron Editor",
     "reticulumConfig": "Reticulum Config",
     "documentation": "Документация",
+    "document": "Документ",
     "settings": "Настройки",
     "nomadNet": "NomadNet"
   },
@@ -158,7 +159,24 @@
     "sandboxReasonUnsupportedKernel": "Отключено: ядро не поддерживает Landlock (требуется Linux 5.13+).",
     "sandboxReasonNoLandlockFlag": "Отключено флагом запуска --no-landlock.",
     "sandboxReasonEnvDisabled": "Отключено переменной окружения REN_BROWSER_LANDLOCK.",
-    "sandboxReasonUnsupportedPlatform": "Landlock доступен только в Linux."
+    "sandboxReasonUnsupportedPlatform": "Landlock доступен только в Linux.",
+    "shareApk": "Поделиться APK",
+    "shareApkHint": "Поделитесь APK этого приложения по Wi-Fi или через меню «Поделиться» Android.",
+    "shareApkVersion": "Установленная версия: {version} ({size})",
+    "shareApkStart": "Запустить раздачу по Wi-Fi",
+    "shareApkStop": "Остановить раздачу",
+    "shareApkShareSheet": "Поделиться через приложения",
+    "shareApkUrl": "URL для скачивания",
+    "shareApkCopyUrl": "Копировать URL",
+    "shareApkCopied": "URL скопирован",
+    "shareApkScan": "Отсканируйте этот код на другом устройстве, чтобы скачать APK.",
+    "shareApkLoading": "Загрузка сведений об APK…",
+    "shareApkUnavailable": "Раздача APK недоступна на этом устройстве.",
+    "shareApkLoadFailed": "Не удалось загрузить сведения об APK",
+    "shareApkShareFailed": "Не удалось открыть меню «Поделиться»",
+    "shareApkStartFailed": "Не удалось запустить раздачу по Wi-Fi",
+    "shareApkStopFailed": "Не удалось остановить раздачу",
+    "shareApkCopyFailed": "Не удалось скопировать URL для скачивания"
   },
   "keybinds": {
     "focusUrl": "Фокус на адресной строке",
@@ -255,7 +273,23 @@
     "retryFailed": "Не удалось повторить загрузку",
     "retrying": "Повтор ({attempt}/{max})\u2026",
     "interrupted": "Прервано при закрытии приложения — повторите загрузку",
-    "etaLeft": "осталось {eta}"
+    "etaLeft": "осталось {eta}",
+    "readDocument": "Читать {name}"
+  },
+  "documents": {
+    "loading": "Загрузка документа\u2026",
+    "pageOf": "Страница {current} из {total}",
+    "prevPage": "Предыдущая страница",
+    "nextPage": "Следующая страница",
+    "prevChapter": "Предыдущая глава",
+    "nextChapter": "Следующая глава",
+    "zoomIn": "Увеличить",
+    "zoomOut": "Уменьшить",
+    "fitWidth": "По ширине",
+    "toc": "Содержание",
+    "loadFailed": "Не удалось открыть документ",
+    "missingData": "Данные документа не были получены от браузера",
+    "retry": "Повторить"
   },
   "content": {
     "cachedBanner": "Просмотр кэшированной страницы от {when}",

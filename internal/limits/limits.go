@@ -37,6 +37,10 @@ func MaxFetchBytes(path string) int {
 	return MaxPageBytes()
 }
 
+func MaxDocumentViewBytes() int {
+	return MaxPageBytes()
+}
+
 func envBytes(key string, fallback int) int {
 	raw := strings.TrimSpace(os.Getenv(key))
 	if raw == "" {

@@ -1,8 +1,9 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Download, FolderOpen, RotateCcw, Trash2, X } from "@lucide/svelte";
+  import { Download, FolderOpen, RotateCcw, Trash2, X, BookOpen } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
+  import { isReadableDocumentName } from "$lib/documents/types";
   import {
     formatBytes,
     formatEta,
@@ -25,6 +26,7 @@
     variant?: "dropdown" | "sheet";
     onDownloadPage: () => void;
     onOpenFile: (path: string) => void;
+    onReadFile?: (path: string) => void;
     onOpenFolder: () => void;
     onCancelActive?: (id: string) => void;
     onDismissActive?: (id: string) => void;
@@ -43,6 +45,7 @@
     variant = "dropdown",
     onDownloadPage,
     onOpenFile,
+    onReadFile = () => {},
     onOpenFolder,
     onCancelActive = () => {},
     onDismissActive = () => {},
@@ -218,11 +221,22 @@
       {:else if downloads.length > 0}
         <ul>
           {#each downloads as item (item.path)}
-            <li>
+            <li class="file-item">
               <button type="button" class="file-row" onclick={() => onOpenFile(item.path)}>
                 <span class="name" title={item.name}>{item.name}</span>
                 <span class="meta">{formatBytes(item.size)} · {formatWhen(item.modifiedAt)}</span>
               </button>
+              {#if isReadableDocumentName(item.name)}
+                <button
+                  type="button"
+                  class="read-btn"
+                  aria-label={t("downloads.readDocument", { name: item.name })}
+                  title={t("downloads.readDocument", { name: item.name })}
+                  onclick={() => onReadFile(item.path)}
+                >
+                  <BookOpen size={15} />
+                </button>
+              {/if}
             </li>
           {/each}
         </ul>
@@ -501,8 +515,35 @@
     color: var(--ren-accent);
   }
 
+  .file-item {
+    display: flex;
+    align-items: stretch;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
+  .read-btn {
+    flex-shrink: 0;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--ren-border);
+    background: var(--ren-surface-raised);
+    color: var(--ren-accent);
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  .read-btn:hover {
+    background: var(--ren-tab-hover);
+    border-color: var(--ren-border-strong);
+  }
+
   .file-row {
-    width: 100%;
+    flex: 1;
     min-width: 0;
     max-width: 100%;
     text-align: left;

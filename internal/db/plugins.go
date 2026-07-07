@@ -62,11 +62,18 @@ func (d *DB) SetPluginEnabled(id string, enabled bool) error {
 }
 
 func (d *DB) DeletePlugin(id string) error {
-	if _, err := d.sql.Exec(`DELETE FROM plugin_settings WHERE plugin_id = ?`, id); err != nil {
+	tx, err := d.sql.Begin()
+	if err != nil {
 		return err
 	}
-	_, err := d.sql.Exec(`DELETE FROM plugins WHERE id = ?`, id)
-	return err
+	defer func() { _ = tx.Rollback() }()
+	if _, err := tx.Exec(`DELETE FROM plugin_settings WHERE plugin_id = ?`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM plugins WHERE id = ?`, id); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 func (d *DB) GetPluginSetting(pluginID, key string) (string, error) {

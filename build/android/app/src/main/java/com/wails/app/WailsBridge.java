@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.IntentFilter;
@@ -56,6 +57,7 @@ import androidx.biometric.BiometricManager;
 import androidx.biometric.BiometricPrompt;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.FragmentActivity;
 import androidx.security.crypto.EncryptedSharedPreferences;
 import androidx.security.crypto.MasterKey;
@@ -64,8 +66,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
 import java.util.Locale;
 import java.util.concurrent.Executor;
 
@@ -623,6 +630,125 @@ public class WailsBridge {
                     .toString();
         } catch (Exception e) {
             return "{}";
+        }
+    }
+
+    /**
+     * Local IPv4 address for Wi-Fi/LAN sharing as {"ip":"192.168.1.5"}.
+     */
+    public String getLocalIpJson() {
+        try {
+            String ip = "";
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces != null && interfaces.hasMoreElements()) {
+                NetworkInterface ni = interfaces.nextElement();
+                if (!ni.isUp() || ni.isLoopback()) {
+                    continue;
+                }
+                Enumeration<InetAddress> addrs = ni.getInetAddresses();
+                while (addrs.hasMoreElements()) {
+                    InetAddress addr = addrs.nextElement();
+                    if (addr.isLoopbackAddress() || !(addr instanceof Inet4Address)) {
+                        continue;
+                    }
+                    String host = addr.getHostAddress();
+                    if (host == null || host.isEmpty()) {
+                        continue;
+                    }
+                    if (host.startsWith("192.168.")
+                            || host.startsWith("10.")
+                            || host.matches("172\\.(1[6-9]|2\\d|3[01])\\..*")) {
+                        ip = host;
+                        break;
+                    }
+                }
+                if (!ip.isEmpty()) {
+                    break;
+                }
+            }
+            return new JSONObject().put("ip", ip).toString();
+        } catch (Exception e) {
+            return "{\"ip\":\"\"}";
+        }
+    }
+
+    /**
+     * Copy the installed APK into cache for sharing.
+     * Returns {"ok":true,"path","size","filename","version"} or {"ok":false,"error"}.
+     */
+    public String prepareShareApkJson() {
+        try {
+            PackageManager pm = activity.getPackageManager();
+            ApplicationInfo appInfo = pm.getApplicationInfo(activity.getPackageName(), 0);
+            File src = new File(appInfo.sourceDir);
+            if (!src.exists() || !src.isFile()) {
+                return new JSONObject().put("ok", false).put("error", "apk not found").toString();
+            }
+            PackageInfo pi = pm.getPackageInfo(activity.getPackageName(), 0);
+            String version = pi.versionName != null ? pi.versionName : "unknown";
+            String filename = "renbrowser-" + version + ".apk";
+            File dir = new File(activity.getCacheDir(), "apk_share");
+            if (!dir.exists() && !dir.mkdirs()) {
+                return new JSONObject().put("ok", false).put("error", "cache unavailable").toString();
+            }
+            File dest = new File(dir, filename);
+            if (!dest.exists() || dest.length() != src.length()) {
+                copyFile(src, dest);
+            }
+            return new JSONObject()
+                    .put("ok", true)
+                    .put("path", dest.getAbsolutePath())
+                    .put("size", dest.length())
+                    .put("filename", filename)
+                    .put("version", version)
+                    .toString();
+        } catch (Exception e) {
+            Log.e(TAG, "prepareShareApkJson failed", e);
+            try {
+                return new JSONObject().put("ok", false).put("error", e.getMessage()).toString();
+            } catch (Exception ignored) {
+                return "{\"ok\":false}";
+            }
+        }
+    }
+
+    /**
+     * Open the Android share sheet for the prepared APK file.
+     */
+    public void sharePreparedApk() {
+        mainHandler.post(() -> {
+            try {
+                JSONObject prepared = new JSONObject(prepareShareApkJson());
+                if (!prepared.optBoolean("ok", false)) {
+                    return;
+                }
+                File file = new File(prepared.getString("path"));
+                if (!file.exists()) {
+                    return;
+                }
+                Uri uri = FileProvider.getUriForFile(
+                        activity, activity.getPackageName() + ".fileprovider", file);
+                Intent send = new Intent(Intent.ACTION_SEND);
+                send.setType("application/vnd.android.package-archive");
+                send.putExtra(Intent.EXTRA_STREAM, uri);
+                send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                Intent chooser = Intent.createChooser(send, null);
+                chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                activity.startActivity(chooser);
+            } catch (Exception e) {
+                Log.e(TAG, "sharePreparedApk failed", e);
+            }
+        });
+    }
+
+    private static void copyFile(File src, File dest) throws Exception {
+        try (FileInputStream in = new FileInputStream(src);
+             FileOutputStream out = new FileOutputStream(dest)) {
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) >= 0) {
+                out.write(buf, 0, n);
+            }
         }
     }
 

@@ -26,8 +26,10 @@
     "@lucide/svelte": "^1.23.0",
     "@wailsio/runtime": "latest",
     "dompurify": "^3.4.11",
+    "jszip": "^3.10.1",
     "marked": "^18.0.5",
-    "micron-parser": "github:RFnexus/micron-parser-js"
+    "micron-parser": "github:RFnexus/micron-parser-js",
+    "pdfjs-dist": "^6.1.200"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

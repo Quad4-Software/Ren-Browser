@@ -8,6 +8,7 @@ export type TabPage = {
   errorKind?: string;
   durationMs: number;
   lastRaw: string;
+  binaryB64?: string;
   path?: string;
   pageFg?: string;
   pageBg?: string;
@@ -196,6 +197,9 @@ export function normalizeReticulumURL(input: string): string {
   if (lower.startsWith("docs:?")) {
     return trimmed;
   }
+  if (lower.startsWith("document:")) {
+    return trimmed;
+  }
   if (trimmed.includes(":/")) {
     return trimmed;
   }
@@ -238,6 +242,19 @@ export function tabTitleFromURL(url: string, nodes: DiscoveredNode[] = []): stri
       return title.length <= 40 ? title : `${title.slice(0, 39)}…`;
     }
     return translate("tab.documentation");
+  }
+  if (url.startsWith("document:")) {
+    try {
+      const parsed = new URL(url);
+      const path = parsed.searchParams.get("path") ?? "";
+      const leaf = path.split(/[/\\]/).filter(Boolean).at(-1) ?? "";
+      if (leaf) {
+        return leaf.length <= 40 ? leaf : `${leaf.slice(0, 39)}…`;
+      }
+    } catch {
+      /* fall through */
+    }
+    return translate("tab.document");
   }
   const hash = url.split(":/")[0]?.toLowerCase();
   const node = nodes.find((n) => n.hash.toLowerCase() === hash);

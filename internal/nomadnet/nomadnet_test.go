@@ -74,6 +74,8 @@ func TestDetectContentType(t *testing.T) {
 		{"/page/readme.md", "# Title", "markdown"},
 		{"/page/site.html", "<html></html>", "html"},
 		{"/page/note.txt", "plain", "plaintext"},
+		{"/file/book.pdf", "%PDF-1.4", "pdf"},
+		{"/file/novel.epub", "PK\x03\x04", "epub"},
 	}
 	for _, tc := range cases {
 		got := nomadnet.DetectContentType(tc.path, []byte(tc.body))

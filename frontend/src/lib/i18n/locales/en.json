@@ -92,6 +92,7 @@
     "micronEditor": "Micron Editor",
     "reticulumConfig": "Reticulum Config",
     "documentation": "Documentation",
+    "document": "Document",
     "settings": "Settings",
     "nomadNet": "NomadNet"
   },
@@ -158,7 +159,24 @@
     "sandboxReasonUnsupportedKernel": "Disabled because this kernel does not support Landlock (Linux 5.13+ required).",
     "sandboxReasonNoLandlockFlag": "Disabled by the --no-landlock startup flag.",
     "sandboxReasonEnvDisabled": "Disabled by the REN_BROWSER_LANDLOCK environment variable.",
-    "sandboxReasonUnsupportedPlatform": "Landlock is only available on Linux."
+    "sandboxReasonUnsupportedPlatform": "Landlock is only available on Linux.",
+    "shareApk": "Share APK",
+    "shareApkHint": "Share this app's APK with nearby devices over Wi-Fi or through the Android share sheet.",
+    "shareApkVersion": "Installed version: {version} ({size})",
+    "shareApkStart": "Start Wi-Fi sharing",
+    "shareApkStop": "Stop sharing",
+    "shareApkShareSheet": "Share via apps",
+    "shareApkUrl": "Download URL",
+    "shareApkCopyUrl": "Copy URL",
+    "shareApkCopied": "URL copied",
+    "shareApkScan": "Scan this code on another device to download the APK.",
+    "shareApkLoading": "Loading APK details…",
+    "shareApkUnavailable": "APK sharing is not available on this device.",
+    "shareApkLoadFailed": "Could not load APK details",
+    "shareApkShareFailed": "Could not open the share sheet",
+    "shareApkStartFailed": "Could not start Wi-Fi sharing",
+    "shareApkStopFailed": "Could not stop sharing",
+    "shareApkCopyFailed": "Could not copy the download URL"
   },
   "keybinds": {
     "focusUrl": "Focus address bar",
@@ -255,7 +273,23 @@
     "retryFailed": "Could not retry download",
     "retrying": "Retrying ({attempt}/{max})\u2026",
     "interrupted": "Interrupted when the app closed \u2014 retry to download again",
-    "etaLeft": "{eta} left"
+    "etaLeft": "{eta} left",
+    "readDocument": "Read {name}"
+  },
+  "documents": {
+    "loading": "Loading document\u2026",
+    "pageOf": "Page {current} of {total}",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "prevChapter": "Previous chapter",
+    "nextChapter": "Next chapter",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "fitWidth": "Fit width",
+    "toc": "Contents",
+    "loadFailed": "Could not open this document",
+    "missingData": "Document data was not received from the browser",
+    "retry": "Try again"
   },
   "content": {
     "cachedBanner": "Viewing cached page from {when}",

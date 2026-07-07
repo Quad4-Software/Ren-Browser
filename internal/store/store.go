@@ -6,7 +6,6 @@ import (
 	"os"
 	"sync"
 
-	"renbrowser/internal/apperrors"
 	"renbrowser/internal/brand"
 	"renbrowser/internal/db"
 	"renbrowser/internal/nomadnet"
@@ -55,23 +54,71 @@ func Open(path string) (*Store, error) {
 	if path == "" {
 		path = DefaultPath()
 	}
-	database, err := db.Open(path)
+	database, corrupt, corruptDetail, err := openDatabase(path)
 	if err != nil {
-		if db.IsCorruptError(err) {
-			return &Store{path: path, corrupt: true, corruptDetail: err.Error()}, nil
-		}
 		return nil, err
 	}
-	s := &Store{path: path, db: database}
-	if health := s.healthLocked(); !health.OK && health.Kind == string(apperrors.KindDatabaseCorrupt) {
-		s.corrupt = true
-		s.corruptDetail = health.Detail
+	s := &Store{path: path, db: database, corrupt: corrupt, corruptDetail: corruptDetail}
+	if s.db == nil {
+		return s, nil
 	}
 	if err := s.migrateLegacyJSON(); err != nil {
 		_ = database.Close()
 		return nil, err
 	}
 	return s, nil
+}
+
+func openDatabase(path string) (*db.DB, bool, string, error) {
+	database, err := db.Open(path)
+	if err != nil {
+		if db.IsCorruptError(err) {
+			return tryRecoverDatabase(path)
+		}
+		return nil, false, "", err
+	}
+	check, err := database.QuickCheck()
+	if err != nil {
+		_ = database.Close()
+		if db.IsCorruptError(err) {
+			return tryRecoverDatabase(path)
+		}
+		return nil, false, "", err
+	}
+	if !check.OK {
+		_ = database.Close()
+		return tryRecoverDatabase(path)
+	}
+	return database, false, "", nil
+}
+
+func tryRecoverDatabase(path string) (*db.DB, bool, string, error) {
+	backup, err := db.LatestBackup(path)
+	if err != nil || backup == "" {
+		if err != nil {
+			return nil, true, err.Error(), nil
+		}
+		return nil, true, "database is corrupt", nil
+	}
+	if err := db.RestoreBackup(path, backup); err != nil {
+		return nil, true, "database is corrupt", nil
+	}
+	database, err := db.Open(path)
+	if err != nil {
+		return nil, true, err.Error(), nil
+	}
+	check, err := database.QuickCheck()
+	if err != nil || !check.OK {
+		_ = database.Close()
+		detail := "database is corrupt"
+		if err != nil {
+			detail = err.Error()
+		} else if !check.OK {
+			detail = check.Detail
+		}
+		return nil, true, detail, nil
+	}
+	return database, false, "", nil
 }
 
 func (s *Store) Close() error {

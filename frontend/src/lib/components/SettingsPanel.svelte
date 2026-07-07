@@ -9,6 +9,7 @@
     type CommunityInterface,
   } from "$lib/components/CommunityInterfaces.svelte";
   import IdentityPanel from "$lib/components/IdentityPanel.svelte";
+  import ShareApkPanel from "$lib/components/ShareApkPanel.svelte";
   import ExtensionsPanel from "$lib/components/ExtensionsPanel.svelte";
   import SettingsSection from "$lib/components/SettingsSection.svelte";
   import type { MicronRendererPreference } from "$lib/micron/render-page";
@@ -31,6 +32,7 @@
     SUPPORTED_LOCALES,
     t,
   } from "$lib/i18n/i18n.svelte";
+  import { System } from "@wailsio/runtime";
 
   type InterfaceRow = {
     name: string;
@@ -302,6 +304,8 @@
   function sectionCollapsed(id: string): boolean {
     return sectionsCollapsed[id] === true;
   }
+
+  const isAndroid = System.IsAndroid();
 </script>
 
 <svelte:window onkeydown={recordKeybind} />
@@ -744,6 +748,17 @@
       {/if}
     </div>
   </SettingsSection>
+
+  {#if isAndroid}
+    <SettingsSection
+      id="shareApk"
+      title={t("settings.shareApk")}
+      collapsed={sectionCollapsed("shareApk")}
+      onToggle={toggleSettingsSection}
+    >
+      <ShareApkPanel />
+    </SettingsSection>
+  {/if}
 
   {#if !publicMode}
     <SettingsSection

@@ -15,6 +15,8 @@ export {
 export type {
     AboutInfo,
     ActiveDownload,
+    ApkShareInfo,
+    ApkShareSession,
     BrowserPrefs,
     CommunityFetchResult,
     DevLogEntry,

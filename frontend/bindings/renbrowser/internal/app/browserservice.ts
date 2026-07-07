@@ -128,6 +128,14 @@ export function GetAboutInfo(): $CancellablePromise<$models.AboutInfo> {
     return $Call.ByID(1103929366);
 }
 
+export function GetApkShareInfo(): $CancellablePromise<$models.ApkShareInfo> {
+    return $Call.ByID(558763188);
+}
+
+export function GetApkShareSession(): $CancellablePromise<$models.ApkShareSession> {
+    return $Call.ByID(2711052500);
+}
+
 export function GetBrowserPrefs(): $CancellablePromise<$models.BrowserPrefs> {
     return $Call.ByID(3733174083);
 }
@@ -441,6 +449,10 @@ export function SetTheme(theme: $models.ThemeSettings): $CancellablePromise<$mod
     return $Call.ByID(1442035638, theme);
 }
 
+export function ShareApk(): $CancellablePromise<void> {
+    return $Call.ByID(1495621912);
+}
+
 export function ShowConfigDir(): $CancellablePromise<void> {
     return $Call.ByID(1798308007);
 }
@@ -453,8 +465,16 @@ export function Shutdown(): $CancellablePromise<void> {
     return $Call.ByID(1497311545);
 }
 
+export function StartApkShareServer(): $CancellablePromise<$models.ApkShareSession> {
+    return $Call.ByID(2658270679);
+}
+
 export function StartReticulum(): $CancellablePromise<void> {
     return $Call.ByID(905786083);
+}
+
+export function StopApkShareServer(): $CancellablePromise<void> {
+    return $Call.ByID(3591011581);
 }
 
 export function StopReticulum(): $CancellablePromise<void> {

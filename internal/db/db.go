@@ -15,7 +15,8 @@ import (
 )
 
 type DB struct {
-	sql *sql.DB
+	path string
+	sql  *sql.DB
 }
 
 func DefaultPath() string {
@@ -36,7 +37,7 @@ func Open(path string) (*DB, error) {
 	}
 	conn.SetMaxOpenConns(1)
 
-	d := &DB{sql: conn}
+	d := &DB{path: path, sql: conn}
 	if err := d.migrate(); err != nil {
 		_ = conn.Close()
 		return nil, err
@@ -48,18 +49,15 @@ func (d *DB) Close() error {
 	if d == nil || d.sql == nil {
 		return nil
 	}
-	return d.sql.Close()
+	_ = d.Checkpoint()
+	err := d.sql.Close()
+	d.sql = nil
+	return err
 }
 
 func (d *DB) migrate() error {
-	if _, err := d.sql.Exec(`PRAGMA journal_mode=WAL`); err != nil {
-		return fmt.Errorf("wal: %w", err)
-	}
-	if _, err := d.sql.Exec(`PRAGMA foreign_keys=ON`); err != nil {
-		return fmt.Errorf("foreign_keys: %w", err)
-	}
-	if _, err := d.sql.Exec(`PRAGMA busy_timeout=5000`); err != nil {
-		return fmt.Errorf("busy_timeout: %w", err)
+	if err := d.configureDurability(); err != nil {
+		return err
 	}
 
 	stmts := []string{
@@ -127,6 +125,9 @@ func (d *DB) migrate() error {
 		if !strings.Contains(strings.ToLower(err.Error()), "duplicate column") {
 			return err
 		}
+	}
+	if _, err := d.sql.Exec(`PRAGMA user_version = ` + fmt.Sprint(schemaVersion)); err != nil {
+		return fmt.Errorf("user_version: %w", err)
 	}
 	return nil
 }

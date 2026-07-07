@@ -16,6 +16,7 @@
   import PageContextMenu from "$lib/components/PageContextMenu.svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import PageErrorState from "$lib/components/PageErrorState.svelte";
+  import DocumentViewer from "$lib/components/DocumentViewer.svelte";
   import { displayName } from "$lib/brand";
   import { t } from "$lib/i18n/i18n.svelte";
   import {
@@ -26,6 +27,7 @@
     pageDownloadName,
     type DownloadResult,
   } from "$lib/browser/download";
+  import { isDocumentContentType } from "$lib/documents/types";
   import {
     attachMobileGestures,
     type MobileGestureProgress,
@@ -39,6 +41,7 @@
     errorKind?: string;
     currentURL: string;
     raw?: string;
+    binaryB64?: string;
     pageFg?: string;
     pageBg?: string;
     fromCache?: boolean;
@@ -65,6 +68,7 @@
     errorKind = "",
     currentURL,
     raw = "",
+    binaryB64 = "",
     pageFg = "",
     pageBg = "",
     fromCache = false,
@@ -96,6 +100,7 @@
   });
 
   const cacheBannerKey = $derived(`${fromCache}:${cachedAt}`);
+  const isDocument = $derived(isDocumentContentType(contentType));
   const isMicron = $derived(contentType === "micron");
   const isAbout = $derived(contentType === "about");
   const isLicense = $derived(contentType === "license");
@@ -315,7 +320,7 @@
   {/if}
 
   <div class="gesture-body" style:transform={gestureTransform}>
-    <PageFindBar open={findOpen && !showSource} onClose={onFindClose} contentRoot={contentEl} />
+    <PageFindBar open={findOpen && !showSource && !isDocument} onClose={onFindClose} contentRoot={contentEl} />
 
     {#if showCacheBanner}
       <div class="cache-banner">
@@ -349,6 +354,13 @@
     {:else if loading}
       <div class="progress" aria-hidden="true"></div>
       <div class="state">{t("content.loadingPage")}</div>
+    {:else if isDocument}
+      <DocumentViewer
+        {contentType}
+        {binaryB64}
+        pageError={error}
+        onRetry={onRetry}
+      />
     {:else if error}
       <PageErrorState {error} {errorKind} {currentURL} {onRetry} />
     {:else if displayHtml}

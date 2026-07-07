@@ -46,6 +46,27 @@ export interface ActiveDownload {
     "updatedAt": number;
 }
 
+/**
+ * ApkShareInfo describes the installed Android package available for sharing.
+ */
+export interface ApkShareInfo {
+    "available": boolean;
+    "version": string;
+    "size": number;
+    "filename": string;
+    "error"?: string;
+}
+
+/**
+ * ApkShareSession describes an active local HTTP APK download session.
+ */
+export interface ApkShareSession {
+    "active": boolean;
+    "url": string;
+    "qrDataURL"?: string;
+    "error"?: string;
+}
+
 export interface BrowserPrefs {
     "openLinksInNewTab": boolean;
     "openLinksInNewWindow": boolean;
@@ -163,6 +184,7 @@ export interface PageResponse {
     "contentType": string;
     "html": string;
     "raw": string;
+    "binaryB64"?: string;
     "pageFg"?: string;
     "pageBg"?: string;
     "durationMs": number;

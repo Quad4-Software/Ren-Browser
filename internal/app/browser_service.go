@@ -39,6 +39,7 @@ type PageResponse struct {
 	ContentType string `json:"contentType"`
 	HTML        string `json:"html"`
 	Raw         string `json:"raw"`
+	BinaryB64   string `json:"binaryB64,omitempty"`
 	PageFG      string `json:"pageFg,omitempty"`
 	PageBG      string `json:"pageBg,omitempty"`
 	DurationMs  int64  `json:"durationMs"`
@@ -482,6 +483,10 @@ func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) Pa
 		}
 	} else if resp, ok := s.handlePluginScheme(rawURL, pushHistory); ok {
 		return resp
+	}
+
+	if isDocumentURL(rawURL) {
+		return s.documentPage(rawURL, pushHistory)
 	}
 
 	parsed, err := nomadnet.ParseURL(rawURL)

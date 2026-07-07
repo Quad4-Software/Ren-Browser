@@ -92,6 +92,7 @@
     "micronEditor": "",
     "reticulumConfig": "",
     "documentation": "",
+    "document": "",
     "settings": "",
     "nomadNet": ""
   },
@@ -158,7 +159,24 @@
     "sandboxReasonUnsupportedKernel": "",
     "sandboxReasonNoLandlockFlag": "",
     "sandboxReasonEnvDisabled": "",
-    "sandboxReasonUnsupportedPlatform": ""
+    "sandboxReasonUnsupportedPlatform": "",
+    "shareApk": "",
+    "shareApkHint": "",
+    "shareApkVersion": "",
+    "shareApkStart": "",
+    "shareApkStop": "",
+    "shareApkShareSheet": "",
+    "shareApkUrl": "",
+    "shareApkCopyUrl": "",
+    "shareApkCopied": "",
+    "shareApkScan": "",
+    "shareApkLoading": "",
+    "shareApkUnavailable": "",
+    "shareApkLoadFailed": "",
+    "shareApkShareFailed": "",
+    "shareApkStartFailed": "",
+    "shareApkStopFailed": "",
+    "shareApkCopyFailed": ""
   },
   "keybinds": {
     "focusUrl": "",
@@ -255,7 +273,23 @@
     "retryFailed": "",
     "retrying": "",
     "interrupted": "",
-    "etaLeft": ""
+    "etaLeft": "",
+    "readDocument": ""
+  },
+  "documents": {
+    "loading": "",
+    "pageOf": "",
+    "prevPage": "",
+    "nextPage": "",
+    "prevChapter": "",
+    "nextChapter": "",
+    "zoomIn": "",
+    "zoomOut": "",
+    "fitWidth": "",
+    "toc": "",
+    "loadFailed": "",
+    "missingData": "",
+    "retry": ""
   },
   "content": {
     "cachedBanner": "",

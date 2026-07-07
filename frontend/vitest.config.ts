@@ -10,6 +10,7 @@ const domTests = [
   "src/lib/auth/api.test.ts",
   "src/lib/browser/find-in-page.test.ts",
   "src/lib/browser/docs-render.test.ts",
+  "src/lib/documents/epub.test.ts",
   "src/lib/browser/page-links.test.ts",
   "src/lib/micron/multiline.test.ts",
   "src/lib/components/**/*layout*.test.ts",

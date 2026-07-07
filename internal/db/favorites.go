@@ -3,6 +3,7 @@ package db
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -96,25 +97,57 @@ func (d *DB) SaveTabs(tabs []TabRow) error {
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	if _, err := tx.Exec(`DELETE FROM tabs`); err != nil {
-		return err
-	}
 	stmt, err := tx.Prepare(
 		`INSERT INTO tabs (
 			id, title, url, active, pinned, html, content_type, error, duration_ms, last_raw, page_fg, page_bg, sort_order
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET
+			title=excluded.title,
+			url=excluded.url,
+			active=excluded.active,
+			pinned=excluded.pinned,
+			html=excluded.html,
+			content_type=excluded.content_type,
+			error=excluded.error,
+			duration_ms=excluded.duration_ms,
+			last_raw=excluded.last_raw,
+			page_fg=excluded.page_fg,
+			page_bg=excluded.page_bg,
+			sort_order=excluded.sort_order`,
 	)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
+	keepIDs := make([]any, len(tabs))
 	for i, t := range tabs {
 		if _, err := stmt.Exec(
 			t.ID, t.Title, t.URL, boolInt(t.Active), boolInt(t.Pinned),
 			t.HTML, t.ContentType, t.Error, t.DurationMs, t.LastRaw,
 			t.PageFG, t.PageBG, i,
 		); err != nil {
+			return err
+		}
+		if saveTabsAfterInsertHook != nil {
+			if err := saveTabsAfterInsertHook(i + 1); err != nil {
+				return err
+			}
+		}
+		keepIDs[i] = t.ID
+	}
+
+	if len(keepIDs) == 0 {
+		if _, err := tx.Exec(`DELETE FROM tabs`); err != nil {
+			return err
+		}
+	} else {
+		placeholders := make([]string, len(keepIDs))
+		for i := range keepIDs {
+			placeholders[i] = "?"
+		}
+		query := `DELETE FROM tabs WHERE id NOT IN (` + strings.Join(placeholders, ",") + `)`
+		if _, err := tx.Exec(query, keepIDs...); err != nil {
 			return err
 		}
 	}

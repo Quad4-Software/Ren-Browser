@@ -92,6 +92,7 @@
     "micronEditor": "Micron Editor",
     "reticulumConfig": "Reticulum Config",
     "documentation": "Documentación",
+    "document": "Documento",
     "settings": "Configuración",
     "nomadNet": "NomadNet"
   },
@@ -158,7 +159,24 @@
     "sandboxReasonUnsupportedKernel": "Desactivado porque este kernel no admite Landlock (se requiere Linux 5.13+).",
     "sandboxReasonNoLandlockFlag": "Desactivado por la opción de inicio --no-landlock.",
     "sandboxReasonEnvDisabled": "Desactivado por la variable de entorno REN_BROWSER_LANDLOCK.",
-    "sandboxReasonUnsupportedPlatform": "Landlock solo está disponible en Linux."
+    "sandboxReasonUnsupportedPlatform": "Landlock solo está disponible en Linux.",
+    "shareApk": "Compartir APK",
+    "shareApkHint": "Comparte el APK de esta app por Wi-Fi o mediante el menú de compartir de Android.",
+    "shareApkVersion": "Versión instalada: {version} ({size})",
+    "shareApkStart": "Iniciar compartición por Wi-Fi",
+    "shareApkStop": "Detener compartición",
+    "shareApkShareSheet": "Compartir con apps",
+    "shareApkUrl": "URL de descarga",
+    "shareApkCopyUrl": "Copiar URL",
+    "shareApkCopied": "URL copiada",
+    "shareApkScan": "Escanea este código en otro dispositivo para descargar el APK.",
+    "shareApkLoading": "Cargando detalles del APK…",
+    "shareApkUnavailable": "Compartir APK no está disponible en este dispositivo.",
+    "shareApkLoadFailed": "No se pudieron cargar los detalles del APK",
+    "shareApkShareFailed": "No se pudo abrir el menú de compartir",
+    "shareApkStartFailed": "No se pudo iniciar la compartición por Wi-Fi",
+    "shareApkStopFailed": "No se pudo detener la compartición",
+    "shareApkCopyFailed": "No se pudo copiar la URL de descarga"
   },
   "keybinds": {
     "focusUrl": "Enfocar barra de direcciones",
@@ -255,7 +273,23 @@
     "retryFailed": "No se pudo reintentar la descarga",
     "retrying": "Reintentando ({attempt}/{max})\u2026",
     "interrupted": "Interrumpida al cerrar la app; reintenta la descarga",
-    "etaLeft": "{eta} restante"
+    "etaLeft": "{eta} restante",
+    "readDocument": "Leer {name}"
+  },
+  "documents": {
+    "loading": "Cargando documento\u2026",
+    "pageOf": "Página {current} de {total}",
+    "prevPage": "Página anterior",
+    "nextPage": "Página siguiente",
+    "prevChapter": "Capítulo anterior",
+    "nextChapter": "Capítulo siguiente",
+    "zoomIn": "Acercar",
+    "zoomOut": "Alejar",
+    "fitWidth": "Ajustar ancho",
+    "toc": "Contenido",
+    "loadFailed": "No se pudo abrir este documento",
+    "missingData": "No se recibieron datos del documento desde el navegador",
+    "retry": "Reintentar"
   },
   "content": {
     "cachedBanner": "Viendo página en caché de {when}",

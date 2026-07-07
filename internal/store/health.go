@@ -2,6 +2,7 @@
 package store
 
 import (
+	"os"
 	"renbrowser/internal/apperrors"
 	"renbrowser/internal/db"
 )
@@ -60,6 +61,7 @@ func (s *Store) Reset() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.db != nil {
+		_, _ = s.db.BackupBesideDB()
 		_ = s.db.Close()
 		s.db = nil
 	}
@@ -76,6 +78,15 @@ func (s *Store) Reset() error {
 	s.corrupt = false
 	s.corruptDetail = ""
 	return nil
+}
+
+func (s *Store) Backup() (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.db == nil {
+		return "", os.ErrInvalid
+	}
+	return s.db.BackupBesideDB()
 }
 
 func (s *Store) noteWriteError(err error) {

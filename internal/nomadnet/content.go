@@ -12,11 +12,16 @@ const (
 	KindHTML      ContentKind = "html"
 	KindMarkdown  ContentKind = "markdown"
 	KindPlaintext ContentKind = "plaintext"
+	KindPDF       ContentKind = "pdf"
+	KindEPUB      ContentKind = "epub"
 	KindBinary    ContentKind = "binary"
 )
 
 func DetectContentType(path string, body []byte) string {
 	if kind, ok := contentKindByPath(path); ok {
+		return kind
+	}
+	if kind := probeDocumentKind(body); kind != "" {
 		return kind
 	}
 
@@ -50,9 +55,38 @@ func contentKindByPath(path string) (string, bool) {
 		return string(KindMarkdown), true
 	case pathEndsWithFold(path, ".txt"):
 		return string(KindPlaintext), true
+	case pathEndsWithFold(path, ".pdf"):
+		return string(KindPDF), true
+	case pathEndsWithFold(path, ".epub"):
+		return string(KindEPUB), true
 	default:
 		return "", false
 	}
+}
+
+func IsDocumentKind(kind string) bool {
+	switch ContentKind(kind) {
+	case KindPDF, KindEPUB:
+		return true
+	default:
+		return false
+	}
+}
+
+func probeDocumentKind(body []byte) string {
+	if len(body) >= 5 && bytes.Equal(body[:5], []byte("%PDF-")) {
+		return string(KindPDF)
+	}
+	if len(body) >= 30 && bytes.Equal(body[:4], []byte("PK\x03\x04")) {
+		limit := body
+		if len(limit) > 512 {
+			limit = limit[:512]
+		}
+		if bytes.Contains(limit, []byte("application/epub+zip")) {
+			return string(KindEPUB)
+		}
+	}
+	return ""
 }
 
 func pathEndsWithFold(path, suffix string) bool {

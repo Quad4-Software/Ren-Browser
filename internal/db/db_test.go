@@ -16,6 +16,14 @@ func TestSQLiteWALAndHistory(t *testing.T) {
 	}
 	defer database.Close()
 
+	mode, err := database.PragmaString("journal_mode")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mode != "wal" {
+		t.Fatalf("journal_mode=%q; want wal", mode)
+	}
+
 	if err := database.UpsertNode(db.NodeRow{
 		Hash: "abc",
 		Name: "Node",

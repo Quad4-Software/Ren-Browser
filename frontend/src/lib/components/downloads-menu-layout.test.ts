@@ -31,6 +31,7 @@ describe("DownloadsMenu layout regressions", () => {
       variant: "dropdown",
       onDownloadPage: noop,
       onOpenFile: noop,
+      onReadFile: noop,
       onOpenFolder: noop,
       onClose: noop,
     });
@@ -61,6 +62,7 @@ describe("DownloadsMenu layout regressions", () => {
       variant: "sheet",
       onDownloadPage: noop,
       onOpenFile: noop,
+      onReadFile: noop,
       onOpenFolder: noop,
       onClose: noop,
     });
@@ -97,6 +99,7 @@ describe("DownloadsMenu layout regressions", () => {
       variant: "sheet",
       onDownloadPage: noop,
       onOpenFile: noop,
+      onReadFile: noop,
       onOpenFolder: noop,
       onClose: noop,
     });
@@ -121,6 +124,7 @@ describe("DownloadsMenu layout regressions", () => {
       variant: "dropdown",
       onDownloadPage: noop,
       onOpenFile: noop,
+      onReadFile: noop,
       onOpenFolder: noop,
       onClose: noop,
     });

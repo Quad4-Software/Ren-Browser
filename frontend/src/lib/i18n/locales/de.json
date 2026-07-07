@@ -92,6 +92,7 @@
     "micronEditor": "Micron Editor",
     "reticulumConfig": "Reticulum Config",
     "documentation": "Dokumentation",
+    "document": "Dokument",
     "settings": "Einstellungen",
     "nomadNet": "NomadNet"
   },
@@ -158,7 +159,24 @@
     "sandboxReasonUnsupportedKernel": "Deaktiviert, weil dieser Kernel Landlock nicht unterstützt (Linux 5.13+ erforderlich).",
     "sandboxReasonNoLandlockFlag": "Durch die Startoption --no-landlock deaktiviert.",
     "sandboxReasonEnvDisabled": "Durch die Umgebungsvariable REN_BROWSER_LANDLOCK deaktiviert.",
-    "sandboxReasonUnsupportedPlatform": "Landlock ist nur unter Linux verfügbar."
+    "sandboxReasonUnsupportedPlatform": "Landlock ist nur unter Linux verfügbar.",
+    "shareApk": "APK teilen",
+    "shareApkHint": "Teile die APK dieser App per WLAN oder über das Android-Freigabemenü mit Geräten in der Nähe.",
+    "shareApkVersion": "Installierte Version: {version} ({size})",
+    "shareApkStart": "WLAN-Freigabe starten",
+    "shareApkStop": "Freigabe beenden",
+    "shareApkShareSheet": "Über Apps teilen",
+    "shareApkUrl": "Download-URL",
+    "shareApkCopyUrl": "URL kopieren",
+    "shareApkCopied": "URL kopiert",
+    "shareApkScan": "Scanne diesen Code auf einem anderen Gerät, um die APK herunterzuladen.",
+    "shareApkLoading": "APK-Details werden geladen…",
+    "shareApkUnavailable": "APK-Freigabe ist auf diesem Gerät nicht verfügbar.",
+    "shareApkLoadFailed": "APK-Details konnten nicht geladen werden",
+    "shareApkShareFailed": "Freigabemenü konnte nicht geöffnet werden",
+    "shareApkStartFailed": "WLAN-Freigabe konnte nicht gestartet werden",
+    "shareApkStopFailed": "Freigabe konnte nicht beendet werden",
+    "shareApkCopyFailed": "Download-URL konnte nicht kopiert werden"
   },
   "keybinds": {
     "focusUrl": "Adressleiste fokussieren",
@@ -255,7 +273,23 @@
     "retryFailed": "Download konnte nicht erneut gestartet werden",
     "retrying": "Erneuter Versuch ({attempt}/{max})\u2026",
     "interrupted": "Beim Schlie\u00dfen der App unterbrochen \u2014 erneut versuchen",
-    "etaLeft": "noch {eta}"
+    "etaLeft": "noch {eta}",
+    "readDocument": "{name} lesen"
+  },
+  "documents": {
+    "loading": "Dokument wird geladen\u2026",
+    "pageOf": "Seite {current} von {total}",
+    "prevPage": "Vorherige Seite",
+    "nextPage": "Nächste Seite",
+    "prevChapter": "Vorheriges Kapitel",
+    "nextChapter": "Nächstes Kapitel",
+    "zoomIn": "Vergrößern",
+    "zoomOut": "Verkleinern",
+    "fitWidth": "Breite anpassen",
+    "toc": "Inhalt",
+    "loadFailed": "Dokument konnte nicht geöffnet werden",
+    "missingData": "Dokumentdaten wurden nicht vom Browser empfangen",
+    "retry": "Erneut versuchen"
   },
   "content": {
     "cachedBanner": "Gecachte Seite von {when} wird angezeigt",

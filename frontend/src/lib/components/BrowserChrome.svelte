@@ -45,6 +45,7 @@
     onToggleDownloads: () => void;
     onCloseDownloads: () => void;
     onOpenDownload: (path: string) => void;
+    onReadDownload?: (path: string) => void;
     onOpenDownloadFolder: () => void;
     onCancelDownload?: (id: string) => void;
     onDismissDownload?: (id: string) => void;
@@ -78,6 +79,7 @@
     onToggleDownloads,
     onCloseDownloads,
     onOpenDownload,
+    onReadDownload = () => {},
     onOpenDownloadFolder,
     onCancelDownload = () => {},
     onDismissDownload = () => {},
@@ -168,6 +170,7 @@
         {downloadDir}
         {onDownloadPage}
         onOpenFile={onOpenDownload}
+        onReadFile={onReadDownload}
         onOpenFolder={onOpenDownloadFolder}
         onCancelActive={onCancelDownload}
         onDismissActive={onDismissDownload}
