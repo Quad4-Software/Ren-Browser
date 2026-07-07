@@ -32,6 +32,29 @@ See [Server mode](server-mode.md) for proxy flags.
 
 Only install extensions from people or projects you trust. Read the permission list in **Settings → Extensions** before enabling.
 
+### Install-time checks
+
+When you install an extension, RenBrowser shows:
+
+- Per-permission toggles (disabled permissions are not granted at runtime)
+- Scanned network endpoints from the manifest and package files
+- Signature badges (unsigned, signed, trusted publisher, tampered)
+- A heuristic security assessment (unsigned + network, dangerous permissions, suspicious patterns in JS)
+
+Invalid signatures block installation. Unsigned extensions can still be installed if you accept the risk.
+
+### Runtime protection
+
+- Granted permissions are enforced for JS `PluginFetch` and WASM `http_fetch`
+- WASM network exports are blocked when `network.fetch` was not granted
+- Per-call limits on plugin HTTP requests and WASM work reduce freeze risk from misbehaving extensions
+- Extension file integrity is hashed after install; external tampering disables the extension until you re-enable it
+- User trusted publisher list changes outside the app are detected via a database-backed digest
+
+Plugin HTTP traffic appears in **Developer tools → Network** when DevTools is open.
+
+See [Extensions](extensions.md) for signing, locales, and manifest fields.
+
 ## Verify downloads
 
 Official builds come from [GitHub Releases](https://github.com/Quad4-Software/Ren-Browser/releases) and GitHub Actions CI.

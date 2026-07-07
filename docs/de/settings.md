@@ -40,12 +40,12 @@ Siehe [Tastenkürzel](keyboard-shortcuts.md) für Standardbelegungen und wie Sie
 
 Verwalten Sie Plugins unter **Einstellungen → Erweiterungen**:
 
-- Aus einem Zip-Archiv installieren
-- Aus einem Ordner installieren
-- Installierte Erweiterungen aktivieren oder deaktivieren
-- Berechtigungen jeder Erweiterung anzeigen
+- Installation aus Zip, Ordner oder gebündeltem `.wasm`-Modul
+- Installationsvorschau: Berechtigungen, Netzwerk-Endpunkte, Signatur-Badges, Sicherheitshinweise, UI-Sprachen
+- Erweiterungen aktivieren oder deaktivieren
+- Signaturstatus und Manipulationswarnungen pro Karte
 
-Siehe [Erweiterungen](extensions.md) für Manifest-Format und Installationspfade.
+Siehe [Erweiterungen](extensions.md) für Manifest, Signatur und Installationspfade.
 
 ## Profil und Daten
 

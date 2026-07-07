@@ -32,6 +32,27 @@ Siehe [Servermodus](server-mode.md) für Proxy-Flags.
 
 Installieren Sie Erweiterungen nur von Personen oder Projekten, denen Sie vertrauen. Lesen Sie die Berechtigungsliste unter **Einstellungen → Erweiterungen** vor dem Aktivieren.
 
+### Prüfungen bei der Installation
+
+RenBrowser zeigt beim Installieren:
+
+- Einzelschalter für Berechtigungen (deaktivierte Rechte gelten zur Laufzeit nicht)
+- Gescannte Netzwerk-Endpunkte aus Manifest und Paketdateien
+- Signatur-Badges (unsigniert, signiert, vertrauenswürdig, manipuliert)
+- Heuristische Sicherheitsbewertung
+
+Ungültige Signaturen blockieren die Installation. Unsignierte Erweiterungen können nach eigenem Risiko installiert werden.
+
+### Laufzeitschutz
+
+- Gewährte Berechtigungen für JS `PluginFetch` und WASM `http_fetch`
+- WASM-Netzwerkexporte ohne `network.fetch` werden blockiert
+- Limits für Plugin-HTTP-Anfragen und WASM-Arbeit gegen Einfrieren
+- Integritäts-Hash der Dateien; externe Änderungen deaktivieren die Erweiterung
+- Digest-geschützte Benutzer-Vertrauensliste
+
+Plugin-HTTP erscheint in **Entwicklertools → Netzwerk**. Siehe [Erweiterungen](extensions.md).
+
 ## Downloads prüfen
 
 Offizielle Builds kommen von [GitHub Releases](https://github.com/Quad4-Software/Ren-Browser/releases) und GitHub Actions CI.

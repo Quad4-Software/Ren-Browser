@@ -40,12 +40,12 @@ See [Keyboard shortcuts](keyboard-shortcuts.md) for defaults and how to record n
 
 Manage plugins from **Settings → Extensions**:
 
-- Install from a zip archive
-- Install from a folder
+- Install from a zip archive, folder, or bundled `.wasm` module
+- Review install preview: permissions, network endpoints, signature badges, security notes, bundled UI languages
 - Enable or disable installed extensions
-- View permissions each extension requested
+- View signature status and tamper warnings on each card
 
-See [Extensions](extensions.md) for manifest format and install paths.
+See [Extensions](extensions.md) for manifest format, signing, and install paths.
 
 ## Profile and data
 

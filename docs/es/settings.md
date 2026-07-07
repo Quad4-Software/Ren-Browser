@@ -40,12 +40,12 @@ Consulta [Atajos de teclado](keyboard-shortcuts.md) para los valores predetermin
 
 Gestiona plugins desde **Settings → Extensions**:
 
-- Instalar desde un archivo zip
-- Instalar desde una carpeta
+- Instalar desde zip, carpeta o módulo `.wasm` empaquetado
+- Vista previa: permisos, endpoints de red, insignias de firma, notas de seguridad, idiomas de UI
 - Activar o desactivar extensiones instaladas
-- Ver los permisos que solicitó cada extensión
+- Estado de firma y avisos de alteración en cada tarjeta
 
-Consulta [Extensiones](extensions.md) para el formato del manifiesto y las rutas de instalación.
+Consulta [Extensiones](extensions.md) para manifiesto, firma y rutas de instalación.
 
 ## Perfil y datos
 

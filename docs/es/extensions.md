@@ -7,9 +7,16 @@ Ren Browser admite plugins que añaden esquemas de URL, paneles laterales, coman
 ### Desde Settings
 
 1. Abre **Settings → Extensions**
-2. Elige **Install from zip** o **Install from folder**
-3. Confirma que el manifiesto carga y que los permisos se ven correctos
-4. Activa la extensión
+2. Elige **Install extension**, luego **.zip**, **carpeta** o **módulo .wasm empaquetado**
+3. Revisa la vista previa de instalación:
+   - Permisos solicitados (puedes desactivar permisos individuales antes de instalar)
+   - URLs externas que la extensión puede contactar (escaneadas del manifiesto y archivos del paquete)
+   - Estado de la firma del publicador (sin firmar, firmada, publicador de confianza, no válida)
+   - Advertencias de evaluación de seguridad
+   - Idiomas de interfaz incluidos (cuando hay `locales/*.json`)
+4. Confirma y activa la extensión
+
+Las extensiones con `network.fetch` muestran un diálogo con los endpoints detectados. La lista de URLs sigue visible aunque desactives `network.fetch` antes de instalar.
 
 ### Instalación manual
 
@@ -21,7 +28,7 @@ Descomprime un plugin en:
 
 La carpeta debe contener `renbrowser.plugin.json`. El `id` del manifiesto debe coincidir con el nombre de la carpeta.
 
-## Extensión de ejemplo
+## Extensiones de ejemplo
 
 El repositorio incluye `extensions/hello-extension/`:
 
@@ -29,7 +36,7 @@ El repositorio incluye `extensions/hello-extension/`:
 - Añade un panel lateral **Hello**
 - Define un comando **Say hello** con `mod+shift+h`
 
-Úsala como plantilla cuando escribas tu propio plugin.
+`extensions/micron-translator/` traduce páginas Micron (`.mu`) con Google Translate o LibreTranslate. Comandos: **Translate Micron page** (`mod+shift+t`) y **Restore original** (`mod+shift+r`).
 
 ## Archivo de manifiesto
 
@@ -46,7 +53,7 @@ Campos obligatorios:
 | `main` | Script de entrada del frontend (opcional si solo hay backend) |
 | `permissions` | Lista de capacidades (ver abajo) |
 
-Los campos opcionales incluyen `description`, `author`, `license`, `engines`, `backend` y `contributes`.
+Campos opcionales: `description`, `author`, `license`, `engines`, `backend`, `network`, `contributes`.
 
 ### Restricción de motor
 
@@ -55,6 +62,21 @@ Los campos opcionales incluyen `description`, `author`, `license`, `engines`, `b
 ```
 
 El host rechaza cargar el plugin si la versión de tu aplicación es demasiado antigua.
+
+### Endpoints de red
+
+Las extensiones con `network.fetch` deben declarar hosts o URLs contactados:
+
+```json
+"network": {
+  "endpoints": [
+    "https://api.example.com/",
+    "URL de servicio configurada por el usuario"
+  ]
+}
+```
+
+Al instalar, RenBrowser también escanea `.js`, `.go`, `.wasm` y otros archivos del paquete en busca de URLs `http`/`https`.
 
 ### Contribuciones
 
@@ -70,8 +92,6 @@ El host rechaza cargar el plugin si la versión de tu aplicación es demasiado a
 
 ## Permisos
 
-Los plugins deben declarar lo que necesitan. Permisos conocidos:
-
 | Permiso | Permite |
 |---------|---------|
 | `storage.plugin` | Almacenamiento clave-valor privado del plugin |
@@ -83,31 +103,68 @@ Los plugins deben declarar lo que necesitan. Permisos conocidos:
 | `devtools.network` | Detalle de red extra en DevTools |
 | `render.unsanitized` | Omitir parte de la sanitización HTML (peligroso) |
 
-El host aplica los permisos en tiempo de ejecución. Un plugin no puede usar una capacidad que no declaró.
+El host aplica los permisos en tiempo de ejecución. Los permisos que desactives al instalar no se conceden a `ctx.network.fetch` ni a WASM `http_fetch`.
+
+## Firmas del publicador
+
+Las extensiones pueden incluir una firma Ed25519 en `renbrowser.plugin.rsg` (compatible con `rnid` de Reticulum). Las firmas no válidas bloquean la instalación.
+
+Insignias en la vista previa y la lista:
+
+| Insignia | Significado |
+|----------|-------------|
+| Sin firmar | Sin archivo de firma |
+| Firmada | Identidad Reticulum válida |
+| De confianza | Publicador de la lista de confianza |
+| Alterada | Archivos modificados fuera de RenBrowser (desactivada hasta volver a activar) |
+
+Durante la instalación puedes elegir **Confiar en esta identidad del publicador**. La lista de usuario está en `~/.renbrowser/trusted_publishers.json` y está protegida por un digest en la base de datos del perfil.
+
+Firma con `build/scripts/sign-extension.sh` (requiere Python `rnid`).
+
+## Traducciones de UI del plugin
+
+Las extensiones pueden incluir cadenas en `locales/<code>.json`. Los títulos del manifiesto pueden usar `%clave.ruta%`; el host carga catálogos desde `/_plugins/<id>/locales/<code>.json`.
+
+La vista previa de instalación lista los códigos de locale incluidos.
 
 ## Script de entrada del frontend
 
-Un `main.js` típico exporta:
+Exportes típicos en `main.js`: `activate(ctx)`, `deactivate()`, `mount(el)`, `handleScheme(url)`.
 
-- `activate(ctx)` para suscribirse a eventos y registrar UI
-- `deactivate()` para limpieza
-- `mount(el)` para renderizar HTML del panel lateral
-- `handleScheme(url)` para manejadores de esquemas de URL
+Con `network.fetch` concedido: `ctx.network.fetch()`. Comprueba `ctx.capabilities.networkFetch` antes de trabajo que use red.
 
-La extensión hello muestra versiones mínimas de cada una.
+Con backend WASM: `ctx.wasm.call("export", input)`. Cadenas con `ctx.i18n.t("key")`.
+
+## Módulos WASM empaquetados
+
+Un archivo `.wasm` puede llevar manifiesto (`renbrowser.plugin`), archivos (`renbrowser.files`) y firma opcional (`renbrowser.signature`).
+
+Instala desde **Settings → Extensions → Choose .wasm module**.
+
+`extensions/micron-translator/` usa TinyGo (`build-wasm.sh`, `go run ./extensions/micron-translator/bundle`).
 
 ## Backend WASM
 
-Los plugins pueden establecer `backend` en una ruta de módulo WASM para lógica más pesada. Los plugins WASM se ejecutan en un runtime restringido con permisos explícitos.
+`backend` apunta a un módulo WASM. El host ofrece `renhost.http_fetch` cuando `network.fetch` fue concedido en la instalación. Hay límites de peticiones, timeouts y tamaño.
+
+## DevTools
+
+En **Developer tools → Network**, las peticiones HTTP salientes de extensiones aparecen como **Extension fetch** con código de estado y duración.
+
+## Integridad
+
+Tras instalar, RenBrowser guarda un hash de los archivos del paquete. Cambios en disco fuera de la app desactivan la extensión (**Alterada**). Volver a activar acepta el estado actual.
 
 ## Notas de seguridad
 
-- Instala plugins solo de fuentes en las que confíes
-- Lee la lista de permisos antes de activar
-- Trata los plugins como cualquier programa local con acceso a los datos de tu perfil
+- Instala solo de fuentes de confianza
+- Lee permisos y endpoints antes de confirmar
+- Prefiere extensiones firmadas de publicadores conocidos
+- Trata los plugins como programas locales con acceso a tu perfil
 
 ## Próximos pasos
 
-- Referencia en el código: `internal/plugins/manifest.go` en el repositorio
-- [Seguridad](security.md) para el modelo de amenazas de plugins
-- [Desarrollo](development.md) para trabajar en el host de plugins
+- Referencia: `internal/plugins/manifest.go`
+- [Seguridad](security.md)
+- [Desarrollo](development.md)
