@@ -112,8 +112,9 @@ func relocateForAppImage(cfg *config.Runtime) {
 	// them there and the dbus-proxy exec fails. There is no supported way to
 	// add that mount from outside WebKit, so fall back to WebKit's own
 	// documented escape hatch for nested-sandbox conflicts (the same one
-	// Flatpak apps use when running under an outer sandbox already). This
-	// only affects the AppImage build; system package installs run from
+	// Flatpak apps use when running under an outer sandbox already). Flatpak
+	// also sets this via finish-args and internal/webkit detects /.flatpak-info.
+	// This only affects the AppImage build; system package installs run from
 	// standard paths and keep the full inner sandbox.
 	_ = os.Setenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1")
 }

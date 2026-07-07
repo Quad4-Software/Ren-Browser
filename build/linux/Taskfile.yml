@@ -18,7 +18,7 @@ vars:
   FLATPAK_BUILD_DIR: '{{.ROOT_DIR}}/build/flatpak/build'
   FLATPAK_REPO: '{{.ROOT_DIR}}/build/flatpak/repo'
   FLATPAK_BUNDLE: '{{.ROOT_DIR}}/build/flatpak/{{.FLATPAK_APP_ID}}.flatpak'
-  FLATPAK_BUILDER_FLAGS: '--user'
+  FLATPAK_BUILDER_FLAGS: '--user --disable-rofiles-fuse'
   PACKAGING_ICON: '{{.ROOT_DIR}}/build/packaging/renbrowser-256.png'
   LINUXDEPLOY_TAG: 1-alpha-20251107-1
   APPIMAGETOOL_URL: https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool
@@ -210,6 +210,17 @@ tasks:
       - install -Dm644 flatpak/{{.FLATPAK_APP_ID}}.desktop "{{.FLATPAK_STAGING}}/{{.FLATPAK_APP_ID}}.desktop"
       - install -Dm644 flatpak/{{.FLATPAK_APP_ID}}.metainfo.xml "{{.FLATPAK_STAGING}}/{{.FLATPAK_APP_ID}}.metainfo.xml"
       - install -Dm644 flatpak/{{.FLATPAK_APP_ID}}.svg "{{.FLATPAK_STAGING}}/{{.FLATPAK_APP_ID}}.svg"
+      - |
+        set -euo pipefail
+        if ! command -v rsvg-convert >/dev/null 2>&1; then
+          echo "rsvg-convert is required to generate Flatpak PNG icons." >&2
+          exit 1
+        fi
+        for size in 64 128 256; do
+          rsvg-convert -w "${size}" -h "${size}" \
+            -o "{{.FLATPAK_STAGING}}/{{.FLATPAK_APP_ID}}-${size}.png" \
+            flatpak/{{.FLATPAK_APP_ID}}.svg
+        done
 
   flatpak:repo:
     summary: Build a local Flatpak repository
