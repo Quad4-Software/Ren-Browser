@@ -109,6 +109,40 @@ export function humanizeBindingError(message: string): string {
     return translate("errors.extensionNotFound", { plugin: formatPluginId(match[1]) });
   }
 
+  if (trimmed === "identity not found") {
+    return translate("identity.notFound");
+  }
+  if (trimmed === "identity name is required") {
+    return translate("identity.nameRequired");
+  }
+  if (trimmed === "identity name is too long") {
+    return translate("identity.nameTooLong");
+  }
+  if (trimmed === "identity id is invalid") {
+    return translate("identity.idInvalid");
+  }
+  if (trimmed.startsWith("identity already exists")) {
+    return translate("identity.duplicate");
+  }
+  if (trimmed === "cannot delete the active identity") {
+    return translate("identity.cannotDeleteActive");
+  }
+  if (trimmed === "cannot delete the only identity") {
+    return translate("identity.cannotDeleteLast");
+  }
+  if (trimmed === "identity is already active") {
+    return translate("identity.alreadyActive");
+  }
+  if (trimmed.startsWith("identity registry is corrupt")) {
+    return translate("identity.registryCorrupt");
+  }
+  if (trimmed.startsWith("invalid identity key file")) {
+    return translate("identity.invalidKeyFile");
+  }
+  if (trimmed === "identity file selection canceled") {
+    return translate("identity.pickerCanceled");
+  }
+
   return trimmed;
 }
 

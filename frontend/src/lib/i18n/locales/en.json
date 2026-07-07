@@ -384,7 +384,18 @@
     "switchFailed": "Failed to switch identity",
     "renameFailed": "Failed to rename identity",
     "deleteFailed": "Failed to delete identity",
-    "copyFailed": "Failed to copy hash to clipboard"
+    "copyFailed": "Failed to copy hash to clipboard",
+    "notFound": "Identity not found.",
+    "nameRequired": "Identity name is required.",
+    "nameTooLong": "Identity name is too long.",
+    "idInvalid": "Identity id is invalid.",
+    "duplicate": "This identity is already in your registry.",
+    "cannotDeleteActive": "Switch to another identity before deleting this one.",
+    "cannotDeleteLast": "At least one identity must remain.",
+    "alreadyActive": "This identity is already active.",
+    "registryCorrupt": "Identity registry data is corrupt.",
+    "invalidKeyFile": "The selected file is not a valid identity key.",
+    "pickerCanceled": "File selection was canceled."
   },
   "community": {
     "title": "Community interfaces",

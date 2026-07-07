@@ -384,7 +384,18 @@
     "switchFailed": "Identität konnte nicht gewechselt werden",
     "renameFailed": "Identität konnte nicht umbenannt werden",
     "deleteFailed": "Identität konnte nicht gelöscht werden",
-    "copyFailed": "Hash konnte nicht in die Zwischenablage kopiert werden"
+    "copyFailed": "Hash konnte nicht in die Zwischenablage kopiert werden",
+    "notFound": "Identität nicht gefunden.",
+    "nameRequired": "Ein Identitätsname ist erforderlich.",
+    "nameTooLong": "Der Identitätsname ist zu lang.",
+    "idInvalid": "Die Identitäts-ID ist ungültig.",
+    "duplicate": "Diese Identität ist bereits in deiner Registry.",
+    "cannotDeleteActive": "Wechsle zu einer anderen Identität, bevor du diese löschst.",
+    "cannotDeleteLast": "Mindestens eine Identität muss verbleiben.",
+    "alreadyActive": "Diese Identität ist bereits aktiv.",
+    "registryCorrupt": "Die Identitäts-Registry-Daten sind beschädigt.",
+    "invalidKeyFile": "Die ausgewählte Datei ist kein gültiger Identitätsschlüssel.",
+    "pickerCanceled": "Dateiauswahl wurde abgebrochen."
   },
   "community": {
     "title": "Community-Schnittstellen",

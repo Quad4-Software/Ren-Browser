@@ -384,7 +384,18 @@
     "switchFailed": "",
     "renameFailed": "",
     "deleteFailed": "",
-    "copyFailed": ""
+    "copyFailed": "",
+    "notFound": "",
+    "nameRequired": "",
+    "nameTooLong": "",
+    "idInvalid": "",
+    "duplicate": "",
+    "cannotDeleteActive": "",
+    "cannotDeleteLast": "",
+    "alreadyActive": "",
+    "registryCorrupt": "",
+    "invalidKeyFile": "",
+    "pickerCanceled": ""
   },
   "community": {
     "title": "",

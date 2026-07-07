@@ -384,7 +384,18 @@
     "switchFailed": "No se pudo cambiar la identidad",
     "renameFailed": "No se pudo renombrar la identidad",
     "deleteFailed": "No se pudo eliminar la identidad",
-    "copyFailed": "No se pudo copiar el hash al portapapeles"
+    "copyFailed": "No se pudo copiar el hash al portapapeles",
+    "notFound": "Identidad no encontrada.",
+    "nameRequired": "El nombre de la identidad es obligatorio.",
+    "nameTooLong": "El nombre de la identidad es demasiado largo.",
+    "idInvalid": "El id de la identidad no es válido.",
+    "duplicate": "Esta identidad ya está en tu registro.",
+    "cannotDeleteActive": "Cambia a otra identidad antes de eliminar esta.",
+    "cannotDeleteLast": "Debe permanecer al menos una identidad.",
+    "alreadyActive": "Esta identidad ya está activa.",
+    "registryCorrupt": "Los datos del registro de identidades están dañados.",
+    "invalidKeyFile": "El archivo seleccionado no es una clave de identidad válida.",
+    "pickerCanceled": "Se canceló la selección de archivo."
   },
   "community": {
     "title": "Interfaces de la comunidad",

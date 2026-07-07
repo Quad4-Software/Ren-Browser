@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"quad4/reticulum-go/pkg/common"
@@ -83,6 +84,9 @@ func (s *Stack) Identities() *IdentityRegistry {
 }
 
 func (s *Stack) SwitchIdentity(id string) error {
+	if strings.TrimSpace(id) == "" {
+		return ErrIdentityIDInvalid
+	}
 	if s.identities == nil {
 		return errors.New("identity registry not initialized")
 	}

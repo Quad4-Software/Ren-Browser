@@ -72,6 +72,12 @@ describe("formatBindingError", () => {
     expect(formatBindingError(new Error("permission denied"))).toBe("permission denied");
   });
 
+  it("humanizes identity sentinel errors", () => {
+    expect(humanizeBindingError("identity not found")).toContain("not found");
+    expect(humanizeBindingError("identity already exists: abc")).toContain("already");
+    expect(humanizeBindingError("identity file selection canceled")).toContain("canceled");
+  });
+
   it("uses the fallback for empty errors", () => {
     expect(formatBindingError("", "fallback")).toBe("fallback");
     expect(formatBindingError(undefined, "fallback")).toBe("fallback");

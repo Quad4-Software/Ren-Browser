@@ -195,7 +195,10 @@
       <li class="empty">{t("identity.loading")}</li>
     {:else if items.length === 0}
       <li class="empty">
-        <EmptyState title={t("identity.noIdentities")} description={t("identity.noIdentitiesDescription")}>
+        <EmptyState
+          title={t("identity.noIdentities")}
+          description={t("identity.noIdentitiesDescription")}
+        >
           <KeyRound size={22} />
         </EmptyState>
       </li>
@@ -206,12 +209,7 @@
             <div class="body">
               {#if renameTarget?.id === row.id}
                 <div class="rename-row">
-                  <input
-                    class="name-input"
-                    type="text"
-                    bind:value={renameValue}
-                    disabled={busy}
-                  />
+                  <input class="name-input" type="text" bind:value={renameValue} disabled={busy} />
                   <button
                     type="button"
                     class="ren-btn"
@@ -220,10 +218,15 @@
                   >
                     {t("common.save")}
                   </button>
-                  <button type="button" class="ren-btn secondary" disabled={busy} onclick={() => {
-                    renameTarget = null;
-                    renameValue = "";
-                  }}>
+                  <button
+                    type="button"
+                    class="ren-btn secondary"
+                    disabled={busy}
+                    onclick={() => {
+                      renameTarget = null;
+                      renameValue = "";
+                    }}
+                  >
                     {t("common.cancel")}
                   </button>
                 </div>
@@ -322,7 +325,12 @@
       bind:value={importName}
       disabled={busy}
     />
-    <button type="button" class="ren-btn secondary" disabled={busy} onclick={() => void importIdentity()}>
+    <button
+      type="button"
+      class="ren-btn secondary"
+      disabled={busy}
+      onclick={() => void importIdentity()}
+    >
       <Upload size={16} />
       {t("identity.import")}
     </button>
