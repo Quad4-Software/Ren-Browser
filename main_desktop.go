@@ -5,6 +5,7 @@
 package main
 
 import (
+	_ "renbrowser/internal/webkit"
 	"embed"
 	"log"
 	"net/http"
