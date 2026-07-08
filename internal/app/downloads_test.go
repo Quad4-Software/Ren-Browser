@@ -35,6 +35,26 @@ func TestIsRootLevelDownloadDir(t *testing.T) {
 	}
 }
 
+func TestIOSDownloadDirNeedsReset(t *testing.T) {
+	root := "/private/var/mobile/Containers/Data/Application/UUID/Documents"
+	cases := []struct {
+		dir  string
+		want bool
+	}{
+		{"", true},
+		{"/Downloads", true},
+		{"/private/var/mobile/Containers/Data/Application/UUID/Downloads", true},
+		{root + "/Downloads", false},
+		{filepath.Join(root, "Downloads", "subdir"), false},
+		{os.TempDir(), true},
+	}
+	for _, tc := range cases {
+		if got := iosDownloadDirNeedsReset(tc.dir, root); got != tc.want {
+			t.Fatalf("iosDownloadDirNeedsReset(%q) = %v; want %v", tc.dir, got, tc.want)
+		}
+	}
+}
+
 func TestIsTempDownloadDir(t *testing.T) {
 	temp := filepath.Clean(os.TempDir())
 	if !isTempDownloadDir(temp) {

@@ -57,3 +57,9 @@ func TestJoin(t *testing.T) {
 		t.Errorf("Join() = %q; want %q", got, want)
 	}
 }
+
+func TestUserDownloadDirEmptyOnDesktop(t *testing.T) {
+	if got := UserDownloadDir(); got != "" {
+		t.Fatalf("UserDownloadDir() = %q; want empty on non-android/non-ios", got)
+	}
+}
