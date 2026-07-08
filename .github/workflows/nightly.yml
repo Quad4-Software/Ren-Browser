@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "0 4 * * *"
   workflow_dispatch:
+    inputs:
+      android_all_abis:
+        description: "Build APKs for all ABIs (arm64, x86_64, arm, 386)"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: nightly-${{ github.workflow }}
@@ -19,6 +25,7 @@ jobs:
     with:
       channel: nightly
       prerelease: true
+      android_all_abis: ${{ inputs.android_all_abis || false }}
     secrets:
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

@@ -23,6 +23,15 @@ android {
         }
     }
 
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'arm64-v8a', 'x86_64', 'armeabi-v7a', 'x86'
+            universalApk true
+        }
+    }
+
     def keystoreFile = System.getenv("ANDROID_KEYSTORE_FILE")
     def keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
     def signingKeyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "renbrowser"

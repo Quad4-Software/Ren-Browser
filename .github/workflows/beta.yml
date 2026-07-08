@@ -8,6 +8,12 @@ on:
       - "v*-beta*"
       - "v*-rc*"
   workflow_dispatch:
+    inputs:
+      android_all_abis:
+        description: "Build APKs for all ABIs (arm64, x86_64, arm, 386)"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: beta-${{ github.workflow }}-${{ github.ref }}
@@ -24,6 +30,7 @@ jobs:
       channel: beta
       prerelease: true
       tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+      android_all_abis: ${{ inputs.android_all_abis || false }}
     secrets:
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

@@ -263,6 +263,27 @@ tasks:
           ARCH: arm64
       - task: android:assemble:apk
 
+  build:android:all:
+    desc: Build debug APK for all Android architectures (fat debug APK)
+    cmds:
+      - task: android:build
+        vars:
+          ARCH: arm64
+          KEEP_OTHER_ABIS: "true"
+      - task: android:compile:go:shared
+        vars:
+          ARCH: amd64
+          KEEP_OTHER_ABIS: "true"
+      - task: android:compile:go:shared
+        vars:
+          ARCH: arm
+          KEEP_OTHER_ABIS: "true"
+      - task: android:compile:go:shared
+        vars:
+          ARCH: 386
+          KEEP_OTHER_ABIS: "true"
+      - task: android:assemble:apk
+
   build:android:emu:
     desc: Build debug APK for the Android emulator (host ABI)
     cmds:

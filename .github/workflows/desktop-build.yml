@@ -26,6 +26,11 @@ on:
         required: false
         type: boolean
         default: false
+      android_all_abis:
+        description: Build APKs for all ABIs (arm64, x86_64, arm, 386)
+        required: false
+        type: boolean
+        default: false
     outputs:
       version:
         description: Resolved release version
@@ -547,11 +552,20 @@ jobs:
         run: |
           set -euo pipefail
           export ANDROID_KEY_PASSWORD="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
-          task package:android
+          if [ "${{ inputs.android_all_abis }}" = "true" ]; then
+            task package:fat
+          else
+            task package:android
+          fi
 
       - name: Build debug APK
         if: steps.android_sign.outputs.available != 'true' && (inputs.channel != 'release' || inputs.android_sign_release == false)
-        run: task build:android
+        run: |
+          if [ "${{ inputs.android_all_abis }}" = "true" ]; then
+            task build:android:all
+          else
+            task build:android
+          fi
 
       - name: Stage artifacts
         if: inputs.channel != 'release' || inputs.android_sign_release == false || steps.android_sign.outputs.available == 'true'
@@ -560,16 +574,37 @@ jobs:
           set -euo pipefail
           mkdir -p dist/release
           channel="${{ inputs.channel }}"
-          if [ "${{ steps.android_sign.outputs.available }}" = "true" ]; then
-            if [ "$channel" = "release" ]; then
-              apk_name="renbrowser-android.apk"
-            else
-              apk_name="renbrowser-android-signed.apk"
+          find bin -name "*.apk" | while read -r apk; do
+            base_name=$(basename "$apk")
+            abi=""
+            if [[ "$base_name" == *"arm64-v8a"* ]]; then
+              abi="arm64-v8a"
+            elif [[ "$base_name" == *"armeabi-v7a"* ]]; then
+              abi="armeabi-v7a"
+            elif [[ "$base_name" == *"x86_64"* ]]; then
+              abi="x86_64"
+            elif [[ "$base_name" == *"x86"* ]]; then
+              abi="x86"
+            elif [[ "$base_name" == *"universal"* ]]; then
+              abi="universal"
             fi
-          else
-            apk_name="renbrowser-android-debug.apk"
-          fi
-          cp bin/renbrowser.apk "dist/release/${apk_name}"
+            if [ -z "$abi" ]; then
+              abi="universal"
+            fi
+            suffix=""
+            if [ "${{ steps.android_sign.outputs.available }}" = "true" ]; then
+              if [ "$channel" = "release" ]; then
+                suffix=""
+              else
+                suffix="-signed"
+              fi
+            else
+              suffix="-debug"
+            fi
+            final_name="renbrowser-android-${abi}${suffix}.apk"
+            cp "$apk" "dist/release/${final_name}"
+            echo "Staged APK: dist/release/${final_name}"
+          done
 
       - name: Upload artifacts
         if: inputs.channel != 'release' || inputs.android_sign_release == false || steps.android_sign.outputs.available == 'true'

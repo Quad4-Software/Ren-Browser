@@ -218,8 +218,18 @@ tasks:
         # build assets, so restore it before invoking the wrapper.
         chmod +x ./gradlew
         ./gradlew assembleDebug
-        cp app/build/outputs/apk/debug/app-debug.apk "../../{{.BIN_DIR}}/{{.APP_NAME}}.apk"
-        echo "APK created: {{.BIN_DIR}}/{{.APP_NAME}}.apk"
+        mkdir -p "../../{{.BIN_DIR}}"
+        rm -f "../../{{.BIN_DIR}}"/*.apk
+        find app/build/outputs/apk/debug -name "*.apk" | while read -r apk; do
+          base_name=$(basename "$apk")
+          if [ "$base_name" = "app-debug.apk" ]; then
+            new_name="{{.APP_NAME}}.apk"
+          else
+            new_name=$(echo "$base_name" | sed "s/^app-/{{.APP_NAME}}-android-/")
+          fi
+          cp "$apk" "../../{{.BIN_DIR}}/$new_name"
+          echo "APK created: {{.BIN_DIR}}/$new_name"
+        done
 
   assemble:apk:release:
     summary: Assembles a release APK using Gradle (signed with the debug keystore unless ANDROID_KEYSTORE_FILE is set)
@@ -238,8 +248,18 @@ tasks:
         # build assets, so restore it before invoking the wrapper.
         chmod +x ./gradlew
         ./gradlew assembleRelease
-        cp app/build/outputs/apk/release/app-release.apk "../../{{.BIN_DIR}}/{{.APP_NAME}}.apk"
-        echo "Release APK created: {{.BIN_DIR}}/{{.APP_NAME}}.apk"
+        mkdir -p "../../{{.BIN_DIR}}"
+        rm -f "../../{{.BIN_DIR}}"/*.apk
+        find app/build/outputs/apk/release -name "*.apk" | while read -r apk; do
+          base_name=$(basename "$apk")
+          if [ "$base_name" = "app-release.apk" ] || [ "$base_name" = "app-release-unsigned.apk" ]; then
+            new_name="{{.APP_NAME}}.apk"
+          else
+            new_name=$(echo "$base_name" | sed "s/^app-/{{.APP_NAME}}-android-/")
+          fi
+          cp "$apk" "../../{{.BIN_DIR}}/$new_name"
+          echo "APK created: {{.BIN_DIR}}/$new_name"
+        done
 
   generate:android:overlay:
     internal: true
