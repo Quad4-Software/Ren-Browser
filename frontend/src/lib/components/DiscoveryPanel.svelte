@@ -48,8 +48,8 @@
 
   const placeholder = $derived(
     pool.length > 0
-      ? t("common.searchCount", { count: pool.length, noun: t("discovery.sites") })
-      : t("common.search", { noun: t("discovery.sites") }),
+      ? t("common.searchCount", { count: pool.length, noun: t("discovery.nodes") })
+      : t("common.search", { noun: t("discovery.nodes") }),
   );
 
   function openNode(node: Node) {
@@ -73,12 +73,7 @@
   }
 
   function formatMeta(node: Node): string {
-    const seen = t("common.lastSeen", { when: formatSeen(node.lastSeen) });
-    const hops = formatHops(node.hops);
-    if (!hops) {
-      return seen;
-    }
-    return `${seen} · ${hops}`;
+    return t("common.lastSeen", { when: formatSeen(node.lastSeen) });
   }
 
   const scanningDescription = $derived(t("discovery.scanning", { app: displayName }));
@@ -149,6 +144,9 @@
           <button onclick={() => openNode(node)}>
             <span class="row">
               <span class="name">{node.name || t("discovery.unnamedSite")}</span>
+              {#if node.hops >= 0}
+                <span class="hops-badge">{formatHops(node.hops)}</span>
+              {/if}
               <span
                 class="fav"
                 role="button"
@@ -270,15 +268,23 @@
 
   .fav {
     color: var(--ren-accent);
+    flex-shrink: 0;
+  }
+
+  .hops-badge {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--ren-muted);
+    border: 1px solid var(--ren-border);
+    border-radius: 999px;
+    padding: 0.1rem 0.45rem;
+    white-space: nowrap;
   }
 
   .meta {
-    flex-shrink: 0;
     color: var(--ren-muted);
     font-size: 0.85em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 45%;
+    word-break: break-all;
   }
 </style>

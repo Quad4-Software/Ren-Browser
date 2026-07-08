@@ -13,6 +13,7 @@
     title: string;
     subtitle: string;
     url: string;
+    hops?: number;
   };
 
   type SearchGroup = {
@@ -113,6 +114,7 @@
         title: node.name || t("discovery.unnamedSite"),
         subtitle: node.hash,
         url,
+        hops: node.hops,
       });
     }
 
@@ -136,7 +138,7 @@
     const order: SearchKind[] = ["history", "site", "favorite"];
     const labels: Record<SearchKind, string> = {
       history: t("search.history"),
-      site: t("search.sites"),
+      site: t("search.nodes"),
       favorite: t("search.favorites"),
     };
     const grouped: SearchGroup[] = [];
@@ -174,6 +176,15 @@
 
   function openResult(url: string) {
     onOpen(url, query.trim() || undefined);
+  }
+
+  function formatHops(hops: number): string {
+    if (hops < 0) {
+      return "";
+    }
+    return hops === 1
+      ? t("devtools.hopsCount", { count: hops })
+      : t("devtools.hopsCountPlural", { count: hops });
   }
 </script>
 
@@ -224,6 +235,9 @@
                 <span class="row">
                   <span class="icon" aria-hidden="true"><Icon size={14} /></span>
                   <span class="name">{result.title}</span>
+                  {#if result.kind === "site" && result.hops !== undefined && result.hops >= 0}
+                    <span class="hops-badge">{formatHops(result.hops)}</span>
+                  {/if}
                 </span>
                 <span class="meta">{result.subtitle}</span>
               </button>
@@ -321,6 +335,17 @@
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hops-badge {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--ren-muted);
+    border: 1px solid var(--ren-border);
+    border-radius: 999px;
+    padding: 0.1rem 0.45rem;
     white-space: nowrap;
   }
 

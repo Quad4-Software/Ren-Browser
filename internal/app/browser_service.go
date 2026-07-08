@@ -331,13 +331,27 @@ func (s *BrowserService) ListNodes() []nomadnet.Node {
 		if err != nil {
 			return nil
 		}
-		return stored
+		return enrichNodeHops(s, stored)
 	}
 	live := stack.Handler().List()
 	if err != nil || len(stored) == 0 {
-		return live
+		return enrichNodeHops(s, live)
 	}
-	return mergeNodes(stored, live)
+	return enrichNodeHops(s, mergeNodes(stored, live))
+}
+
+func enrichNodeHops(s *BrowserService, nodes []nomadnet.Node) []nomadnet.Node {
+	for i := range nodes {
+		hops := s.hopsForNode(nodes[i].Hash)
+		if hops < 0 {
+			continue
+		}
+		if hops > 255 {
+			hops = 255
+		}
+		nodes[i].Hops = uint8(hops)
+	}
+	return nodes
 }
 
 func mergeNodes(stored, live []nomadnet.Node) []nomadnet.Node {
