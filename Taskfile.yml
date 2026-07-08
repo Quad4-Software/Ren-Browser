@@ -283,6 +283,7 @@ tasks:
     summary: Runs the application
     cmds:
       - task: "{{.GOOS}}:run"
+        vars: { CLI_ARGS: '{{.CLI_ARGS}}' }
 
   dev:
     summary: Runs the application in development mode
