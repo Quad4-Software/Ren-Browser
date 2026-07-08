@@ -81,7 +81,7 @@ type Link struct {
 	trackPhyStats             bool
 
 	watchdogLock         bool
-	watchdogActive       bool
+	watchdogActive       atomic.Bool
 	establishmentTimeout time.Duration
 	keepalive            time.Duration
 	staleTime            time.Duration
@@ -133,7 +133,6 @@ func NewLink(dest *destination.Destination, transport *transport.Transport, netw
 		pathFinder:          pathfinder.NewPathFinder(),
 
 		watchdogLock:         false,
-		watchdogActive:       false,
 		establishmentTimeout: time.Duration(EstablishmentTimeoutPerHop * float64(time.Second)),
 		keepalive:            time.Duration(Keepalive * float64(time.Second)),
 		staleTime:            time.Duration(StaleTime * float64(time.Second)),
@@ -175,17 +174,17 @@ func HandleIncomingLinkRequest(pkt *packet.Packet, dest *destination.Destination
 
 func (l *Link) Establish() error {
 	l.mutex.Lock()
-	defer l.mutex.Unlock()
-
 	startTime := time.Now()
 	debug.Log(debug.DebugInfo, "Establishing link", "dest_hash", fmt.Sprintf("%x", l.destination.GetHash()))
 
 	if l.status.Load() != int32(StatusPending) {
 		debug.Log(debug.DebugInfo, "Cannot establish link: invalid status", "status", l.status.Load())
+		l.mutex.Unlock()
 		return errors.New("link already established or failed")
 	}
 
 	if l.destination == nil {
+		l.mutex.Unlock()
 		return errors.New("destination is nil")
 	}
 
@@ -193,16 +192,18 @@ func (l *Link) Establish() error {
 	l.status.Store(int32(StatusPending))
 	l.requestTime = time.Now()
 
-	if err := l.SendLinkRequest(); err != nil {
-		l.markInitiatorEstablishmentFailedLocked()
-		debug.Log(debug.DebugError, "Failed to send link request", "error", err, "elapsed", time.Since(startTime).Seconds())
+	if err := l.prepareLinkRequestLocked(); err != nil {
+		debug.Log(debug.DebugError, "Failed to prepare link request", "error", err, "elapsed", time.Since(startTime).Seconds())
+		l.mutex.Unlock()
 		return err
 	}
 
+	// Register before sending so an immediate link proof cannot race and miss.
+	// The mutex is released before SendPacket because synchronous interfaces
+	// may deliver the proof back into ValidateLinkProof on this goroutine.
 	if l.transport != nil {
 		l.transport.RegisterLink(l.linkID, l)
 
-		// If network interface is not set, try to find it from transport paths
 		if l.networkInterface == nil {
 			if ifaceName := l.transport.NextHopInterface(l.destination.GetHash()); ifaceName != "" {
 				if iface, err := l.transport.GetInterface(ifaceName); err == nil {
@@ -216,10 +217,44 @@ func (l *Link) Establish() error {
 		}
 	}
 
+	l.mutex.Unlock()
+
+	if err := l.sendPreparedLinkRequest(); err != nil {
+		l.mutex.Lock()
+		l.markInitiatorEstablishmentFailedLocked()
+		l.mutex.Unlock()
+		debug.Log(debug.DebugError, "Failed to send link request", "error", err, "elapsed", time.Since(startTime).Seconds())
+		return err
+	}
 	go l.startWatchdog()
 
 	debug.Log(debug.DebugInfo, "Link establishment initiated", "link_id", fmt.Sprintf("%x", l.linkID), "elapsed", time.Since(startTime).Seconds())
 	return nil
+}
+
+// Reestablish resets a closed or failed link and starts a new establishment attempt.
+func (l *Link) Reestablish() error {
+	l.mutex.Lock()
+	st := l.status.Load()
+	if st == int32(StatusPending) || st == int32(StatusHandshake) || st == int32(StatusActive) {
+		l.mutex.Unlock()
+		return errors.New("link already active or establishing")
+	}
+	l.resetForReconnectLocked()
+	l.mutex.Unlock()
+	return l.Establish()
+}
+
+func (l *Link) resetForReconnectLocked() {
+	l.status.Store(int32(StatusPending))
+	l.remoteIdentity = nil
+	l.sessionKey = nil
+	l.hmacKey = nil
+	l.establishedAt = time.Time{}
+	l.requestPacket = nil
+	l.requestTime = time.Time{}
+	l.teardownReason = 0
+	l.linkID = nil
 }
 
 // registerLinkPath copies the destination's transport path for this link's
@@ -357,7 +392,7 @@ func (l *Link) Request(path string, data any, timeout time.Duration) (*RequestRe
 			return nil, err
 		}
 
-		encrypted, err := l.encrypt(packedRequest)
+		encrypted, err := l.encryptLocked(packedRequest)
 		if err != nil {
 			return nil, err
 		}
@@ -445,7 +480,8 @@ func (r *RequestReceipt) GetMetadata() map[string]any {
 // Progress returns how many bytes of the response have arrived so far and
 // the total number of bytes expected, for responses delivered as a resource
 // transfer (e.g. large /file/ downloads). total is 0 until the resource
-// advertisement carrying the transfer size has been received; both values
+// advertisement carrying the transfer size has been received. Both values
+
 // are 0 for responses that never go through a resource transfer.
 func (r *RequestReceipt) Progress() (received int64, total int64) {
 	r.mutex.RLock()
@@ -724,7 +760,7 @@ func (l *Link) SendPacketWithContext(data []byte, context byte) error {
 	if context == packet.ContextResource || context == packet.ContextCacheReq {
 		wireData = data
 	} else {
-		wireData, err = l.encrypt(data)
+		wireData, err = l.encryptLocked(data)
 		if err != nil {
 			debug.Log(debug.DebugInfo, "Failed to encrypt packet", "error", err)
 			return err
@@ -840,10 +876,11 @@ func (l *Link) signalOutgoingResourceComplete() {
 }
 
 func (l *Link) handleResourceProof(pkt *packet.Packet) error {
-	if len(pkt.Data) < sha256.Size {
+	if len(pkt.Data) < sha256.Size*2 {
 		return nil
 	}
 	resourceHash := pkt.Data[:sha256.Size]
+	receivedProof := pkt.Data[sha256.Size : sha256.Size*2]
 
 	l.outgoingMu.Lock()
 	out := l.outgoingRes
@@ -852,6 +889,16 @@ func (l *Link) handleResourceProof(pkt *packet.Packet) error {
 		return nil
 	}
 	if !bytes.Equal(out.GetHash(), resourceHash) {
+		return nil
+	}
+	expectedProof, ok := out.ExpectedProof()
+	if !ok || !bytes.Equal(receivedProof, expectedProof) {
+		debug.Log(
+			debug.DebugVerbose,
+			"Ignoring invalid outgoing resource proof",
+			"resource_hash",
+			fmt.Sprintf("%x", resourceHash),
+		)
 		return nil
 	}
 
@@ -1256,14 +1303,9 @@ func (l *Link) dispatchOutgoingResourceRequests(plaintext []byte) {
 		}
 		_ = out.MarkOutboundPartSent(pi)
 	}
-	if out.OutboundTransferComplete() {
-		if err := l.SendPacketWithContext(nil, packet.ContextResource); err != nil {
-			return
-		}
-	}
 }
 
-func chooseHashmapUpdateSegment(out *resource.Resource, sdu int, anchorHash []byte, receiverMinPart int) (int, int, bool) {
+func chooseHashmapUpdateSegment(out *resource.Resource, sdu int, anchorHash []byte, receiverMinPart int) (segment int, nextMin int, ok bool) {
 	if out == nil || len(anchorHash) != resource.MapHashLen {
 		return 0, 0, false
 	}
@@ -1308,11 +1350,11 @@ func chooseHashmapUpdateSegment(out *resource.Resource, sdu int, anchorHash []by
 		return 0, 0, false
 	}
 
-	segment := (target + 1) / entries
+	segment = (target + 1) / entries
 	if segment <= 0 {
 		return 0, 0, false
 	}
-	nextMin := target + 1
+	nextMin = target + 1
 	return segment, nextMin, true
 }
 
@@ -1555,15 +1597,16 @@ func (l *Link) handleRequest(plaintext []byte, pkt *packet.Packet) error {
 		return errors.New("invalid request format")
 	}
 
-	requestedAtFloat, ok := requestData[0].(float64)
-	if !ok {
-		requestedAtInt, ok := requestData[0].(int64)
-		if !ok {
-			return fmt.Errorf("invalid requested_at type: %T", requestData[0])
-		}
-		requestedAtFloat = float64(requestedAtInt)
+	requestedAt, err := parseRequestedAt(requestData[0])
+	if err != nil {
+		return err
 	}
-	requestedAt := time.Unix(int64(requestedAtFloat), 0)
+	if !requestTimestampValid(requestedAt, time.Now()) {
+		debug.Log(debug.DebugInfo, "Rejecting request with stale requested_at",
+			"requested_at", requestedAt.Unix(),
+			"request_id", fmt.Sprintf("%x", pkt.TruncatedHash()))
+		return nil
+	}
 
 	pathHash, ok := requestData[1].([]byte)
 	if !ok {
@@ -1793,10 +1836,10 @@ func (l *Link) updateKeepaliveLocked() {
 }
 
 func (l *Link) handleLinkProof(pkt *packet.Packet, networkIface common.NetworkInterface) error {
-	if l.initiator {
-		return l.ValidateLinkProof(pkt, networkIface)
+	if !l.initiator {
+		return nil
 	}
-	return nil
+	return l.validateLinkProofLocked(pkt, networkIface)
 }
 
 func (l *Link) handleTeardown(plaintext []byte) error {
@@ -1823,23 +1866,31 @@ func maxFloat(a, b float64) float64 {
 	return b
 }
 
-func (l *Link) encrypt(data []byte) ([]byte, error) {
-	if l.sessionKey == nil || l.hmacKey == nil {
+func (l *Link) copySessionKeysLocked() (sessionKey, hmacKey []byte) {
+	if l.sessionKey != nil {
+		sessionKey = append([]byte(nil), l.sessionKey...)
+	}
+	if l.hmacKey != nil {
+		hmacKey = append([]byte(nil), l.hmacKey...)
+	}
+	return sessionKey, hmacKey
+}
+
+func encryptWithKeys(sessionKey, hmacKey, data []byte) ([]byte, error) {
+	if sessionKey == nil || hmacKey == nil {
 		return nil, errors.New("no session keys available")
 	}
 
-	block, err := aes.NewCipher(l.sessionKey)
+	block, err := aes.NewCipher(sessionKey)
 	if err != nil {
 		return nil, err
 	}
 
-	// Generate IV
 	iv := make([]byte, aes.BlockSize)
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		return nil, err
 	}
 
-	// Add PKCS7 padding
 	padding := aes.BlockSize - len(data)%aes.BlockSize
 	padtext := make([]byte, len(data)+padding)
 	copy(padtext, data)
@@ -1847,59 +1898,76 @@ func (l *Link) encrypt(data []byte) ([]byte, error) {
 		padtext[i] = byte(padding)
 	}
 
-	// Encrypt
 	mode := cipher.NewCBCEncrypter(block, iv) // #nosec G407
 	ciphertext := make([]byte, len(padtext))
 	mode.CryptBlocks(ciphertext, padtext)
 
-	// Combine IV and ciphertext for HMAC
 	signedParts := make([]byte, len(iv)+len(ciphertext))
 	copy(signedParts, iv)
 	copy(signedParts[len(iv):], ciphertext)
 
-	// Calculate HMAC
-	h := hmac.New(sha256.New, l.hmacKey)
+	h := hmac.New(sha256.New, hmacKey)
 	h.Write(signedParts)
 	mac := h.Sum(nil)
 
-	// Result: [IV] [Ciphertext] [HMAC]
 	result := make([]byte, len(signedParts)+len(mac))
 	copy(result, signedParts)
 	copy(result[len(signedParts):], mac)
 	return result, nil
 }
 
+func decryptWithKeys(sessionKey, hmacKey, data []byte) ([]byte, error) {
+	if sessionKey == nil || hmacKey == nil {
+		return nil, errors.New("no session keys available")
+	}
+	if len(data) < aes.BlockSize+aes.BlockSize+32 {
+		return nil, errors.New("data too short")
+	}
+
+	signedParts := data[:len(data)-32]
+	receivedMac := data[len(data)-32:]
+
+	h := hmac.New(sha256.New, hmacKey)
+	h.Write(signedParts)
+	expectedMac := h.Sum(nil)
+	if !hmac.Equal(receivedMac, expectedMac) {
+		return nil, errors.New("HMAC verification failed")
+	}
+
+	return cryptography.DecryptAES256CBC(sessionKey, signedParts)
+}
+
+func (l *Link) encrypt(data []byte) ([]byte, error) {
+	l.mutex.RLock()
+	sessionKey, hmacKey := l.copySessionKeysLocked()
+	l.mutex.RUnlock()
+	return encryptWithKeys(sessionKey, hmacKey, data)
+}
+
+// encryptLocked encrypts data while the link mutex is already held by the caller.
+func (l *Link) encryptLocked(data []byte) ([]byte, error) {
+	sessionKey, hmacKey := l.copySessionKeysLocked()
+	return encryptWithKeys(sessionKey, hmacKey, data)
+}
+
 func (l *Link) decrypt(data []byte) ([]byte, error) {
-	if l.sessionKey == nil || l.hmacKey == nil {
+	l.mutex.RLock()
+	sessionKey, hmacKey := l.copySessionKeysLocked()
+	l.mutex.RUnlock()
+	if sessionKey == nil || hmacKey == nil {
 		debug.Log(debug.DebugError, "Decrypt failed: no session keys", "link_id", fmt.Sprintf("%x", l.linkID))
 		return nil, errors.New("no session keys available")
 	}
-
-	// Minimum length: IV(16) + at least one block(16) + HMAC(32) = 64 bytes
 	if len(data) < aes.BlockSize+aes.BlockSize+32 {
 		debug.Log(debug.DebugError, "Decrypt failed: data too short", "length", len(data))
 		return nil, errors.New("data too short")
 	}
 
-	// Split into [IV + Ciphertext] and [HMAC]
-	signedParts := data[:len(data)-32]
-	receivedMac := data[len(data)-32:]
-
-	// Verify HMAC
-	h := hmac.New(sha256.New, l.hmacKey)
-	h.Write(signedParts)
-	expectedMac := h.Sum(nil)
-	if !hmac.Equal(receivedMac, expectedMac) {
-		debug.Log(debug.DebugError, "Decrypt failed: HMAC mismatch", "link_id", fmt.Sprintf("%x", l.linkID))
-		return nil, errors.New("HMAC verification failed")
-	}
-
-	plaintext, err := cryptography.DecryptAES256CBC(l.sessionKey, signedParts)
+	plaintext, err := decryptWithKeys(sessionKey, hmacKey, data)
 	if err != nil {
 		debug.Log(debug.DebugError, "Decrypt failed", "link_id", fmt.Sprintf("%x", l.linkID), "error", err)
 		return nil, err
 	}
-
 	return plaintext, nil
 }
 
@@ -2156,16 +2224,18 @@ func (l *Link) HandleProofRequest(packet *packet.Packet) bool {
 }
 
 func (l *Link) startWatchdog() {
-	if l.watchdogActive {
+	if !l.watchdogActive.CompareAndSwap(false, true) {
 		return
 	}
-
-	l.watchdogActive = true
 	go l.watchdog()
 }
 
 func (l *Link) watchdog() {
 	for l.GetStatus() != StatusClosed {
+		if GlobalPaused() {
+			time.Sleep(time.Duration(WatchdogInterval * float64(time.Second)))
+			continue
+		}
 		l.mutex.Lock()
 		if l.watchdogLock {
 			rttWait := WatchdogMinSleep
@@ -2283,7 +2353,7 @@ func (l *Link) watchdog() {
 		l.mutex.Unlock()
 		time.Sleep(time.Duration(sleepTime * float64(time.Second)))
 	}
-	l.watchdogActive = false
+	l.watchdogActive.Store(false)
 }
 
 func (l *Link) sendKeepalive() error {
@@ -2300,7 +2370,7 @@ func (l *Link) sendKeepalive() error {
 		Data:            keepaliveData,
 		CreateReceipt:   false,
 	}
-	encrypted, err := l.encrypt(keepaliveData)
+	encrypted, err := l.encryptLocked(keepaliveData)
 	if err != nil {
 		return err
 	}
@@ -2325,7 +2395,7 @@ func (l *Link) sendTeardownPacket() error {
 		Data:            l.linkID,
 		CreateReceipt:   false,
 	}
-	encrypted, err := l.encrypt(l.linkID)
+	encrypted, err := l.encryptLocked(l.linkID)
 	if err != nil {
 		return err
 	}
@@ -2375,7 +2445,9 @@ func signallingBytes(mtu int, mode byte) []byte {
 	return bytes
 }
 
-func (l *Link) SendLinkRequest() error {
+// prepareLinkRequestLocked builds the outbound link request and derives linkID.
+// The link mutex must be held by the caller.
+func (l *Link) prepareLinkRequestLocked() error {
 	if err := l.generateEphemeralKeys(); err != nil {
 		return err
 	}
@@ -2411,6 +2483,17 @@ func (l *Link) SendLinkRequest() error {
 	l.requestPacket = pkt
 	l.requestTime = time.Now()
 	l.status.Store(int32(StatusPending))
+	return nil
+}
+
+func (l *Link) sendPreparedLinkRequest() error {
+	pkt := l.requestPacket
+	if pkt == nil {
+		return errors.New("link request not prepared")
+	}
+	if l.transport == nil {
+		return errors.New("transport is nil")
+	}
 
 	sendStartTime := time.Now()
 	if err := l.transport.SendPacket(pkt); err != nil {
@@ -2555,6 +2638,12 @@ func (l *Link) resourceSDU() int {
 }
 
 func (l *Link) performHandshake() error {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	return l.performHandshakeLocked()
+}
+
+func (l *Link) performHandshakeLocked() error {
 	if len(l.peerPub) != KeySize {
 		return errors.New("invalid peer public key length")
 	}
@@ -2581,12 +2670,12 @@ func (l *Link) performHandshake() error {
 	l.derivedKey = derivedKey
 
 	if len(derivedKey) >= 64 {
-		l.hmacKey = derivedKey[0:32]
-		l.sessionKey = derivedKey[32:64]
+		l.hmacKey = append([]byte(nil), derivedKey[0:32]...)
+		l.sessionKey = append([]byte(nil), derivedKey[32:64]...)
 		debug.Log(debug.DebugInfo, "Session keys derived", "link_id", fmt.Sprintf("%x", l.linkID), "mode", l.mode, "initiator", l.initiator, "hmac_key", fmt.Sprintf("%x", l.hmacKey[:8]), "session_key", fmt.Sprintf("%x", l.sessionKey[:8]))
 	} else if len(derivedKey) >= 32 {
-		l.hmacKey = derivedKey[0:16]
-		l.sessionKey = derivedKey[16:32]
+		l.hmacKey = append([]byte(nil), derivedKey[0:16]...)
+		l.sessionKey = append([]byte(nil), derivedKey[16:32]...)
 	}
 
 	l.status.Store(int32(StatusHandshake))
@@ -2595,14 +2684,14 @@ func (l *Link) performHandshake() error {
 }
 
 func (l *Link) sendLinkProof(ownerIdentity *identity.Identity) error {
-	debug.Log(debug.DebugError, "Generating link proof", "link_id", fmt.Sprintf("%x", l.linkID), "initiator", l.initiator, "has_interface", l.networkInterface != nil)
+	debug.Log(debug.DebugInfo, "Generating link proof", "link_id", fmt.Sprintf("%x", l.linkID), "initiator", l.initiator, "has_interface", l.networkInterface != nil)
 
 	proofPkt, err := l.GenerateLinkProof(ownerIdentity)
 	if err != nil {
 		return err
 	}
 
-	debug.Log(debug.DebugError, "Link proof packet created", "dest_hash", fmt.Sprintf("%x", proofPkt.DestinationHash), "packet_type", fmt.Sprintf("0x%02x", proofPkt.PacketType))
+	debug.Log(debug.DebugVerbose, "Link proof packet created", "dest_hash", fmt.Sprintf("%x", proofPkt.DestinationHash), "packet_type", fmt.Sprintf("0x%02x", proofPkt.PacketType))
 
 	// For responder links (not initiator), send proof directly through the receiving interface
 	if !l.initiator && l.networkInterface != nil {
@@ -2610,12 +2699,12 @@ func (l *Link) sendLinkProof(ownerIdentity *identity.Identity) error {
 			return fmt.Errorf("failed to pack proof packet: %w", err)
 		}
 
-		debug.Log(debug.DebugError, "Sending proof through interface", "raw_len", len(proofPkt.Raw), "interface", l.networkInterface.GetName())
+		debug.Log(debug.DebugVerbose, "Sending proof through interface", "raw_len", len(proofPkt.Raw), "interface", l.networkInterface.GetName())
 
 		if err := l.networkInterface.Send(proofPkt.Raw, ""); err != nil {
 			return fmt.Errorf("failed to send link proof through interface: %w", err)
 		}
-		debug.Log(debug.DebugError, "Link proof sent through interface", "link_id", fmt.Sprintf("%x", l.linkID), "interface", l.networkInterface.GetName())
+		debug.Log(debug.DebugInfo, "Link proof sent through interface", "link_id", fmt.Sprintf("%x", l.linkID), "interface", l.networkInterface.GetName())
 		return nil
 	}
 
@@ -2682,6 +2771,14 @@ func (l *Link) GenerateLinkProof(ownerIdentity *identity.Identity) (*packet.Pack
 }
 
 func (l *Link) ValidateLinkProof(pkt *packet.Packet, networkIface common.NetworkInterface) error {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	return l.validateLinkProofLocked(pkt, networkIface)
+}
+
+// validateLinkProofLocked completes initiator-side link establishment after
+// receiving the responder's signed proof. The link mutex must be held.
+func (l *Link) validateLinkProofLocked(pkt *packet.Packet, networkIface common.NetworkInterface) error {
 	startTime := time.Now()
 	debug.Log(debug.DebugInfo, "Validating link proof", "link_id", fmt.Sprintf("%x", l.linkID), "status", l.status.Load(), "initiator", l.initiator, "has_interface", networkIface != nil, "proof_data_len", len(pkt.Data))
 	st := l.status.Load()
@@ -2737,21 +2834,19 @@ func (l *Link) ValidateLinkProof(pkt *packet.Packet, networkIface common.Network
 	}
 	debug.Log(debug.DebugInfo, "Link proof signature validated successfully", "link_id", fmt.Sprintf("%x", l.linkID[:8]))
 
-	if err := l.performHandshake(); err != nil {
+	if err := l.performHandshakeLocked(); err != nil {
 		l.markInitiatorEstablishmentFailedLocked()
 		return fmt.Errorf("handshake failed: %w", err)
 	}
 
 	l.updateMDU()
 
-	l.mutex.Lock()
 	l.rtt = time.Since(l.requestTime).Seconds()
 	l.establishedAt = time.Now()
 	if l.rtt > 0 {
 		l.updateKeepaliveLocked()
 	}
 	logRtt := l.rtt
-	l.mutex.Unlock()
 
 	l.status.Store(int32(StatusActive))
 
@@ -2778,7 +2873,8 @@ func (l *Link) ValidateLinkProof(pkt *packet.Packet, networkIface common.Network
 		}
 	}
 
-	encrypted, err := l.encrypt(rttData)
+	sessionKey, hmacKey := l.copySessionKeysLocked()
+	encrypted, err := encryptWithKeys(sessionKey, hmacKey, rttData)
 	if err != nil {
 		debug.Log(debug.DebugError, "Failed to encrypt RTT packet", "error", err, "link_id", fmt.Sprintf("%x", l.linkID))
 	} else {
