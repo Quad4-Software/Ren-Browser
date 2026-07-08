@@ -24,21 +24,31 @@
   let { nodes, favorites, slowMode, onOpen, onFavorite, onSlowModeChange }: Props = $props();
 
   let query = $state("");
+  let favoritesOnly = $state(false);
 
-  const filtered = $derived(() => {
+  function isFavorite(hash: string): boolean {
+    const url = `${hash}:/page/index.mu`;
+    return favorites.some((f) => f.startsWith(hash) || f === url);
+  }
+
+  const pool = $derived.by(() =>
+    favoritesOnly ? nodes.filter((node) => isFavorite(node.hash)) : nodes,
+  );
+
+  const filtered = $derived.by(() => {
     const q = query.trim().toLowerCase();
     if (!q) {
-      return nodes;
+      return pool;
     }
-    return nodes.filter((node) => {
+    return pool.filter((node) => {
       const hay = `${node.name} ${node.hash}`.toLowerCase();
       return hay.includes(q);
     });
   });
 
   const placeholder = $derived(
-    nodes.length > 0
-      ? t("common.searchCount", { count: nodes.length, noun: t("discovery.sites") })
+    pool.length > 0
+      ? t("common.searchCount", { count: pool.length, noun: t("discovery.sites") })
       : t("common.search", { noun: t("discovery.sites") }),
   );
 
@@ -72,11 +82,6 @@
   }
 
   const scanningDescription = $derived(t("discovery.scanning", { app: displayName }));
-
-  function isFavorite(hash: string): boolean {
-    const url = `${hash}:/page/index.mu`;
-    return favorites.some((f) => f.startsWith(hash) || f === url);
-  }
 </script>
 
 <section class="discovery">
@@ -86,16 +91,28 @@
         <h2>{t("discovery.title")}</h2>
         <p>{t("discovery.subtitle")}</p>
       </div>
-      <button
-        type="button"
-        class="ren-icon-btn slow-btn"
-        class:active={slowMode}
-        aria-label={slowMode ? t("discovery.slowModeOn") : t("discovery.slowModeOff")}
-        title={t("discovery.slowMode")}
-        onclick={() => onSlowModeChange(!slowMode)}
-      >
-        <Snail size={16} />
-      </button>
+      <div class="header-actions">
+        <button
+          type="button"
+          class="ren-icon-btn filter-btn"
+          class:active={favoritesOnly}
+          aria-label={favoritesOnly ? t("discovery.favoritesOnlyOn") : t("discovery.favoritesOnlyOff")}
+          title={t("discovery.favoritesOnly")}
+          onclick={() => (favoritesOnly = !favoritesOnly)}
+        >
+          <Star size={16} fill={favoritesOnly ? "currentColor" : "none"} />
+        </button>
+        <button
+          type="button"
+          class="ren-icon-btn filter-btn"
+          class:active={slowMode}
+          aria-label={slowMode ? t("discovery.slowModeOn") : t("discovery.slowModeOff")}
+          title={t("discovery.slowMode")}
+          onclick={() => onSlowModeChange(!slowMode)}
+        >
+          <Snail size={16} />
+        </button>
+      </div>
     </div>
     <input
       class="search ren-input"
@@ -111,7 +128,14 @@
     <EmptyState title={t("discovery.noSites")} description={scanningDescription}>
       <Compass size={22} />
     </EmptyState>
-  {:else if filtered().length === 0}
+  {:else if favoritesOnly && pool.length === 0}
+    <EmptyState
+      title={t("discovery.noFavorites")}
+      description={t("discovery.noFavoritesDescription")}
+    >
+      <Star size={22} />
+    </EmptyState>
+  {:else if filtered.length === 0}
     <EmptyState
       title={t("discovery.noMatching")}
       description={t("common.nothingMatches", { query: query.trim() })}
@@ -120,7 +144,7 @@
     </EmptyState>
   {:else}
     <ul>
-      {#each filtered() as node (node.hash)}
+      {#each filtered as node (node.hash)}
         <li>
           <button onclick={() => openNode(node)}>
             <span class="row">
@@ -181,12 +205,15 @@
     font-size: 0.88rem;
   }
 
-  .slow-btn {
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
     flex-shrink: 0;
     margin-left: auto;
   }
 
-  .slow-btn.active {
+  .filter-btn.active {
     color: var(--ren-accent);
     background: color-mix(in srgb, var(--ren-accent) 14%, var(--ren-chrome-bg));
   }

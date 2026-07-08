@@ -205,6 +205,11 @@
     "slowMode": "",
     "slowModeOn": "",
     "slowModeOff": "",
+    "favoritesOnly": "",
+    "favoritesOnlyOn": "",
+    "favoritesOnlyOff": "",
+    "noFavorites": "",
+    "noFavoritesDescription": "",
     "favoriteSite": ""
   },
   "history": {

@@ -205,6 +205,11 @@
     "slowMode": "Slow discovery updates",
     "slowModeOn": "Slow mode on",
     "slowModeOff": "Slow mode off",
+    "favoritesOnly": "Show favorites only",
+    "favoritesOnlyOn": "Favorites only on",
+    "favoritesOnlyOff": "Favorites only off",
+    "noFavorites": "No favorite sites discovered",
+    "noFavoritesDescription": "Star a site in Discovery or mark a page as a favorite while browsing.",
     "favoriteSite": "Favorite site"
   },
   "history": {

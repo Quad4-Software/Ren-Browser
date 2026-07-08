@@ -205,6 +205,11 @@
     "slowMode": "Actualizaciones lentas de descubrimiento",
     "slowModeOn": "Modo lento activado",
     "slowModeOff": "Modo lento desactivado",
+    "favoritesOnly": "Mostrar solo favoritos",
+    "favoritesOnlyOn": "Solo favoritos activado",
+    "favoritesOnlyOff": "Solo favoritos desactivado",
+    "noFavorites": "No hay sitios favoritos descubiertos",
+    "noFavoritesDescription": "Marca un sitio en Descubrir o guarda una página como favorita al navegar.",
     "favoriteSite": "Marcar sitio como favorito"
   },
   "history": {

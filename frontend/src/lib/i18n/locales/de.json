@@ -205,6 +205,11 @@
     "slowMode": "Langsame Entdeckungsaktualisierung",
     "slowModeOn": "Langsamer Modus ein",
     "slowModeOff": "Langsamer Modus aus",
+    "favoritesOnly": "Nur Favoriten anzeigen",
+    "favoritesOnlyOn": "Nur Favoriten ein",
+    "favoritesOnlyOff": "Nur Favoriten aus",
+    "noFavorites": "Keine favorisierten Seiten entdeckt",
+    "noFavoritesDescription": "Markiere eine Seite in Entdecken oder setze eine Seite beim Surfen als Favorit.",
     "favoriteSite": "Seite favorisieren"
   },
   "history": {
