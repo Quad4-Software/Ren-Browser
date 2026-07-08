@@ -1,5 +1,4 @@
 - Android user storage over app storage
-- Expanded backend tests and UI regression tests
-- Memory profiling 
+- Memory profiling
 - Publish image on docker hub
 - Flatpak

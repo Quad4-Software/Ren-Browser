@@ -1,6 +1,7 @@
 # Pinned third-party actions (bump tag and SHA together when upgrading):
 #   actions/checkout@v7.0.0                    9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 #   actions/upload-artifact@v7.0.1             043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+#   actions/cache@v4.2.3                       5a3ec84eff668545956fd18022155c47e93e2684
 #   aquasecurity/trivy-action@0.35.0           57a97c7e7821a5776cebc9bb87c984fa69cba8f1
 
 name: CI
@@ -14,6 +15,7 @@ on:
       - beta
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -101,8 +103,33 @@ jobs:
         with:
           install-wails: "false"
 
+      - name: Restore benchmark baseline
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: bench/baseline
+          key: go-bench-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            go-bench-${{ runner.os }}-
+
       - name: Run benchmarks
         run: task bench:go
+
+      - name: Compare benchmarks
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f bench/baseline/go.txt ]; then
+            task bench:compare BENCH_BASELINE=bench/baseline/go.txt
+          else
+            echo "No prior benchmark baseline; skipping regression gate."
+          fi
+
+      - name: Save benchmark baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p bench/baseline
+          cp bench/go.txt bench/baseline/go.txt
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -111,6 +138,70 @@ jobs:
           path: bench/go.txt
           if-no-files-found: error
           retention-days: 30
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-wails: "false"
+          install-linux-deps: "true"
+          cache-node: "true"
+
+      - name: Go coverage
+        run: task coverage:go
+
+      - name: Frontend coverage
+        run: task coverage:frontend
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: coverage-reports
+          path: |
+            coverage/go.out
+            coverage/go.html
+            coverage/go-func.txt
+            coverage/frontend
+          if-no-files-found: error
+          retention-days: 14
+
+  e2e:
+    name: E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-wails: "false"
+          install-linux-deps: "true"
+          cache-node: "true"
+
+      - name: Playwright E2E
+        run: task test:e2e
+
+      - name: Playwright visual regression
+        continue-on-error: true
+        run: task test:visual
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          if-no-files-found: ignore
+          retention-days: 7
 
   brand:
     name: Brand drift
@@ -500,6 +591,11 @@ jobs:
       - name: Build
         run: task ${{ matrix.task }}
 
+      - name: Server smoke
+        if: matrix.target == 'server-linux-amd64'
+        shell: bash
+        run: bash build/scripts/server-smoke.sh "${{ matrix.artifact }}"
+
       - name: Upload binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
@@ -514,6 +610,8 @@ jobs:
     needs:
       - go
       - benchmark
+      - coverage
+      - e2e
       - brand
       - frontend
       - frontend-artifact
@@ -532,6 +630,8 @@ jobs:
           for result in \
             "${{ needs.go.result }}" \
             "${{ needs.benchmark.result }}" \
+            "${{ needs.coverage.result }}" \
+            "${{ needs.e2e.result }}" \
             "${{ needs.brand.result }}" \
             "${{ needs.frontend.result }}" \
             "${{ needs.security.result }}" \

@@ -20,7 +20,13 @@ permissions:
   actions: read
 
 jobs:
+  ci:
+    name: Require CI
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
   build:
+    needs: ci
     uses: ./.github/workflows/desktop-build.yml
     with:
       channel: release

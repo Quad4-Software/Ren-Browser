@@ -131,13 +131,26 @@ tasks:
     cmds:
       - go test -fuzz='^FuzzParseURL$' -fuzztime=30s ./internal/nomadnet/...
       - go test -fuzz='^FuzzParseURLFields$' -fuzztime=30s ./internal/nomadnet/...
+      - go test -fuzz='^FuzzCheckResponseSize$' -fuzztime=30s ./internal/nomadnet/...
       - go test -fuzz='^FuzzResolveNavigation$' -fuzztime=30s ./internal/micron/...
       - go test -fuzz='^FuzzSanitizeHTML$' -fuzztime=30s ./internal/content/...
       - go test -fuzz='^FuzzVerifyPassword$' -fuzztime=30s ./internal/auth/...
       - go test -fuzz='^FuzzHashPassword$' -fuzztime=30s ./internal/auth/...
+      - go test -fuzz='^FuzzNewSessionToken$' -fuzztime=30s ./internal/auth/...
       - go test -fuzz='^FuzzNormalizeIP$' -fuzztime=30s ./internal/auth/...
       - go test -fuzz='^FuzzClientHash$' -fuzztime=30s ./internal/auth/...
+      - go test -fuzz='^FuzzClientIP$' -fuzztime=30s ./internal/auth/...
       - go test -fuzz='^FuzzParseWhitelist$' -fuzztime=30s ./internal/auth/...
+      - go test -fuzz='^FuzzWhitelistAllows$' -fuzztime=30s ./internal/auth/...
+      - go test -fuzz='^FuzzUnwrap$' -fuzztime=30s ./internal/deeplink/...
+      - go test -fuzz='^FuzzHandleIncoming$' -fuzztime=30s ./internal/deeplink/...
+      - go test -fuzz='^FuzzValidateIdentityID$' -fuzztime=30s ./internal/rns/...
+      - go test -fuzz='^FuzzValidateIdentityName$' -fuzztime=30s ./internal/rns/...
+      - go test -fuzz='^FuzzParseIdentityRegistryJSON$' -fuzztime=30s ./internal/rns/...
+      - go test -fuzz='^FuzzValidateIdentityKeyData$' -fuzztime=30s ./internal/rns/...
+      - go test -fuzz='^FuzzValidateRSG$' -fuzztime=30s ./internal/plugins/...
+      - go test -fuzz='^FuzzAssessManifestJSON$' -fuzztime=30s ./internal/plugins/...
+      - go test -fuzz='^FuzzExtractURLsFromText$' -fuzztime=30s ./internal/plugins/...
       - go test -tags server -fuzz='^FuzzGuardLogin$' -fuzztime=30s ./internal/serverauth/...
       - go test -tags server -fuzz='^FuzzGuardRoute$' -fuzztime=30s ./internal/serverauth/...
     env:
@@ -157,6 +170,55 @@ tasks:
     cmds:
       - mkdir -p bench
       - go test -run='^$' -bench=. -benchmem -count=1 ./internal/cache/... ./internal/content/... ./internal/nomadnet/... | tee bench/go.txt
+    env:
+      GOFLAGS: "-mod=vendor"
+
+  bench:compare:
+    desc: Compare bench/go.txt against a baseline (BENCH_BASELINE path)
+    cmds:
+      - bash build/scripts/bench-compare.sh "{{.BENCH_BASELINE}}" "{{.BENCH_CURRENT | default "bench/go.txt"}}"
+
+  coverage:go:
+    desc: Generate Go coverage report under coverage/
+    cmds:
+      - bash build/scripts/coverage-go.sh
+    env:
+      GOFLAGS: "-mod=vendor"
+
+  coverage:frontend:
+    desc: Generate Vitest coverage report under coverage/frontend
+    deps:
+      - common:install:frontend:deps
+    cmds:
+      - pnpm --dir frontend run test:coverage
+
+  test:e2e:
+    desc: Playwright E2E against renbrowser-server
+    deps:
+      - common:install:frontend:deps
+    cmds:
+      - task: common:build:server
+      - pnpm --dir frontend exec playwright install --with-deps chromium
+      - pnpm --dir frontend run test:e2e
+    env:
+      GOFLAGS: "-mod=vendor"
+
+  test:visual:
+    desc: Playwright visual regression against renbrowser-server
+    deps:
+      - common:install:frontend:deps
+    cmds:
+      - task: common:build:server
+      - pnpm --dir frontend exec playwright install --with-deps chromium
+      - pnpm --dir frontend run test:visual
+    env:
+      GOFLAGS: "-mod=vendor"
+
+  test:server:smoke:
+    desc: Start renbrowser-server and verify HTTP responds
+    cmds:
+      - task: common:build:server
+      - bash build/scripts/server-smoke.sh
     env:
       GOFLAGS: "-mod=vendor"
 

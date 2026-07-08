@@ -28,6 +28,11 @@ task dev
 | `task run` | Run built binary |
 | `task check` | Full quality gate (Go + frontend) |
 | `task test` | All unit tests |
+| `task test:e2e` | Playwright E2E against `renbrowser-server` |
+| `task test:visual` | Visual regression vs `screenshots/` baselines |
+| `task test:server:smoke` | Start server binary and verify HTTP |
+| `task coverage:go` | Go coverage report under `coverage/` |
+| `task coverage:frontend` | Vitest coverage under `coverage/frontend` |
 | `task test:interop` | Live Reticulum tests (needs network) |
 | `task build:server` | Headless server binary |
 | `task run:server` | Run server locally |
@@ -62,6 +67,18 @@ task test:go:race
 task test:go:hard
 task fuzz:go
 ```
+
+E2E and coverage:
+
+```sh
+task test:e2e
+task test:visual
+task coverage:go
+task coverage:frontend
+task test:server:smoke
+```
+
+Nightly CI also runs `task test:interop` via `.github/workflows/interop.yml`.
 
 ## Frontend only
 

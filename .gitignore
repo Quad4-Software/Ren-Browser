@@ -6,6 +6,7 @@ bin/
 bench/
 sbom/
 reports/
+coverage/
 .docker/
 *.exe
 /renbrowser
@@ -17,6 +18,8 @@ dist/
 frontend/dist
 frontend/node_modules
 frontend/.svelte-kit
+frontend/playwright-report
+frontend/test-results
 frontend/public/vendor/micron-parser-go/
 
 # WASM modules (fetched at build or TinyGo output; built in release CI)

@@ -3,6 +3,7 @@ package deeplink
 
 import (
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"unicode/utf8"
@@ -320,12 +321,7 @@ func isBuiltinScheme(lower string) bool {
 
 func isBuiltinName(name string) bool {
 	name = strings.ToLower(strings.TrimSpace(strings.TrimSuffix(name, ":")))
-	for _, b := range builtinNames() {
-		if name == b {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(builtinNames(), name)
 }
 
 func builtinNames() []string {

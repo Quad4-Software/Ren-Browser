@@ -1,8 +1,16 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["src/main.ts", "vite.config.ts", "vitest.config.ts", "src/**/*.test.ts"],
-  "project": ["src/**/*.{ts,svelte}", "vite.config.ts", "vitest.config.ts"],
-  "ignore": ["bindings/**", "dist/**"],
+  "entry": [
+    "src/main.ts",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "e2e/**/*.ts",
+    "scripts/**/*.{js,mjs}",
+    "src/**/*.test.ts"
+  ],
+  "project": ["src/**/*.{ts,svelte}", "e2e/**/*.ts", "scripts/**/*.{js,mjs}"],
+  "ignore": ["bindings/**", "dist/**", "playwright-report/**", "test-results/**"],
   "ignoreDependencies": ["@types/dompurify", "tailwindcss", "tslib"],
   "ignoreIssues": {
     "src/lib/**": ["exports", "types"]

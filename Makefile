@@ -3,7 +3,7 @@
 
 SHELL := /bin/bash
 .PHONY: help check format test test-go test-regression frontend-check frontend-test frontend-fmt \
-	build build-frontend build-server screenshots dev clean vendor mod-tidy gosec sbom
+	build build-frontend build-server screenshots e2e coverage-go server-smoke dev clean vendor mod-tidy gosec sbom
 
 export GOFLAGS ?= -mod=vendor
 export PNPM ?= pnpm
@@ -20,6 +20,9 @@ help:
 		"  make check            Run Go and frontend quality gates" \
 		"  make format           Format Go and frontend sources" \
 		"  make test             Run Go and frontend unit tests" \
+		"  make e2e              Playwright E2E against renbrowser-server" \
+		"  make coverage-go      Write Go coverage under coverage/" \
+		"  make server-smoke     Start server binary and hit HTTP" \
 		"  make build            Build desktop binary (GTK4/WebKitGTK)" \
 		"  make build-server     Build headless server binary" \
 		"  make screenshots      Regenerate README preview images" \
@@ -87,6 +90,16 @@ build-server: build-frontend
 screenshots: build-server
 	$(PNPM) --dir frontend exec playwright install chromium
 	$(PNPM) --dir frontend run screenshots
+
+e2e: build-server
+	$(PNPM) --dir frontend exec playwright install chromium
+	$(PNPM) --dir frontend run test:e2e
+
+coverage-go:
+	bash build/scripts/coverage-go.sh
+
+server-smoke: build-server
+	bash build/scripts/server-smoke.sh
 
 dev:
 	wails3 dev -config ./build/config.yml

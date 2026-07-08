@@ -1,0 +1,16 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`docs render snapshots > matches external link rewrite snapshot 1`] = `
+"<p>See <span class="docs-external-ref" data-href="https://reticulum.network/">Reticulum</span> and <a href="docs:?lang=en&amp;page=faq">local</a>.</p>
+"
+`;
+
+exports[`docs render snapshots > matches markdown chrome snapshot 1`] = `
+"<h1>Getting started</h1>
+<ul>
+<li>Install</li>
+<li>Configure</li>
+</ul>
+<p><a href="docs:?lang=en&amp;page=installation">Next</a></p>
+"
+`;

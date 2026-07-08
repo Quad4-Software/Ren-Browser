@@ -60,6 +60,9 @@ jobs:
       - name: Build server
         run: task build:server
 
+      - name: Server smoke
+        run: bash build/scripts/server-smoke.sh
+
       - name: Prepare image context
         shell: bash
         run: |
