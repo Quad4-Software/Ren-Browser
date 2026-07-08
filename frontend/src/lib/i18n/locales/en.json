@@ -48,6 +48,7 @@
     "identifyTitle": "Identify yourself to this node",
     "downloads": "Downloads",
     "history": "History",
+    "search": "Search",
     "discovery": "Discovery",
     "devtools": "Developer tools",
     "settings": "Settings",
@@ -57,6 +58,7 @@
   "mobileNav": {
     "label": "Mobile navigation",
     "browse": "Browse",
+    "search": "Search",
     "discover": "Discover",
     "history": "History",
     "downloads": "Downloads",
@@ -183,6 +185,7 @@
     "reload": "Reload page",
     "devtools": "Developer tools",
     "findInPage": "Find in page",
+    "search": "Search panel",
     "discovery": "Discovery panel",
     "settings": "Settings panel",
     "newTab": "New tab",
@@ -212,6 +215,20 @@
     "noMatching": "No matching pages",
     "clear": "Clear history",
     "clearConfirm": "Clear all browsing history? This cannot be undone."
+  },
+  "search": {
+    "title": "Search",
+    "subtitle": "Find pages, sites, and favorites across the mesh.",
+    "entries": "entries",
+    "history": "History",
+    "sites": "Sites",
+    "favorites": "Favorites",
+    "recent": "Recent",
+    "noData": "Nothing to search yet",
+    "noDataDescription": "Browse the mesh or favorite sites and they will appear here.",
+    "noMatching": "No matching results",
+    "noRecent": "No recent pages",
+    "noRecentDescription": "Pages you visit will show up here for quick access."
   },
   "devtools": {
     "console": "Console",

@@ -1852,6 +1852,9 @@ export function createApp() {
         findOpen = true;
         activePanel = "browser";
         break;
+      case "search":
+        setPanel("search");
+        break;
       case "discovery":
         setPanel("discovery");
         break;

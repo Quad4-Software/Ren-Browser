@@ -48,6 +48,7 @@
     "identifyTitle": "Identificarse en este nodo",
     "downloads": "Descargas",
     "history": "Historial",
+    "search": "Buscar",
     "discovery": "Descubrir",
     "devtools": "Herramientas de desarrollo",
     "settings": "Ajustes",
@@ -57,6 +58,7 @@
   "mobileNav": {
     "label": "Navegación móvil",
     "browse": "Explorar",
+    "search": "Buscar",
     "discover": "Descubrir",
     "history": "Historial",
     "downloads": "Descargas",
@@ -183,6 +185,7 @@
     "reload": "Recargar página",
     "devtools": "Herramientas de desarrollo",
     "findInPage": "Buscar en la página",
+    "search": "Panel de búsqueda",
     "discovery": "Panel de descubrimiento",
     "settings": "Panel de ajustes",
     "newTab": "Nueva pestaña",
@@ -212,6 +215,20 @@
     "noMatching": "No hay páginas coincidentes",
     "clear": "Borrar historial",
     "clearConfirm": "¿Borrar todo el historial de navegación? Esto no se puede deshacer."
+  },
+  "search": {
+    "title": "Buscar",
+    "subtitle": "Encuentra páginas, sitios y favoritos en la malla.",
+    "entries": "entradas",
+    "history": "Historial",
+    "sites": "Sitios",
+    "favorites": "Favoritos",
+    "recent": "Recientes",
+    "noData": "Nada que buscar aún",
+    "noDataDescription": "Navega por la malla o marca sitios como favoritos.",
+    "noMatching": "No hay resultados coincidentes",
+    "noRecent": "No hay páginas recientes",
+    "noRecentDescription": "Las páginas que visites aparecerán aquí para acceso rápido."
   },
   "devtools": {
     "console": "Consola",

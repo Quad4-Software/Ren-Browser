@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   clampBackOffset,
   clampPullOffset,
+  getEffectiveScrollTop,
   isBackEdgeStart,
   isGestureSuppressedTarget,
   shouldTriggerBack,
@@ -49,5 +50,21 @@ describe("mobile gestures", () => {
     expect(isGestureSuppressedTarget(overlay)).toBe(true);
 
     overlay.remove();
+  });
+
+  it("reads scroll position from scrollable ancestors", () => {
+    const boundary = document.createElement("section");
+    const parent = document.createElement("div");
+    const child = document.createElement("div");
+    parent.appendChild(child);
+    boundary.appendChild(parent);
+    document.body.appendChild(boundary);
+
+    Object.defineProperty(parent, "scrollTop", { value: 24, configurable: true });
+
+    expect(getEffectiveScrollTop(child, boundary)).toBe(24);
+    expect(getEffectiveScrollTop(null, boundary)).toBe(0);
+
+    boundary.remove();
   });
 });

@@ -9,6 +9,7 @@
     History,
     Moon,
     RefreshCw,
+    Search,
     Settings,
     Sun,
     Terminal,
@@ -181,6 +182,14 @@
         onClose={onCloseDownloads}
       />
     </div>
+    <button
+      class="ren-icon-btn mobile-nav-dup"
+      class:active={activePanel === "search"}
+      aria-label={t("chrome.search")}
+      onclick={() => onPanel("search")}
+    >
+      <Search size={16} />
+    </button>
     <button
       class="ren-icon-btn mobile-nav-dup"
       class:active={activePanel === "history"}

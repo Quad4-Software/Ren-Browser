@@ -48,6 +48,7 @@
     "identifyTitle": "Bei diesem Knoten identifizieren",
     "downloads": "Downloads",
     "history": "Verlauf",
+    "search": "Suche",
     "discovery": "Entdecken",
     "devtools": "Entwicklertools",
     "settings": "Einstellungen",
@@ -57,6 +58,7 @@
   "mobileNav": {
     "label": "Mobile Navigation",
     "browse": "Durchsuchen",
+    "search": "Suche",
     "discover": "Entdecken",
     "history": "Verlauf",
     "downloads": "Downloads",
@@ -183,6 +185,7 @@
     "reload": "Seite neu laden",
     "devtools": "Entwicklertools",
     "findInPage": "Auf Seite suchen",
+    "search": "Such-Panel",
     "discovery": "Entdecken-Panel",
     "settings": "Einstellungen-Panel",
     "newTab": "Neuer Tab",
@@ -212,6 +215,20 @@
     "noMatching": "Keine passenden Seiten",
     "clear": "Verlauf löschen",
     "clearConfirm": "Gesamten Browserverlauf löschen? Dies kann nicht rückgängig gemacht werden."
+  },
+  "search": {
+    "title": "Suche",
+    "subtitle": "Seiten, Sites und Favoriten im Mesh finden.",
+    "entries": "Einträge",
+    "history": "Verlauf",
+    "sites": "Seiten",
+    "favorites": "Favoriten",
+    "recent": "Zuletzt",
+    "noData": "Noch nichts zu suchen",
+    "noDataDescription": "Durchsuchen Sie das Mesh oder markieren Sie Sites als Favoriten.",
+    "noMatching": "Keine passenden Ergebnisse",
+    "noRecent": "Keine kürzlichen Seiten",
+    "noRecentDescription": "Besuchte Seiten erscheinen hier für den schnellen Zugriff."
   },
   "devtools": {
     "console": "Konsole",

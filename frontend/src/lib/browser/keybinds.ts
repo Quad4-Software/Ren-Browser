@@ -6,6 +6,7 @@ export type KeybindAction =
   | "reload"
   | "devtools"
   | "findInPage"
+  | "search"
   | "discovery"
   | "settings"
   | "newTab"
@@ -38,6 +39,7 @@ export const KEYBIND_ACTIONS: KeybindAction[] = [
   "reload",
   "devtools",
   "findInPage",
+  "search",
   "discovery",
   "settings",
   "newTab",
@@ -53,6 +55,7 @@ export function defaultKeybinds(): KeybindSettings {
       reload: "mod+r",
       devtools: "mod+shift+i",
       findInPage: "mod+f",
+      search: "mod+shift+f",
       discovery: "mod+shift+d",
       settings: "mod+,",
       newTab: "mod+t",

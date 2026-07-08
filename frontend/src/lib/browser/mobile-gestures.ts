@@ -72,6 +72,28 @@ function emptyProgress(): MobileGestureProgress {
   };
 }
 
+export function getEffectiveScrollTop(
+  element: HTMLElement | null | undefined,
+  boundary?: HTMLElement | null,
+): number {
+  if (!element) {
+    return 0;
+  }
+
+  let current: HTMLElement | null = element;
+  while (current) {
+    if (current.scrollTop > 1) {
+      return current.scrollTop;
+    }
+    if (boundary && current === boundary) {
+      break;
+    }
+    current = current.parentElement;
+  }
+
+  return 0;
+}
+
 export function attachMobileGestures(
   surface: HTMLElement,
   options: MobileGestureOptions,

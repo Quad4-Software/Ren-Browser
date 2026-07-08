@@ -2,6 +2,7 @@
 <script lang="ts">
   import DiscoveryPanel from "$lib/components/DiscoveryPanel.svelte";
   import HistoryPanel from "$lib/components/HistoryPanel.svelte";
+  import SearchPanel from "$lib/components/SearchPanel.svelte";
   import DevToolsPanel from "$lib/components/DevToolsPanel.svelte";
   import PluginPanelHost from "$lib/components/PluginPanelHost.svelte";
   import AppSettingsPane from "$lib/components/AppSettingsPane.svelte";
@@ -15,7 +16,16 @@
   let { app }: Props = $props();
 </script>
 
-{#if app.activePanel === "discovery"}
+{#if app.activePanel === "search"}
+  <aside class="side-pane">
+    <SearchPanel
+      history={app.history}
+      nodes={app.nodes}
+      favorites={app.favorites}
+      onOpen={app.browseURL}
+    />
+  </aside>
+{:else if app.activePanel === "discovery"}
   <aside class="side-pane">
     <DiscoveryPanel
       nodes={app.nodes}

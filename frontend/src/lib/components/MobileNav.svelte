@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Compass, Download, History, Home, Settings, Terminal } from "@lucide/svelte";
+  import { Compass, Download, History, Home, Search, Settings, Terminal } from "@lucide/svelte";
   import { pluginLabel } from "$lib/plugins/plugin-label.js";
   import PluginLucideIcon from "$lib/components/PluginLucideIcon.svelte";
   import type { ActivePanel, PluginPanelContribution } from "$lib/plugins/api-types.js";
@@ -32,6 +32,10 @@
   <button class:active={activePanel === "browser"} onclick={() => onPanel("browser")}>
     <Home size={18} />
     <span>{t("mobileNav.browse")}</span>
+  </button>
+  <button class:active={activePanel === "search"} onclick={() => onPanel("search")}>
+    <Search size={18} />
+    <span>{t("mobileNav.search")}</span>
   </button>
   <button class:active={activePanel === "discovery"} onclick={() => onPanel("discovery")}>
     <Compass size={18} />

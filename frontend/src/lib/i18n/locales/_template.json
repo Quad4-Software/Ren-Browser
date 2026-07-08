@@ -48,6 +48,7 @@
     "identifyTitle": "",
     "downloads": "",
     "history": "",
+    "search": "",
     "discovery": "",
     "devtools": "",
     "settings": "",
@@ -57,6 +58,7 @@
   "mobileNav": {
     "label": "",
     "browse": "",
+    "search": "",
     "discover": "",
     "history": "",
     "downloads": "",
@@ -183,6 +185,7 @@
     "reload": "",
     "devtools": "",
     "findInPage": "",
+    "search": "",
     "discovery": "",
     "settings": "",
     "newTab": "",
@@ -212,6 +215,20 @@
     "noMatching": "",
     "clear": "",
     "clearConfirm": ""
+  },
+  "search": {
+    "title": "",
+    "subtitle": "",
+    "entries": "",
+    "history": "",
+    "sites": "",
+    "favorites": "",
+    "recent": "",
+    "noData": "",
+    "noDataDescription": "",
+    "noMatching": "",
+    "noRecent": "",
+    "noRecentDescription": ""
   },
   "devtools": {
     "console": "",

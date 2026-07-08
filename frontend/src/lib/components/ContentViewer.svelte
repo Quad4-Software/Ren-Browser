@@ -29,6 +29,7 @@
   import { isDocumentContentType } from "$lib/documents/types";
   import {
     attachMobileGestures,
+    getEffectiveScrollTop,
     type MobileGestureProgress,
   } from "$lib/browser/mobile-gestures.js";
   import type { Component } from "svelte";
@@ -308,9 +309,9 @@
 
     const attachment = attachMobileGestures(surface, {
       getCanGoBack: () => canGoBack,
-      getScrollTop: () => contentEl?.scrollTop ?? 0,
+      getScrollTop: () => getEffectiveScrollTop(contentEl, surface),
       isActive: () => !loading && !showSource && !isDocument,
-      onRefresh: onRetry,
+      onRefresh: onReloadFresh,
       onBack,
       onProgress: (progress) => {
         gesture = progress;
