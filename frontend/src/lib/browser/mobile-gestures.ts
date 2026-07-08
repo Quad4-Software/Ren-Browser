@@ -23,6 +23,16 @@ export type MobileGestureOptions = {
   onProgress?: (progress: MobileGestureProgress) => void;
 };
 
+export const GESTURE_SUPPRESSED_SELECTOR =
+  'button, a, input, textarea, select, label, summary, [role="button"], [role="dialog"], [role="menu"], [role="menuitem"], [contenteditable="true"], .toc-overlay, .reader-search';
+
+export function isGestureSuppressedTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+  return Boolean(target.closest(GESTURE_SUPPRESSED_SELECTOR));
+}
+
 export function isBackEdgeStart(clientX: number, edgeWidth = MOBILE_BACK_EDGE_WIDTH): boolean {
   return clientX <= edgeWidth;
 }
@@ -93,6 +103,9 @@ export function attachMobileGestures(
       return;
     }
     if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+    if (isGestureSuppressedTarget(event.target)) {
       return;
     }
 

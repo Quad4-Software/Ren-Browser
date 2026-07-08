@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: MIT
+function ownerDocument(root: Node): Document {
+  return root.ownerDocument ?? document;
+}
+
 export function clearFindHighlights(root: HTMLElement): void {
   root.querySelectorAll("mark.ren-find-hit").forEach((mark) => {
     const parent = mark.parentNode;
     if (!parent) {
       return;
     }
-    parent.replaceChild(document.createTextNode(mark.textContent ?? ""), mark);
+    const doc = ownerDocument(root);
+    parent.replaceChild(doc.createTextNode(mark.textContent ?? ""), mark);
     parent.normalize();
   });
 }
@@ -16,9 +21,10 @@ export function highlightFindMatches(root: HTMLElement, query: string): number {
   if (!needle) {
     return 0;
   }
+  const doc = ownerDocument(root);
   const lower = needle.toLowerCase();
   let count = 0;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const textNodes: Text[] = [];
   while (walker.nextNode()) {
     const node = walker.currentNode as Text;
@@ -39,12 +45,12 @@ export function highlightFindMatches(root: HTMLElement, query: string): number {
     if (index < 0) {
       continue;
     }
-    const frag = document.createDocumentFragment();
+    const frag = doc.createDocumentFragment();
     while (index >= 0) {
       if (index > start) {
-        frag.appendChild(document.createTextNode(value.slice(start, index)));
+        frag.appendChild(doc.createTextNode(value.slice(start, index)));
       }
-      const mark = document.createElement("mark");
+      const mark = doc.createElement("mark");
       mark.className = "ren-find-hit";
       mark.textContent = value.slice(index, index + needle.length);
       frag.appendChild(mark);
@@ -53,7 +59,7 @@ export function highlightFindMatches(root: HTMLElement, query: string): number {
       index = valueLower.indexOf(lower, start);
     }
     if (start < value.length) {
-      frag.appendChild(document.createTextNode(value.slice(start)));
+      frag.appendChild(doc.createTextNode(value.slice(start)));
     }
     node.parentNode?.replaceChild(frag, node);
   }

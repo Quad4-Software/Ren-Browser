@@ -31,7 +31,7 @@ func TestDocumentPage(t *testing.T) {
 	svc := newTestBrowserService(t)
 	svc.SetDownloadDir(dir)
 
-	rawURL := documentURL(pdfPath)
+	rawURL := documentURL(pdfPath, dir)
 	page := svc.documentPage(rawURL, false)
 	if page.Error != "" {
 		t.Fatalf("unexpected error: %s", page.Error)
@@ -57,7 +57,7 @@ func TestDocumentPageRejectsOutsideDownloadDir(t *testing.T) {
 	svc := newTestBrowserService(t)
 	svc.SetDownloadDir(dir)
 
-	page := svc.documentPage(documentURL(outside), false)
+	page := svc.documentPage(documentURL(outside, dir), false)
 	if page.Error == "" {
 		t.Fatal("expected error for path outside download dir")
 	}
@@ -73,7 +73,7 @@ func TestDocumentPageTooLarge(t *testing.T) {
 
 	svc := newTestBrowserService(t)
 	svc.SetDownloadDir(dir)
-	page := svc.documentPage(documentURL(pdfPath), false)
+	page := svc.documentPage(documentURL(pdfPath, dir), false)
 	if page.Error == "" {
 		t.Fatal("expected too-large error")
 	}

@@ -2,10 +2,11 @@
 import { formatBindingError } from "$lib/browser/binding-errors.js";
 import { getUILocale } from "$lib/i18n/i18n.svelte";
 import { createPluginContext, listPlugins } from "./api.js";
-import { loadPluginModule, clearPluginModuleCache } from "./loader.js";
+import { loadPluginModule } from "./loader.js";
 import { reportPluginFailure } from "./plugin-errors.js";
-import { clearPluginI18n, ensurePluginI18n, preloadPluginI18n } from "./plugin-i18n.js";
-import type { PluginContext, PluginModule } from "./api-types.js";
+import { getActivePlugin, hasActivePlugin, setActivePlugin } from "./plugin-runtime.js";
+import { ensurePluginI18n, preloadPluginI18n } from "./plugin-i18n.js";
+import type { PluginModule } from "./api-types.js";
 import { getContributionsSnapshot } from "./registry.js";
 
 type LifecycleOpts = {
@@ -18,8 +19,6 @@ type LifecycleOpts = {
   wasmBackend?: boolean;
   onPluginError?: (pluginId: string, message: string) => void;
 };
-
-const active = new Map<string, { ctx: PluginContext; mod: PluginModule }>();
 
 export async function activateAllPlugins(opts: LifecycleOpts) {
   const snapshot = getContributionsSnapshot();
@@ -43,7 +42,7 @@ export async function activateAllPlugins(opts: LifecycleOpts) {
 }
 
 export async function activatePlugin(pluginId: string, entry: string, opts: LifecycleOpts) {
-  if (active.has(pluginId)) {
+  if (hasActivePlugin(pluginId)) {
     return;
   }
   let mod: PluginModule;
@@ -66,34 +65,13 @@ export async function activatePlugin(pluginId: string, entry: string, opts: Life
     await reportPluginFailure(pluginId, "activate", err);
     return;
   }
-  active.set(pluginId, { ctx, mod });
+  setActivePlugin(pluginId, { ctx, mod });
 }
 
-export async function deactivatePlugin(pluginId: string) {
-  const item = active.get(pluginId);
-  if (!item) {
-    return;
-  }
-  try {
-    if (item.mod.deactivate) {
-      await item.mod.deactivate();
-    }
-  } catch {
-    // Ignore teardown errors while unloading a broken plugin.
-  }
-  active.delete(pluginId);
-  clearPluginModuleCache(pluginId);
-  clearPluginI18n(pluginId);
-}
-
-export async function deactivateAllPlugins() {
-  for (const pluginId of [...active.keys()]) {
-    await deactivatePlugin(pluginId);
-  }
-}
+export { deactivateAllPlugins, deactivatePlugin } from "./plugin-runtime.js";
 
 export async function handlePluginScheme(pluginId: string, handler: string, url: string) {
-  const item = active.get(pluginId);
+  const item = getActivePlugin(pluginId);
   if (!item?.mod.handleScheme) {
     let mod: PluginModule;
     try {

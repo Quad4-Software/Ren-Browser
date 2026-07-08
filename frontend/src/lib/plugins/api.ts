@@ -31,6 +31,7 @@ import type {
 } from "./api-types.js";
 import type { PluginI18n } from "./plugin-i18n.js";
 import { formatBindingError, toBindingError } from "$lib/browser/binding-errors.js";
+import { reportPluginFailure } from "./plugin-errors.js";
 
 export async function listPlugins() {
   return ListPlugins();
@@ -251,7 +252,6 @@ export function createPluginContext(
             try {
               fn((payload as { data?: unknown }).data ?? payload);
             } catch (err) {
-              const { reportPluginFailure } = await import("./plugin-errors.js");
               await reportPluginFailure(pluginId, `event:${event}`, err);
             }
           })();

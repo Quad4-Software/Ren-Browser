@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { LoaderCircle } from "@lucide/svelte";
+  import { LoaderCircle, Plus } from "@lucide/svelte";
   import { expandHexColor, micronPageColors, type Tab } from "$lib/browser/url";
   import { normalizePageErrorKind, pageErrorContent } from "$lib/browser/errors";
   import {
@@ -111,6 +111,8 @@
 
   const displayLabel = $derived(label || previewLabel());
 
+  const isEmptyTab = $derived(!tab.url.trim() && !tab.page?.error);
+
   $effect(() => {
     const el = thumbEl;
     if (!el) {
@@ -163,6 +165,13 @@
         style:height="{PREVIEW_REF_HEIGHT}px"
         style:transform="scale({previewScale})"
       ></iframe>
+    </div>
+  {:else if isEmptyTab}
+    <div class="thumb-state empty">
+      <span class="thumb-empty-icon" aria-hidden="true">
+        <Plus size={20} />
+      </span>
+      <span class="thumb-empty-title">{displayLabel}</span>
     </div>
   {:else}
     <span class="thumb-title">{displayLabel}</span>
@@ -217,6 +226,32 @@
 
   .thumb-state.error {
     color: var(--ren-danger);
+  }
+
+  .thumb-state.empty {
+    gap: 0.55rem;
+  }
+
+  .thumb-empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ren-accent) 12%, var(--ren-chrome-bg));
+    color: var(--ren-muted);
+  }
+
+  .thumb-empty-title {
+    font-weight: 600;
+    font-size: 0.82rem;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .thumb-state-title {

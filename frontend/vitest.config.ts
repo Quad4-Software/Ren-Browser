@@ -9,6 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const domTests = [
   "src/lib/auth/api.test.ts",
   "src/lib/browser/find-in-page.test.ts",
+  "src/lib/browser/mobile-gestures.test.ts",
   "src/lib/browser/docs-render.test.ts",
   "src/lib/documents/epub.test.ts",
   "src/lib/browser/page-links.test.ts",

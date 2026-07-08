@@ -54,6 +54,11 @@ describe("normalizeReticulumURL", () => {
     expect(normalizeReticulumURL(backtick)).toBe(backtick);
   });
 
+  it("normalizes document urls", () => {
+    expect(normalizeReticulumURL("document:book.epub")).toBe("document:/book.epub");
+    expect(normalizeReticulumURL("document:/book.epub")).toBe("document:/book.epub");
+  });
+
   it("rejects external internet urls", () => {
     expect(normalizeReticulumURL("https://example.com")).toBe("");
     expect(normalizeReticulumURL("http://example.com/path")).toBe("");

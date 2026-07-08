@@ -1,9 +1,13 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import EpubViewer from "$lib/components/EpubViewer.svelte";
-  import PdfViewer from "$lib/components/PdfViewer.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
   import { isDocumentContentType } from "$lib/documents/types";
+  import type { Component } from "svelte";
+
+  type ViewerProps = {
+    binaryB64: string;
+    onRetry?: () => void;
+  };
 
   type Props = {
     contentType: string;
@@ -14,9 +18,31 @@
 
   let { contentType, binaryB64, pageError = "", onRetry = () => {} }: Props = $props();
 
+  let ViewerComponent = $state<Component<ViewerProps> | null>(null);
+
   const missingData = $derived(
     isDocumentContentType(contentType) && !binaryB64.trim() && !pageError.trim(),
   );
+
+  $effect(() => {
+    if (!isDocumentContentType(contentType) || pageError.trim() || missingData) {
+      ViewerComponent = null;
+      return;
+    }
+    let cancelled = false;
+    const loader =
+      contentType === "pdf"
+        ? import("$lib/components/PdfViewer.svelte")
+        : import("$lib/components/EpubViewer.svelte");
+    void loader.then((module) => {
+      if (!cancelled) {
+        ViewerComponent = module.default;
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  });
 </script>
 
 {#if isDocumentContentType(contentType)}
@@ -30,21 +56,30 @@
       <p>{t("documents.missingData")}</p>
       <button type="button" onclick={onRetry}>{t("documents.retry")}</button>
     </div>
-  {:else if contentType === "pdf"}
-    <PdfViewer {binaryB64} {onRetry} />
+  {:else if ViewerComponent}
+    <ViewerComponent {binaryB64} {onRetry} />
   {:else}
-    <EpubViewer {binaryB64} {onRetry} />
+    <div class="document-loading">{t("documents.loading")}</div>
   {/if}
 {/if}
 
 <style>
-  .document-error {
+  .document-error,
+  .document-loading {
     margin: auto;
     max-width: 28rem;
     padding: 2rem 1.25rem;
     text-align: center;
+  }
+
+  .document-error {
     display: grid;
     gap: 0.75rem;
+  }
+
+  .document-loading {
+    color: var(--ren-muted);
+    font-size: 0.9rem;
   }
 
   .document-error p {

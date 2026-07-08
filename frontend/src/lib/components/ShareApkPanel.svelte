@@ -129,12 +129,22 @@
         {t("settings.shareApkShareSheet")}
       </button>
       {#if session?.active}
-        <button type="button" class="action-btn danger" disabled={busy} onclick={() => void stopSharing()}>
+        <button
+          type="button"
+          class="action-btn danger"
+          disabled={busy}
+          onclick={() => void stopSharing()}
+        >
           <Square size={16} />
           {t("settings.shareApkStop")}
         </button>
       {:else}
-        <button type="button" class="action-btn primary" disabled={busy} onclick={() => void startSharing()}>
+        <button
+          type="button"
+          class="action-btn primary"
+          disabled={busy}
+          onclick={() => void startSharing()}
+        >
           <Wifi size={16} />
           {t("settings.shareApkStart")}
         </button>
@@ -152,7 +162,13 @@
         </div>
         {#if session.qrDataURL}
           <figure class="qr-wrap">
-            <img class="qr" src={session.qrDataURL} alt={t("settings.shareApkScan")} width="256" height="256" />
+            <img
+              class="qr"
+              src={session.qrDataURL}
+              alt={t("settings.shareApkScan")}
+              width="256"
+              height="256"
+            />
             <figcaption>{t("settings.shareApkScan")}</figcaption>
           </figure>
         {/if}

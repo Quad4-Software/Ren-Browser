@@ -4,6 +4,7 @@ import {
   clampBackOffset,
   clampPullOffset,
   isBackEdgeStart,
+  isGestureSuppressedTarget,
   shouldTriggerBack,
   shouldTriggerPull,
 } from "./mobile-gestures";
@@ -33,5 +34,20 @@ describe("mobile gestures", () => {
     expect(shouldTriggerBack(90, 10)).toBe(true);
     expect(shouldTriggerBack(90, 80)).toBe(false);
     expect(shouldTriggerBack(40, 0)).toBe(false);
+  });
+
+  it("ignores interactive targets for gesture capture", () => {
+    const button = document.createElement("button");
+    const overlay = document.createElement("div");
+    overlay.className = "toc-overlay";
+    const panel = document.createElement("div");
+    overlay.appendChild(panel);
+    panel.appendChild(button);
+    document.body.appendChild(overlay);
+
+    expect(isGestureSuppressedTarget(button)).toBe(true);
+    expect(isGestureSuppressedTarget(overlay)).toBe(true);
+
+    overlay.remove();
   });
 });

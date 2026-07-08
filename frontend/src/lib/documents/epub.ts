@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
-import DOMPurify from "dompurify";
 import JSZip from "jszip";
+import { sanitizeDocumentHtml } from "$lib/documents/sanitize-html";
 
 export type EpubChapter = {
   id: string;
@@ -14,13 +14,6 @@ export type EpubBook = {
   blobUrls: string[];
 };
 
-const EPUB_SANITIZE = {
-  USE_PROFILES: { html: true },
-  FORBID_TAGS: ["script", "iframe", "object", "embed", "link", "base", "meta"],
-  FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover"],
-  ALLOWED_URI_REGEXP: /^(blob:|data:image\/[a-z0-9+.-]+)/i,
-};
-
 function textContent(el: Element | null | undefined): string {
   return el?.textContent?.trim() ?? "";
 }
@@ -28,9 +21,7 @@ function textContent(el: Element | null | undefined): string {
 function elementsByLocalName(root: ParentNode, localName: string): Element[] {
   const want = localName.toLowerCase();
   const nodes =
-    root instanceof Document || root instanceof Element
-      ? root.getElementsByTagName("*")
-      : [];
+    root instanceof Document || root instanceof Element ? root.getElementsByTagName("*") : [];
   return [...nodes].filter((el) => el.localName.toLowerCase() === want);
 }
 
@@ -71,6 +62,179 @@ function resolveZipPath(base: string, href: string): string {
     out.push(part);
   }
   return out.join("/");
+}
+
+function normalizeEpubPath(path: string): string {
+  const bare = path.split("#")[0] ?? path;
+  return bare.replace(/\\/g, "/").replace(/^\/+/, "").trim();
+}
+
+function parseNcxToc(ncxXml: string): Map<string, string> {
+  const titles = new Map<string, string>();
+  const doc = new DOMParser().parseFromString(ncxXml, "application/xml");
+  for (const point of elementsByLocalName(doc, "navPoint")) {
+    const label = textContent(firstByLocalName(point, "text"));
+    const content = firstByLocalName(point, "content");
+    const src = content?.getAttribute("src") ?? "";
+    const path = normalizeEpubPath(src);
+    if (label && path) {
+      titles.set(path, label);
+    }
+  }
+  if (titles.size === 0) {
+    const pattern =
+      /<navLabel>\s*<(?:\w+:)?text>([^<]+)<\/(?:\w+:)?text>[\s\S]*?<content[^>]+src="([^"]+)"/gi;
+    for (const match of ncxXml.matchAll(pattern)) {
+      const label = match[1]?.trim() ?? "";
+      const path = normalizeEpubPath(match[2] ?? "");
+      if (label && path) {
+        titles.set(path, label);
+      }
+    }
+  }
+  return titles;
+}
+
+function parseNavToc(navHtml: string, opfDir: string): Map<string, string> {
+  const titles = new Map<string, string>();
+  const doc = new DOMParser().parseFromString(navHtml, "application/xhtml+xml");
+  const navRoots = [...elementsByLocalName(doc, "nav")];
+  const tocNav =
+    navRoots.find((nav) => {
+      const type = nav.getAttribute("epub:type") ?? nav.getAttribute("type") ?? "";
+      return type.toLowerCase().split(/\s+/).includes("toc");
+    }) ?? navRoots[0];
+  if (!tocNav) {
+    return titles;
+  }
+  for (const link of elementsByLocalName(tocNav, "a")) {
+    const href = link.getAttribute("href");
+    const label = textContent(link);
+    if (!href || !label) {
+      continue;
+    }
+    titles.set(normalizeEpubPath(resolveZipPath(opfDir, href)), label);
+  }
+  return titles;
+}
+
+function lookupTocTitle(titles: Map<string, string>, chapterPath: string, href: string): string {
+  const candidates = new Set([
+    normalizeEpubPath(chapterPath),
+    normalizeEpubPath(href),
+    normalizeEpubPath(resolveZipPath("", href)),
+  ]);
+  const leaf = href.split("/").pop() ?? href;
+  candidates.add(normalizeEpubPath(leaf));
+  for (const key of candidates) {
+    const hit = titles.get(key);
+    if (hit) {
+      return hit;
+    }
+  }
+  for (const [key, label] of titles) {
+    const keyLeaf = key.split("/").pop() ?? key;
+    if (keyLeaf === leaf || key.endsWith(`/${leaf}`)) {
+      return label;
+    }
+  }
+  return "";
+}
+
+function headingFromBody(doc: Document): string {
+  const body = doc.body;
+  if (!body) {
+    return "";
+  }
+  for (const tag of ["h1", "h2", "h3", "h4", "h5", "h6"]) {
+    const text = textContent(body.querySelector(tag));
+    if (text) {
+      return text;
+    }
+  }
+  return "";
+}
+
+function titleFromFilename(href: string): string {
+  const base =
+    href
+      .split("/")
+      .pop()
+      ?.replace(/\.[^.]+$/i, "") ?? "";
+  const numbered = base.match(/(?:^|_)c(\d{1,3})(?:_|$)/i);
+  if (numbered) {
+    return `Chapter ${Number(numbered[1])}`;
+  }
+  const chapterWord = base.match(/chapter[\s._-]*(\d+)/i);
+  if (chapterWord) {
+    return `Chapter ${Number(chapterWord[1])}`;
+  }
+  return base.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+async function loadTocTitles(
+  zip: JSZip,
+  opfDir: string,
+  manifest: Map<string, { href: string; mediaType: string }>,
+  manifestEl: Element,
+  spineEl: Element,
+): Promise<Map<string, string>> {
+  const titles = new Map<string, string>();
+
+  for (const item of childElementsByLocalName(manifestEl, "item")) {
+    const properties = item.getAttribute("properties") ?? "";
+    if (!properties.split(/\s+/).includes("nav")) {
+      continue;
+    }
+    const href = item.getAttribute("href");
+    if (!href) {
+      continue;
+    }
+    const navHtml = await readZipText(zip, resolveZipPath(opfDir, href));
+    for (const [key, label] of parseNavToc(navHtml, opfDir)) {
+      titles.set(key, label);
+    }
+  }
+
+  const tocId = spineEl.getAttribute("toc");
+  if (tocId) {
+    const entry = manifest.get(tocId);
+    if (entry) {
+      const ncxXml = await readZipText(zip, resolveZipPath(opfDir, entry.href));
+      for (const [key, label] of parseNcxToc(ncxXml)) {
+        titles.set(key, label);
+      }
+    }
+  }
+
+  if (titles.size === 0) {
+    for (const entry of manifest.values()) {
+      if (!entry.mediaType.includes("dtbncx") && !entry.href.toLowerCase().endsWith(".ncx")) {
+        continue;
+      }
+      const ncxXml = await readZipText(zip, resolveZipPath(opfDir, entry.href));
+      for (const [key, label] of parseNcxToc(ncxXml)) {
+        titles.set(key, label);
+      }
+    }
+  }
+
+  return titles;
+}
+
+function chapterTitle(
+  doc: Document,
+  chapterPath: string,
+  href: string,
+  tocTitles: Map<string, string>,
+  index: number,
+): string {
+  return (
+    lookupTocTitle(tocTitles, chapterPath, href) ||
+    headingFromBody(doc) ||
+    titleFromFilename(href) ||
+    `Chapter ${index + 1}`
+  );
 }
 
 async function readZipText(zip: JSZip, path: string): Promise<string> {
@@ -123,6 +287,10 @@ async function resolveChapterImages(
     if (!src || src.startsWith("blob:") || src.startsWith("data:")) {
       continue;
     }
+    if (/^[a-z][a-z0-9+.-]*:/i.test(src.trim())) {
+      img.removeAttribute("src");
+      continue;
+    }
     const assetPath = resolveZipPath(chapterDir, src);
     let blobUrl = blobCache.get(assetPath);
     if (!blobUrl) {
@@ -135,7 +303,7 @@ async function resolveChapterImages(
     }
     img.setAttribute("src", blobUrl);
   }
-  return String(DOMPurify.sanitize(doc.body?.innerHTML ?? html, EPUB_SANITIZE));
+  return sanitizeDocumentHtml(doc.body?.innerHTML ?? html);
 }
 
 export async function parseEpub(data: Uint8Array): Promise<EpubBook> {
@@ -176,6 +344,7 @@ export async function parseEpub(data: Uint8Array): Promise<EpubBook> {
   if (!spineEl) {
     throw new Error("epub spine not found");
   }
+  const tocTitles = await loadTocTitles(zip, opfDir, manifest, manifestEl, spineEl);
   const spineIds: string[] = [];
   for (const itemref of childElementsByLocalName(spineEl, "itemref")) {
     const idref = itemref.getAttribute("idref");
@@ -202,10 +371,7 @@ export async function parseEpub(data: Uint8Array): Promise<EpubBook> {
       : "";
     const rawHtml = await readZipText(zip, chapterPath);
     const doc = new DOMParser().parseFromString(rawHtml, "application/xhtml+xml");
-    const heading =
-      textContent(doc.querySelector("h1")) ||
-      textContent(doc.querySelector("title")) ||
-      `Chapter ${chapters.length + 1}`;
+    const heading = chapterTitle(doc, chapterPath, entry.href, tocTitles, chapters.length);
     const bodyHtml = doc.body?.innerHTML ?? rawHtml;
     chapters.push({
       id,

@@ -2,150 +2,155 @@
 import { SvelteSet } from "svelte/reactivity";
 import { Events, System } from "@wailsio/runtime";
 import {
-    AddFavorite,
-    CancelDownload,
-    ClearDevLogs,
-    ClearBrowsingHistory,
-    ClearPageCache,
-    ConfigPath,
-    DismissDownload,
-    ExportDevLogs,
-    ExportTheme,
-    FetchCommunityInterfaces,
-    GetBrowserPrefs,
-    GetDownloadDir,
-    GetDevLogs,
-    GetFavorites,
-    GetBrowsingHistory,
-    GetKeybinds,
-    GetNetworkLog,
-    GetStoreHealth,
-    GetTabs,
-    GetTheme,
-    GetWindowChrome,
-    GetReticulumConfigText,
-    GetPageCacheStats,
-    GetRuntimeConfig,
-    GetSandboxStatus,
-    GoBack,
-    GoForward,
-    HistoryState,
-    IdentifyToNode,
-    ImportCommunityInterfaces,
-    ImportTheme,
-    ListActiveDownloads,
-    ListDownloads,
-    ClearDownloadHistory,
-    ListInterfaces,
-    ListNodes,
-    ListSystemFonts,
-    Navigate,
-    NavigateFresh,
-    OpenDownloadPath,
-    OpenURL,
-    OpenFreshURL,
-    PickDownloadDir,
-    RetryDownload,
-    ResetDatabase,
-    ResetSettings,
-    ReloadReticulumConfig,
-    SaveTabs,
-    SaveReticulumConfigText,
-    SetBrowserPrefs,
-    SetDownloadDir,
-    SetInterfaceEnabled,
-    SetKeybinds,
-    SetLogLevel,
-    SetNativeTitlebar,
-    SetTheme,
-    ShowConfigDir,
-    ShowDownloadDir,
-    Shutdown,
-    SyncMobileChrome,
-  } from "../../../bindings/renbrowser/internal/app/browserservice.js";
-  import type { WindowChrome } from "../../../bindings/renbrowser/internal/app/models.js";
-  import type { DownloadRow } from "$lib/components/DownloadsMenu.svelte";
-  import { withProgress, type ActiveDownloadRow } from "$lib/browser/download-progress";
-  import { exportFilename } from "$lib/brand";
-  import { isStoreBlockingKind } from "$lib/browser/errors";
-  import { isCompactViewport } from "$lib/browser/viewport";
-  import { resolveMobileUI } from "$lib/browser/mobile-layout";
-  import {
-    defaultTheme,
-    applyTheme,
-    mobileChromeBg,
-    mobileChromeUsesLightIcons,
-    type ThemeSettings,
-  } from "$lib/theme/tokens";
-  import {
-    screenshotThemeFromQuery,
-    screenshotLayoutFromQuery,
-    screenshotSceneFromQuery,
-    markScreenshotReady,
-    type ScreenshotScene,
-  } from "$lib/theme/screenshot";
-  import type { CommunityInterface } from "$lib/components/CommunityInterfaces.svelte";
-  import {
-    defaultKeybinds,
-    matchKeybind,
-    isKeybindRecording,
-    mergeKeybinds,
-    type KeybindAction,
-    type KeybindSettings,
-  } from "$lib/browser/keybinds";
-  import {
-    getContributionsSnapshot,
-    setContributions,
-    findPanel,
-    parsePanelKey,
-  } from "$lib/plugins/registry.js";
-  import { getContributions as fetchContributions, listPlugins } from "$lib/plugins/api.js";
-  import { PluginsDir } from "../../../bindings/renbrowser/internal/app/pluginhost.js";
-  import {
-    activateAllPlugins,
-    deactivateAllPlugins,
-    handlePluginScheme,
-  } from "$lib/plugins/lifecycle.js";
-  import { dispatchPluginCommand, matchPluginKeybind } from "$lib/plugins/command-dispatch.js";
-  import type { ActivePanel, ContributionsSnapshot } from "$lib/plugins/api-types.js";
-  import { formatBindingError } from "$lib/browser/binding-errors.js";
-  import {
-    downloadPageContent,
-    downloadFailureMessage,
-    canceledDownloadToast,
-    isDownloadCanceledError,
-    pageDownloadName,
-    type DownloadResult,
-  } from "$lib/browser/download";
-  import { blockExternalLinkPointerEvent } from "$lib/browser/navigation-guard";
-  import {
-    canOpenTab,
-    MAX_TABS,
-    normalizeReticulumURL,
-    nodeHomeURL,
-    isNodeHomePage,
-    orderTabsPinnedFirst,
-    pinTabInList,
-    reorderTabsInList,
-    tabTitleFromURL,
-    unpinTabInList,
-    type Tab,
-    type TabPage,
-  } from "$lib/browser/url";
-  import { documentURL, isDocumentURL, isReadableMeshFileURL } from "$lib/documents/types";
-  import {
-    BUNDLED_MICRON_WASM_PARSER_ID,
-    ensureMicronWasmReady,
-    micronRendererBadgeLabel,
-    normalizeMicronRendererPreference,
-    resolveEffectiveMicronEngine,
-    resolveMicronWasmParserLabel,
-    shouldPreloadMicronWasm,
-    type MicronRendererPreference,
-  } from "$lib/micron/render-page";
-  import { isMicronWasmAvailable } from "$lib/micron/wasm-loader";
-  import { randomId } from "$lib/browser/id";
-  import { initUILocale, setUILocale, t, detectOSLocale } from "$lib/i18n/i18n.svelte";
+  AddFavorite,
+  CancelDownload,
+  ClearDevLogs,
+  ClearBrowsingHistory,
+  ClearPageCache,
+  ConfigPath,
+  DismissDownload,
+  ExportDevLogs,
+  ExportTheme,
+  FetchCommunityInterfaces,
+  GetBrowserPrefs,
+  GetDownloadDir,
+  GetDevLogs,
+  GetFavorites,
+  GetBrowsingHistory,
+  GetKeybinds,
+  GetNetworkLog,
+  GetStoreHealth,
+  GetTabs,
+  GetTheme,
+  GetWindowChrome,
+  GetReticulumConfigText,
+  GetPageCacheStats,
+  GetRuntimeConfig,
+  GetSandboxStatus,
+  GoBack,
+  GoForward,
+  HistoryState,
+  IdentifyToNode,
+  ImportCommunityInterfaces,
+  ImportTheme,
+  ListActiveDownloads,
+  ListDownloads,
+  ClearDownloadHistory,
+  ListInterfaces,
+  ListNodes,
+  ListSystemFonts,
+  Navigate,
+  NavigateFresh,
+  OpenDownloadPath,
+  OpenURL,
+  OpenFreshURL,
+  PickDownloadDir,
+  RetryDownload,
+  ResetDatabase,
+  ResetSettings,
+  ReloadReticulumConfig,
+  SaveTabs,
+  SaveReticulumConfigText,
+  SetBrowserPrefs,
+  SetDownloadDir,
+  SetInterfaceEnabled,
+  SetKeybinds,
+  SetLogLevel,
+  SetNativeTitlebar,
+  SetTheme,
+  ShowConfigDir,
+  ShowDownloadDir,
+  Shutdown,
+  SyncMobileChrome,
+} from "../../../bindings/renbrowser/internal/app/browserservice.js";
+import type { WindowChrome } from "../../../bindings/renbrowser/internal/app/models.js";
+import type { DownloadRow } from "$lib/components/DownloadsMenu.svelte";
+import { withProgress, type ActiveDownloadRow } from "$lib/browser/download-progress";
+import { exportFilename } from "$lib/brand";
+import { isStoreBlockingKind } from "$lib/browser/errors";
+import { isCompactViewport } from "$lib/browser/viewport";
+import { resolveMobileUI } from "$lib/browser/mobile-layout";
+import {
+  defaultTheme,
+  applyTheme,
+  mobileChromeBg,
+  mobileChromeUsesLightIcons,
+  type ThemeSettings,
+} from "$lib/theme/tokens";
+import {
+  screenshotThemeFromQuery,
+  screenshotLayoutFromQuery,
+  screenshotSceneFromQuery,
+  markScreenshotReady,
+  type ScreenshotScene,
+} from "$lib/theme/screenshot";
+import type { CommunityInterface } from "$lib/components/CommunityInterfaces.svelte";
+import {
+  defaultKeybinds,
+  matchKeybind,
+  isKeybindRecording,
+  mergeKeybinds,
+  type KeybindAction,
+  type KeybindSettings,
+} from "$lib/browser/keybinds";
+import {
+  getContributionsSnapshot,
+  setContributions,
+  findPanel,
+  parsePanelKey,
+} from "$lib/plugins/registry.js";
+import { getContributions as fetchContributions, listPlugins } from "$lib/plugins/api.js";
+import { PluginsDir } from "../../../bindings/renbrowser/internal/app/pluginhost.js";
+import {
+  activateAllPlugins,
+  deactivateAllPlugins,
+  handlePluginScheme,
+} from "$lib/plugins/lifecycle.js";
+import { dispatchPluginCommand, matchPluginKeybind } from "$lib/plugins/command-dispatch.js";
+import type { ActivePanel, ContributionsSnapshot } from "$lib/plugins/api-types.js";
+import { formatBindingError } from "$lib/browser/binding-errors.js";
+import {
+  downloadPageContent,
+  downloadFailureMessage,
+  canceledDownloadToast,
+  isDownloadCanceledError,
+  pageDownloadName,
+  type DownloadResult,
+} from "$lib/browser/download";
+import { blockExternalLinkPointerEvent } from "$lib/browser/navigation-guard";
+import {
+  canOpenTab,
+  MAX_TABS,
+  normalizeReticulumURL,
+  nodeHomeURL,
+  isNodeHomePage,
+  orderTabsPinnedFirst,
+  pinTabInList,
+  reorderTabsInList,
+  tabTitleFromURL,
+  unpinTabInList,
+  type Tab,
+  type TabPage,
+} from "$lib/browser/url";
+import {
+  documentURL,
+  canonicalDocumentURL,
+  isDocumentURL,
+  isReadableMeshFileURL,
+} from "$lib/documents/types";
+import {
+  BUNDLED_MICRON_WASM_PARSER_ID,
+  ensureMicronWasmReady,
+  micronRendererBadgeLabel,
+  normalizeMicronRendererPreference,
+  resolveEffectiveMicronEngine,
+  resolveMicronWasmParserLabel,
+  shouldPreloadMicronWasm,
+  type MicronRendererPreference,
+} from "$lib/micron/render-page";
+import { isMicronWasmAvailable } from "$lib/micron/wasm-loader";
+import { randomId } from "$lib/browser/id";
+import { initUILocale, setUILocale, t, detectOSLocale } from "$lib/i18n/i18n.svelte";
 import type {
   DevLogEntry,
   HistoryEntry,
@@ -402,8 +407,6 @@ export function createApp() {
     await bootPlugins();
   }
 
-
-
   function currentPageState(): TabPage {
     return {
       html,
@@ -544,6 +547,12 @@ export function createApp() {
     tabs = tabs.map((tab) => ({ ...tab, active: tab.id === id }));
     const selected = tabs.find((tab) => tab.id === id);
     url = selected?.url ?? "";
+    if (selected?.url && isDocumentURL(selected.url) && !selected.page?.binaryB64?.trim()) {
+      loading = true;
+      void openPage(selected.url, false, { tabId: id });
+      schedulePersistTabs();
+      return;
+    }
     if (selected?.page) {
       applyPageState(selected.page);
     } else {
@@ -879,8 +888,12 @@ export function createApp() {
     if (!normalized) {
       return;
     }
+    const pageUrl =
+      isDocumentURL(normalized) && downloadDir.trim()
+        ? canonicalDocumentURL(normalized, downloadDir)
+        : normalized;
 
-    if (isReadableMeshFileURL(normalized)) {
+    if (!isDocumentURL(pageUrl) && isReadableMeshFileURL(normalized)) {
       try {
         handleDownloadResult({ ok: true, pending: true, message: t("downloads.downloading") });
         await downloadPageContent(normalized, "file", "");
@@ -923,8 +936,8 @@ export function createApp() {
       tab.id === tabId
         ? {
             ...tab,
-            url: normalized,
-            title: tabTitleFromURL(normalized, nodes),
+            url: pageUrl,
+            title: tabTitleFromURL(pageUrl, nodes),
             navGeneration: generation,
             loading: true,
           }
@@ -932,7 +945,7 @@ export function createApp() {
     );
 
     if (isActiveView) {
-      url = normalized;
+      url = pageUrl;
       loading = true;
       error = "";
       errorKind = "";
@@ -954,12 +967,10 @@ export function createApp() {
       let page: PageResponse;
       if (skipCache) {
         page = (
-          pushHistory ? await NavigateFresh(normalized) : await OpenFreshURL(normalized)
+          pushHistory ? await NavigateFresh(pageUrl) : await OpenFreshURL(pageUrl)
         ) as PageResponse;
       } else {
-        page = (
-          pushHistory ? await Navigate(normalized) : await OpenURL(normalized)
-        ) as PageResponse;
+        page = (pushHistory ? await Navigate(pageUrl) : await OpenURL(pageUrl)) as PageResponse;
       }
 
       const current = tabs.find((tab) => tab.id === tabId);
@@ -978,7 +989,7 @@ export function createApp() {
         tabPage = { ...tabPage, lastRaw: configText };
       }
 
-      applyPageToTab(tabId, tabPage, normalized);
+      applyPageToTab(tabId, tabPage, page.url?.trim() || pageUrl);
       schedulePersistTabs();
     } catch (err) {
       const current = tabs.find((tab) => tab.id === tabId);
@@ -1792,7 +1803,7 @@ export function createApp() {
 
   function readDownload(path: string) {
     downloadsOpen = false;
-    void openPage(documentURL(path));
+    void openPage(documentURL(path, downloadDir));
   }
 
   async function openDownloadFolder() {
@@ -1995,9 +2006,10 @@ export function createApp() {
       if (!screenshotScene) {
         const saved = (await GetTabs()) as TabSnapshot[];
         restoreTabs(saved);
-        const active = tabs.find((tab) => tab.active);
-        if (active?.url && isDocumentURL(active.url) && !active.page?.binaryB64) {
-          void openPage(active.url, false);
+        for (const tab of tabs) {
+          if (tab.url && isDocumentURL(tab.url) && !tab.page?.binaryB64?.trim()) {
+            void openPage(tab.url, false, { tabId: tab.id });
+          }
         }
       }
     });
@@ -2181,119 +2193,336 @@ export function createApp() {
     };
   }
 
-
   return {
-    get activePanel() { return activePanel; },
-    get pluginContributions() { return pluginContributions; },
-    get pluginToast() { return pluginToast; },
-    get pluginToastIsError() { return pluginToastIsError; },
-    get pluginsDir() { return pluginsDir; },
-    get pluginGrantedById() { return pluginGrantedById; },
-    get url() { return url; },
-    set url(value) { url = value; },
-    get loading() { return loading; },
-    get html() { return html; },
-    get contentType() { return contentType; },
-    get error() { return error; },
-    get errorKind() { return errorKind; },
-    get durationMs() { return durationMs; },
-    get hops() { return hops; },
-    get pageFg() { return pageFg; },
-    get pageBg() { return pageBg; },
-    get nodes() { return nodes; },
-    get logs() { return logs; },
-    get network() { return network; },
-    get favorites() { return favorites; },
-    get history() { return history; },
-    get interfaces() { return interfaces; },
-    get configPath() { return configPath; },
-    get logLevel() { return logLevel; },
-    get systemFonts() { return systemFonts; },
-    get theme() { return theme; },
-    set theme(value) { theme = value; },
-    get keybinds() { return keybinds; },
-    get downloadDir() { return downloadDir; },
-    set downloadDir(value) { downloadDir = value; },
-    get downloads() { return downloads; },
-    get activeDownloads() { return activeDownloads; },
+    get activePanel() {
+      return activePanel;
+    },
+    get pluginContributions() {
+      return pluginContributions;
+    },
+    get pluginToast() {
+      return pluginToast;
+    },
+    get pluginToastIsError() {
+      return pluginToastIsError;
+    },
+    get pluginsDir() {
+      return pluginsDir;
+    },
+    get pluginGrantedById() {
+      return pluginGrantedById;
+    },
+    get url() {
+      return url;
+    },
+    set url(value) {
+      url = value;
+    },
+    get loading() {
+      return loading;
+    },
+    get html() {
+      return html;
+    },
+    get contentType() {
+      return contentType;
+    },
+    get error() {
+      return error;
+    },
+    get errorKind() {
+      return errorKind;
+    },
+    get durationMs() {
+      return durationMs;
+    },
+    get hops() {
+      return hops;
+    },
+    get pageFg() {
+      return pageFg;
+    },
+    get pageBg() {
+      return pageBg;
+    },
+    get nodes() {
+      return nodes;
+    },
+    get logs() {
+      return logs;
+    },
+    get network() {
+      return network;
+    },
+    get favorites() {
+      return favorites;
+    },
+    get history() {
+      return history;
+    },
+    get interfaces() {
+      return interfaces;
+    },
+    get configPath() {
+      return configPath;
+    },
+    get logLevel() {
+      return logLevel;
+    },
+    get systemFonts() {
+      return systemFonts;
+    },
+    get theme() {
+      return theme;
+    },
+    set theme(value) {
+      theme = value;
+    },
+    get keybinds() {
+      return keybinds;
+    },
+    get downloadDir() {
+      return downloadDir;
+    },
+    set downloadDir(value) {
+      downloadDir = value;
+    },
+    get downloads() {
+      return downloads;
+    },
+    get activeDownloads() {
+      return activeDownloads;
+    },
     retryingDownloadIds,
-    get clearingDownloadHistory() { return clearingDownloadHistory; },
-    get activeDownloadViews() { return activeDownloadViews; },
-    get downloadsOpen() { return downloadsOpen; },
-    set downloadsOpen(value) { downloadsOpen = value; },
-    get findOpen() { return findOpen; },
-    set findOpen(value) { findOpen = value; },
-    get canGoBack() { return canGoBack; },
-    get canGoForward() { return canGoForward; },
-    get lastRaw() { return lastRaw; },
-    get binaryB64() { return binaryB64; },
-    get pagePath() { return pagePath; },
-    get fromCache() { return fromCache; },
-    get cachedAt() { return cachedAt; },
-    get showSource() { return showSource; },
-    get openLinksInNewTab() { return openLinksInNewTab; },
-    get nativeTitlebar() { return nativeTitlebar; },
-    get uiLanguage() { return uiLanguage; },
-    get docsLanguage() { return docsLanguage; },
-    get micronRenderer() { return micronRenderer; },
-    get micronWasmEnabled() { return micronWasmEnabled; },
-    get micronWasmReady() { return micronWasmReady; },
-    get micronWasmAvailable() { return micronWasmAvailable; },
-    get micronWasmParserId() { return micronWasmParserId; },
-    get micronWasmParserLabel() { return micronWasmParserLabel; },
-    get identifying() { return identifying; },
-    get identifyConfirmOpen() { return identifyConfirmOpen; },
-    set identifyConfirmOpen(value) { identifyConfirmOpen = value; },
-    get resetDbConfirmOpen() { return resetDbConfirmOpen; },
-    set resetDbConfirmOpen(value) { resetDbConfirmOpen = value; },
-    get closeAllConfirmOpen() { return closeAllConfirmOpen; },
-    set closeAllConfirmOpen(value) { closeAllConfirmOpen = value; },
-    get shutdownConfirmOpen() { return shutdownConfirmOpen; },
-    set shutdownConfirmOpen(value) { shutdownConfirmOpen = value; },
-    get clearHistoryConfirmOpen() { return clearHistoryConfirmOpen; },
-    set clearHistoryConfirmOpen(value) { clearHistoryConfirmOpen = value; },
-    get publicMode() { return publicMode; },
-    get serverMode() { return serverMode; },
-    get storeHealth() { return storeHealth; },
-    get sandboxStatus() { return sandboxStatus; },
-    get meshOnline() { return meshOnline; },
-    get splitViewOpen() { return splitViewOpen; },
-    get splitTabId() { return splitTabId; },
-    get splitRatio() { return splitRatio; },
-    set splitRatio(value) { splitRatio = value; },
-    get desktopChrome() { return desktopChrome; },
-    get compactViewport() { return compactViewport; },
-    get mobileUI() { return mobileUI; },
-    get configText() { return configText; },
-    set configText(value) { configText = value; },
-    get configSaving() { return configSaving; },
-    get configError() { return configError; },
-    get pageCacheEntries() { return pageCacheEntries; },
-    get pageCacheMax() { return pageCacheMax; },
-    get pageCacheClearing() { return pageCacheClearing; },
-    get pageCacheEnabled() { return pageCacheEnabled; },
-    get communityItems() { return communityItems; },
-    get communityLoading() { return communityLoading; },
-    get communityImporting() { return communityImporting; },
-    get communityError() { return communityError; },
-    get communityFromBundle() { return communityFromBundle; },
-    get communityFilter() { return communityFilter; },
-    set communityFilter(value) { communityFilter = value; },
+    get clearingDownloadHistory() {
+      return clearingDownloadHistory;
+    },
+    get activeDownloadViews() {
+      return activeDownloadViews;
+    },
+    get downloadsOpen() {
+      return downloadsOpen;
+    },
+    set downloadsOpen(value) {
+      downloadsOpen = value;
+    },
+    get findOpen() {
+      return findOpen;
+    },
+    set findOpen(value) {
+      findOpen = value;
+    },
+    get canGoBack() {
+      return canGoBack;
+    },
+    get canGoForward() {
+      return canGoForward;
+    },
+    get lastRaw() {
+      return lastRaw;
+    },
+    get binaryB64() {
+      return binaryB64;
+    },
+    get pagePath() {
+      return pagePath;
+    },
+    get fromCache() {
+      return fromCache;
+    },
+    get cachedAt() {
+      return cachedAt;
+    },
+    get showSource() {
+      return showSource;
+    },
+    get openLinksInNewTab() {
+      return openLinksInNewTab;
+    },
+    get nativeTitlebar() {
+      return nativeTitlebar;
+    },
+    get uiLanguage() {
+      return uiLanguage;
+    },
+    get docsLanguage() {
+      return docsLanguage;
+    },
+    get micronRenderer() {
+      return micronRenderer;
+    },
+    get micronWasmEnabled() {
+      return micronWasmEnabled;
+    },
+    get micronWasmReady() {
+      return micronWasmReady;
+    },
+    get micronWasmAvailable() {
+      return micronWasmAvailable;
+    },
+    get micronWasmParserId() {
+      return micronWasmParserId;
+    },
+    get micronWasmParserLabel() {
+      return micronWasmParserLabel;
+    },
+    get identifying() {
+      return identifying;
+    },
+    get identifyConfirmOpen() {
+      return identifyConfirmOpen;
+    },
+    set identifyConfirmOpen(value) {
+      identifyConfirmOpen = value;
+    },
+    get resetDbConfirmOpen() {
+      return resetDbConfirmOpen;
+    },
+    set resetDbConfirmOpen(value) {
+      resetDbConfirmOpen = value;
+    },
+    get closeAllConfirmOpen() {
+      return closeAllConfirmOpen;
+    },
+    set closeAllConfirmOpen(value) {
+      closeAllConfirmOpen = value;
+    },
+    get shutdownConfirmOpen() {
+      return shutdownConfirmOpen;
+    },
+    set shutdownConfirmOpen(value) {
+      shutdownConfirmOpen = value;
+    },
+    get clearHistoryConfirmOpen() {
+      return clearHistoryConfirmOpen;
+    },
+    set clearHistoryConfirmOpen(value) {
+      clearHistoryConfirmOpen = value;
+    },
+    get publicMode() {
+      return publicMode;
+    },
+    get serverMode() {
+      return serverMode;
+    },
+    get storeHealth() {
+      return storeHealth;
+    },
+    get sandboxStatus() {
+      return sandboxStatus;
+    },
+    get meshOnline() {
+      return meshOnline;
+    },
+    get splitViewOpen() {
+      return splitViewOpen;
+    },
+    get splitTabId() {
+      return splitTabId;
+    },
+    get splitRatio() {
+      return splitRatio;
+    },
+    set splitRatio(value) {
+      splitRatio = value;
+    },
+    get desktopChrome() {
+      return desktopChrome;
+    },
+    get compactViewport() {
+      return compactViewport;
+    },
+    get mobileUI() {
+      return mobileUI;
+    },
+    get configText() {
+      return configText;
+    },
+    set configText(value) {
+      configText = value;
+    },
+    get configSaving() {
+      return configSaving;
+    },
+    get configError() {
+      return configError;
+    },
+    get pageCacheEntries() {
+      return pageCacheEntries;
+    },
+    get pageCacheMax() {
+      return pageCacheMax;
+    },
+    get pageCacheClearing() {
+      return pageCacheClearing;
+    },
+    get pageCacheEnabled() {
+      return pageCacheEnabled;
+    },
+    get communityItems() {
+      return communityItems;
+    },
+    get communityLoading() {
+      return communityLoading;
+    },
+    get communityImporting() {
+      return communityImporting;
+    },
+    get communityError() {
+      return communityError;
+    },
+    get communityFromBundle() {
+      return communityFromBundle;
+    },
+    get communityFilter() {
+      return communityFilter;
+    },
+    set communityFilter(value) {
+      communityFilter = value;
+    },
     communitySelected,
-    get discoverySlowMode() { return discoverySlowMode; },
-    get mobileDevTools() { return mobileDevTools; },
-    get tabHoverPreviews() { return tabHoverPreviews; },
-    get mobileTabsOpen() { return mobileTabsOpen; },
-    get settingsSectionsCollapsed() { return settingsSectionsCollapsed; },
-    get tabs() { return tabs; },
-    get effectiveMicronEngine() { return effectiveMicronEngine; },
-    get micronRendererBadge() { return micronRendererBadge; },
-    get canIdentify() { return canIdentify; },
-    get atTabLimit() { return atTabLimit; },
-    get activeTabId() { return activeTabId; },
-    get splitTab() { return splitTab; },
-    get storeErrorVisible() { return storeErrorVisible; },
-    get activePluginPanel() { return activePluginPanel; },
+    get discoverySlowMode() {
+      return discoverySlowMode;
+    },
+    get mobileDevTools() {
+      return mobileDevTools;
+    },
+    get tabHoverPreviews() {
+      return tabHoverPreviews;
+    },
+    get mobileTabsOpen() {
+      return mobileTabsOpen;
+    },
+    get settingsSectionsCollapsed() {
+      return settingsSectionsCollapsed;
+    },
+    get tabs() {
+      return tabs;
+    },
+    get effectiveMicronEngine() {
+      return effectiveMicronEngine;
+    },
+    get micronRendererBadge() {
+      return micronRendererBadge;
+    },
+    get canIdentify() {
+      return canIdentify;
+    },
+    get atTabLimit() {
+      return atTabLimit;
+    },
+    get activeTabId() {
+      return activeTabId;
+    },
+    get splitTab() {
+      return splitTab;
+    },
+    get storeErrorVisible() {
+      return storeErrorVisible;
+    },
+    get activePluginPanel() {
+      return activePluginPanel;
+    },
     emptyPage,
     setPanel,
     showPluginToast,

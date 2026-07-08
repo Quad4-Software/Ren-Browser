@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { translate } from "$lib/i18n/catalog";
+import { parseDocumentPathFromURL } from "$lib/documents/types";
 import { isBlockedNavigationURL } from "./navigation-guard";
 export type TabPage = {
   html: string;
@@ -198,7 +199,14 @@ export function normalizeReticulumURL(input: string): string {
     return trimmed;
   }
   if (lower.startsWith("document:")) {
-    return trimmed;
+    if (trimmed.includes("?")) {
+      return trimmed;
+    }
+    let rest = trimmed.slice("document:".length);
+    if (!rest.startsWith("/")) {
+      rest = `/${rest}`;
+    }
+    return `document:${rest}`;
   }
   if (trimmed.includes(":/")) {
     return trimmed;
@@ -244,15 +252,10 @@ export function tabTitleFromURL(url: string, nodes: DiscoveredNode[] = []): stri
     return translate("tab.documentation");
   }
   if (url.startsWith("document:")) {
-    try {
-      const parsed = new URL(url);
-      const path = parsed.searchParams.get("path") ?? "";
-      const leaf = path.split(/[/\\]/).filter(Boolean).at(-1) ?? "";
-      if (leaf) {
-        return leaf.length <= 40 ? leaf : `${leaf.slice(0, 39)}…`;
-      }
-    } catch {
-      /* fall through */
+    const path = parseDocumentPathFromURL(url) ?? "";
+    const leaf = path.split(/[/\\]/).filter(Boolean).at(-1) ?? "";
+    if (leaf) {
+      return leaf.length <= 40 ? leaf : `${leaf.slice(0, 39)}…`;
     }
     return translate("tab.document");
   }

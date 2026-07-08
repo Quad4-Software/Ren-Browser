@@ -1,10 +1,16 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "@lucide/svelte";
+  import { onDestroy } from "svelte";
+  import { ChevronLeft, ChevronRight, RotateCw, ZoomIn, ZoomOut } from "@lucide/svelte";
   import { t } from "$lib/i18n/i18n.svelte";
-  import { formatDocumentError } from "$lib/documents/async";
+  import { resolveDocumentErrorMessage } from "$lib/documents/async";
+  import { handleDocumentArrowKeys } from "$lib/documents/document-keys";
   import { decodeBase64ToUint8Array } from "$lib/documents/types";
+  import { buildIsolatedPdfShell, ISOLATED_FRAME_SANDBOX } from "$lib/documents/isolated-html";
+  import { resolvedReaderTheme, type ReaderTheme } from "$lib/documents/reader-theme";
   import { fitWidthScale, loadPdfDocument, renderPdfPage } from "$lib/documents/pdf";
+  import { cycleReaderRotation, type ReaderRotation } from "$lib/documents/reader-layout";
+  import { attachReaderSwipe } from "$lib/documents/reader-swipe";
   import type { PDFDocumentProxy } from "pdfjs-dist";
 
   type Props = {
@@ -15,19 +21,86 @@
   let { binaryB64, onRetry = () => {} }: Props = $props();
 
   let viewportEl: HTMLElement | undefined = $state();
-  let canvasEl: HTMLCanvasElement | undefined = $state();
+  let frameEl: HTMLIFrameElement | undefined = $state();
+  let pageScrollEl: HTMLElement | null = $state(null);
   let doc: PDFDocumentProxy | undefined = $state();
   let page = $state(1);
   let numPages = $state(0);
   let scale = $state(1);
+  let rotation = $state<ReaderRotation>(0);
   let loading = $state(false);
   let error = $state("");
+  let loadSeq = 0;
+  let ownedDoc: PDFDocumentProxy | undefined;
+  let readerTheme = $state<ReaderTheme>(resolvedReaderTheme());
+
+  $effect(() => {
+    const root = document.documentElement;
+    const syncTheme = () => {
+      readerTheme = resolvedReaderTheme();
+    };
+    syncTheme();
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  });
+
+  function dropOwnedDoc() {
+    if (ownedDoc) {
+      void ownedDoc.cleanup();
+      ownedDoc = undefined;
+    }
+  }
+
+  onDestroy(() => {
+    dropOwnedDoc();
+  });
+
+  function scrollRootFromFrame(frame: HTMLIFrameElement | undefined): HTMLElement | null {
+    const doc = frame?.contentDocument;
+    if (!doc) {
+      return null;
+    }
+    return doc.scrollingElement instanceof HTMLElement ? doc.scrollingElement : doc.documentElement;
+  }
+
+  function ensurePdfCanvas(
+    frame: HTMLIFrameElement,
+    theme: ReaderTheme,
+    rotate: number,
+  ): HTMLCanvasElement | null {
+    const idoc = frame.contentDocument;
+    if (!idoc) {
+      return null;
+    }
+    let canvas = idoc.getElementById("page-canvas");
+    const shellTheme = frame.dataset.readerTheme;
+    const shellRotation = frame.dataset.readerRotation ?? "0";
+    if (
+      !(canvas instanceof HTMLCanvasElement) ||
+      shellTheme !== theme ||
+      shellRotation !== String(rotate)
+    ) {
+      idoc.open();
+      idoc.write(buildIsolatedPdfShell(theme, rotate));
+      idoc.close();
+      frame.dataset.readerTheme = theme;
+      frame.dataset.readerRotation = String(rotate);
+      canvas = idoc.getElementById("page-canvas");
+    }
+    pageScrollEl = scrollRootFromFrame(frame);
+    return canvas instanceof HTMLCanvasElement ? canvas : null;
+  }
 
   async function paintPage() {
-    if (!doc || !canvasEl) {
+    if (!doc || !frameEl) {
       return;
     }
-    await renderPdfPage(doc, page, canvasEl, scale);
+    const canvas = ensurePdfCanvas(frameEl, readerTheme, rotation);
+    if (!canvas) {
+      return;
+    }
+    await renderPdfPage(doc, page, canvas, scale, rotation);
   }
 
   async function fitToWidth() {
@@ -41,49 +114,44 @@
 
   $effect(() => {
     const payload = binaryB64;
-    let cancelled = false;
+    const seq = ++loadSeq;
+
+    dropOwnedDoc();
+    doc = undefined;
+    page = 1;
+    numPages = 0;
 
     if (!payload.trim()) {
       loading = false;
       error = t("documents.missingData");
-      doc = undefined;
       return;
     }
 
     loading = true;
     error = "";
-    void doc?.cleanup();
-    doc = undefined;
-    page = 1;
-    numPages = 0;
 
     void (async () => {
       try {
         const bytes = decodeBase64ToUint8Array(payload);
         const loaded = await loadPdfDocument(bytes);
-        if (cancelled) {
+        if (seq !== loadSeq) {
           await loaded.doc.cleanup();
           return;
         }
+        ownedDoc = loaded.doc;
         doc = loaded.doc;
         numPages = loaded.numPages;
         loading = false;
         await fitToWidth();
       } catch (err) {
-        if (cancelled) {
+        if (seq !== loadSeq) {
           return;
         }
         console.error("[PdfViewer] load failed", err);
-        error = formatDocumentError(err, t("documents.loadFailed"));
+        error = resolveDocumentErrorMessage(err, t);
         loading = false;
       }
     })();
-
-    return () => {
-      cancelled = true;
-      void doc?.cleanup();
-      doc = undefined;
-    };
   });
 
   async function prevPage() {
@@ -111,15 +179,99 @@
     scale = Math.max(scale / 1.2, 0.4);
     await paintPage();
   }
+
+  function onKeyDown(event: KeyboardEvent) {
+    if (loading || error) {
+      return;
+    }
+    handleDocumentArrowKeys(event, {
+      viewport: pageScrollEl ?? viewportEl,
+      onPrev: () => {
+        void prevPage();
+      },
+      onNext: () => {
+        void nextPage();
+      },
+      canPrev: page > 1,
+      canNext: !!doc && page < numPages,
+    });
+  }
+
+  $effect(() => {
+    const el = viewportEl;
+    if (!el) {
+      return;
+    }
+    const handler = (event: KeyboardEvent) => {
+      onKeyDown(event);
+    };
+    el.addEventListener("keydown", handler);
+    return () => {
+      el.removeEventListener("keydown", handler);
+    };
+  });
+
+  $effect(() => {
+    const el = viewportEl;
+    if (!el) {
+      return;
+    }
+    const swipe = attachReaderSwipe(el, {
+      isEnabled: () => !loading && !error && !!doc,
+      canPrev: () => page > 1,
+      canNext: () => !!doc && page < numPages,
+      onPrev: () => {
+        void prevPage();
+      },
+      onNext: () => {
+        void nextPage();
+      },
+    });
+    return () => swipe.teardown();
+  });
+
+  $effect(() => {
+    if (!loading && !error && doc && viewportEl) {
+      viewportEl.focus({ preventScroll: true });
+    }
+  });
+
+  $effect(() => {
+    const frame = frameEl;
+    void readerTheme;
+    void rotation;
+    if (!frame || loading || error || !doc) {
+      pageScrollEl = null;
+      return;
+    }
+    const init = () => {
+      void paintPage();
+    };
+    if (frame.contentDocument?.readyState === "complete") {
+      init();
+    } else {
+      frame.addEventListener("load", init, { once: true });
+    }
+    return () => {
+      pageScrollEl = null;
+    };
+  });
 </script>
 
-<section class="pdf-viewer">
+<div class="pdf-viewer">
   <header class="toolbar">
     <div class="nav">
-      <button type="button" aria-label={t("documents.prevPage")} disabled={page <= 1} onclick={prevPage}>
+      <button
+        type="button"
+        aria-label={t("documents.prevPage")}
+        disabled={page <= 1}
+        onclick={prevPage}
+      >
         <ChevronLeft size={16} />
       </button>
-      <span class="status">{t("documents.pageOf", { current: String(page), total: String(numPages || 1) })}</span>
+      <span class="status"
+        >{t("documents.pageOf", { current: String(page), total: String(numPages || 1) })}</span
+      >
       <button
         type="button"
         aria-label={t("documents.nextPage")}
@@ -137,10 +289,26 @@
         <ZoomIn size={16} />
       </button>
       <button type="button" class="fit-btn" onclick={fitToWidth}>{t("documents.fitWidth")}</button>
+      <button
+        type="button"
+        aria-label={t("documents.rotate")}
+        onclick={() => {
+          rotation = cycleReaderRotation(rotation);
+          void paintPage();
+        }}
+      >
+        <RotateCw size={16} />
+      </button>
     </div>
   </header>
 
-  <div class="viewport" bind:this={viewportEl}>
+  <div
+    class="viewport"
+    bind:this={viewportEl}
+    role="region"
+    aria-label={t("documents.pageOf", { current: String(page), total: String(numPages || 1) })}
+    tabindex="-1"
+  >
     {#if loading}
       <div class="state">{t("documents.loading")}</div>
     {:else if error}
@@ -149,10 +317,16 @@
         <button type="button" class="retry-btn" onclick={onRetry}>{t("documents.retry")}</button>
       </div>
     {:else}
-      <canvas bind:this={canvasEl} class="page-canvas"></canvas>
+      <iframe
+        bind:this={frameEl}
+        class="pdf-frame"
+        title={t("documents.pageOf", { current: String(page), total: String(numPages || 1) })}
+        sandbox={ISOLATED_FRAME_SANDBOX}
+        src="about:blank"
+      ></iframe>
     {/if}
   </div>
-</section>
+</div>
 
 <style>
   .pdf-viewer {
@@ -215,17 +389,20 @@
   .viewport {
     flex: 1;
     min-height: 0;
-    overflow: auto;
-    padding: 1rem;
+    overflow: hidden;
+    padding: 0;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    outline: none;
+    touch-action: pan-y;
   }
 
-  .page-canvas {
-    max-width: 100%;
-    height: auto;
-    box-shadow: 0 2px 12px rgb(0 0 0 / 18%);
-    background: #fff;
+  .pdf-frame {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    border: none;
+    background: transparent;
   }
 
   .state {

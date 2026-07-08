@@ -28,11 +28,7 @@
   </aside>
 {:else if app.activePanel === "history"}
   <aside class="side-pane">
-    <HistoryPanel
-      history={app.history}
-      onOpen={app.browseURL}
-      onClear={app.requestClearHistory}
-    />
+    <HistoryPanel history={app.history} onOpen={app.browseURL} onClear={app.requestClearHistory} />
   </aside>
 {:else if app.activePanel === "devtools"}
   <aside class="side-pane">

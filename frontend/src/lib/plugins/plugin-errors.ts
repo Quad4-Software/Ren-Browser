@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 import { ReportPluginError } from "../../../bindings/renbrowser/internal/app/pluginhost.js";
 import { formatBindingError } from "$lib/browser/binding-errors.js";
-import { deactivatePlugin } from "./lifecycle.js";
+import { deactivatePlugin } from "./plugin-runtime.js";
 
 export async function reportPluginFailure(
   pluginId: string,

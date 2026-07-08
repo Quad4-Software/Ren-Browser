@@ -15,7 +15,11 @@ export async function loadPdfDocument(data: Uint8Array): Promise<PdfLoadResult> 
   const loadingTask = pdfjs.getDocument({
     data: copy,
     useWorkerFetch: false,
+    useSystemFonts: false,
     disableFontFace: true,
+    disableAutoFetch: true,
+    disableStream: true,
+    disableRange: true,
   });
   const doc = await withTimeout(loadingTask.promise, DOCUMENT_PDF_RENDER_TIMEOUT_MS, "PDF load");
   return { doc, numPages: doc.numPages };
@@ -26,13 +30,14 @@ export async function renderPdfPage(
   pageNumber: number,
   canvas: HTMLCanvasElement,
   scale: number,
+  rotation = 0,
 ): Promise<void> {
   const page = await withTimeout(
     doc.getPage(pageNumber),
     DOCUMENT_PDF_RENDER_TIMEOUT_MS,
     "PDF page load",
   );
-  const viewport = page.getViewport({ scale });
+  const viewport = page.getViewport({ scale, rotation });
   const context = canvas.getContext("2d");
   if (!context) {
     throw new Error("canvas context unavailable");
