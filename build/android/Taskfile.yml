@@ -175,6 +175,22 @@ tasks:
     cmds:
       - task: assemble:apk:release
 
+  package:default:
+    summary: Packages a production build for 64-bit architectures only (arm64 + x86_64)
+    deps:
+      - task: build
+        vars:
+          PRODUCTION: "true"
+          ARCH: arm64
+          KEEP_OTHER_ABIS: "true"
+    cmds:
+      - task: compile:go:shared
+        vars:
+          ARCH: amd64
+          PRODUCTION: "true"
+          KEEP_OTHER_ABIS: "true"
+      - task: assemble:apk:release
+
   package:fat:
     summary: Packages a production build for all architectures (fat APK)
     deps:

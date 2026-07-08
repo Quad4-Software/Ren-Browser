@@ -553,7 +553,7 @@ jobs:
           set -euo pipefail
           export ANDROID_KEY_PASSWORD="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
           if [ "${{ inputs.android_all_abis }}" = "true" ]; then
-            task package:fat
+            task package:android:all
           else
             task package:android
           fi

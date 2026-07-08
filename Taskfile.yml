@@ -293,6 +293,11 @@ tasks:
   package:android:
     desc: Package production APK for Android (arm64 + x86_64)
     cmds:
+      - task: android:package:default
+
+  package:android:all:
+    desc: Package production APK for all Android architectures (arm64, x86_64, arm, 386)
+    cmds:
       - task: android:package:fat
 
   run:android:

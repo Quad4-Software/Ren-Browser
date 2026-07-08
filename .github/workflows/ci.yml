@@ -336,7 +336,7 @@ jobs:
         run: |
           set -euo pipefail
           export ANDROID_KEY_PASSWORD="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
-          task package:fat
+          task package:android:all
 
       - name: Build debug APK
         if: steps.android_sign.outputs.available != 'true'
