@@ -3,7 +3,7 @@
 
 SHELL := /bin/bash
 .PHONY: help check format test test-go test-regression frontend-check frontend-test frontend-fmt \
-	build build-frontend build-server screenshots dev clean vendor mod-tidy
+	build build-frontend build-server screenshots dev clean vendor mod-tidy gosec sbom
 
 export GOFLAGS ?= -mod=vendor
 export PNPM ?= pnpm
@@ -23,6 +23,7 @@ help:
 		"  make build            Build desktop binary (GTK4/WebKitGTK)" \
 		"  make build-server     Build headless server binary" \
 		"  make screenshots      Regenerate README preview images" \
+		"  make sbom             Generate SPDX and CycloneDX SBOMs (requires Trivy)" \
 		"  make dev              Run Wails dev mode" \
 		"  make vendor           Refresh vendor/ from go.mod" \
 		"  make mod-tidy         go mod tidy + vendor refresh"
@@ -45,6 +46,13 @@ test-go:
 
 gosec:
 	bash build/scripts/gosec.sh ./...
+
+sbom:
+	@command -v trivy >/dev/null 2>&1 || { echo "Trivy not found. Install with: sh build/scripts/ci/setup-trivy.sh 0.69.3" >&2; exit 1; }
+	mkdir -p sbom
+	trivy fs --skip-dirs vendor --skip-dirs frontend/node_modules --skip-dirs bin --skip-dirs .cache --skip-dirs third_party --skip-dirs build/android/.gradle --skip-dirs build/android/build --format spdx-json --include-dev-deps --output sbom/sbom.spdx.json .
+	trivy fs --skip-dirs vendor --skip-dirs frontend/node_modules --skip-dirs bin --skip-dirs .cache --skip-dirs third_party --skip-dirs build/android/.gradle --skip-dirs build/android/build --format cyclonedx --include-dev-deps --output sbom/sbom.cyclonedx.json .
+	@echo 'SBOM files generated in sbom/ directory'
 
 frontend-install:
 	$(PNPM) install --dir frontend

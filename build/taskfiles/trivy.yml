@@ -1,0 +1,55 @@
+version: '3'
+
+tasks:
+  _trivy-require:
+    internal: true
+    preconditions:
+      - sh: command -v trivy
+        msg: "Trivy not found. Run 'task trivy:install' first."
+
+  "trivy:install":
+    desc: Install Trivy scanner
+    cmds:
+      - |
+        if ! command -v trivy &> /dev/null; then
+          sh build/scripts/ci/setup-trivy.sh 0.69.3
+        else
+          echo "Trivy is already installed: $(trivy --version)"
+        fi
+
+  "trivy:scan":
+    desc: Run Trivy vulnerability scan
+    deps: [_trivy-require]
+    cmds:
+      - trivy fs {{.TRIVY_SKIP_DIR_FLAGS}} --scanners vuln --severity HIGH,CRITICAL --timeout 90m .
+
+  "trivy:ci":
+    desc: Run Trivy scan for CI (exits with non-zero code on findings)
+    deps: [_trivy-require]
+    cmds:
+      - trivy fs {{.TRIVY_SKIP_DIR_FLAGS}} --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --timeout 90m .
+
+  sbom:
+    desc: Generate SBOM files (SPDX and CycloneDX formats)
+    deps: [_trivy-require]
+    cmds:
+      - mkdir -p sbom
+      - trivy fs {{.TRIVY_SKIP_DIR_FLAGS}} --format spdx-json --include-dev-deps --output sbom/sbom.spdx.json .
+      - trivy fs {{.TRIVY_SKIP_DIR_FLAGS}} --format cyclonedx --include-dev-deps --output sbom/sbom.cyclonedx.json .
+      - echo 'SBOM files generated in sbom/ directory'
+
+  "sbom:spdx":
+    desc: Generate SPDX JSON SBOM
+    deps: [_trivy-require]
+    cmds:
+      - mkdir -p sbom
+      - trivy fs {{.TRIVY_SKIP_DIR_FLAGS}} --format spdx-json --include-dev-deps --output sbom/sbom.spdx.json .
+      - echo 'SPDX SBOM generated at sbom/sbom.spdx.json'
+
+  "sbom:cyclonedx":
+    desc: Generate CycloneDX SBOM
+    deps: [_trivy-require]
+    cmds:
+      - mkdir -p sbom
+      - trivy fs {{.TRIVY_SKIP_DIR_FLAGS}} --format cyclonedx --include-dev-deps --output sbom/sbom.cyclonedx.json .
+      - echo 'CycloneDX SBOM generated at sbom/sbom.cyclonedx.json'

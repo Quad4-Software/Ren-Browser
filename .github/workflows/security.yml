@@ -1,0 +1,52 @@
+# Pinned actions (bump tag and SHA together when upgrading):
+#   actions/checkout@v7.0.0            9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+#   actions/upload-artifact@v7.0.1     043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+#
+name: Security
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  CI_TRIVY_VERSION: "0.69.3"
+  GOFLAGS: -mod=vendor
+
+jobs:
+  sbom:
+    name: SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-wails: "false"
+          install-linux-deps: "false"
+          cache-node: "false"
+
+      - name: Apt update (for Trivy .deb)
+        run: sh build/scripts/ci/exec-priv.sh apt-get update -qq
+
+      - name: Install Trivy
+        run: sh build/scripts/ci/setup-trivy.sh "${{ env.CI_TRIVY_VERSION }}"
+
+      - name: Generate SBOM
+        run: task sbom
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sbom-${{ github.ref_name }}
+          path: sbom/
+          if-no-files-found: error

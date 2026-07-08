@@ -7,6 +7,7 @@ vars:
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
   GOOS: '{{.GOOS | default OS}}'
   RETICULUM_GO: '{{.RETICULUM_GO | default "../Reticulum/Reticulum-Go"}}'
+  TRIVY_SKIP_DIR_FLAGS: --skip-dirs vendor --skip-dirs frontend/node_modules --skip-dirs bin --skip-dirs .cache --skip-dirs third_party --skip-dirs build/android/.gradle --skip-dirs build/android/build
   GIT_COMMIT:
     sh: git rev-parse --short HEAD 2>/dev/null || echo dev
 
@@ -17,6 +18,9 @@ includes:
   linux: ./build/linux/Taskfile.yml
   ios: ./build/ios/Taskfile.yml
   android: ./build/android/Taskfile.yml
+  trivy:
+    taskfile: ./build/taskfiles/trivy.yml
+    flatten: true
 
 tasks:
   default:

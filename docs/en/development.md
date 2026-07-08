@@ -49,6 +49,12 @@ task check
 - Brand consistency check
 - Frontend typecheck, lint, format check, knip, audit, and vitest
 
+Generate SPDX and CycloneDX SBOMs with Trivy:
+
+```sh
+task sbom
+```
+
 Optional harder Go tests:
 
 ```sh

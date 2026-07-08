@@ -85,6 +85,7 @@ Check Settings for the error string.
 | Go tests | `task test:go` |
 | Frontend | `task frontend:check` |
 | Security scan | `task gosec` |
+| SBOM | `task sbom` |
 
 Run `task check` before you send patches.
 

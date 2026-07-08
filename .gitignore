@@ -4,6 +4,8 @@
 # Build output
 bin/
 bench/
+sbom/
+reports/
 .docker/
 *.exe
 /renbrowser

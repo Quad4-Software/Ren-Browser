@@ -2,6 +2,8 @@
 #   actions/checkout@v7.0.0                    9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 #   actions/upload-artifact@v7.0.1             043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
 #   actions/download-artifact@v8.0.1           3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+#
+# Trivy (SBOM job): pinned via build/scripts/ci/setup-trivy.sh (0.69.3)
 
 name: Desktop build
 
@@ -47,6 +49,7 @@ permissions:
 
 env:
   GOFLAGS: -mod=vendor
+  CI_TRIVY_VERSION: "0.69.3"
 
 jobs:
   version:
@@ -661,6 +664,45 @@ jobs:
           path: dist/release/renbrowser-micron-translator*.wasm
           if-no-files-found: ignore
 
+  sbom:
+    name: SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-wails: "false"
+          install-linux-deps: "false"
+          cache-node: "false"
+
+      - name: Apt update (for Trivy .deb)
+        run: sh build/scripts/ci/exec-priv.sh apt-get update -qq
+
+      - name: Install Trivy
+        run: sh build/scripts/ci/setup-trivy.sh "${{ env.CI_TRIVY_VERSION }}"
+
+      - name: Generate SBOM
+        run: task sbom
+
+      - name: Stage SBOM files for release
+        run: |
+          set -euo pipefail
+          cp sbom/sbom.spdx.json renbrowser-sbom.spdx.json
+          cp sbom/sbom.cyclonedx.json renbrowser-sbom.cyclonedx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: sbom-release
+          path: |
+            renbrowser-sbom.spdx.json
+            renbrowser-sbom.cyclonedx.json
+          if-no-files-found: error
+
   publish:
     name: Publish
     needs:
@@ -674,6 +716,7 @@ jobs:
       - build-android
       - build-extension-wasm
       - build-ios
+      - sbom
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
@@ -696,10 +739,15 @@ jobs:
             echo "No artifacts directory after download." >&2
             exit 1
           fi
-          find artifacts -type f -name 'renbrowser-*' -exec cp {} release/ \;
-          if [ -z "$(find release -maxdepth 1 -type f | head -n 1)" ]; then
+          find artifacts -type f \( -name 'renbrowser-*' -o -name 'renbrowser-sbom.*' \) -exec cp {} release/ \;
+          if [ -z "$(find release -maxdepth 1 -type f ! -name 'renbrowser-sbom.*' | head -n 1)" ]; then
             echo "No release binaries found in downloaded artifacts." >&2
             find artifacts -type f | head -20 >&2 || true
+            exit 1
+          fi
+          if [ ! -f release/renbrowser-sbom.spdx.json ] || [ ! -f release/renbrowser-sbom.cyclonedx.json ]; then
+            echo "SBOM artifacts missing from download." >&2
+            find artifacts -type f -name '*sbom*' >&2 || true
             exit 1
           fi
           cd release
@@ -732,6 +780,7 @@ jobs:
           - Windows 7/8/8.1 headless server (`renbrowser-server-windows7-amd64.exe`) when the legacy toolchain build succeeds
           - Android universal APK (arm64-v8a + armeabi-v7a; debug for nightly/beta; signed release when keystore secrets are configured)
           - Micron Translator extension WASM (`renbrowser-micron-translator.wasm` one-file install; `renbrowser-micron-translator-backend.wasm` raw backend when TinyGo build succeeds)
+          - Software Bill of Materials (`renbrowser-sbom.spdx.json`, `renbrowser-sbom.cyclonedx.json`)
 
           See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${tag}/CHANGELOG.md) for details.
           EOF

@@ -26,6 +26,7 @@ Official release binaries and packages are built in **automation on GitHub**, no
 
 - **Installable files** (Linux AppImage and binary, Windows executable, macOS app bundle, headless server binary, and Android APK when the pipeline produces it) from that tag.
 - A **`SHA256SUMS.txt`** file listing checksums for release assets so you can verify downloads.
+- **Software Bill of Materials** (`renbrowser-sbom.spdx.json` and `renbrowser-sbom.cyclonedx.json`) generated with Trivy (`task sbom`). Ad-hoc SBOM generation is available via `workflow_dispatch` on `.github/workflows/security.yml`.
 
 **Docker images** for `renbrowser` published to GitHub Container Registry are built in CI with **build provenance and an SBOM** attached by Docker Buildx.
 
@@ -115,6 +116,6 @@ The community directory URL is also fetched at **build time** to refresh the emb
 
 ### Build, supply chain, and transparency
 
-- **CI:** Automated pipelines on GitHub Actions run Go and frontend tests, **gosec** static analysis, **Trivy** filesystem and Dockerfile configuration scans, brand consistency checks, and server/desktop build smoke tests. **CodeQL** analysis runs on a separate schedule/workflow. Third-party GitHub Actions are referenced with **pinned commit SHAs** (documented beside each workflow) to reduce unexpected upgrades.
-- **Releases:** Tagged release artifacts for Linux, Windows, macOS, and the headless server are produced in CI and published with **SHA256** checksums. Android release APKs are built when the Android pipeline is enabled for the tag.
+- **CI:** Automated pipelines on GitHub Actions run Go and frontend tests, **gosec** static analysis, **Trivy** filesystem and Dockerfile configuration scans, brand consistency checks, and server/desktop build smoke tests. **CodeQL** analysis runs on a separate schedule/workflow. Third-party GitHub Actions are referenced with **pinned commit SHAs** (documented beside each workflow) to reduce unexpected upgrades. SPDX and CycloneDX SBOMs are produced with Trivy (`task sbom` / `make sbom`) and attached to GitHub Releases from the desktop build workflow; ad-hoc generation uses `.github/workflows/security.yml`.
+- **Releases:** Tagged release artifacts for Linux, Windows, macOS, and the headless server are produced in CI and published with **SHA256** checksums and SBOM files. Android release APKs are built when the Android pipeline is enabled for the tag.
 - **Containers:** Server images are built with provenance and SBOM generation enabled in the Docker workflow.

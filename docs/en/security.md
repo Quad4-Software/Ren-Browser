@@ -65,6 +65,8 @@ Each release should include `SHA256SUMS.txt`. Check your file:
 sha256sum -c SHA256SUMS.txt
 ```
 
+Tagged releases also attach SPDX and CycloneDX SBOMs (`renbrowser-sbom.spdx.json`, `renbrowser-sbom.cyclonedx.json`) from Trivy (`task sbom` or `make sbom`). Generate them locally the same way, or run the Security workflow (`workflow_dispatch`) on GitHub Actions.
+
 For Docker, prefer pinning by digest (`@sha256:...`) after you trust a build. Images on GHCR include build provenance and an SBOM from Docker Buildx.
 
 If a binary does not match published checksums, treat it as untrusted.
