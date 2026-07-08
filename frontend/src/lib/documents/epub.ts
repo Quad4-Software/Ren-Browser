@@ -82,13 +82,19 @@ function parseNcxToc(ncxXml: string): Map<string, string> {
     }
   }
   if (titles.size === 0) {
-    const pattern =
-      /<navLabel>\s*<(?:\w+:)?text>([^<]+)<\/(?:\w+:)?text>[\s\S]*?<content[^>]+src="([^"]+)"/gi;
-    for (const match of ncxXml.matchAll(pattern)) {
-      const label = match[1]?.trim() ?? "";
-      const path = normalizeEpubPath(match[2] ?? "");
-      if (label && path) {
-        titles.set(path, label);
+    const parts = ncxXml.split(/<navPoint/i);
+    // eslint-disable-next-line security/detect-unsafe-regex
+    const labelPattern = /<navLabel>\s*<(?:\w+:)?text>([^<]+)<\/(?:\w+:)?text>/i;
+    const contentPattern = /<content[^>]+src="([^"]+)"/i;
+    for (const part of parts) {
+      const labelMatch = part.match(labelPattern);
+      const contentMatch = part.match(contentPattern);
+      if (labelMatch && contentMatch) {
+        const label = labelMatch[1]?.trim() ?? "";
+        const path = normalizeEpubPath(contentMatch[1] ?? "");
+        if (label && path) {
+          titles.set(path, label);
+        }
       }
     }
   }

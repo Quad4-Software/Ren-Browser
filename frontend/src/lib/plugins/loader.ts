@@ -10,6 +10,7 @@ export async function loadPluginModule(pluginId: string, entry: string): Promise
     return cached;
   }
   const url = `/_plugins/${encodeURIComponent(pluginId)}/${entry.split("/").map(encodeURIComponent).join("/")}`;
+  // eslint-disable-next-line no-unsanitized/method
   const mod = (await import(/* @vite-ignore */ url)) as PluginModule;
   cache.set(key, mod);
   return mod;
