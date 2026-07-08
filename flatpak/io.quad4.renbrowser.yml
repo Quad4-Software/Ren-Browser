@@ -18,6 +18,9 @@ finish-args:
   - --filesystem=xdg-config/io.quad4.renbrowser:create
   # Wails registers GtkApplication as org.wails.ren_browser (from "Ren Browser").
   - --own-name=org.wails.ren_browser
+  # Wails single-instance lock (UniqueID = brand.BundleID) owns this name on the
+  # session bus. Without it, RequestName fails and the app exits silently.
+  - --own-name=org.wails_app_io_quad4_renbrowser.SingleInstance
   - --talk-name=org.freedesktop.portal.Desktop
   - --talk-name=org.freedesktop.portal.FileChooser
   - --talk-name=org.freedesktop.portal.OpenURI
