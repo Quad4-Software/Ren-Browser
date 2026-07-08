@@ -2,7 +2,7 @@
 
 A modern browser for Reticulum Network using Reticulum-Go and Micron-Parser-Go.
 
-This project is under heavy active development, please wait until v1.0 for stability and to be more user friendly.
+This project is under heavy active development and may be unstable on some platformas until v1.0
 
 <p align="center"><img src="screenshots/desktop/dark/home.png" alt="Ren Browser" width="720" /></p>
 
