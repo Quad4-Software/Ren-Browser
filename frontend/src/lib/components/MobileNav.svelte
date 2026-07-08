@@ -1,15 +1,11 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Compass, Download, History, Home, Search, Settings, Terminal } from "@lucide/svelte";
-  import { pluginLabel } from "$lib/plugins/plugin-label.js";
-  import PluginLucideIcon from "$lib/components/PluginLucideIcon.svelte";
-  import type { ActivePanel, PluginPanelContribution } from "$lib/plugins/api-types.js";
-  import { panelKey } from "$lib/plugins/registry.js";
+  import { Compass, Download, History, Home, Settings, Terminal } from "@lucide/svelte";
+  import type { ActivePanel } from "$lib/plugins/api-types.js";
   import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
     activePanel: ActivePanel;
-    pluginPanels?: PluginPanelContribution[];
     mobileDevTools: boolean;
     downloadsOpen: boolean;
     activeDownloadCount?: number;
@@ -19,7 +15,6 @@
 
   let {
     activePanel,
-    pluginPanels = [],
     mobileDevTools,
     downloadsOpen,
     activeDownloadCount = 0,
@@ -32,10 +27,6 @@
   <button class:active={activePanel === "browser"} onclick={() => onPanel("browser")}>
     <Home size={18} />
     <span>{t("mobileNav.browse")}</span>
-  </button>
-  <button class:active={activePanel === "search"} onclick={() => onPanel("search")}>
-    <Search size={18} />
-    <span>{t("mobileNav.search")}</span>
   </button>
   <button class:active={activePanel === "discovery"} onclick={() => onPanel("discovery")}>
     <Compass size={18} />
@@ -59,15 +50,6 @@
     </span>
     <span>{t("mobileNav.downloads")}</span>
   </button>
-  {#each pluginPanels as panel (panel.pluginId + ":" + panel.id)}
-    {@const key = panelKey(panel.pluginId, panel.id)}
-    <button class:active={activePanel === key} onclick={() => onPanel(key)}>
-      <span class="plugin-dot">
-        <PluginLucideIcon name={panel.icon} size={18} />
-      </span>
-      <span>{pluginLabel(panel.pluginId, panel.title)}</span>
-    </button>
-  {/each}
   {#if mobileDevTools}
     <button class:active={activePanel === "devtools"} onclick={() => onPanel("devtools")}>
       <Terminal size={18} />
@@ -155,21 +137,6 @@
     font-weight: 700;
     line-height: 1;
     border: 1.5px solid var(--ren-chrome-bg);
-  }
-
-  .plugin-dot {
-    width: 18px;
-    height: 18px;
-    display: grid;
-    place-items: center;
-    border-radius: 999px;
-    background: var(--ren-surface-raised);
-    font-size: 0.7rem;
-    font-weight: 700;
-  }
-
-  button.active .plugin-dot {
-    background: rgba(255, 255, 255, 0.2);
   }
 
   :global(.app-shell.mobile-ui) .mobile-nav {

@@ -44,7 +44,7 @@
   canGoForward={app.canGoForward}
   activePanel={app.activePanel}
   pluginPanels={app.pluginContributions.panels}
-  themeMode={app.theme.mode === "light" ? "light" : "dark"}
+  devToolsEnabled={app.mobileDevTools}
   downloadsOpen={app.downloadsOpen}
   downloads={app.downloads}
   activeDownloads={app.activeDownloadViews}
@@ -69,5 +69,4 @@
   clearingDownloadHistory={app.clearingDownloadHistory}
   onIdentify={app.requestIdentify}
   onPanel={app.setPanel}
-  onToggleTheme={app.toggleTheme}
 />

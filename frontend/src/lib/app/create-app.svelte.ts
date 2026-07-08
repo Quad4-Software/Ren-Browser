@@ -315,7 +315,7 @@ export function createApp() {
   let persistTimer: ReturnType<typeof setTimeout> | undefined;
 
   function setPanel(panel: ActivePanel) {
-    if (mobileUI && panel === "devtools" && !mobileDevTools) {
+    if (panel === "devtools" && !mobileDevTools) {
       return;
     }
     const next = activePanel === panel ? "browser" : panel;
@@ -1343,7 +1343,7 @@ export function createApp() {
     pageCacheEnabled = prefs.pageCacheEnabled !== false;
     tabHoverPreviews = prefs.tabHoverPreviews !== false;
     settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
-    if (mobileUI && activePanel === "devtools" && !mobileDevTools) {
+    if (activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
     }
     await refreshMicronWasmState(micronWasmParserId);
@@ -1395,7 +1395,7 @@ export function createApp() {
     pageCacheEnabled = prefs.pageCacheEnabled !== false;
     tabHoverPreviews = prefs.tabHoverPreviews !== false;
     settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
-    if (mobileUI && activePanel === "devtools" && !mobileDevTools) {
+    if (activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
     }
     await refreshMicronWasmState(micronWasmParserId);
@@ -1619,7 +1619,7 @@ export function createApp() {
     mobileDevTools = !!reset.browserPrefs.mobileDevTools;
     pageCacheEnabled = reset.browserPrefs.pageCacheEnabled !== false;
     tabHoverPreviews = reset.browserPrefs.tabHoverPreviews !== false;
-    if (mobileUI && activePanel === "devtools" && !mobileDevTools) {
+    if (activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
     }
     await refreshMicronWasmState(micronWasmParserId);

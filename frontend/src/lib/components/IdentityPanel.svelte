@@ -409,7 +409,7 @@
 
   .card {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 0.65rem;
     flex-wrap: wrap;
@@ -418,7 +418,7 @@
   }
 
   .body {
-    flex: 1 1 12rem;
+    flex: 1 1 auto;
     min-width: 0;
     display: grid;
     gap: 0.25rem;
@@ -528,15 +528,20 @@
   }
 
   @media (max-width: 640px) {
+    .list {
+      max-height: none;
+    }
+
     .card {
-      flex-direction: column;
-      align-items: stretch;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .actions {
-      width: 100%;
-      margin-left: 0;
+      width: auto;
+      margin-left: auto;
       justify-content: flex-end;
+      flex-wrap: nowrap;
     }
 
     .create-row,
@@ -545,7 +550,9 @@
       grid-template-columns: 1fr;
     }
 
-    .ren-btn {
+    .create-row .ren-btn,
+    .import-row .ren-btn,
+    .rename-row .ren-btn {
       width: 100%;
       justify-content: center;
       white-space: normal;

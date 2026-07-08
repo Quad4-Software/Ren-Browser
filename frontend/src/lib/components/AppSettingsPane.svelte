@@ -50,6 +50,7 @@
   onChangeOpenLinksInNewTab={app.saveOpenLinksInNewTab}
   onChangeTabHoverPreviews={app.saveTabHoverPreviews}
   onChangeMobileDevTools={app.saveMobileDevTools}
+  onOpenSearch={() => app.setPanel("search")}
   onChangeNativeTitlebar={app.saveNativeTitlebar}
   onChangeMicronRenderer={app.saveMicronRenderer}
   onChangeMicronWasmEnabled={app.saveMicronWasmEnabled}

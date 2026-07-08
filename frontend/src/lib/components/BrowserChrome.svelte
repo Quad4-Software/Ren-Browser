@@ -7,11 +7,9 @@
     Download,
     Fingerprint,
     History,
-    Moon,
     RefreshCw,
     Search,
     Settings,
-    Sun,
     Terminal,
     X,
   } from "@lucide/svelte";
@@ -29,7 +27,7 @@
     canGoForward: boolean;
     activePanel: ActivePanel;
     pluginPanels?: PluginPanelContribution[];
-    themeMode: "dark" | "light";
+    devToolsEnabled: boolean;
     downloadsOpen: boolean;
     downloads: DownloadRow[];
     activeDownloads?: DownloadProgressView[];
@@ -41,7 +39,6 @@
     onForward: () => void;
     onReload: () => void;
     onPanel: (panel: ActivePanel) => void;
-    onToggleTheme: () => void;
     onDownloadPage: () => void;
     onToggleDownloads: () => void;
     onCloseDownloads: () => void;
@@ -63,7 +60,7 @@
     canGoForward,
     activePanel,
     pluginPanels = [],
-    themeMode,
+    devToolsEnabled,
     downloadsOpen,
     downloads,
     activeDownloads = [],
@@ -75,7 +72,6 @@
     onForward,
     onReload,
     onPanel,
-    onToggleTheme,
     onDownloadPage,
     onToggleDownloads,
     onCloseDownloads,
@@ -220,14 +216,16 @@
         </span>
       </button>
     {/each}
-    <button
-      class="ren-icon-btn mobile-nav-dup"
-      class:active={activePanel === "devtools"}
-      aria-label={t("chrome.devtools")}
-      onclick={() => onPanel("devtools")}
-    >
-      <Terminal size={16} />
-    </button>
+    {#if devToolsEnabled}
+      <button
+        class="ren-icon-btn mobile-nav-dup"
+        class:active={activePanel === "devtools"}
+        aria-label={t("chrome.devtools")}
+        onclick={() => onPanel("devtools")}
+      >
+        <Terminal size={16} />
+      </button>
+    {/if}
     <button
       class="ren-icon-btn mobile-nav-dup"
       class:active={activePanel === "settings"}
@@ -235,17 +233,6 @@
       onclick={() => onPanel("settings")}
     >
       <Settings size={16} />
-    </button>
-    <button
-      class="ren-icon-btn mobile-nav-dup"
-      aria-label={t("chrome.toggleTheme")}
-      onclick={onToggleTheme}
-    >
-      {#if themeMode === "dark"}
-        <Sun size={16} />
-      {:else}
-        <Moon size={16} />
-      {/if}
     </button>
     {#if activePanel !== "browser"}
       <button
@@ -320,7 +307,7 @@
     }
 
     /* These actions (history, discovery, devtools, settings, downloads,
-       theme, close panel) are already reachable from the bottom mobile
+       close panel) are already reachable from the bottom mobile
        nav bar, so hide the duplicates here to keep the URL bar row clean. */
     .mobile-nav-dup {
       display: none;

@@ -90,6 +90,7 @@
     onChangeOpenLinksInNewTab: (value: boolean) => void;
     onChangeTabHoverPreviews: (value: boolean) => void;
     onChangeMobileDevTools: (value: boolean) => void;
+    onOpenSearch?: () => void;
     onChangeNativeTitlebar: (value: boolean) => void;
     onChangeMicronRenderer: (value: MicronRendererPreference) => void;
     onChangeMicronWasmEnabled: (value: boolean) => void;
@@ -152,6 +153,7 @@
     onChangeOpenLinksInNewTab,
     onChangeTabHoverPreviews,
     onChangeMobileDevTools,
+    onOpenSearch = () => {},
     onChangeNativeTitlebar,
     onChangeMicronRenderer,
     onChangeMicronWasmEnabled,
@@ -430,12 +432,16 @@
       onchange={onChangeOpenLinksInNewTab}
     />
 
+    <Toggle
+      label={t("settings.mobileDevTools")}
+      checked={mobileDevTools}
+      onchange={onChangeMobileDevTools}
+    />
+
     {#if mobileUI}
-      <Toggle
-        label={t("settings.mobileDevTools")}
-        checked={mobileDevTools}
-        onchange={onChangeMobileDevTools}
-      />
+      <button type="button" class="panel-link" onclick={onOpenSearch}>
+        {t("settings.openSearch")}
+      </button>
     {/if}
 
     {#if desktopChrome}
@@ -959,6 +965,26 @@
     color: var(--ren-muted);
     font-size: 0.82rem;
     word-break: break-all;
+  }
+
+  .panel-link {
+    width: 100%;
+    text-align: left;
+    border: 1px solid var(--ren-border);
+    border-radius: var(--ren-radius);
+    background: var(--ren-surface-raised);
+    color: var(--ren-fg);
+    padding: 0.65rem 0.8rem;
+    font: inherit;
+    cursor: pointer;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
+  }
+
+  .panel-link:hover {
+    border-color: var(--ren-border-strong);
+    background: var(--ren-tab-hover);
   }
 
   .warn {

@@ -41,8 +41,7 @@
   {#if app.mobileUI && !app.mobileTabsOpen}
     <MobileNav
       activePanel={app.activePanel}
-      pluginPanels={app.pluginContributions.panels}
-      mobileDevTools={app.mobileUI ? app.mobileDevTools : true}
+      mobileDevTools={app.mobileDevTools}
       downloadsOpen={app.downloadsOpen}
       activeDownloadCount={app.activeDownloadViews.filter(
         (item) => item.status === "pending" || item.status === "downloading",

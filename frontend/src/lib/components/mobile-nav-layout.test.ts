@@ -25,7 +25,6 @@ describe("MobileNav layout regressions", () => {
         target: shell,
         props: {
           activePanel: "browser",
-          pluginPanels: [],
           mobileDevTools: false,
           downloadsOpen: false,
           activeDownloadCount: 0,
