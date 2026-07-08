@@ -80,6 +80,39 @@ Ren Browser can open **PDF** and **EPUB** files from the **Downloads folder** in
 - **Only open documents from sources you trust.** Malicious PDFs or EPUBs may still attempt denial-of-service (very large or pathological files are partially mitigated by size limits and timeouts, not eliminated).
 - For maximum isolation, open untrusted files with an external application instead of the built-in viewer.
 
+### External network connections
+
+Ren Browser does **not** include telemetry, analytics, crash reporting, or an in-app auto-update checker. The main browser UI **blocks** clearnet navigation (`http://`, `https://`, `ws://`, `wss://`) for page content.
+
+The table below lists every **intentional** outbound connection path in application code. Third-party plugins and user-configured Reticulum peers can reach additional hosts beyond this list.
+
+#### Runtime - automatic or app-initiated (clearnet HTTP/HTTPS)
+
+| When | Destination | Purpose | Code |
+|------|-------------|---------|------|
+| Settings → Community interfaces refresh | `https://directory.rns.recipes/api/directory/submitted?search=&type=&status=online` | Fetch live Reticulum community interface directory. Falls back to an embedded snapshot on failure. | `internal/rns/community.go` |
+| First Reticulum config creation | Hosts from community directory (e.g. `rns.michmesh.net:7822` as a disabled default; up to 4 enabled peers from directory data) | Seed default TCP client interfaces. | `internal/rns/config.go`, `internal/rns/data/community_directory.json` |
+| Settings → Micron WASM Manager (user adds a GitHub release) | `https://github.com/Quad4-Software/Micron-Parser-Go/releases/download/{tag}/micron-parser-go.wasm` and `.../SHASUMS256.txt` | Download and SHA-256–verify an optional Micron parser WASM binary. | `internal/micronwasm/fetch.go` |
+
+The community directory URL is also fetched at **build time** to refresh the embedded snapshot (`build/scripts/fetch-community-directory.mjs`). Override for builds only: `REN_BROWSER_COMMUNITY_DIRECTORY_URL`.
+
+#### Runtime - user-initiated or permission-gated
+
+| When | Destination | Purpose | Code |
+|------|-------------|---------|------|
+| Plugin with `network.fetch` permission | Any `http://` or `https://` URL the plugin requests | Plugin HTTP client (`PluginFetch` / `ctx.network.fetch`). Manifest `network.endpoints` is disclosure for install review, not a runtime allowlist. | `internal/plugins/wasm_http.go`, `internal/app/plugin_fetch.go` |
+| Micron Translator extension (bundled; requires `network.fetch`) | `https://translate.googleapis.com/translate_a/single?...` | Google Translate backend (default). | `extensions/micron-translator/wasm/main.go` |
+| Micron Translator extension | `https://libretranslate.com/translate` (or user-configured LibreTranslate base URL) | LibreTranslate backend (optional). | `extensions/micron-translator/wasm/main.go`, `extensions/micron-translator/settings.js` |
+| Android APK share | `http://{local-wifi-ip}:{port}/{filename}` | Temporary LAN HTTP server so another device on the same network can download a shared APK. | `internal/app/share_apk_android.go` |
+| Android `OpenURL` | User-chosen URI | Opens the system browser or handler for a link (destination depends on context). | `internal/app/downloads_android.go` |
+
+#### Runtime - mesh / Reticulum (not clearnet HTTP)
+
+| When | Destination | Purpose | Code |
+|------|-------------|---------|------|
+| NomadNet browsing, file fetch, LXMF | Reticulum destination hashes over configured transports (TCP, I2P, Yggdrasil, WebSocket, etc.) | Load `.mu` pages and mesh files. No hardcoded internet URLs; peers come from Reticulum config. | `internal/nomadnet/`, `internal/app/browser_service.go` |
+| User or admin Reticulum config | Arbitrary `target_host`, `remote`, WebSocket URLs, I2P peers, etc. | Transport interfaces defined in `~/.reticulum-go/` or `REN_BROWSER_CONFIG`. | Reticulum config (operator-controlled) |
+
 ### Build, supply chain, and transparency
 
 - **CI:** Automated pipelines on GitHub Actions run Go and frontend tests, **gosec** static analysis, **Trivy** filesystem and Dockerfile configuration scans, brand consistency checks, and server/desktop build smoke tests. **CodeQL** analysis runs on a separate schedule/workflow. Third-party GitHub Actions are referenced with **pinned commit SHAs** (documented beside each workflow) to reduce unexpected upgrades.
