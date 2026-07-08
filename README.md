@@ -51,6 +51,17 @@ This project is under heavy active development, please wait until v1.0 for stabi
 
 </details>
 
+## Features
+
+- **NomadNet compatible** - renders Micron (`.mu`) pages served over Reticulum.
+- **Full interface control** - Hot reload interfaces.
+- **Multiple identities** - create, import, export, rename, and switch between Reticulum identities.
+- **Document reader** - open epub and PDF files downloaded over the network.
+- **Micron editor** - write and preview `.mu` pages.
+- **Extension system** - install JS or WASM plugins with per-permission grants (network, storage, navigation).
+- **Runs anywhere** - desktop builds for Linux, Windows, and macOS, an Android APK, and a headless server binary/Docker image for your server or rpi zero w.
+- **Localized UI** - English, German, Spanish, and Russian, with more community translations welcome.
+
 ## Documentation
 
 Guides by language in [docs/](docs/):
