@@ -142,7 +142,7 @@ describe("createApp controller", () => {
   it("navigates via openPage and updates tab url", async () => {
     browserMocks.Navigate.mockResolvedValue({
       url: "about:",
-      html: "<article class=\'about-page\'>About</article>",
+      html: "<article class='about-page'>About</article>",
       contentType: "text/html",
       raw: "",
       binaryB64: "",
