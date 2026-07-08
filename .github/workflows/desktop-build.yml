@@ -614,6 +614,47 @@ jobs:
           path: dist/release/*
           if-no-files-found: error
 
+  build-ios:
+    name: iOS (ipa)
+    needs:
+      - version
+      - frontend
+    runs-on: macos-latest
+    env:
+      REN_BROWSER_FRONTEND_PREBUILT: "1"
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Fetch frontend artifact
+        uses: ./.github/actions/fetch-frontend-artifact
+        with:
+          artifact-name: ${{ needs.frontend.outputs.artifact_name }}
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-linux-deps: "false"
+          install-wails: "true"
+          cache-node: "false"
+
+      - name: Build iOS IPA
+        run: task ios:package:ipa IOS_PLATFORM=device CODESIGN_IDENTITY="-"
+
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/release
+          cp bin/renbrowser.ipa dist/release/renbrowser-ios.ipa
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: ios-ipa
+          path: dist/release/*
+          if-no-files-found: error
+
   build-extension-wasm:
     name: Extension WASM
     needs:
@@ -652,6 +693,7 @@ jobs:
       - build-server-windows-legacy
       - build-android
       - build-extension-wasm
+      - build-ios
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
@@ -705,6 +747,7 @@ jobs:
           - Linux amd64 Flatpak bundle when flatpak-builder succeeds
           - Windows amd64 portable executable and NSIS installer (MSIX when packaging succeeds)
           - macOS universal .app (zip)
+          - iOS IPA (`renbrowser-ios.ipa` ad-hoc signed, for sideloading)
           - Headless server binaries (Linux amd64/arm64/armv6, FreeBSD amd64/arm64, OpenBSD/NetBSD amd64, Windows amd64 `renbrowser-server-windows-amd64.exe`)
           - Windows 7/8/8.1 headless server (`renbrowser-server-windows7-amd64.exe`) when the legacy toolchain build succeeds
           - Android APK (debug for nightly/beta; signed release when keystore secrets are configured)
