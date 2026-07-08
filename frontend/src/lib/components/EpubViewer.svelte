@@ -339,7 +339,8 @@
         {:else if error}
           <div class="state-panel error">
             <p>{error}</p>
-            <button type="button" class="retry-btn" onclick={onRetry}>{t("documents.retry")}</button>
+            <button type="button" class="retry-btn" onclick={onRetry}>{t("documents.retry")}</button
+            >
           </div>
         {:else if chapter}
           <article class="chapter">
@@ -348,7 +349,7 @@
               html={chapter.html}
               title={chapter.title}
               {fontScale}
-              rotation={rotation}
+              {rotation}
               onScrollRoot={(root) => {
                 chapterScrollEl = root;
               }}

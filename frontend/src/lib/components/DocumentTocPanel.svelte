@@ -37,13 +37,9 @@
 
 {#if variant === "drawer"}
   <div class="toc-overlay" use:portal use:stopPointerBubble>
-    <button type="button" class="toc-scrim" aria-label={t("documents.closeToc")} onclick={onClose}></button>
-    <div
-      class="toc-panel drawer"
-      role="dialog"
-      aria-modal="true"
-      aria-label={t("documents.toc")}
-    >
+    <button type="button" class="toc-scrim" aria-label={t("documents.closeToc")} onclick={onClose}
+    ></button>
+    <div class="toc-panel drawer" role="dialog" aria-modal="true" aria-label={t("documents.toc")}>
       <header class="toc-header">
         <span class="toc-header-title">{t("documents.toc")}</span>
         <button

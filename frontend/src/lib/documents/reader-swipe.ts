@@ -31,7 +31,10 @@ export function attachReaderSwipe(
     if (event.pointerType === "mouse" && event.button !== 0) {
       return;
     }
-    if (event.target instanceof Element && event.target.closest("button, a, input, textarea, select, label")) {
+    if (
+      event.target instanceof Element &&
+      event.target.closest("button, a, input, textarea, select, label")
+    ) {
       return;
     }
     activePointerId = event.pointerId;

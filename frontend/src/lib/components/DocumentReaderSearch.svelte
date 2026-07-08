@@ -110,7 +110,12 @@
   >
     <ChevronDown size={14} />
   </button>
-  <button type="button" class="reader-search-icon" aria-label={t("documents.searchClose")} onclick={close}>
+  <button
+    type="button"
+    class="reader-search-icon"
+    aria-label={t("documents.searchClose")}
+    onclick={close}
+  >
     <X size={14} />
   </button>
 </div>
