@@ -47,6 +47,7 @@ tasks:
         vars:
           ARCH: '{{.ARCH | default .HOST_ARCH}}'
           PRODUCTION: '{{.PRODUCTION | default "false"}}'
+          KEEP_OTHER_ABIS: '{{.KEEP_OTHER_ABIS | default "false"}}'
           BUILD_FLAGS:
             ref: .BUILD_FLAGS
     vars:
@@ -103,6 +104,19 @@ tasks:
             export GOARCH=amd64
             JNI_DIR="x86_64"
             ;;
+          arm|armeabi-v7a)
+            export CC="$TOOLCHAIN/bin/armv7a-linux-androideabi{{.MIN_SDK}}-clang"
+            export CXX="$TOOLCHAIN/bin/armv7a-linux-androideabi{{.MIN_SDK}}-clang++"
+            export GOARCH=arm
+            export GOARM=7
+            JNI_DIR="armeabi-v7a"
+            ;;
+          386|x86)
+            export CC="$TOOLCHAIN/bin/i686-linux-android{{.MIN_SDK}}-clang"
+            export CXX="$TOOLCHAIN/bin/i686-linux-android{{.MIN_SDK}}-clang++"
+            export GOARCH=386
+            JNI_DIR="x86"
+            ;;
           *)
             echo "Unsupported architecture: {{.ARCH}}"
             exit 1
@@ -116,9 +130,8 @@ tasks:
         mkdir -p build/android/app/src/main/jniLibs/$JNI_DIR
 
         # Drop other ABI folders so a stale libwails.so is not packaged when
-        # cross-compiling one architecture (e.g. arm64 for a phone after an
-        # older x86_64 emulator build left jniLibs/x86_64 behind).
-        if [ -d build/android/app/src/main/jniLibs ]; then
+        # cross-compiling one architecture, unless KEEP_OTHER_ABIS is set.
+        if [ "{{.KEEP_OTHER_ABIS}}" != "true" ] && [ -d build/android/app/src/main/jniLibs ]; then
           for abi_dir in build/android/app/src/main/jniLibs/*; do
             [ -d "$abi_dir" ] || continue
             if [ "$(basename "$abi_dir")" != "$JNI_DIR" ]; then
@@ -138,9 +151,19 @@ tasks:
       - task: compile:go:shared
         vars:
           ARCH: arm64
+          KEEP_OTHER_ABIS: "true"
       - task: compile:go:shared
         vars:
           ARCH: amd64
+          KEEP_OTHER_ABIS: "true"
+      - task: compile:go:shared
+        vars:
+          ARCH: arm
+          KEEP_OTHER_ABIS: "true"
+      - task: compile:go:shared
+        vars:
+          ARCH: 386
+          KEEP_OTHER_ABIS: "true"
 
   package:
     summary: Packages a production build of the application into a signed release APK
@@ -159,11 +182,23 @@ tasks:
         vars:
           PRODUCTION: "true"
           ARCH: arm64
+          KEEP_OTHER_ABIS: "true"
     cmds:
       - task: compile:go:shared
         vars:
           ARCH: amd64
           PRODUCTION: "true"
+          KEEP_OTHER_ABIS: "true"
+      - task: compile:go:shared
+        vars:
+          ARCH: arm
+          PRODUCTION: "true"
+          KEEP_OTHER_ABIS: "true"
+      - task: compile:go:shared
+        vars:
+          ARCH: 386
+          PRODUCTION: "true"
+          KEEP_OTHER_ABIS: "true"
       - task: assemble:apk:release
 
   assemble:apk:
