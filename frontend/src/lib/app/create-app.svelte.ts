@@ -55,6 +55,7 @@ import {
   ResetBrowser,
   RestartReticulum,
   ReloadReticulumConfig,
+  RunSelfCheck,
   SaveTabs,
   SaveReticulumConfigText,
   SetBrowserPrefs,
@@ -90,7 +91,10 @@ import {
   markScreenshotReady,
   type ScreenshotScene,
 } from "$lib/theme/screenshot";
-import type { CommunityFetchResult } from "../../../bindings/renbrowser/internal/app/models.js";
+import type {
+  CommunityFetchResult,
+  SelfCheckResult,
+} from "../../../bindings/renbrowser/internal/app/models.js";
 import type { CommunityInterface } from "../../../bindings/renbrowser/internal/rns/models.js";
 import {
   defaultKeybinds,
@@ -247,6 +251,8 @@ export function createApp() {
   let serverMode = $state(false);
   let storeHealth = $state<StoreHealth>({ ok: true, path: "" });
   let sandboxStatus = $state<SandboxStatus>({ type: "none", enabled: false });
+  let selfTestResult = $state<SelfCheckResult | null>(null);
+  let selfTestRunning = $state(false);
   let meshOnline = $state(true);
   let splitViewOpen = $state(false);
   let splitTabId = $state<string | null>(null);
@@ -1716,6 +1722,18 @@ export function createApp() {
     }
   }
 
+  async function runSelfTest() {
+    selfTestRunning = true;
+    selfTestResult = null;
+    try {
+      selfTestResult = await RunSelfCheck();
+    } catch (err) {
+      console.error("Self check failed:", err);
+    } finally {
+      selfTestRunning = false;
+    }
+  }
+
   async function confirmResetDatabase() {
     resetDbConfirmOpen = false;
     try {
@@ -2569,6 +2587,18 @@ export function createApp() {
     set resetBrowserConfirmOpen(value) {
       resetBrowserConfirmOpen = value;
     },
+    get selfTestResult() {
+      return selfTestResult;
+    },
+    set selfTestResult(value) {
+      selfTestResult = value;
+    },
+    get selfTestRunning() {
+      return selfTestRunning;
+    },
+    set selfTestRunning(value) {
+      selfTestRunning = value;
+    },
     get restartReticulumConfirmOpen() {
       return restartReticulumConfirmOpen;
     },
@@ -2779,6 +2809,7 @@ export function createApp() {
     confirmResetBrowser,
     confirmRestartReticulum,
     confirmResetDatabase,
+    runSelfTest,
     resetDefaults,
     saveUILanguage,
     saveTabHoverPreviews,

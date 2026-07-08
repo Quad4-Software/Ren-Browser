@@ -203,6 +203,12 @@ func (s *Stack) Config() *common.ReticulumConfig {
 	return s.cfg
 }
 
+func (s *Stack) IsStarted() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.started
+}
+
 func DefaultConfigDir() string {
 	return filepath.Join(homeDir(), ".reticulum-go")
 }

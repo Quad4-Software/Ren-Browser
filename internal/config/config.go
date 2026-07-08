@@ -39,6 +39,8 @@ type Runtime struct {
 	AuthSessionHrs  int
 	LogLevel        string
 	Reset           bool
+	Headless        bool
+	SelfCheck       bool
 }
 
 func ParseFlags() Runtime {
@@ -68,6 +70,8 @@ func ParseFlags() Runtime {
 	flag.StringVar(&cfg.AuthIPWhitelist, "auth-ip-whitelist", "", "Comma-separated IPs/CIDRs that bypass auth (supports IPv6)")
 	flag.IntVar(&cfg.AuthSessionHrs, "auth-session-hours", 0, "Auth session lifetime in hours (default 168)")
 	flag.StringVar(&cfg.LogLevel, "log-level", "", "Server log level: debug, info, warn, error")
+	flag.BoolVar(&cfg.Headless, "headless", false, "Run in headless mode (exit immediately after startup/self-check)")
+	flag.BoolVar(&cfg.SelfCheck, "self-check", false, "Run internal diagnostics and exit with code 0 if healthy, 1 otherwise")
 	flag.Parse()
 	LoadDotEnv("")
 	return ApplyEnv(cfg)
@@ -149,6 +153,12 @@ func ApplyEnv(cfg Runtime) Runtime {
 	}
 	if !cfg.Reset {
 		cfg.Reset = envBool("REN_BROWSER_RESET")
+	}
+	if !cfg.Headless {
+		cfg.Headless = envBool("REN_BROWSER_HEADLESS")
+	}
+	if !cfg.SelfCheck {
+		cfg.SelfCheck = envBool("REN_BROWSER_SELF_CHECK")
 	}
 	if !cfg.NativeTitlebar {
 		cfg.NativeTitlebar = envBool("REN_BROWSER_NATIVE_TITLEBAR")

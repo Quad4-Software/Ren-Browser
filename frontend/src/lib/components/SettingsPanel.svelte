@@ -7,6 +7,7 @@
   import ReticulumConfigEditor from "$lib/components/ReticulumConfigEditor.svelte";
   import CommunityInterfaces from "$lib/components/CommunityInterfaces.svelte";
   import type { CommunityInterface } from "../../../bindings/renbrowser/internal/rns/models.js";
+  import type { SelfCheckResult } from "../../../bindings/renbrowser/internal/app/models.js";
   import IdentityPanel from "$lib/components/IdentityPanel.svelte";
   import ShareApkPanel from "$lib/components/ShareApkPanel.svelte";
   import ExtensionsPanel from "$lib/components/ExtensionsPanel.svelte";
@@ -118,6 +119,9 @@
     onChangeSectionsCollapsed: (sections: Record<string, boolean>) => void;
     pluginsDir?: string;
     onPluginsChanged?: () => void;
+    selfTestResult?: SelfCheckResult | null;
+    selfTestRunning?: boolean;
+    onRunSelfTest?: () => void;
   };
 
   let {
@@ -190,6 +194,9 @@
     pageCacheClearing = false,
     pageCacheEnabled = true,
     sandboxStatus = { type: "none", enabled: false },
+    selfTestResult = null,
+    selfTestRunning = false,
+    onRunSelfTest = () => {},
   }: Props = $props();
 
   let recordingAction = $state<KeybindAction | null>(null);
@@ -787,6 +794,103 @@
     </SettingsSection>
   {/if}
 
+  <SettingsSection
+    id="selfTest"
+    title={t("settings.selfTest")}
+    collapsed={sectionCollapsed("selfTest")}
+    onToggle={toggleSettingsSection}
+  >
+    <p class="hint">{t("settings.selfTestHint")}</p>
+    <div class="reset-row" style="margin-bottom: 1rem;">
+      <button type="button" class="reset-btn" onclick={onRunSelfTest} disabled={selfTestRunning}>
+        {#if selfTestRunning}
+          {t("settings.selfTestRunning")}
+        {:else}
+          {t("settings.runSelfTest")}
+        {/if}
+      </button>
+    </div>
+
+    {#if selfTestResult}
+      <div class="self-test-results">
+        <div
+          class="self-test-summary"
+          class:passed={selfTestResult.allPassed}
+          class:failed={!selfTestResult.allPassed}
+        >
+          {selfTestResult.allPassed ? t("settings.selfTestPassed") : t("settings.selfTestFailed")}
+        </div>
+        <ul class="self-test-list">
+          <li class="self-test-item">
+            <span class="check-name">{t("settings.checkStackUp")}</span>
+            <span
+              class="check-status"
+              class:passed={selfTestResult.stackUp.passed}
+              class:failed={!selfTestResult.stackUp.passed}
+            >
+              {selfTestResult.stackUp.passed ? t("settings.passed") : t("settings.failed")}
+            </span>
+            {#if !selfTestResult.stackUp.passed}
+              <div class="check-reason">{selfTestResult.stackUp.reason}</div>
+            {/if}
+          </li>
+          <li class="self-test-item">
+            <span class="check-name">{t("settings.checkConfigGood")}</span>
+            <span
+              class="check-status"
+              class:passed={selfTestResult.configGood.passed}
+              class:failed={!selfTestResult.configGood.passed}
+            >
+              {selfTestResult.configGood.passed ? t("settings.passed") : t("settings.failed")}
+            </span>
+            {#if !selfTestResult.configGood.passed}
+              <div class="check-reason">{selfTestResult.configGood.reason}</div>
+            {/if}
+          </li>
+          <li class="self-test-item">
+            <span class="check-name">{t("settings.checkDBGood")}</span>
+            <span
+              class="check-status"
+              class:passed={selfTestResult.dbGood.passed}
+              class:failed={!selfTestResult.dbGood.passed}
+            >
+              {selfTestResult.dbGood.passed ? t("settings.passed") : t("settings.failed")}
+            </span>
+            {#if !selfTestResult.dbGood.passed}
+              <div class="check-reason">{selfTestResult.dbGood.reason}</div>
+            {/if}
+          </li>
+          <li class="self-test-item">
+            <span class="check-name">{t("settings.checkReadWriteGood")}</span>
+            <span
+              class="check-status"
+              class:passed={selfTestResult.readWriteGood.passed}
+              class:failed={!selfTestResult.readWriteGood.passed}
+            >
+              {selfTestResult.readWriteGood.passed ? t("settings.passed") : t("settings.failed")}
+            </span>
+            {#if !selfTestResult.readWriteGood.passed}
+              <div class="check-reason">{selfTestResult.readWriteGood.reason}</div>
+            {/if}
+          </li>
+          <li class="self-test-item">
+            <span class="check-name">{t("settings.checkDownloadsGood")}</span>
+            <span
+              class="check-status"
+              class:passed={selfTestResult.downloadsGood.passed}
+              class:failed={!selfTestResult.downloadsGood.passed}
+            >
+              {selfTestResult.downloadsGood.passed ? t("settings.passed") : t("settings.failed")}
+            </span>
+            {#if !selfTestResult.downloadsGood.passed}
+              <div class="check-reason">{selfTestResult.downloadsGood.reason}</div>
+            {/if}
+          </li>
+        </ul>
+      </div>
+    {/if}
+  </SettingsSection>
+
   {#if !publicMode}
     <SettingsSection
       id="application"
@@ -1226,5 +1330,76 @@
     to {
       transform: rotate(360deg);
     }
+  }
+
+  .self-test-results {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.75rem;
+    background: var(--ren-bg-secondary, #1e1e24);
+    padding: 1rem;
+    border-radius: var(--ren-radius);
+    border: 1px solid var(--ren-border);
+  }
+
+  .self-test-summary {
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--ren-border);
+  }
+
+  .self-test-summary.passed {
+    color: var(--ren-success, #3d9a5f);
+  }
+
+  .self-test-summary.failed {
+    color: var(--ren-danger, #e5484d);
+  }
+
+  .self-test-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  .self-test-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.88rem;
+  }
+
+  .check-name {
+    color: var(--ren-text);
+  }
+
+  .check-status {
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 0.12rem 0.4rem;
+    border-radius: 4px;
+  }
+
+  .check-status.passed {
+    background: color-mix(in srgb, var(--ren-success, #3d9a5f) 15%, transparent);
+    color: var(--ren-success, #3d9a5f);
+  }
+
+  .check-status.failed {
+    background: color-mix(in srgb, var(--ren-danger, #e5484d) 15%, transparent);
+    color: var(--ren-danger, #e5484d);
+  }
+
+  .check-reason {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+    color: var(--ren-muted);
+    padding-left: 0.5rem;
+    border-left: 2px solid var(--ren-danger, #e5484d);
+    margin-top: 0.15rem;
   }
 </style>

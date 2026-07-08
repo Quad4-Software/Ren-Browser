@@ -230,6 +230,17 @@ jobs:
       - name: Package AppImage
         run: task linux:create:appimage ARCH=${{ matrix.arch }}
 
+      - name: Run self-check
+        shell: bash
+        run: |
+          if [ "${{ matrix.arch }}" = "amd64" ]; then
+            # Run self-check using xvfb-run on Linux to provide a virtual display for WebKitGTK
+            sudo apt-get update && sudo apt-get install -y xvfb
+            xvfb-run --auto-servernum ./bin/renbrowser --self-check
+          else
+            echo "Skipping self-check on non-amd64 runner"
+          fi
+
       - name: Stage artifacts
         shell: bash
         run: |
@@ -392,6 +403,15 @@ jobs:
 
       - name: Build
         run: task ${{ matrix.task }}
+
+      - name: Run self-check
+        shell: bash
+        run: |
+          if [ "${{ matrix.target }}" = "windows-amd64" ]; then
+            ./bin/renbrowser.exe --self-check
+          else
+            ./bin/renbrowser --self-check
+          fi
 
       - name: Upload binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

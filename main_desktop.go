@@ -35,6 +35,28 @@ func main() {
 	}
 	defer appBundle.Loader.Close()
 
+	if cfg.SelfCheck {
+		log.Println("Running self-check diagnostics...")
+		// Start Reticulum stack temporarily to allow full self-check
+		if err := appBundle.Service.StartReticulum(); err != nil {
+			log.Printf("Self-check warning: reticulum start failed: %v", err)
+		}
+		res := appBundle.Service.RunSelfCheck()
+		_ = appBundle.Service.StopReticulum() // clean up stack
+		if res.AllPassed {
+			log.Println("Self-check PASSED!")
+			os.Exit(0)
+		} else {
+			log.Printf("Self-check FAILED: %+v", res)
+			os.Exit(1)
+		}
+	}
+
+	if cfg.Headless {
+		log.Println("Headless mode active, exiting successfully.")
+		os.Exit(0)
+	}
+
 	if cfg.NativeTitlebar {
 		prefs := appBundle.Service.GetBrowserPrefs()
 		prefs.NativeTitlebar = true

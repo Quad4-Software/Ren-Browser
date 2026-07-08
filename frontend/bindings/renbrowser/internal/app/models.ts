@@ -85,6 +85,11 @@ export interface BrowserPrefs {
     "settingsSectionsCollapsed": { [_ in string]?: boolean } | null;
 }
 
+export interface CheckStatus {
+    "passed": boolean;
+    "reason"?: string;
+}
+
 export interface CommunityFetchResult {
     "items": rns$0.CommunityInterface[] | null;
     "fromBundle": boolean;
@@ -253,6 +258,15 @@ export interface RuntimeConfig {
  * SandboxStatus describes process-level filesystem sandboxing.
  */
 export type SandboxStatus = sandbox$0.Status;
+
+export interface SelfCheckResult {
+    "stackUp": CheckStatus;
+    "configGood": CheckStatus;
+    "dbGood": CheckStatus;
+    "readWriteGood": CheckStatus;
+    "downloadsGood": CheckStatus;
+    "allPassed": boolean;
+}
 
 export interface SettingsReset {
     "theme": ThemeSettings;

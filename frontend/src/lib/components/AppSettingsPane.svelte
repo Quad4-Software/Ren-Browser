@@ -62,6 +62,9 @@
   onResetBrowser={app.requestResetBrowser}
   onRestartReticulum={app.requestRestartReticulum}
   onShutdown={app.requestShutdown}
+  selfTestResult={app.selfTestResult}
+  selfTestRunning={app.selfTestRunning}
+  onRunSelfTest={app.runSelfTest}
   onToggleInterface={app.toggleInterface}
   onExportTheme={() => void app.exportThemeFile()}
   onImportTheme={(json) => void app.importThemeFile(json)}

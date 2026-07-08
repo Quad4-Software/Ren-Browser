@@ -422,6 +422,13 @@ export function RetryDownload(id: string): $CancellablePromise<$models.DownloadR
     return $Call.ByID(1783106127, id);
 }
 
+/**
+ * RunSelfCheck performs a comprehensive internal health check of the application components.
+ */
+export function RunSelfCheck(): $CancellablePromise<$models.SelfCheckResult> {
+    return $Call.ByID(4049250422);
+}
+
 export function SaveDownload(rawURL: string, destPath: string): $CancellablePromise<void> {
     return $Call.ByID(2853347910, rawURL, destPath);
 }
