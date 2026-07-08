@@ -6,6 +6,8 @@ package main
 
 import (
 	"C"
+	"fmt"
+	"runtime/debug"
 )
 
 // For iOS builds we export a function the WailsAppDelegate can call.
@@ -21,5 +23,11 @@ import (
 //
 //export WailsIOSMain
 func WailsIOSMain() {
+	defer func() {
+		if r := recover(); r != nil {
+			errStr := fmt.Sprintf("%v\n\nStack Trace:\n%s", r, debug.Stack())
+			handleFatalError(fmt.Errorf("Application Panic: %s", errStr))
+		}
+	}()
 	main()
 }

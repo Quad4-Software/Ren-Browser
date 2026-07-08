@@ -31,7 +31,7 @@ func main() {
 
 	appBundle, err := bootstrap.New(embeddedAssets, cfg)
 	if err != nil {
-		log.Fatal(err)
+		handleFatalError(err)
 	}
 	defer appBundle.Loader.Close()
 
@@ -83,7 +83,7 @@ func main() {
 	}
 
 	if err := appBundle.Wails.Run(); err != nil {
-		log.Fatal(err)
+		handleFatalError(err)
 	}
 }
 

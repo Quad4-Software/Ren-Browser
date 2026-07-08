@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"runtime"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
@@ -76,10 +77,11 @@ func newWailsApp(browserSvc *app.BrowserService, pluginHost *app.PluginHost, plu
 	}
 
 	return application.New(application.Options{
-		Name:        brand.DisplayName,
-		Description: brand.Description,
-		Logger:      serverlog.WailsLogger(),
-		Services:    services,
+		Name:                        brand.DisplayName,
+		Description:                 brand.Description,
+		Logger:                      serverlog.WailsLogger(),
+		Services:                    services,
+		DisableDefaultSignalHandler: runtime.GOOS == "ios",
 		Assets: application.AssetOptions{
 			Handler:    handler,
 			Middleware: extra.AuthMiddleware,
