@@ -107,16 +107,19 @@ func (s *BrowserService) RunSelfCheck() SelfCheckResult {
 		res.DownloadsGood = CheckStatus{Passed: false, Reason: "Downloads directory path is empty"}
 		res.AllPassed = false
 	} else {
+		// #nosec G301 -- downloads folder permissions are intended to be user-readable/writable (0755)
 		if err := os.MkdirAll(downloadDir, 0o755); err != nil {
 			res.DownloadsGood = CheckStatus{Passed: false, Reason: fmt.Sprintf("Failed to create downloads directory: %v", err)}
 			res.AllPassed = false
 		} else {
 			tempFile := filepath.Join(downloadDir, ".self_check_temp")
 			testData := []byte("self_check_data")
+			// #nosec G306 -- self-check temporary file permissions are fine at 0644
 			if err := os.WriteFile(tempFile, testData, 0o644); err != nil {
 				res.DownloadsGood = CheckStatus{Passed: false, Reason: fmt.Sprintf("Failed to write to downloads directory: %v", err)}
 				res.AllPassed = false
 			} else {
+				// #nosec G304 -- tempFile path is safely constructed within the downloads directory
 				readData, err := os.ReadFile(tempFile)
 				_ = os.Remove(tempFile) // Clean up immediately
 
