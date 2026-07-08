@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	supportedDocLangs = []string{"en", "ru", "es", "de"}
+	supportedDocLangs = []string{"en", "ru", "es", "de", "ja", "zh"}
 	docsPageNameRe    = regexp.MustCompile(`^[a-z0-9-]+$`)
 )
 
@@ -185,6 +185,10 @@ func docsLangLabel(lang string) string {
 		return "Spanish"
 	case "de":
 		return "German"
+	case "ja":
+		return "Japanese"
+	case "zh":
+		return "Chinese"
 	default:
 		return strings.ToUpper(lang)
 	}

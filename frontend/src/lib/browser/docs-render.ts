@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 import { marked } from "marked";
 
-const SUPPORTED_LANGS = ["en", "ru", "es", "de"] as const;
+const SUPPORTED_LANGS = ["en", "ru", "es", "de", "ja", "zh"] as const;
 const PAGE_NAME_RE = /^[a-z0-9-]+$/;
 
 marked.use({
@@ -80,6 +80,10 @@ function docsLangLabel(lang: string): string {
       return "Spanish";
     case "de":
       return "German";
+    case "ja":
+      return "Japanese";
+    case "zh":
+      return "Chinese";
     default:
       return lang.toUpperCase();
   }

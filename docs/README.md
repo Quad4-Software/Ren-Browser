@@ -8,6 +8,8 @@ Documentation is organized by language. Pick the folder that matches how you wan
 | Russian | [ru/](ru/) |
 | Spanish | [es/](es/) |
 | German | [de/](de/) |
+| Japanese | [ja/](ja/) |
+| Chinese | [zh/](zh/) |
 
 Each language folder contains the same topics. Start with **Getting started** in your language, then follow the table of contents in that folder's README.
 

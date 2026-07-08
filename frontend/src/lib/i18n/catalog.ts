@@ -2,7 +2,9 @@
 import de from "./locales/de.json";
 import en from "./locales/en.json";
 import es from "./locales/es.json";
+import ja from "./locales/ja.json";
 import ru from "./locales/ru.json";
+import zh from "./locales/zh.json";
 import { DEFAULT_LOCALE, type LocaleCode, resolveLocale } from "./locales";
 
 export type MessageTree = {
@@ -11,7 +13,7 @@ export type MessageTree = {
 
 export type TranslateParams = Record<string, string | number>;
 
-const catalogs: Record<LocaleCode, MessageTree> = { en, de, es, ru };
+const catalogs: Record<LocaleCode, MessageTree> = { en, de, es, ja, ru, zh };
 
 let activeLocale: LocaleCode = DEFAULT_LOCALE;
 

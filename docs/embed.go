@@ -4,5 +4,5 @@ package docassets
 
 import "embed"
 
-//go:embed en ru es de
+//go:embed en ru es de ja zh
 var FS embed.FS
