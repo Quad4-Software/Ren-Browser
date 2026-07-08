@@ -886,6 +886,45 @@
               <div class="check-reason">{selfTestResult.downloadsGood.reason}</div>
             {/if}
           </li>
+          <li class="self-test-item">
+            <span class="check-name">{t("settings.checkInterfaces")}</span>
+            <span
+              class="check-status"
+              class:passed={selfTestResult.interfaces.passed}
+              class:failed={!selfTestResult.interfaces.passed}
+            >
+              {selfTestResult.interfaces.passed ? t("settings.passed") : t("settings.failed")}
+            </span>
+            {#if selfTestResult.interfaces.reason}
+              <div class="check-reason">{selfTestResult.interfaces.reason}</div>
+            {/if}
+          </li>
+          <li class="self-test-item">
+            <span class="check-name">{t("settings.checkDiscovery")}</span>
+            <span
+              class="check-status"
+              class:passed={selfTestResult.discovery.passed}
+              class:failed={!selfTestResult.discovery.passed}
+            >
+              {selfTestResult.discovery.passed ? t("settings.passed") : t("settings.failed")}
+            </span>
+            {#if selfTestResult.discovery.reason}
+              <div class="check-reason">{selfTestResult.discovery.reason}</div>
+            {/if}
+          </li>
+          <li class="self-test-item">
+            <span class="check-name">{t("settings.checkPageFetch")}</span>
+            <span
+              class="check-status"
+              class:passed={selfTestResult.pageFetch.passed}
+              class:failed={!selfTestResult.pageFetch.passed}
+            >
+              {selfTestResult.pageFetch.passed ? t("settings.passed") : t("settings.failed")}
+            </span>
+            {#if selfTestResult.pageFetch.reason}
+              <div class="check-reason">{selfTestResult.pageFetch.reason}</div>
+            {/if}
+          </li>
         </ul>
       </div>
     {/if}

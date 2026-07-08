@@ -13,6 +13,7 @@ import (
 	_ "renbrowser/internal/webkit"
 	"strings"
 
+	"renbrowser/internal/app"
 	"renbrowser/internal/bootstrap"
 	"renbrowser/internal/config"
 	"renbrowser/internal/safe"
@@ -43,13 +44,13 @@ func main() {
 		}
 		res := appBundle.Service.RunSelfCheck()
 		_ = appBundle.Service.StopReticulum() // clean up stack
+		logSelfCheckResult(res)
 		if res.AllPassed {
 			log.Println("Self-check PASSED!")
 			os.Exit(0)
-		} else {
-			log.Printf("Self-check FAILED: %+v", res)
-			os.Exit(1)
 		}
+		log.Println("Self-check FAILED")
+		os.Exit(1)
 	}
 
 	if cfg.Headless {
@@ -146,4 +147,27 @@ func absolutize(path *string) {
 	if abs, err := filepath.Abs(*path); err == nil {
 		*path = abs
 	}
+}
+
+func logSelfCheckResult(res app.SelfCheckResult) {
+	logCheck := func(name string, st app.CheckStatus) {
+		status := "PASS"
+		if !st.Passed {
+			status = "FAIL"
+		}
+		if st.Reason != "" {
+			log.Printf("  %-12s %s — %s", name, status, st.Reason)
+			return
+		}
+		log.Printf("  %-12s %s", name, status)
+	}
+	log.Printf("Self-check results (mesh=%v):", res.MeshEnabled)
+	logCheck("stack", res.StackUp)
+	logCheck("config", res.ConfigGood)
+	logCheck("db", res.DBGood)
+	logCheck("readwrite", res.ReadWriteGood)
+	logCheck("downloads", res.DownloadsGood)
+	logCheck("interfaces", res.Interfaces)
+	logCheck("discovery", res.Discovery)
+	logCheck("page", res.PageFetch)
 }

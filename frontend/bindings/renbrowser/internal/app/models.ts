@@ -265,7 +265,11 @@ export interface SelfCheckResult {
     "dbGood": CheckStatus;
     "readWriteGood": CheckStatus;
     "downloadsGood": CheckStatus;
+    "interfaces": CheckStatus;
+    "discovery": CheckStatus;
+    "pageFetch": CheckStatus;
     "allPassed": boolean;
+    "meshEnabled": boolean;
 }
 
 export interface SettingsReset {
