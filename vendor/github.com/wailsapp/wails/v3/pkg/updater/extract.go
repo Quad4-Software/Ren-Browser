@@ -137,10 +137,7 @@ func extractZip(src, dst string) error {
 	rootClean := filepath.Clean(dst)
 
 	// Pass 1 — directories and regular files. Symlinks recorded for pass 2.
-	type pendingLink struct {
-		src    *zip.File
-		target string
-	}
+	type pendingLink struct{ src *zip.File; target string }
 	var symlinks []pendingLink
 	var written int64
 	for _, f := range zr.File {

@@ -44,12 +44,12 @@ func NewHandler(w io.Writer, opts *Options) slog.Handler {
 }
 
 type handler struct {
-	mu           sync.Mutex
-	w            io.Writer
-	opts         Options
-	timeFormat   string
+	mu         sync.Mutex
+	w          io.Writer
+	opts       Options
+	timeFormat string
 	preformatted []byte
-	groups       []string
+	groups     []string
 }
 
 func (h *handler) Enabled(_ context.Context, level slog.Level) bool {
