@@ -473,6 +473,25 @@
     "invalidKeyFile": "El archivo seleccionado no es una clave de identidad válida.",
     "pickerCanceled": "Se canceló la selección de archivo."
   },
+  "setup": {
+    "title": "Bienvenido a Ren Browser",
+    "subtitle": "Elige cómo conectarte a la malla Reticulum. Puedes cambiar las interfaces más tarde en Ajustes.",
+    "suggestedTitle": "Usar interfaces sugeridas",
+    "suggestedHint": "Elegimos {count} hubs comunitarios del directorio público.",
+    "pickTitle": "Explorar el directorio",
+    "pickHint": "Elige interfaces comunitarias para añadir a tu configuración.",
+    "configTitle": "Editar configuración",
+    "configHint": "Edita reticulum.conf directamente. AutoInterface permanece activo a menos que lo elimines.",
+    "autoOnlyTitle": "Solo AutoInterface",
+    "autoOnlyHint": "Omitir hubs comunitarios por ahora. El descubrimiento local de pares seguirá funcionando.",
+    "back": "Atrás",
+    "refreshSuggested": "Elegir otras interfaces",
+    "applySuggested": "Añadir y continuar",
+    "saveAndContinue": "Guardar y continuar",
+    "addSelectedContinue": "Añadir {count} seleccionadas y continuar",
+    "busy": "Aplicando configuración...",
+    "suggestedEmpty": "No se encontraron interfaces utilizables. Explora el directorio o edita la configuración."
+  },
   "community": {
     "title": "Interfaces de la comunidad",
     "hint": "Entradas en línea de directory.rns.recipes",

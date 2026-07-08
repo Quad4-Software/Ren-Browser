@@ -473,6 +473,25 @@
     "invalidKeyFile": "The selected file is not a valid identity key.",
     "pickerCanceled": "File selection was canceled."
   },
+  "setup": {
+    "title": "Welcome to Ren Browser",
+    "subtitle": "Choose how to connect to the wider Reticulum mesh. You can change interfaces later in Settings.",
+    "suggestedTitle": "Use suggested interfaces",
+    "suggestedHint": "We picked {count} community hubs from the public directory.",
+    "pickTitle": "Browse the directory",
+    "pickHint": "Choose community interfaces to add to your configuration.",
+    "configTitle": "Edit configuration",
+    "configHint": "Edit reticulum.conf directly. AutoInterface stays enabled unless you remove it.",
+    "autoOnlyTitle": "AutoInterface only",
+    "autoOnlyHint": "Skip community hubs for now. Local peer discovery will still work.",
+    "back": "Back",
+    "refreshSuggested": "Pick different interfaces",
+    "applySuggested": "Add and continue",
+    "saveAndContinue": "Save and continue",
+    "addSelectedContinue": "Add {count} selected and continue",
+    "busy": "Applying configuration...",
+    "suggestedEmpty": "No seedable interfaces were found. Try browsing the directory or editing the config."
+  },
   "community": {
     "title": "Community interfaces",
     "hint": "Online entries from directory.rns.recipes",

@@ -6,6 +6,7 @@
   import AppDesktopChrome from "$lib/components/AppDesktopChrome.svelte";
   import AppWorkspace from "$lib/components/AppWorkspace.svelte";
   import AppConfirmDialogs from "$lib/components/AppConfirmDialogs.svelte";
+  import InitialSetupModal from "$lib/components/InitialSetupModal.svelte";
   import MobileUrlBar from "$lib/components/MobileUrlBar.svelte";
   import MobileNav from "$lib/components/MobileNav.svelte";
   import DownloadsMenu from "$lib/components/DownloadsMenu.svelte";
@@ -73,6 +74,8 @@
   {/if}
 
   <AppConfirmDialogs {app} />
+
+  <InitialSetupModal {app} />
 
   {#if app.storeErrorVisible}
     <AppStoreError

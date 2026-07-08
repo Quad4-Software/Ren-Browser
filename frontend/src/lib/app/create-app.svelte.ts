@@ -3,7 +3,9 @@ import { SvelteSet } from "svelte/reactivity";
 import { Events, System } from "@wailsio/runtime";
 import {
   AddFavorite,
+  ApplySuggestedCommunityInterfaces,
   CancelDownload,
+  CompleteInitialSetup,
   ClearDevLogs,
   ClearBrowsingHistory,
   ClearPageCache,
@@ -17,6 +19,7 @@ import {
   GetDevLogs,
   GetFavorites,
   GetBrowsingHistory,
+  GetInitialSetupState,
   GetKeybinds,
   GetNetworkLog,
   GetStoreHealth,
@@ -45,6 +48,7 @@ import {
   OpenURL,
   OpenFreshURL,
   PickDownloadDir,
+  PreviewSuggestedCommunityInterfaces,
   RetryDownload,
   ResetDatabase,
   ResetSettings,
@@ -155,6 +159,7 @@ import { initUILocale, setUILocale, t, detectOSLocale } from "$lib/i18n/i18n.sve
 import type {
   DevLogEntry,
   HistoryEntry,
+  InitialSetupStep,
   InterfaceRow,
   NetworkEntry,
   Node,
@@ -266,6 +271,12 @@ export function createApp() {
   let communityFromBundle = $state(false);
   let communityFilter = $state("");
   const communitySelected = new SvelteSet<number>();
+  let initialSetupOpen = $state(false);
+  let initialSetupStep = $state<InitialSetupStep>("welcome");
+  let suggestedItems = $state<CommunityInterface[]>([]);
+  let suggestedLoading = $state(false);
+  let initialSetupBusy = $state(false);
+  let initialSetupError = $state("");
   let discoverySlowMode = $state(false);
   let mobileDevTools = $state(false);
   let tabHoverPreviews = $state(true);
@@ -1281,8 +1292,121 @@ export function createApp() {
       await loadCommunityInterfaces();
     } catch (err) {
       communityError = formatBindingError(err, "Request failed");
+      throw err;
     } finally {
       communityImporting = false;
+    }
+  }
+
+  async function checkInitialSetup() {
+    if (publicMode) {
+      return;
+    }
+    try {
+      const state = await GetInitialSetupState();
+      if (state?.needed) {
+        initialSetupOpen = true;
+        initialSetupStep = "welcome";
+        void loadSuggestedPreview();
+      }
+    } catch {
+      // Do not block the shell if setup state cannot be read.
+    }
+  }
+
+  async function loadSuggestedPreview() {
+    suggestedLoading = true;
+    initialSetupError = "";
+    try {
+      const items = await PreviewSuggestedCommunityInterfaces();
+      suggestedItems = Array.isArray(items) ? items : [];
+    } catch (err) {
+      suggestedItems = [];
+      initialSetupError = formatBindingError(err, "Request failed");
+    } finally {
+      suggestedLoading = false;
+    }
+  }
+
+  function setInitialSetupStep(step: InitialSetupStep) {
+    initialSetupStep = step;
+    initialSetupError = "";
+    if (step === "pick" && communityItems.length === 0) {
+      void loadCommunityInterfaces();
+    }
+    if (step === "config" && !configText.trim()) {
+      void loadConfigText();
+    }
+  }
+
+  async function completeInitialSetup() {
+    await CompleteInitialSetup();
+    initialSetupOpen = false;
+    initialSetupStep = "welcome";
+    initialSetupError = "";
+    suggestedItems = [];
+    communitySelected.clear();
+  }
+
+  async function applySuggestedSetup() {
+    initialSetupBusy = true;
+    initialSetupError = "";
+    try {
+      await ApplySuggestedCommunityInterfaces();
+      await loadConfigText();
+      await loadInterfaces();
+      await loadCommunityInterfaces();
+      await completeInitialSetup();
+    } catch (err) {
+      initialSetupError = formatBindingError(err, "Request failed");
+    } finally {
+      initialSetupBusy = false;
+    }
+  }
+
+  async function importInitialSetupSelection() {
+    if (communitySelected.size === 0) {
+      return;
+    }
+    initialSetupBusy = true;
+    initialSetupError = "";
+    try {
+      await importCommunitySelection();
+      await completeInitialSetup();
+    } catch (err) {
+      initialSetupError = formatBindingError(err, "Request failed");
+    } finally {
+      initialSetupBusy = false;
+    }
+  }
+
+  async function saveInitialSetupConfig() {
+    initialSetupBusy = true;
+    initialSetupError = "";
+    configSaving = true;
+    configError = "";
+    try {
+      await SaveReticulumConfigText(configText);
+      await loadInterfaces();
+      await loadCommunityInterfaces();
+      await completeInitialSetup();
+    } catch (err) {
+      initialSetupError = formatBindingError(err, "Request failed");
+    } finally {
+      configSaving = false;
+      initialSetupBusy = false;
+    }
+  }
+
+  async function skipInitialSetupAutoOnly() {
+    initialSetupBusy = true;
+    initialSetupError = "";
+    try {
+      await completeInitialSetup();
+    } catch (err) {
+      initialSetupError = formatBindingError(err, "Request failed");
+    } finally {
+      initialSetupBusy = false;
     }
   }
 
@@ -2047,7 +2171,7 @@ export function createApp() {
     void refreshNetwork();
     void loadStoreHealth();
     void loadSandboxStatus();
-    void loadRuntimeConfig();
+    void loadRuntimeConfig().then(() => checkInitialSetup());
     void bootPlugins();
 
     Events.On("plugin:loaded", () => {
@@ -2508,6 +2632,24 @@ export function createApp() {
       communityFilter = value;
     },
     communitySelected,
+    get initialSetupOpen() {
+      return initialSetupOpen;
+    },
+    get initialSetupStep() {
+      return initialSetupStep;
+    },
+    get suggestedItems() {
+      return suggestedItems;
+    },
+    get suggestedLoading() {
+      return suggestedLoading;
+    },
+    get initialSetupBusy() {
+      return initialSetupBusy;
+    },
+    get initialSetupError() {
+      return initialSetupError;
+    },
     get discoverySlowMode() {
       return discoverySlowMode;
     },
@@ -2626,6 +2768,12 @@ export function createApp() {
     loadCommunityInterfaces,
     toggleCommunitySelection,
     importCommunitySelection,
+    setInitialSetupStep,
+    loadSuggestedPreview,
+    applySuggestedSetup,
+    importInitialSetupSelection,
+    saveInitialSetupConfig,
+    skipInitialSetupAutoOnly,
     reloadPlugins,
     loadStoreHealth,
     toggleInterface,

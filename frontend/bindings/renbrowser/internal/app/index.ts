@@ -25,6 +25,7 @@ export type {
     DownloadRetryResult,
     HistoryEntry,
     HistoryState,
+    InitialSetupState,
     KeybindSettings,
     MicronWasmFetchResult,
     NetworkEntry,

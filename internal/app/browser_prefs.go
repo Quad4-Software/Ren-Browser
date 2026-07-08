@@ -19,6 +19,7 @@ type BrowserPrefs struct {
 	PageCacheEnabled          bool            `json:"pageCacheEnabled"`
 	TabHoverPreviews          bool            `json:"tabHoverPreviews"`
 	MicronPreserveLayout      bool            `json:"micronPreserveLayout"`
+	InitialSetupComplete      bool            `json:"initialSetupComplete"`
 	SettingsSectionsCollapsed map[string]bool `json:"settingsSectionsCollapsed"`
 }
 
@@ -57,6 +58,7 @@ func mergeBrowserPrefs(saved BrowserPrefs) BrowserPrefs {
 	defaults.PageCacheEnabled = saved.PageCacheEnabled
 	defaults.TabHoverPreviews = saved.TabHoverPreviews
 	defaults.MicronPreserveLayout = saved.MicronPreserveLayout
+	defaults.InitialSetupComplete = saved.InitialSetupComplete
 	if len(saved.SettingsSectionsCollapsed) > 0 {
 		defaults.SettingsSectionsCollapsed = saved.SettingsSectionsCollapsed
 	}

@@ -81,6 +81,7 @@ export interface BrowserPrefs {
     "pageCacheEnabled": boolean;
     "tabHoverPreviews": boolean;
     "micronPreserveLayout": boolean;
+    "initialSetupComplete": boolean;
     "settingsSectionsCollapsed": { [_ in string]?: boolean } | null;
 }
 
@@ -144,6 +145,11 @@ export interface HistoryState {
     "canGoBack": boolean;
     "canGoForward": boolean;
     "current": string;
+}
+
+export interface InitialSetupState {
+    "needed": boolean;
+    "suggestedCount": number;
 }
 
 export interface KeybindSettings {

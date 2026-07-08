@@ -32,6 +32,10 @@ export function AddFavorite(url: string): $CancellablePromise<string[] | null> {
     return $Call.ByID(1018688458, url);
 }
 
+export function ApplySuggestedCommunityInterfaces(): $CancellablePromise<string[] | null> {
+    return $Call.ByID(3355314149);
+}
+
 export function AttachStack(stack: rns$0.Stack | null): $CancellablePromise<void> {
     return $Call.ByID(1182225214, stack);
 }
@@ -66,6 +70,10 @@ export function ClearDownloadHistory(): $CancellablePromise<$models.DownloadHist
 
 export function ClearPageCache(): $CancellablePromise<number> {
     return $Call.ByID(3956852603);
+}
+
+export function CompleteInitialSetup(): $CancellablePromise<void> {
+    return $Call.ByID(1969272321);
 }
 
 export function ConfigPath(): $CancellablePromise<string> {
@@ -154,6 +162,10 @@ export function GetDownloadDir(): $CancellablePromise<string> {
 
 export function GetFavorites(): $CancellablePromise<string[] | null> {
     return $Call.ByID(2054671026);
+}
+
+export function GetInitialSetupState(): $CancellablePromise<$models.InitialSetupState> {
+    return $Call.ByID(2191938145);
 }
 
 export function GetKeybinds(): $CancellablePromise<$models.KeybindSettings> {
@@ -330,6 +342,10 @@ export function PickPluginZip(): $CancellablePromise<string> {
 
 export function PluginManager(): $CancellablePromise<plugins$0.Manager | null> {
     return $Call.ByID(1606493335);
+}
+
+export function PreviewSuggestedCommunityInterfaces(): $CancellablePromise<rns$0.CommunityInterface[] | null> {
+    return $Call.ByID(1578446213);
 }
 
 export function ProfileName(): $CancellablePromise<string> {

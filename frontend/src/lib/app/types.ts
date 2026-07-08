@@ -8,6 +8,8 @@ import type { ThemeSettings } from "$lib/theme/tokens";
 import type { Tab, TabPage } from "$lib/browser/url";
 import type { ActiveDownloadRow } from "$lib/browser/download-progress";
 
+export type InitialSetupStep = "welcome" | "suggested" | "pick" | "config";
+
 export type Node = {
   hash: string;
   name: string;
@@ -179,6 +181,12 @@ export type AppState = {
   communityError: string;
   communityFromBundle: boolean;
   communityFilter: string;
+  initialSetupOpen: boolean;
+  initialSetupStep: InitialSetupStep;
+  suggestedItems: CommunityInterface[];
+  suggestedLoading: boolean;
+  initialSetupBusy: boolean;
+  initialSetupError: string;
   discoverySlowMode: boolean;
   mobileDevTools: boolean;
   tabHoverPreviews: boolean;

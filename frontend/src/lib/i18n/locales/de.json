@@ -473,6 +473,25 @@
     "invalidKeyFile": "Die ausgewählte Datei ist kein gültiger Identitätsschlüssel.",
     "pickerCanceled": "Dateiauswahl wurde abgebrochen."
   },
+  "setup": {
+    "title": "Willkommen bei Ren Browser",
+    "subtitle": "Wählen Sie, wie Sie sich mit dem Reticulum-Mesh verbinden. Interfaces können später in den Einstellungen geändert werden.",
+    "suggestedTitle": "Vorgeschlagene Interfaces verwenden",
+    "suggestedHint": "Wir haben {count} Community-Hubs aus dem öffentlichen Verzeichnis ausgewählt.",
+    "pickTitle": "Verzeichnis durchsuchen",
+    "pickHint": "Wählen Sie Community-Interfaces für Ihre Konfiguration.",
+    "configTitle": "Konfiguration bearbeiten",
+    "configHint": "Bearbeiten Sie reticulum.conf direkt. AutoInterface bleibt aktiv, bis Sie es entfernen.",
+    "autoOnlyTitle": "Nur AutoInterface",
+    "autoOnlyHint": "Community-Hubs vorerst überspringen. Lokale Peer-Erkennung funktioniert weiterhin.",
+    "back": "Zurück",
+    "refreshSuggested": "Andere Interfaces wählen",
+    "applySuggested": "Hinzufügen und fortfahren",
+    "saveAndContinue": "Speichern und fortfahren",
+    "addSelectedContinue": "{count} ausgewählte hinzufügen und fortfahren",
+    "busy": "Konfiguration wird angewendet...",
+    "suggestedEmpty": "Keine verwendbaren Interfaces gefunden. Durchsuchen Sie das Verzeichnis oder bearbeiten Sie die Konfiguration."
+  },
   "community": {
     "title": "Community-Schnittstellen",
     "hint": "Online-Einträge von directory.rns.recipes",
