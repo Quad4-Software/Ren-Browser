@@ -163,6 +163,16 @@ jobs:
         with:
           install-wails: "false"
           install-linux-deps: "true"
+          cache-node: "true"
+
+      - name: Install frontend dependencies
+        run: task common:install:frontend:deps
+
+      - name: Frontend dependency audit
+        run: pnpm --dir frontend run audit
+
+      - name: Frontend ESLint security scan
+        run: pnpm --dir frontend run lint
 
       - name: gosec
         run: task gosec
