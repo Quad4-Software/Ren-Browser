@@ -98,6 +98,7 @@
     onChangeMicronWasmParser: (parserId: string) => void;
     onMicronWasmReadyChange: (ready: boolean) => void;
     onResetDefaults: () => void;
+    onResetBrowser: () => void;
     onShutdown: () => void;
     onToggleInterface: (name: string, enabled: boolean) => void;
     onExportTheme: () => void;
@@ -163,6 +164,7 @@
     onChangeMicronWasmParser,
     onMicronWasmReadyChange,
     onResetDefaults,
+    onResetBrowser,
     onShutdown,
     onToggleInterface,
     onExportTheme,
@@ -787,6 +789,13 @@
       <div class="reset-row">
         <button type="button" class="reset-btn" onclick={onShutdown}
           >{t("settings.shutdown")}</button
+        >
+      </div>
+
+      <p class="hint" style="margin-top: 1rem;">{t("settings.resetBrowserHint")}</p>
+      <div class="reset-row">
+        <button type="button" class="reset-btn" onclick={onResetBrowser}
+          >{t("settings.resetBrowser")}</button
         >
       </div>
     </SettingsSection>

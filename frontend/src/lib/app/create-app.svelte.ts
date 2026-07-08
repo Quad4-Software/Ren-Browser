@@ -52,6 +52,7 @@ import {
   RetryDownload,
   ResetDatabase,
   ResetSettings,
+  ResetBrowser,
   ReloadReticulumConfig,
   SaveTabs,
   SaveReticulumConfigText,
@@ -236,6 +237,7 @@ export function createApp() {
   let identifying = $state(false);
   let identifyConfirmOpen = $state(false);
   let resetDbConfirmOpen = $state(false);
+  let resetBrowserConfirmOpen = $state(false);
   let closeAllConfirmOpen = $state(false);
   let shutdownConfirmOpen = $state(false);
   let clearHistoryConfirmOpen = $state(false);
@@ -1680,13 +1682,22 @@ export function createApp() {
     resetDbConfirmOpen = true;
   }
 
+  function requestResetBrowser() {
+    resetBrowserConfirmOpen = true;
+  }
+
   function requestShutdown() {
     shutdownConfirmOpen = true;
   }
 
-  async function confirmShutdown() {
+  function confirmShutdown() {
     shutdownConfirmOpen = false;
     await Shutdown();
+  }
+
+  async function confirmResetBrowser() {
+    resetBrowserConfirmOpen = false;
+    await ResetBrowser();
   }
 
   async function confirmResetDatabase() {
@@ -2536,6 +2547,12 @@ export function createApp() {
     set resetDbConfirmOpen(value) {
       resetDbConfirmOpen = value;
     },
+    get resetBrowserConfirmOpen() {
+      return resetBrowserConfirmOpen;
+    },
+    set resetBrowserConfirmOpen(value) {
+      resetBrowserConfirmOpen = value;
+    },
     get closeAllConfirmOpen() {
       return closeAllConfirmOpen;
     },
@@ -2733,8 +2750,10 @@ export function createApp() {
     requestIdentify,
     confirmIdentify,
     requestResetDatabase,
+    requestResetBrowser,
     requestShutdown,
     confirmShutdown,
+    confirmResetBrowser,
     confirmResetDatabase,
     resetDefaults,
     saveUILanguage,

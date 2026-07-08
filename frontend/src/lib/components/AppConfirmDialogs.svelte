@@ -48,6 +48,15 @@
 />
 
 <ConfirmDialog
+  open={app.resetBrowserConfirmOpen}
+  title={t("settings.resetBrowser")}
+  message={t("settings.resetBrowserConfirm")}
+  confirmLabel={t("settings.resetBrowser")}
+  onConfirm={app.confirmResetBrowser}
+  onCancel={() => (app.resetBrowserConfirmOpen = false)}
+/>
+
+<ConfirmDialog
   open={app.clearHistoryConfirmOpen}
   title={t("history.clear")}
   message={t("history.clearConfirm")}

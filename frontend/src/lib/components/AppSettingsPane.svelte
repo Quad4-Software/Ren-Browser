@@ -59,6 +59,7 @@
   onChangeMicronWasmParser={app.saveMicronWasmParser}
   onMicronWasmReadyChange={app.setMicronWasmReady}
   onResetDefaults={app.resetDefaults}
+  onResetBrowser={app.requestResetBrowser}
   onShutdown={app.requestShutdown}
   onToggleInterface={app.toggleInterface}
   onExportTheme={() => void app.exportThemeFile()}
