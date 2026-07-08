@@ -401,6 +401,40 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  build-ios:
+    name: iOS (experimental)
+    needs: frontend-artifact
+    runs-on: macos-latest
+    continue-on-error: true
+    env:
+      REN_BROWSER_FRONTEND_PREBUILT: "1"
+    steps:
+      - name: Checkout Ren Browser
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Fetch frontend artifact
+        uses: ./.github/actions/fetch-frontend-artifact
+        with:
+          artifact-name: ${{ needs.frontend-artifact.outputs.artifact_name }}
+
+      - name: Setup dependencies
+        uses: ./.github/actions/setup
+        with:
+          install-linux-deps: "false"
+          install-wails: "true"
+          cache-node: "false"
+
+      - name: Build iOS App
+        run: task ios:package
+
+      - name: Upload iOS App Bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: renbrowser-ios-app
+          path: bin/renbrowser.app
+          if-no-files-found: ignore
+          retention-days: 7
+
   build-server:
     name: Server (${{ matrix.target }})
     runs-on: ubuntu-latest
