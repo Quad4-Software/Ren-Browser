@@ -91,14 +91,15 @@
     color: var(--ren-muted);
     font: inherit;
     font-size: 0.62rem;
-    padding: 0.35rem 0.1rem;
+    padding: 0.35rem 0.2rem;
     border-radius: 10px;
+    overflow: visible;
     transition:
       background 0.15s ease,
       color 0.15s ease;
   }
 
-  button span {
+  button > span:not(.icon-wrap) {
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -118,6 +119,7 @@
   .icon-wrap {
     position: relative;
     display: inline-flex;
+    overflow: visible;
   }
 
   .download-badge {
