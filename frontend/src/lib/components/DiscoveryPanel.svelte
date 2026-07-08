@@ -91,7 +91,9 @@
           type="button"
           class="ren-icon-btn filter-btn"
           class:active={favoritesOnly}
-          aria-label={favoritesOnly ? t("discovery.favoritesOnlyOn") : t("discovery.favoritesOnlyOff")}
+          aria-label={favoritesOnly
+            ? t("discovery.favoritesOnlyOn")
+            : t("discovery.favoritesOnlyOff")}
           title={t("discovery.favoritesOnly")}
           onclick={() => (favoritesOnly = !favoritesOnly)}
         >

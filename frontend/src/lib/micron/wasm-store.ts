@@ -6,10 +6,11 @@
 import { FetchMicronParserGoRelease } from "../../../bindings/renbrowser/internal/app/browserservice.js";
 import { randomId } from "$lib/browser/id";
 import { indexedDbName } from "$lib/brand";
+import { micronParserGoWasmFilename, micronParserGoMaxWasmBytes } from "$lib/constants";
 
 export const BUNDLED_MICRON_WASM_PARSER_ID = "bundled";
-export const WASM_FILENAME = "micron-parser-go.wasm";
-export const MAX_WASM_PARSER_BYTES = 14 * 1024 * 1024;
+export const WASM_FILENAME = micronParserGoWasmFilename;
+export const MAX_WASM_PARSER_BYTES = micronParserGoMaxWasmBytes;
 
 const DB_NAME = indexedDbName;
 const DB_VERSION = 1;

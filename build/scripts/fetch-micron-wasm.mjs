@@ -14,9 +14,15 @@ import path from "path";
 import crypto from "crypto";
 import { MICRON_PARSER_GO_RELEASE_TAG } from "./micron-parser-go-version.mjs";
 import { micronWasmVendorPaths, micronWasmRepoRoot } from "./micron-wasm-resolve-bundled.mjs";
+import {
+  micronParserGoReleaseDownloadBase,
+  micronParserGoWasmFilename,
+  micronParserGoShasumsFilename,
+  micronParserGoGoWasmExecVersion,
+} from "../../frontend/src/lib/constants.ts";
 
-const WASM_FILENAME = "micron-parser-go.wasm";
-const SHASUMS256_FILENAME = "SHASUMS256.txt";
+const WASM_FILENAME = micronParserGoWasmFilename;
+const SHASUMS256_FILENAME = micronParserGoShasumsFilename;
 
 /** Same line parsing as MicronWasmRuntimeOverride.parseShasums256ForFilename (GNU/BSD shasum). */
 function parseShasums256ForFilename(text, filename) {
@@ -41,8 +47,8 @@ function parseShasums256ForFilename(text, filename) {
     return null;
 }
 
-const DEFAULT_WASM_URL = `https://github.com/Quad4-Software/Micron-Parser-Go/releases/download/${MICRON_PARSER_GO_RELEASE_TAG}/micron-parser-go.wasm`;
-const DEFAULT_WASM_EXEC_URL = "https://raw.githubusercontent.com/golang/go/go1.26.2/lib/wasm/wasm_exec.js";
+const DEFAULT_WASM_URL = `${micronParserGoReleaseDownloadBase}/${MICRON_PARSER_GO_RELEASE_TAG}/${micronParserGoWasmFilename}`;
+const DEFAULT_WASM_EXEC_URL = `https://raw.githubusercontent.com/golang/go/${micronParserGoGoWasmExecVersion}/lib/wasm/wasm_exec.js`;
 
 const TIMEOUT_MS = Number(process.env.MICRON_WASM_FETCH_TIMEOUT_MS || 120000);
 

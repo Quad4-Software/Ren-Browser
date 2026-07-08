@@ -6,13 +6,12 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { communityDirectoryUrl } from "../../frontend/src/lib/constants.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 const target = path.join(repoRoot, "internal/rns/data/community_directory.json");
-const url =
-  process.env.REN_BROWSER_COMMUNITY_DIRECTORY_URL ??
-  "https://directory.rns.recipes/api/directory/submitted?search=&type=&status=online";
+const url = process.env.REN_BROWSER_COMMUNITY_DIRECTORY_URL ?? communityDirectoryUrl;
 
 async function main() {
   let response;

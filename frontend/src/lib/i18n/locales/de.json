@@ -127,6 +127,8 @@
     "micronHint": "JavaScript verwendet micron-parser-js im Browser. WebAssembly nutzt micron-parser-go-Module, die Sie unten auswählen. Go verwendet den Server-Renderer. Wenn WASM nicht verfügbar ist oder nicht geladen werden kann, fallen Seiten automatisch auf JavaScript zurück.",
     "wasmUnavailable": "WebAssembly ist in dieser Webview nicht verfügbar. Es können nur JavaScript- und Go-Renderer verwendet werden.",
     "micronWasmEnabled": "Micron-WebAssembly-Engine aktivieren",
+    "micronPreserveLayout": "Micron-Zeilenlayout beibehalten",
+    "micronPreserveLayoutHint": "Feste Zeilenbreiten auf Micron-Seiten. Breite ASCII-Grafik und Menüs scrollen horizontal statt umzubrechen.",
     "micronRenderer": "Micron-Renderer (.mu)",
     "rendererAuto": "Automatisch (WASM, dann Go, dann JS)",
     "rendererWasm": "WebAssembly (micron-parser-go)",

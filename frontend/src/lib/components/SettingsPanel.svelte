@@ -5,9 +5,8 @@
   import EmptyState from "$lib/components/EmptyState.svelte";
   import MicronWasmManager from "$lib/components/MicronWasmManager.svelte";
   import ReticulumConfigEditor from "$lib/components/ReticulumConfigEditor.svelte";
-  import CommunityInterfaces, {
-    type CommunityInterface,
-  } from "$lib/components/CommunityInterfaces.svelte";
+  import CommunityInterfaces from "$lib/components/CommunityInterfaces.svelte";
+  import type { CommunityInterface } from "../../../bindings/renbrowser/internal/rns/models.js";
   import IdentityPanel from "$lib/components/IdentityPanel.svelte";
   import ShareApkPanel from "$lib/components/ShareApkPanel.svelte";
   import ExtensionsPanel from "$lib/components/ExtensionsPanel.svelte";
@@ -63,6 +62,7 @@
     micronRenderer: MicronRendererPreference;
     micronWasmEnabled: boolean;
     micronWasmParserId: string;
+    micronPreserveLayout: boolean;
     desktopChrome: boolean;
     mobileUI: boolean;
     mobileDevTools: boolean;
@@ -94,6 +94,7 @@
     onChangeNativeTitlebar: (value: boolean) => void;
     onChangeMicronRenderer: (value: MicronRendererPreference) => void;
     onChangeMicronWasmEnabled: (value: boolean) => void;
+    onChangeMicronPreserveLayout: (value: boolean) => void;
     onChangeMicronWasmParser: (parserId: string) => void;
     onMicronWasmReadyChange: (ready: boolean) => void;
     onResetDefaults: () => void;
@@ -131,6 +132,7 @@
     micronRenderer,
     micronWasmEnabled,
     micronWasmParserId,
+    micronPreserveLayout,
     desktopChrome,
     mobileUI,
     mobileDevTools,
@@ -157,6 +159,7 @@
     onChangeNativeTitlebar,
     onChangeMicronRenderer,
     onChangeMicronWasmEnabled,
+    onChangeMicronPreserveLayout,
     onChangeMicronWasmParser,
     onMicronWasmReadyChange,
     onResetDefaults,
@@ -529,6 +532,13 @@
         <option value="js">{t("settings.rendererJs")}</option>
       </select>
     </label>
+
+    <Toggle
+      label={t("settings.micronPreserveLayout")}
+      checked={micronPreserveLayout}
+      onchange={onChangeMicronPreserveLayout}
+    />
+    <p class="hint">{t("settings.micronPreserveLayoutHint")}</p>
 
     {#if isWebAssemblySupported() && micronWasmEnabled}
       <MicronWasmManager

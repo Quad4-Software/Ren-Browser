@@ -1,21 +1,9 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Check, Globe, RefreshCw } from "@lucide/svelte";
+  import type { CommunityInterface } from "../../../bindings/renbrowser/internal/rns/models.js";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
-
-  export type CommunityInterface = {
-    id: number;
-    name: string;
-    type: string;
-    typeName: string;
-    network: string;
-    host: string;
-    port: number | null;
-    status: string;
-    config: string;
-    installed: boolean;
-  };
 
   type Props = {
     items: CommunityInterface[];

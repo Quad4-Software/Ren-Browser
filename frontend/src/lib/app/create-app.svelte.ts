@@ -84,7 +84,8 @@ import {
   markScreenshotReady,
   type ScreenshotScene,
 } from "$lib/theme/screenshot";
-import type { CommunityInterface } from "$lib/components/CommunityInterfaces.svelte";
+import type { CommunityFetchResult } from "../../../bindings/renbrowser/internal/app/models.js";
+import type { CommunityInterface } from "../../../bindings/renbrowser/internal/rns/models.js";
 import {
   defaultKeybinds,
   matchKeybind,
@@ -268,6 +269,7 @@ export function createApp() {
   let discoverySlowMode = $state(false);
   let mobileDevTools = $state(false);
   let tabHoverPreviews = $state(true);
+  let micronPreserveLayout = $state(false);
   let mobileTabsOpen = $state(false);
   let settingsSectionsCollapsed = $state<Record<string, boolean>>({});
 
@@ -1243,10 +1245,7 @@ export function createApp() {
     communityLoading = true;
     communityError = "";
     try {
-      const result = (await FetchCommunityInterfaces()) as {
-        items?: CommunityInterface[] | null;
-        fromBundle?: boolean;
-      };
+      const result = (await FetchCommunityInterfaces()) as CommunityFetchResult;
       communityItems = Array.isArray(result?.items) ? result.items : [];
       communityFromBundle = !!result?.fromBundle;
     } catch (err) {
@@ -1354,6 +1353,7 @@ export function createApp() {
     mobileDevTools = !!prefs.mobileDevTools;
     pageCacheEnabled = prefs.pageCacheEnabled !== false;
     tabHoverPreviews = prefs.tabHoverPreviews !== false;
+    micronPreserveLayout = !!prefs.micronPreserveLayout;
     settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
     if (activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
@@ -1375,6 +1375,7 @@ export function createApp() {
       mobileDevTools,
       pageCacheEnabled,
       tabHoverPreviews,
+      micronPreserveLayout,
       settingsSectionsCollapsed,
     };
   }
@@ -1390,6 +1391,7 @@ export function createApp() {
     mobileDevTools?: boolean;
     pageCacheEnabled?: boolean;
     tabHoverPreviews?: boolean;
+    micronPreserveLayout?: boolean;
     settingsSectionsCollapsed?: Record<string, boolean>;
   }) {
     const prefs = await SetBrowserPrefs({
@@ -1406,6 +1408,7 @@ export function createApp() {
     mobileDevTools = !!prefs.mobileDevTools;
     pageCacheEnabled = prefs.pageCacheEnabled !== false;
     tabHoverPreviews = prefs.tabHoverPreviews !== false;
+    micronPreserveLayout = !!prefs.micronPreserveLayout;
     settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
     if (activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
@@ -1434,6 +1437,11 @@ export function createApp() {
       activePanel = "browser";
     }
     await persistBrowserPrefs({ mobileDevTools: value });
+  }
+
+  async function saveMicronPreserveLayout(value: boolean) {
+    micronPreserveLayout = value;
+    await persistBrowserPrefs({ micronPreserveLayout: value });
   }
 
   async function saveDiscoverySlowMode(value: boolean) {
@@ -1631,6 +1639,7 @@ export function createApp() {
     mobileDevTools = !!reset.browserPrefs.mobileDevTools;
     pageCacheEnabled = reset.browserPrefs.pageCacheEnabled !== false;
     tabHoverPreviews = reset.browserPrefs.tabHoverPreviews !== false;
+    micronPreserveLayout = !!reset.browserPrefs.micronPreserveLayout;
     if (activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
     }
@@ -2508,6 +2517,9 @@ export function createApp() {
     get tabHoverPreviews() {
       return tabHoverPreviews;
     },
+    get micronPreserveLayout() {
+      return micronPreserveLayout;
+    },
     get mobileTabsOpen() {
       return mobileTabsOpen;
     },
@@ -2589,6 +2601,7 @@ export function createApp() {
     saveNativeTitlebar,
     saveMicronRenderer,
     saveMicronWasmEnabled,
+    saveMicronPreserveLayout,
     saveMicronWasmParser,
     setMicronWasmReady,
     saveTheme,

@@ -41,4 +41,28 @@ describe("ContentViewer layout regressions", () => {
     expect(text).not.toBeNull();
     expect(getComputedStyle(text!).overflowWrap).toBe("anywhere");
   });
+
+  it("applies preserve-layout styles on micron pages when enabled", async () => {
+    instance = await mountInBody(ContentViewer, {
+      html: "<span class='Mu-mws'>wide</span>",
+      contentType: "micron",
+      loading: false,
+      error: "",
+      currentURL: "mesh:/art",
+      showSource: false,
+      findOpen: false,
+      micronEngine: "js",
+      micronPreserveLayout: true,
+      onNavigate: noop,
+      onRetry: noop,
+      onReloadFresh: noop,
+      onShowSourceChange: noop,
+      onFindClose: noop,
+    });
+
+    const content = document.querySelector(".content.micron.preserve-layout");
+    expect(content).not.toBeNull();
+    expect(getComputedStyle(content!).overflowX).toBe("auto");
+    expect(getComputedStyle(content!).overflowWrap).toBe("normal");
+  });
 });

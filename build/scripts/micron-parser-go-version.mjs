@@ -1,2 +1,2 @@
 // SPDX-License-Identifier: MIT
-export const MICRON_PARSER_GO_RELEASE_TAG = "v1.0.6";
+export { micronParserGoReleaseTag as MICRON_PARSER_GO_RELEASE_TAG } from "../../frontend/src/lib/constants.ts";

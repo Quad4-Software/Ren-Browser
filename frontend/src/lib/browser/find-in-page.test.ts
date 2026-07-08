@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { clearFindHighlights, highlightFindMatches, scrollToFindMatch, applyTemporaryHighlight } from "./find-in-page";
+import {
+  clearFindHighlights,
+  highlightFindMatches,
+  scrollToFindMatch,
+  applyTemporaryHighlight,
+} from "./find-in-page";
 
 describe("find-in-page", () => {
   let root: HTMLElement;

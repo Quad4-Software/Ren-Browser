@@ -7,14 +7,25 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
+
+	"renbrowser/internal/brand"
+	"renbrowser/internal/constants"
 )
 
 //go:embed data/community_directory.json
 var bundledCommunityDirectory []byte
 
-var communityDirectoryURL = "https://directory.rns.recipes/api/directory/submitted?search=&type=&status=online"
+var communityDirectoryURL = constants.CommunityDirectoryURL
+
+func resolveCommunityDirectoryURL() string {
+	if v := strings.TrimSpace(os.Getenv(brand.EnvPrefix + "_COMMUNITY_DIRECTORY_URL")); v != "" {
+		return v
+	}
+	return communityDirectoryURL
+}
 
 type CommunityInterface struct {
 	ID        int    `json:"id"`
@@ -52,7 +63,7 @@ func FetchCommunityInterfaces(installed map[string]bool) (CommunityFetchResult, 
 
 func fetchLiveCommunityInterfaces(installed map[string]bool) ([]CommunityInterface, error) {
 	client := &http.Client{Timeout: 20 * time.Second}
-	resp, err := client.Get(communityDirectoryURL)
+	resp, err := client.Get(resolveCommunityDirectoryURL())
 	if err != nil {
 		return nil, fmt.Errorf("fetch directory: %w", err)
 	}

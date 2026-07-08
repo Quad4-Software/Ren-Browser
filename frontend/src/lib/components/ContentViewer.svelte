@@ -60,6 +60,7 @@
     pageHighlight?: string;
     onPageHighlightDone?: () => void;
     micronEngine?: MicronEffectiveEngine;
+    micronPreserveLayout?: boolean;
     onNavigate: (url: string) => void;
     onRetry: () => void;
     onReloadFresh: () => void;
@@ -89,6 +90,7 @@
     pageHighlight = "",
     onPageHighlightDone = () => {},
     micronEngine = "js",
+    micronPreserveLayout = false,
     onNavigate,
     onRetry,
     onReloadFresh,
@@ -428,6 +430,7 @@
       <div
         class="content"
         class:micron={isMicron}
+        class:preserve-layout={isMicron && micronPreserveLayout}
         data-content-type={contentType}
         style={shellStyle}
         bind:this={contentEl}
@@ -711,6 +714,31 @@
   .content.micron {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     line-height: 1.25;
+  }
+
+  .content.micron.preserve-layout {
+    overflow-x: auto;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  .content.micron.preserve-layout :global(.Mu-mws) {
+    display: inline !important;
+    flex-wrap: nowrap !important;
+    white-space: pre !important;
+  }
+
+  .content.micron.preserve-layout :global(.Mu-mnt-group) {
+    white-space: pre !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+
+  .content.micron.preserve-layout :global(div[style*="white-space:pre"]) {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    width: max-content !important;
+    max-width: none !important;
   }
 
   .content.micron :global(input[type="text"]),

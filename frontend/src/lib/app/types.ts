@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-import type { CommunityInterface } from "$lib/components/CommunityInterfaces.svelte";
+import type { CommunityInterface } from "../../../bindings/renbrowser/internal/rns/models.js";
 import type { DownloadRow } from "$lib/components/DownloadsMenu.svelte";
 import type { KeybindSettings } from "$lib/browser/keybinds";
 import type { MicronRendererPreference } from "$lib/micron/render-page";

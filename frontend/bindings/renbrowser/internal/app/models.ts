@@ -80,6 +80,7 @@ export interface BrowserPrefs {
     "mobileDevTools": boolean;
     "pageCacheEnabled": boolean;
     "tabHoverPreviews": boolean;
+    "micronPreserveLayout": boolean;
     "settingsSectionsCollapsed": { [_ in string]?: boolean } | null;
 }
 

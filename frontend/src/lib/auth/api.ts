@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import { serverAuthLoginPath, serverAuthStatusPath } from "$lib/constants";
 export type AuthStatus = {
   authRequired: boolean;
   authenticated: boolean;
@@ -25,7 +26,7 @@ function apiBase(): string {
 
 export async function fetchAuthStatus(): Promise<AuthStatus> {
   try {
-    const res = await fetch(`${apiBase()}/api/auth/status`, { credentials: "same-origin" });
+    const res = await fetch(`${apiBase()}${serverAuthStatusPath}`, { credentials: "same-origin" });
     if (!res.ok) {
       return { authRequired: false, authenticated: true };
     }
@@ -36,7 +37,7 @@ export async function fetchAuthStatus(): Promise<AuthStatus> {
 }
 
 export async function login(password: string): Promise<LoginResult> {
-  const res = await fetch(`${apiBase()}/api/auth/login`, {
+  const res = await fetch(`${apiBase()}${serverAuthLoginPath}`, {
     method: "POST",
     credentials: "same-origin",
     headers: { "Content-Type": "application/json" },

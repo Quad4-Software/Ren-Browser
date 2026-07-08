@@ -127,6 +127,8 @@
     "micronHint": "",
     "wasmUnavailable": "",
     "micronWasmEnabled": "",
+    "micronPreserveLayout": "",
+    "micronPreserveLayoutHint": "",
     "micronRenderer": "",
     "rendererAuto": "",
     "rendererWasm": "",

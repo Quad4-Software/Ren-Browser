@@ -11,13 +11,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
-)
 
-const (
-	ReleaseDownloadBase = "https://github.com/Quad4-Software/Micron-Parser-Go/releases/download"
-	WasmFilename        = "micron-parser-go.wasm"
-	ShasumsFilename     = "SHASUMS256.txt"
-	MaxWasmBytes        = 14 * 1024 * 1024
+	"renbrowser/internal/constants"
 )
 
 var shasumLine = regexp.MustCompile(`^([a-fA-F0-9]{64})\s+\*?(\S+)\s*$`)
@@ -46,7 +41,7 @@ func ParseShasums256ForFilename(text, filename string) (string, error) {
 			return strings.ToLower(m[1]), nil
 		}
 	}
-	return "", fmt.Errorf("%s not listed in %s", filename, ShasumsFilename)
+	return "", fmt.Errorf("%s not listed in %s", filename, constants.MicronParserGoShasumsFilename)
 }
 
 func FetchVerifiedRelease(tag string) (FetchResult, error) {
@@ -56,7 +51,7 @@ func FetchVerifiedRelease(tag string) (FetchResult, error) {
 	}
 
 	client := &http.Client{Timeout: 120 * time.Second}
-	sumsURL := fmt.Sprintf("%s/%s/%s", ReleaseDownloadBase, trimmed, ShasumsFilename)
+	sumsURL := fmt.Sprintf("%s/%s/%s", constants.MicronParserGoReleaseDownloadBase, trimmed, constants.MicronParserGoShasumsFilename)
 	sumsRes, err := client.Get(sumsURL)
 	if err != nil {
 		return FetchResult{}, fmt.Errorf("fetch shasums: %w", err)
@@ -69,12 +64,12 @@ func FetchVerifiedRelease(tag string) (FetchResult, error) {
 	if err != nil {
 		return FetchResult{}, fmt.Errorf("read shasums: %w", err)
 	}
-	expectedHex, err := ParseShasums256ForFilename(string(sumsBody), WasmFilename)
+	expectedHex, err := ParseShasums256ForFilename(string(sumsBody), constants.MicronParserGoWasmFilename)
 	if err != nil {
 		return FetchResult{}, err
 	}
 
-	wasmURL := fmt.Sprintf("%s/%s/%s", ReleaseDownloadBase, trimmed, WasmFilename)
+	wasmURL := fmt.Sprintf("%s/%s/%s", constants.MicronParserGoReleaseDownloadBase, trimmed, constants.MicronParserGoWasmFilename)
 	wasmRes, err := client.Get(wasmURL)
 	if err != nil {
 		return FetchResult{}, fmt.Errorf("fetch wasm: %w", err)
@@ -83,12 +78,12 @@ func FetchVerifiedRelease(tag string) (FetchResult, error) {
 	if wasmRes.StatusCode < 200 || wasmRes.StatusCode >= 300 {
 		return FetchResult{}, fmt.Errorf("fetch wasm: HTTP %d", wasmRes.StatusCode)
 	}
-	wasmBody, err := io.ReadAll(io.LimitReader(wasmRes.Body, MaxWasmBytes+1))
+	wasmBody, err := io.ReadAll(io.LimitReader(wasmRes.Body, constants.MicronParserGoMaxWasmBytes+1))
 	if err != nil {
 		return FetchResult{}, fmt.Errorf("read wasm: %w", err)
 	}
-	if len(wasmBody) > MaxWasmBytes {
-		return FetchResult{}, fmt.Errorf("wasm exceeds maximum size (%d bytes)", MaxWasmBytes)
+	if len(wasmBody) > constants.MicronParserGoMaxWasmBytes {
+		return FetchResult{}, fmt.Errorf("wasm exceeds maximum size (%d bytes)", constants.MicronParserGoMaxWasmBytes)
 	}
 	if len(wasmBody) < 4096 {
 		return FetchResult{}, fmt.Errorf("wasm file is too small")

@@ -18,14 +18,15 @@ import (
 
 	"renbrowser/internal/auth"
 	"renbrowser/internal/config"
+	"renbrowser/internal/constants"
 	"renbrowser/internal/db"
 )
 
 const (
-	sessionCookieName = "renbrowser_session"
-	apiLoginPath      = "/api/auth/login"
-	apiLogoutPath     = "/api/auth/logout"
-	apiStatusPath     = "/api/auth/status"
+	sessionCookieName = constants.ServerAuthSessionCookieName
+	apiLoginPath      = constants.ServerAuthLoginPath
+	apiLogoutPath     = constants.ServerAuthLogoutPath
+	apiStatusPath     = constants.ServerAuthStatusPath
 )
 
 type Guard struct {
