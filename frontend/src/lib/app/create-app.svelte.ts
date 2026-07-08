@@ -207,6 +207,7 @@ export function createApp() {
   const activeDownloadViews = $derived(withProgress(activeDownloads));
   let downloadsOpen = $state(false);
   let findOpen = $state(false);
+  let pageHighlight = $state("");
   let canGoBack = $state(false);
   let canGoForward = $state(false);
   let lastRaw = $state("");
@@ -876,8 +877,14 @@ export function createApp() {
   async function openPage(
     nextUrl: string,
     pushHistory = true,
-    opts?: { tabId?: string; skipCache?: boolean },
+    opts?: { tabId?: string; skipCache?: boolean; highlight?: string },
   ) {
+    if (opts && "highlight" in opts) {
+      pageHighlight = opts.highlight?.trim() ?? "";
+    } else {
+      pageHighlight = "";
+    }
+
     syncActiveTabPage();
     const tabId = opts?.tabId ?? tabs.find((tab) => tab.active)?.id;
     if (!tabId) {
@@ -1016,10 +1023,11 @@ export function createApp() {
     }
   }
 
-  function browseURL(targetUrl: string) {
+  function browseURL(targetUrl: string, highlight?: string) {
+    const highlightValue = highlight === undefined ? "" : highlight.trim();
     if (openLinksInNewTab) {
       if (!canOpenTab(tabs.length)) {
-        void openPage(targetUrl);
+        void openPage(targetUrl, true, { highlight: highlightValue });
         return;
       }
       syncActiveTabPage();
@@ -1039,11 +1047,15 @@ export function createApp() {
       url = normalized;
       clearPageState();
       activePanel = "browser";
-      void openPage(normalized, true, { tabId: tab.id });
+      void openPage(normalized, true, { tabId: tab.id, highlight: highlightValue });
       schedulePersistTabs();
       return;
     }
-    void openPage(targetUrl);
+    void openPage(targetUrl, true, { highlight: highlightValue });
+  }
+
+  function clearPageHighlight() {
+    pageHighlight = "";
   }
 
   async function refreshHistoryState() {
@@ -2315,6 +2327,9 @@ export function createApp() {
     set findOpen(value) {
       findOpen = value;
     },
+    get pageHighlight() {
+      return pageHighlight;
+    },
     get canGoBack() {
       return canGoBack;
     },
@@ -2532,6 +2547,7 @@ export function createApp() {
     pluginHostOpts,
     openPage,
     browseURL,
+    clearPageHighlight,
     goBack,
     goForward,
     setActiveTab,

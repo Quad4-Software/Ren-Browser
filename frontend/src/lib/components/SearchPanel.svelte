@@ -25,7 +25,7 @@
     history: HistoryEntry[];
     nodes: Node[];
     favorites: string[];
-    onOpen: (url: string) => void;
+    onOpen: (url: string, highlight?: string) => void;
   };
 
   let { history, nodes, favorites, onOpen }: Props = $props();
@@ -171,6 +171,10 @@
         return Star;
     }
   }
+
+  function openResult(url: string) {
+    onOpen(url, query.trim() || undefined);
+  }
 </script>
 
 <section class="search-panel">
@@ -216,7 +220,7 @@
           {#each group.results as result (result.key)}
             {@const Icon = kindIcon(result.kind)}
             <li>
-              <button onclick={() => onOpen(result.url)}>
+              <button onclick={() => openResult(result.url)}>
                 <span class="row">
                   <span class="icon" aria-hidden="true"><Icon size={14} /></span>
                   <span class="name">{result.title}</span>

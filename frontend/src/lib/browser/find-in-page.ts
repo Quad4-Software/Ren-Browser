@@ -77,3 +77,26 @@ export function scrollToFindMatch(root: HTMLElement, index: number): void {
   });
   marks[clamped]?.scrollIntoView({ block: "center", behavior: "smooth" });
 }
+
+export const TEMPORARY_HIGHLIGHT_MS = 8000;
+
+export function applyTemporaryHighlight(
+  root: HTMLElement,
+  query: string,
+  durationMs = TEMPORARY_HIGHLIGHT_MS,
+): { cancel: () => void; matchCount: number } {
+  const count = highlightFindMatches(root, query);
+  if (count > 0) {
+    scrollToFindMatch(root, 0);
+  }
+  const timer = setTimeout(() => {
+    clearFindHighlights(root);
+  }, durationMs);
+  return {
+    matchCount: count,
+    cancel: () => {
+      clearTimeout(timer);
+      clearFindHighlights(root);
+    },
+  };
+}

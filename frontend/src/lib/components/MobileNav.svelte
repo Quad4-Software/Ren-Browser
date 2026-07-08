@@ -28,13 +28,13 @@
     <Home size={18} />
     <span>{t("mobileNav.browse")}</span>
   </button>
-  <button class:active={activePanel === "discovery"} onclick={() => onPanel("discovery")}>
-    <Compass size={18} />
-    <span>{t("mobileNav.discover")}</span>
-  </button>
   <button class:active={activePanel === "history"} onclick={() => onPanel("history")}>
     <History size={18} />
     <span>{t("mobileNav.history")}</span>
+  </button>
+  <button class:active={activePanel === "discovery"} onclick={() => onPanel("discovery")}>
+    <Compass size={18} />
+    <span>{t("mobileNav.discover")}</span>
   </button>
   <button
     class="downloads-btn"

@@ -78,6 +78,8 @@
       showSource={app.showSource}
       currentURL={app.url}
       findOpen={app.findOpen}
+      pageHighlight={app.pageHighlight}
+      onPageHighlightDone={app.clearPageHighlight}
       micronEngine={app.effectiveMicronEngine}
       mobileGestures={app.mobileUI && app.activePanel === "browser" && !app.mobileTabsOpen}
       canGoBack={app.canGoBack}

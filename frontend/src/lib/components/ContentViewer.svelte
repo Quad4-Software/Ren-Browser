@@ -32,6 +32,7 @@
     getEffectiveScrollTop,
     type MobileGestureProgress,
   } from "$lib/browser/mobile-gestures.js";
+  import { applyTemporaryHighlight, TEMPORARY_HIGHLIGHT_MS } from "$lib/browser/find-in-page.js";
   import type { Component } from "svelte";
 
   type DocumentViewerProps = {
@@ -56,6 +57,8 @@
     cachedAt?: number;
     showSource?: boolean;
     findOpen?: boolean;
+    pageHighlight?: string;
+    onPageHighlightDone?: () => void;
     micronEngine?: MicronEffectiveEngine;
     onNavigate: (url: string) => void;
     onRetry: () => void;
@@ -83,6 +86,8 @@
     cachedAt = 0,
     showSource = false,
     findOpen = false,
+    pageHighlight = "",
+    onPageHighlightDone = () => {},
     micronEngine = "js",
     onNavigate,
     onRetry,
@@ -319,6 +324,31 @@
     });
 
     return () => attachment.teardown();
+  });
+
+  $effect(() => {
+    const root = contentEl;
+    const term = pageHighlight.trim();
+    const ready = !loading && !error && !showSource && !isDocument && Boolean(displayHtml);
+
+    if (!root || !term || !ready) {
+      return;
+    }
+
+    const session = applyTemporaryHighlight(root, term);
+    if (session.matchCount === 0) {
+      onPageHighlightDone();
+      return;
+    }
+
+    const clearStateTimer = setTimeout(() => {
+      onPageHighlightDone();
+    }, TEMPORARY_HIGHLIGHT_MS);
+
+    return () => {
+      clearTimeout(clearStateTimer);
+      session.cancel();
+    };
   });
 </script>
 

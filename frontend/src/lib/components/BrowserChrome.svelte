@@ -134,17 +134,30 @@
   </form>
 
   <div class="tool-cluster">
-    {#if canIdentify}
-      <button
-        class="ren-icon-btn always-show"
-        aria-label={t("chrome.identify")}
-        title={t("chrome.identifyTitle")}
-        disabled={identifying}
-        onclick={onIdentify}
-      >
-        <Fingerprint size={16} />
-      </button>
-    {/if}
+    <button
+      class="ren-icon-btn mobile-nav-dup"
+      class:active={activePanel === "search"}
+      aria-label={t("chrome.search")}
+      onclick={() => onPanel("search")}
+    >
+      <Search size={16} />
+    </button>
+    <button
+      class="ren-icon-btn mobile-nav-dup"
+      class:active={activePanel === "history"}
+      aria-label={t("chrome.history")}
+      onclick={() => onPanel("history")}
+    >
+      <History size={16} />
+    </button>
+    <button
+      class="ren-icon-btn mobile-nav-dup"
+      class:active={activePanel === "discovery"}
+      aria-label={t("chrome.discovery")}
+      onclick={() => onPanel("discovery")}
+    >
+      <Compass size={16} />
+    </button>
     <div class="downloads-anchor mobile-nav-dup">
       <button
         class="ren-icon-btn"
@@ -178,30 +191,17 @@
         onClose={onCloseDownloads}
       />
     </div>
-    <button
-      class="ren-icon-btn mobile-nav-dup"
-      class:active={activePanel === "search"}
-      aria-label={t("chrome.search")}
-      onclick={() => onPanel("search")}
-    >
-      <Search size={16} />
-    </button>
-    <button
-      class="ren-icon-btn mobile-nav-dup"
-      class:active={activePanel === "history"}
-      aria-label={t("chrome.history")}
-      onclick={() => onPanel("history")}
-    >
-      <History size={16} />
-    </button>
-    <button
-      class="ren-icon-btn mobile-nav-dup"
-      class:active={activePanel === "discovery"}
-      aria-label={t("chrome.discovery")}
-      onclick={() => onPanel("discovery")}
-    >
-      <Compass size={16} />
-    </button>
+    {#if canIdentify}
+      <button
+        class="ren-icon-btn always-show"
+        aria-label={t("chrome.identify")}
+        title={t("chrome.identifyTitle")}
+        disabled={identifying}
+        onclick={onIdentify}
+      >
+        <Fingerprint size={16} />
+      </button>
+    {/if}
     {#each pluginPanels as panel (panel.pluginId + ":" + panel.id)}
       {@const key = panelKey(panel.pluginId, panel.id)}
       <button
@@ -306,7 +306,7 @@
       display: none;
     }
 
-    /* These actions (history, discovery, devtools, settings, downloads,
+    /* These actions (search, discovery, history, devtools, settings, downloads,
        close panel) are already reachable from the bottom mobile
        nav bar, so hide the duplicates here to keep the URL bar row clean. */
     .mobile-nav-dup {
