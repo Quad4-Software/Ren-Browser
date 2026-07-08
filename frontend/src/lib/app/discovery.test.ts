@@ -24,7 +24,7 @@ describe("Discovery Slow Mode and Unique Announces", () => {
     ];
 
     // Deduplicate unique nodes (simulating backend/store behavior)
-    const uniqueNodesMap = new Map<string, typeof nodes[0]>();
+    const uniqueNodesMap = new Map<string, (typeof nodes)[0]>();
     for (const node of nodes) {
       uniqueNodesMap.set(node.hash, node);
     }

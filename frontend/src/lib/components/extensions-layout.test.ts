@@ -13,7 +13,8 @@ describe("ExtensionsPanel layout regressions", () => {
 
   it("prevents long plugin directory paths from overflowing on mobile", async () => {
     instance = await mountInBody(ExtensionsPanel, {
-      pluginsDir: "/home/user1/.config/renbrowser/extremely-long-custom-plugins-directory-path-that-would-normally-overflow-the-screen-on-mobile-devices",
+      pluginsDir:
+        "/home/user1/.config/renbrowser/extremely-long-custom-plugins-directory-path-that-would-normally-overflow-the-screen-on-mobile-devices",
       showTitle: true,
     });
 
