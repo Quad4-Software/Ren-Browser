@@ -124,13 +124,52 @@ tasks:
       - cp "{{.BIN_DIR}}/{{.APP_NAME | lower}}" "{{.BIN_DIR}}/{{.APP_NAME}}.app/"
       - cp build/ios/Info.plist "{{.BIN_DIR}}/{{.APP_NAME}}.app/"
       - |
+        # Compile LaunchScreen.storyboard into the bundle (raw .storyboard is not enough on device).
+        if command -v ibtool >/dev/null 2>&1 || command -v xcrun >/dev/null 2>&1; then
+          xcrun ibtool --errors --warnings --notices \
+            --output-format human-readable-text \
+            --compilation-directory "{{.BIN_DIR}}/{{.APP_NAME}}.app" \
+            build/ios/LaunchScreen.storyboard || \
+          cp build/ios/LaunchScreen.storyboard "{{.BIN_DIR}}/{{.APP_NAME}}.app/"
+        else
+          cp build/ios/LaunchScreen.storyboard "{{.BIN_DIR}}/{{.APP_NAME}}.app/"
+        fi
+      - |
         # Embed the provisioning profile for device builds when provided
         if [ "{{.IOS_PLATFORM}}" = "device" ] && [ -n "{{.PROVISIONING_PROFILE}}" ]; then
           cp "{{.PROVISIONING_PROFILE}}" "{{.BIN_DIR}}/{{.APP_NAME}}.app/embedded.mobileprovision"
         fi
+      - task: embed:icons
+        vars:
+          APP_BUNDLE: '{{.BIN_DIR}}/{{.APP_NAME}}.app'
+          IOS_SDK: '{{.IOS_SDK}}'
       - |
-        # Compile asset catalog and embed icons in the app bundle
-        APP_BUNDLE="{{.BIN_DIR}}/{{.APP_NAME}}.app"
+        # Sign the bundle. Ad-hoc ("-") works on the simulator only; device
+        # builds need a real identity (and usually entitlements + profile).
+        # Entitlements are only applied to device builds - simulator bundles
+        # must not carry them (SpringBoard refuses to launch the app).
+        if [ "{{.IOS_PLATFORM}}" = "device" ] && [ -f "{{.ENTITLEMENTS_FILE}}" ]; then
+          codesign --force --sign "{{.CODESIGN_IDENTITY}}" --entitlements "{{.ENTITLEMENTS_FILE}}" "{{.BIN_DIR}}/{{.APP_NAME}}.app"
+        else
+          codesign --force --sign "{{.CODESIGN_IDENTITY}}" "{{.BIN_DIR}}/{{.APP_NAME}}.app"
+        fi
+
+  embed:icons:
+    internal: true
+    summary: Embed Assets.car plus loose PNG icons Sideloadly/SpringBoard can read
+    vars:
+      APP_BUNDLE: '{{.APP_BUNDLE}}'
+      IOS_SDK: '{{.IOS_SDK | default "iphoneos"}}'
+    cmds:
+      - |
+        set -euo pipefail
+        APP_BUNDLE="{{.APP_BUNDLE}}"
+        if [ -z "$APP_BUNDLE" ] || [ ! -d "$APP_BUNDLE" ]; then
+          echo "APP_BUNDLE missing or not a directory: $APP_BUNDLE" >&2
+          exit 1
+        fi
+
+        # Compiled asset catalog (home-screen icons on device).
         AC_IN="build/ios/xcode/main/Assets.xcassets"
         if [ -d "$AC_IN" ]; then
           TMP_AC=$(mktemp -d)
@@ -150,18 +189,86 @@ tasks:
           rm -rf "$TMP_AC"
           if [ -f "$APP_BUNDLE/assetcatalog_generated_info.plist" ]; then
             /usr/libexec/PlistBuddy -c "Merge $APP_BUNDLE/assetcatalog_generated_info.plist" "$APP_BUNDLE/Info.plist" || true
+            rm -f "$APP_BUNDLE/assetcatalog_generated_info.plist"
           fi
         fi
-      - |
-        # Sign the bundle. Ad-hoc ("-") works on the simulator only; device
-        # builds need a real identity (and usually entitlements + profile).
-        # Entitlements are only applied to device builds - simulator bundles
-        # must not carry them (SpringBoard refuses to launch the app).
-        if [ "{{.IOS_PLATFORM}}" = "device" ] && [ -f "{{.ENTITLEMENTS_FILE}}" ]; then
-          codesign --force --sign "{{.CODESIGN_IDENTITY}}" --entitlements "{{.ENTITLEMENTS_FILE}}" "{{.BIN_DIR}}/{{.APP_NAME}}.app"
+
+        # Loose PNGs: Sideloadly and some installers do not parse Assets.car.
+        # Names must match CFBundleIconFiles prefixes in Info.plist.
+        ICONS_DIR="build/ios/icons"
+        copy_prebuilt() {
+          local src="$1" dest="$2"
+          if [ -f "$src" ]; then
+            cp -f "$src" "$dest"
+            return 0
+          fi
+          return 1
+        }
+
+        if [ -d "$ICONS_DIR" ] && [ -f "$ICONS_DIR/AppIcon60x60@2x.png" ]; then
+          copy_prebuilt "$ICONS_DIR/AppIcon60x60@2x.png" "$APP_BUNDLE/AppIcon60x60@2x.png"
+          copy_prebuilt "$ICONS_DIR/AppIcon60x60@3x.png" "$APP_BUNDLE/AppIcon60x60@3x.png"
+          copy_prebuilt "$ICONS_DIR/AppIcon76x76@2x.png" "$APP_BUNDLE/AppIcon76x76@2x.png"
+          copy_prebuilt "$ICONS_DIR/AppIcon83.5x83.5@2x.png" "$APP_BUNDLE/AppIcon83.5x83.5@2x.png"
+          copy_prebuilt "$ICONS_DIR/AppIcon40x40@2x.png" "$APP_BUNDLE/AppIcon40x40@2x.png" || true
+          copy_prebuilt "$ICONS_DIR/AppIcon40x40@3x.png" "$APP_BUNDLE/AppIcon40x40@3x.png" || true
+          copy_prebuilt "$ICONS_DIR/AppIcon29x29@2x.png" "$APP_BUNDLE/AppIcon29x29@2x.png" || true
+          copy_prebuilt "$ICONS_DIR/AppIcon29x29@3x.png" "$APP_BUNDLE/AppIcon29x29@3x.png" || true
+          # Extensionless names expected by IPA browsers / Sideloadly.
+          copy_prebuilt "$ICONS_DIR/iTunesArtwork.png" "$APP_BUNDLE/iTunesArtwork"
+          copy_prebuilt "$ICONS_DIR/iTunesArtwork@2x.png" "$APP_BUNDLE/iTunesArtwork@2x"
+          # Extra aliases some IPA inspectors look for.
+          copy_prebuilt "$ICONS_DIR/AppIcon60x60@2x.png" "$APP_BUNDLE/Icon.png" || true
+          copy_prebuilt "$ICONS_DIR/AppIcon60x60@2x.png" "$APP_BUNDLE/icon.png" || true
+          copy_prebuilt "$ICONS_DIR/iTunesArtwork.png" "$APP_BUNDLE/iTunesArtwork.png" || true
+          copy_prebuilt "$ICONS_DIR/iTunesArtwork@2x.png" "$APP_BUNDLE/iTunesArtwork@2x.png" || true
         else
-          codesign --force --sign "{{.CODESIGN_IDENTITY}}" "{{.BIN_DIR}}/{{.APP_NAME}}.app"
+          SRC=""
+          for candidate in build/appicon.png build/ios/icon.png; do
+            if [ -f "$candidate" ]; then
+              SRC="$candidate"
+              break
+            fi
+          done
+          if [ -z "$SRC" ]; then
+            echo "No app icon source found (build/ios/icons or build/appicon.png)" >&2
+            exit 1
+          fi
+
+          resize_icon() {
+            local size="$1"
+            local dest="$2"
+            # Flatten onto black: iOS app icons must be opaque.
+            if command -v magick >/dev/null 2>&1; then
+              magick "$SRC" -background black -alpha remove -alpha off \
+                -resize "${size}x${size}!" -colorspace sRGB -depth 8 -type TrueColor "PNG24:$dest"
+            elif command -v convert >/dev/null 2>&1; then
+              convert "$SRC" -background black -alpha remove -alpha off \
+                -resize "${size}x${size}!" -colorspace sRGB -depth 8 -type TrueColor "PNG24:$dest"
+            elif command -v sips >/dev/null 2>&1; then
+              cp "$SRC" "$dest"
+              sips -z "$size" "$size" "$dest" >/dev/null
+            else
+              echo "Need magick, convert, or sips to generate iOS icons" >&2
+              exit 1
+            fi
+          }
+
+          resize_icon 120 "$APP_BUNDLE/AppIcon60x60@2x.png"
+          resize_icon 180 "$APP_BUNDLE/AppIcon60x60@3x.png"
+          resize_icon 152 "$APP_BUNDLE/AppIcon76x76@2x.png"
+          resize_icon 167 "$APP_BUNDLE/AppIcon83.5x83.5@2x.png"
+          resize_icon 40  "$APP_BUNDLE/AppIcon40x40@2x.png"
+          resize_icon 60  "$APP_BUNDLE/AppIcon40x40@3x.png"
+          resize_icon 58  "$APP_BUNDLE/AppIcon29x29@2x.png"
+          resize_icon 87  "$APP_BUNDLE/AppIcon29x29@3x.png"
+          resize_icon 512 "$APP_BUNDLE/iTunesArtwork"
+          resize_icon 1024 "$APP_BUNDLE/iTunesArtwork@2x"
         fi
+
+        # Ensure Info.plist still points at AppIcon even if actool merge was skipped.
+        /usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$APP_BUNDLE/Info.plist" >/dev/null 2>&1 || \
+          /usr/libexec/PlistBuddy -c "Add :CFBundleIconName string AppIcon" "$APP_BUNDLE/Info.plist"
 
   deploy-simulator:
     summary: Deploy to iOS Simulator
@@ -296,29 +403,19 @@ tasks:
       - cp "{{.BIN_DIR}}/{{.APP_NAME | lower}}" "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/{{.APP_NAME | lower}}"
       - cp build/ios/Info.dev.plist "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/Info.plist"
       - |
-        # Compile asset catalog and embed icons for dev bundle
-        APP_BUNDLE="{{.BIN_DIR}}/{{.APP_NAME}}.dev.app"
-        AC_IN="build/ios/xcode/main/Assets.xcassets"
-        if [ -d "$AC_IN" ]; then
-          TMP_AC=$(mktemp -d)
-          xcrun actool \
-            --compile "$TMP_AC" \
-            --app-icon AppIcon \
-            --platform iphonesimulator \
-            --minimum-deployment-target {{.MIN_IOS_VERSION}} \
-            --product-type com.apple.product-type.application \
-            --target-device iphone \
-            --target-device ipad \
-            --output-partial-info-plist "$APP_BUNDLE/assetcatalog_generated_info.plist" \
-            "$AC_IN"
-          if [ -f "$TMP_AC/Assets.car" ]; then
-            cp -f "$TMP_AC/Assets.car" "$APP_BUNDLE/Assets.car"
-          fi
-          rm -rf "$TMP_AC"
-          if [ -f "$APP_BUNDLE/assetcatalog_generated_info.plist" ]; then
-            /usr/libexec/PlistBuddy -c "Merge $APP_BUNDLE/assetcatalog_generated_info.plist" "$APP_BUNDLE/Info.plist" || true
-          fi
+        if command -v ibtool >/dev/null 2>&1 || command -v xcrun >/dev/null 2>&1; then
+          xcrun ibtool --errors --warnings --notices \
+            --output-format human-readable-text \
+            --compilation-directory "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app" \
+            build/ios/LaunchScreen.storyboard || \
+          cp build/ios/LaunchScreen.storyboard "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/"
+        else
+          cp build/ios/LaunchScreen.storyboard "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app/"
         fi
+      - task: embed:icons
+        vars:
+          APP_BUNDLE: '{{.BIN_DIR}}/{{.APP_NAME}}.dev.app'
+          IOS_SDK: 'iphonesimulator'
       - codesign --force --sign - "{{.BIN_DIR}}/{{.APP_NAME}}.dev.app"
       - |
         # The dev bundle id comes from build/ios/Info.dev.plist (derived from
