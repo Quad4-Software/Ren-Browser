@@ -10,6 +10,9 @@ type Options struct {
 	ForceMonospace bool
 }
 
+// GetForceMonospace is a global hook to dynamically retrieve the ForceMonospace setting.
+var GetForceMonospace func() bool
+
 var darkParser = mp.Parser{DarkTheme: true}
 
 func ToHTML(source string, opts Options) string {
@@ -27,6 +30,14 @@ func ToHTMLDark(source string) string {
 
 func RenderDark(source string) (html, fg, bg string) {
 	pc := mp.ParseHeaderTags(source)
-	html = darkParser.ConvertMicronToHTML(source)
+	force := false
+	if GetForceMonospace != nil {
+		force = GetForceMonospace()
+	}
+	p := mp.Parser{
+		DarkTheme:      true,
+		ForceMonospace: force,
+	}
+	html = p.ConvertMicronToHTML(source)
 	return html, pc.FG, pc.BG
 }

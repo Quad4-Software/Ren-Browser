@@ -3,6 +3,7 @@ package app
 
 import (
 	"renbrowser/internal/content"
+	"renbrowser/internal/micron"
 	"renbrowser/internal/nomadnet"
 	"renbrowser/internal/plugins"
 	"renbrowser/internal/plugins/builtin"
@@ -19,6 +20,9 @@ func (s *BrowserService) SetPluginManager(manager *plugins.Manager) {
 	plugins.SanitizeHTML = content.SanitizeHTML
 	content.SetRendererRegistry(manager.Registry())
 	builtin.RegisterRenderers(manager.Registry())
+	micron.GetForceMonospace = func() bool {
+		return s.GetBrowserPrefs().MicronPreserveLayout
+	}
 	builtin.RegisterSchemes(manager.Registry(), builtin.SchemeDeps{
 		AboutHTML: func() string {
 			return content.RenderAbout(s.aboutContentInfo())
