@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { effect_root } from "svelte/internal/client";
+import { mount } from "svelte";
 import {
   createBrowserserviceMocks,
   createPluginhostMocks,
   createRuntimeMock,
 } from "$lib/test/mock-bindings";
+import { cleanupMount, mountInBody } from "$lib/test/svelte-mount";
 import type { AppController } from "./create-app.svelte";
 
 const browserMocks = createBrowserserviceMocks();
@@ -66,15 +67,18 @@ vi.mock("$lib/micron/render-page", async (importOriginal) => {
 });
 
 async function withApp(run: (app: AppController) => void | Promise<void>): Promise<void> {
-  const { createApp } = await import("./create-app.svelte");
+  const { default: CreateAppHarness } = await import("$lib/test/CreateAppHarness.svelte");
   let app!: AppController;
-  const dispose = effect_root(() => {
-    app = createApp();
-  });
+  let instance: ReturnType<typeof mount> | null = null;
   try {
+    instance = await mountInBody(CreateAppHarness, {
+      onReady: (controller) => {
+        app = controller;
+      },
+    });
     await run(app);
   } finally {
-    dispose();
+    cleanupMount(instance);
   }
 }
 
@@ -138,7 +142,7 @@ describe("createApp controller", () => {
   it("navigates via openPage and updates tab url", async () => {
     browserMocks.Navigate.mockResolvedValue({
       url: "about:",
-      html: "<article class='about-page'>About</article>",
+      html: "<article class=\'about-page\'>About</article>",
       contentType: "text/html",
       raw: "",
       binaryB64: "",
