@@ -116,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         webView.setBackgroundColor(0xFF18181B);
+        webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
         // Enable debugging in debug builds
         if (DEBUG) {
