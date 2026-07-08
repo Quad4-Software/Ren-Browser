@@ -146,7 +146,7 @@ func (d *DB) SaveTabs(tabs []TabRow) error {
 		for i := range keepIDs {
 			placeholders[i] = "?"
 		}
-		query := `DELETE FROM tabs WHERE id NOT IN (` + strings.Join(placeholders, ",") + `)`
+		query := `DELETE FROM tabs WHERE id NOT IN (` + strings.Join(placeholders, ",") + `)` // #nosec G202 -- placeholders only; ids from DB
 		if _, err := tx.Exec(query, keepIDs...); err != nil {
 			return err
 		}

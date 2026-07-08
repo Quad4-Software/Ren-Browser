@@ -71,6 +71,7 @@ func TestStoreResetCreatesBackup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer st.Close()
 	st.SaveTabs([]store.TabSnapshot{{ID: "tab", Title: "Before Reset", URL: "deadbeef:/page/before.mu"}})
 	if err := st.Reset(); err != nil {
 		t.Fatal(err)

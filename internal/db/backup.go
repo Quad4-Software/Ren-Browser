@@ -42,7 +42,7 @@ func (d *DB) BackupTo(destPath string) error {
 		return fmt.Errorf("checkpoint: %w", err)
 	}
 	escaped := strings.ReplaceAll(destPath, "'", "''")
-	if _, err := d.sql.Exec(`VACUUM INTO '` + escaped + `'`); err != nil { // #nosec G201 -- path escaped, not user SQL
+	if _, err := d.sql.Exec(`VACUUM INTO '` + escaped + `'`); err != nil { // #nosec G201,G202 -- path escaped, not user SQL
 		return fmt.Errorf("vacuum into: %w", err)
 	}
 	return nil
@@ -116,7 +116,7 @@ func copyFile(src, dst string) error {
 		return err
 	}
 	defer in.Close()
-	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	out, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600) // #nosec G304 -- caller-controlled backup path
 	if err != nil {
 		return err
 	}

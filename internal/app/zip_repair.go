@@ -116,11 +116,33 @@ func scanLocalZipEntries(body []byte) ([]zipLocalEntry, int, error) {
 	return entries, offset, nil
 }
 
-func appendZipCentralDirectory(body []byte, entries []zipLocalEntry) []byte {
+func u16ZipField(n int, label string) (uint16, error) {
+	if n < 0 || n > 0xffff {
+		return 0, fmt.Errorf("zip %s exceeds uint16", label)
+	}
+	return uint16(n), nil
+}
+
+func u32ZipField(n int, label string) (uint32, error) {
+	if n < 0 || int64(n) > 0xffffffff {
+		return 0, fmt.Errorf("zip %s exceeds uint32", label)
+	}
+	return uint32(n), nil
+}
+
+func appendZipCentralDirectory(body []byte, entries []zipLocalEntry) ([]byte, error) {
 	cdStart := len(body)
 	out := append([]byte(nil), body...)
 	for _, entry := range entries {
 		nameBytes := []byte(entry.name)
+		nameLen, err := u16ZipField(len(nameBytes), "entry name length")
+		if err != nil {
+			return nil, err
+		}
+		extraLen, err := u16ZipField(len(entry.extra), "entry extra length")
+		if err != nil {
+			return nil, err
+		}
 		header := make([]byte, zipCentralHeaderSize+len(nameBytes)+len(entry.extra))
 		binary.LittleEndian.PutUint32(header[0:], zipCentralHeaderSig)
 		binary.LittleEndian.PutUint16(header[4:], 20)
@@ -132,8 +154,8 @@ func appendZipCentralDirectory(body []byte, entries []zipLocalEntry) []byte {
 		binary.LittleEndian.PutUint32(header[16:], entry.crc32)
 		binary.LittleEndian.PutUint32(header[20:], entry.compressedSize)
 		binary.LittleEndian.PutUint32(header[24:], entry.uncompressedSize)
-		binary.LittleEndian.PutUint16(header[28:], uint16(len(nameBytes)))
-		binary.LittleEndian.PutUint16(header[30:], uint16(len(entry.extra)))
+		binary.LittleEndian.PutUint16(header[28:], nameLen)
+		binary.LittleEndian.PutUint16(header[30:], extraLen)
 		binary.LittleEndian.PutUint16(header[32:], 0)
 		binary.LittleEndian.PutUint16(header[34:], 0)
 		binary.LittleEndian.PutUint16(header[36:], 0)
@@ -144,14 +166,26 @@ func appendZipCentralDirectory(body []byte, entries []zipLocalEntry) []byte {
 		out = append(out, header...)
 	}
 	cdSize := len(out) - cdStart
+	entryCount, err := u16ZipField(len(entries), "entry count")
+	if err != nil {
+		return nil, err
+	}
+	cdSizeU32, err := u32ZipField(cdSize, "central directory size")
+	if err != nil {
+		return nil, err
+	}
+	cdStartU32, err := u32ZipField(cdStart, "central directory offset")
+	if err != nil {
+		return nil, err
+	}
 	eocd := make([]byte, zipEndCentralSize)
 	binary.LittleEndian.PutUint32(eocd[0:], zipEndCentralSig)
-	binary.LittleEndian.PutUint16(eocd[8:], uint16(len(entries)))
-	binary.LittleEndian.PutUint16(eocd[10:], uint16(len(entries)))
-	binary.LittleEndian.PutUint32(eocd[12:], uint32(cdSize))
-	binary.LittleEndian.PutUint32(eocd[16:], uint32(cdStart))
+	binary.LittleEndian.PutUint16(eocd[8:], entryCount)
+	binary.LittleEndian.PutUint16(eocd[10:], entryCount)
+	binary.LittleEndian.PutUint32(eocd[12:], cdSizeU32)
+	binary.LittleEndian.PutUint32(eocd[16:], cdStartU32)
 	out = append(out, eocd...)
-	return out
+	return out, nil
 }
 
 func repairZipIfNeeded(body []byte) ([]byte, error) {
@@ -163,7 +197,10 @@ func repairZipIfNeeded(body []byte) ([]byte, error) {
 		return nil, err
 	}
 	trimmed := body[:endOffset]
-	repaired := appendZipCentralDirectory(trimmed, entries)
+	repaired, err := appendZipCentralDirectory(trimmed, entries)
+	if err != nil {
+		return nil, err
+	}
 	if !zipHasEndOfCentralDirectory(repaired) {
 		return nil, fmt.Errorf("epub zip repair failed")
 	}
