@@ -43,6 +43,17 @@ build/flatpak/
 .flatpak-builder
 build/tools/
 build/packaging/
+packaging/
+*.pkg.tar.*
+*.pkg.tar
+
+# Nix flake / direnv
+/result
+/result-*
+.direnv/
+flake.nix
+flake.lock
+.envrc
 
 # Tests and local tooling
 coverage.out
