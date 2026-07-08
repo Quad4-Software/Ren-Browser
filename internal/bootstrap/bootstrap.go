@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"log"
 	"net/http"
 	"runtime"
 
@@ -80,6 +81,7 @@ func newWailsApp(browserSvc *app.BrowserService, pluginHost *app.PluginHost, plu
 		Name:                        brand.DisplayName,
 		Description:                 brand.Description,
 		Logger:                      serverlog.WailsLogger(),
+		ErrorHandler:                func(err error) { log.Printf("wails: %v", err) },
 		Services:                    services,
 		DisableDefaultSignalHandler: runtime.GOOS == "ios",
 		Assets: application.AssetOptions{
