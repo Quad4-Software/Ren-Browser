@@ -49,6 +49,7 @@ func New(embedded embed.FS, cfg config.Runtime) (*App, error) {
 	if pluginMgr != nil {
 		pluginMgr.SetApp(wailsApp)
 	}
+	wireDeepLinks(wailsApp, browserSvc)
 
 	return &App{
 		Wails:      wailsApp,

@@ -3,7 +3,7 @@
 
 SHELL := /bin/bash
 .PHONY: help check format test test-go test-regression frontend-check frontend-test frontend-fmt \
-	build-server screenshots dev clean vendor mod-tidy
+	build build-frontend build-server screenshots dev clean vendor mod-tidy
 
 export GOFLAGS ?= -mod=vendor
 export PNPM ?= pnpm
@@ -20,6 +20,7 @@ help:
 		"  make check            Run Go and frontend quality gates" \
 		"  make format           Format Go and frontend sources" \
 		"  make test             Run Go and frontend unit tests" \
+		"  make build            Build desktop binary (GTK4/WebKitGTK)" \
 		"  make build-server     Build headless server binary" \
 		"  make screenshots      Regenerate README preview images" \
 		"  make dev              Run Wails dev mode" \
@@ -64,6 +65,11 @@ frontend-fmt: frontend-install
 
 build-frontend: frontend-install
 	$(PNPM) --dir frontend run build
+
+build: build-frontend
+	bash build/scripts/patch-wails-vendor.sh
+	CGO_ENABLED=1 go build -tags production -trimpath -buildvcs=false \
+		-ldflags="$(LDFLAGS)" -o "$(BIN_DIR)/$(APP_NAME)"
 
 build-server: build-frontend
 	bash build/scripts/patch-wails-vendor.sh

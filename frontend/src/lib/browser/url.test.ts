@@ -64,6 +64,11 @@ describe("normalizeReticulumURL", () => {
     expect(normalizeReticulumURL("http://example.com/path")).toBe("");
     expect(normalizeReticulumURL("//cdn.example.com")).toBe("");
   });
+
+  it("unwraps renbrowser deeplinks", () => {
+    expect(normalizeReticulumURL("renbrowser:about")).toBe("about:");
+    expect(normalizeReticulumURL("renbrowser://open?url=license%3A")).toBe("license:");
+  });
 });
 
 describe("nodeHomeURL", () => {

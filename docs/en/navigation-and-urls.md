@@ -32,6 +32,23 @@ This matches the usual NomadNet home page path.
 
 If the current context already has a destination, a path starting with `/page/` may resolve relative to that node. For a cold navigation, prefer the full `hash:/page/...` form.
 
+## Deep links
+
+Ren Browser registers the `renbrowser://` and `rns://` URL schemes so the OS can open the app from a link.
+
+Examples:
+
+```
+renbrowser:about
+renbrowser://about
+renbrowser://open?url=about%3A
+renbrowser://abb3ebcd03cb2388a838e70c001291f9/page/index.mu
+renbrowser://rns/abb3ebcd03cb2388a838e70c001291f9/page/home.mu
+rns://abb3ebcd03cb2388a838e70c001291f9/page/home.mu
+```
+
+Supported on Android, iOS, macOS, Windows, and Linux (desktop file / AppImage / packages). External `http://` and `https://` links are not accepted as deeplink targets.
+
 ## Built-in schemes
 
 These schemes are handled inside the app. They do not use the mesh.

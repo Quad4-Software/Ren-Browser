@@ -26,11 +26,6 @@ on:
         required: false
         type: boolean
         default: false
-      android_all_abis:
-        description: Build APKs for all ABIs (arm64, x86_64, arm, 386)
-        required: false
-        type: boolean
-        default: false
     outputs:
       version:
         description: Resolved release version
@@ -154,12 +149,13 @@ jobs:
           REN_BROWSER_FRONTEND_PREBUILT: "1"
         run: task linux:create:appimage ARCH=${{ matrix.arch }}
 
-      - name: Package deb and rpm
+      - name: Package deb, rpm, and Arch
         env:
           REN_BROWSER_FRONTEND_PREBUILT: "1"
         run: |
           task linux:create:deb ARCH=${{ matrix.arch }}
           task linux:create:rpm ARCH=${{ matrix.arch }}
+          task linux:create:aur ARCH=${{ matrix.arch }}
 
       - name: Stage artifacts
         shell: bash
@@ -176,6 +172,13 @@ jobs:
           cp bin/renbrowser "dist/release/renbrowser-linux-${{ matrix.arch }}"
           cp bin/renbrowser.deb "dist/release/renbrowser-linux-${{ matrix.arch }}.deb"
           cp bin/renbrowser.rpm "dist/release/renbrowser-linux-${{ matrix.arch }}.rpm"
+          arch_pkg="bin/renbrowser.pkg.tar.zst"
+          if [ ! -f "$arch_pkg" ]; then
+            echo "Arch package not found at $arch_pkg" >&2
+            ls -la bin >&2 || true
+            exit 1
+          fi
+          cp "$arch_pkg" "dist/release/renbrowser-linux-${{ matrix.arch }}.pkg.tar.zst"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -552,20 +555,11 @@ jobs:
         run: |
           set -euo pipefail
           export ANDROID_KEY_PASSWORD="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
-          if [ "${{ inputs.android_all_abis }}" = "true" ]; then
-            task package:android:all
-          else
-            task package:android
-          fi
+          task package:android
 
       - name: Build debug APK
         if: steps.android_sign.outputs.available != 'true' && (inputs.channel != 'release' || inputs.android_sign_release == false)
-        run: |
-          if [ "${{ inputs.android_all_abis }}" = "true" ]; then
-            task build:android:all
-          else
-            task build:android
-          fi
+        run: task build:android
 
       - name: Stage artifacts
         if: inputs.channel != 'release' || inputs.android_sign_release == false || steps.android_sign.outputs.available == 'true'
@@ -574,37 +568,23 @@ jobs:
           set -euo pipefail
           mkdir -p dist/release
           channel="${{ inputs.channel }}"
-          find bin -name "*.apk" | while read -r apk; do
-            base_name=$(basename "$apk")
-            abi=""
-            if [[ "$base_name" == *"arm64-v8a"* ]]; then
-              abi="arm64-v8a"
-            elif [[ "$base_name" == *"armeabi-v7a"* ]]; then
-              abi="armeabi-v7a"
-            elif [[ "$base_name" == *"x86_64"* ]]; then
-              abi="x86_64"
-            elif [[ "$base_name" == *"x86"* ]]; then
-              abi="x86"
-            elif [[ "$base_name" == *"universal"* ]]; then
-              abi="universal"
+          apk="$(find bin -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          if [ -z "$apk" ]; then
+            echo "No APK found in bin/" >&2
+            ls -la bin >&2 || true
+            exit 1
+          fi
+          suffix=""
+          if [ "${{ steps.android_sign.outputs.available }}" = "true" ]; then
+            if [ "$channel" != "release" ]; then
+              suffix="-signed"
             fi
-            if [ -z "$abi" ]; then
-              abi="universal"
-            fi
-            suffix=""
-            if [ "${{ steps.android_sign.outputs.available }}" = "true" ]; then
-              if [ "$channel" = "release" ]; then
-                suffix=""
-              else
-                suffix="-signed"
-              fi
-            else
-              suffix="-debug"
-            fi
-            final_name="renbrowser-android-${abi}${suffix}.apk"
-            cp "$apk" "dist/release/${final_name}"
-            echo "Staged APK: dist/release/${final_name}"
-          done
+          else
+            suffix="-debug"
+          fi
+          final_name="renbrowser-android-universal${suffix}.apk"
+          cp "$apk" "dist/release/${final_name}"
+          echo "Staged APK: dist/release/${final_name}"
 
       - name: Upload artifacts
         if: inputs.channel != 'release' || inputs.android_sign_release == false || steps.android_sign.outputs.available == 'true'
@@ -743,14 +723,14 @@ jobs:
           Commit: \`${{ github.sha }}\`
 
           ### Assets
-          - Linux amd64/arm64 AppImage, plain binary, .deb, and .rpm
+          - Linux amd64/arm64 AppImage, plain binary, .deb, .rpm, and Arch `.pkg.tar.zst`
           - Linux amd64 Flatpak bundle when flatpak-builder succeeds
           - Windows amd64 portable executable and NSIS installer (MSIX when packaging succeeds)
           - macOS universal .app (zip)
           - iOS IPA (`renbrowser-ios.ipa` ad-hoc signed, for sideloading)
           - Headless server binaries (Linux amd64/arm64/armv6, FreeBSD amd64/arm64, OpenBSD/NetBSD amd64, Windows amd64 `renbrowser-server-windows-amd64.exe`)
           - Windows 7/8/8.1 headless server (`renbrowser-server-windows7-amd64.exe`) when the legacy toolchain build succeeds
-          - Android APK (debug for nightly/beta; signed release when keystore secrets are configured)
+          - Android universal APK (arm64-v8a + armeabi-v7a; debug for nightly/beta; signed release when keystore secrets are configured)
           - Micron Translator extension WASM (`renbrowser-micron-translator.wasm` one-file install; `renbrowser-micron-translator-backend.wasm` raw backend when TinyGo build succeeds)
 
           See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${tag}/CHANGELOG.md) for details.

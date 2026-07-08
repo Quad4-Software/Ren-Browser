@@ -10,11 +10,6 @@ on:
         description: "Existing tag to publish (e.g. v0.1.0)"
         required: true
         type: string
-      android_all_abis:
-        description: "Build APKs for all ABIs (arm64, x86_64, arm, 386)"
-        required: false
-        type: boolean
-        default: false
 
 concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}
@@ -32,7 +27,6 @@ jobs:
       prerelease: false
       tag: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
       android_sign_release: true
-      android_all_abis: ${{ inputs.android_all_abis || false }}
     secrets:
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

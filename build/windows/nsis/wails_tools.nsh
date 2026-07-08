@@ -251,11 +251,11 @@ RequestExecutionLevel "${REQUEST_EXECUTION_LEVEL}"
 !macroend
 
 !macro wails.associateCustomProtocols
-    ; Create custom protocols associations
-    
+    !insertmacro CUSTOM_PROTOCOL_ASSOCIATE "renbrowser" "URL:Ren Browser Protocol" "$INSTDIR\${PRODUCT_EXECUTABLE},0" "$\"$INSTDIR\${PRODUCT_EXECUTABLE}$\" $\"%1$\""
+    !insertmacro CUSTOM_PROTOCOL_ASSOCIATE "rns" "URL:RNS Protocol" "$INSTDIR\${PRODUCT_EXECUTABLE},0" "$\"$INSTDIR\${PRODUCT_EXECUTABLE}$\" $\"%1$\""
 !macroend
 
 !macro wails.unassociateCustomProtocols
-    ; Delete app custom protocol associations
-    
+    !insertmacro CUSTOM_PROTOCOL_UNASSOCIATE "renbrowser"
+    !insertmacro CUSTOM_PROTOCOL_UNASSOCIATE "rns"
 !macroend

@@ -2,6 +2,8 @@
 import { translate } from "$lib/i18n/catalog";
 import { parseDocumentPathFromURL } from "$lib/documents/types";
 import { isBlockedNavigationURL } from "./navigation-guard";
+import { unwrapDeepLink } from "./deeplink";
+
 export type TabPage = {
   html: string;
   contentType: string;
@@ -166,7 +168,8 @@ export type DiscoveredNode = {
 };
 
 export function normalizeReticulumURL(input: string): string {
-  const trimmed = input.trim();
+  const unwrapped = unwrapDeepLink(input);
+  const trimmed = (unwrapped || input).trim();
   if (!trimmed) {
     return "";
   }

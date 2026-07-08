@@ -18,6 +18,7 @@ import type * as plugins$0 from "../../../../../renbrowser/internal/plugins/mode
 declare module "@wailsio/runtime" {
     namespace Events {
         interface CustomEvents {
+            "app:deeplink": string;
             "dev:log": string;
             "network:entry": app$0.NetworkEntry;
             "node:discovered": nomadnet$0.Node[] | null;

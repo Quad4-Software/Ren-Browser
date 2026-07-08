@@ -145,8 +145,8 @@ tasks:
     vars:
       BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production,android -trimpath -buildvcs=false -ldflags="-w -s"{{else}}-tags android,debug -buildvcs=false -gcflags=all="-l"{{end}}'
 
-  compile:go:all-archs:
-    summary: Compile Go code for all Android architectures (fat APK)
+  compile:go:universal:
+    summary: Compile Go code for universal Android ABIs (arm64-v8a + armeabi-v7a)
     cmds:
       - task: compile:go:shared
         vars:
@@ -154,15 +154,7 @@ tasks:
           KEEP_OTHER_ABIS: "true"
       - task: compile:go:shared
         vars:
-          ARCH: amd64
-          KEEP_OTHER_ABIS: "true"
-      - task: compile:go:shared
-        vars:
           ARCH: arm
-          KEEP_OTHER_ABIS: "true"
-      - task: compile:go:shared
-        vars:
-          ARCH: 386
           KEEP_OTHER_ABIS: "true"
 
   package:
@@ -175,8 +167,8 @@ tasks:
     cmds:
       - task: assemble:apk:release
 
-  package:default:
-    summary: Packages a production build for 64-bit architectures only (arm64 + x86_64)
+  package:universal:
+    summary: Packages a production universal APK (arm64-v8a + armeabi-v7a)
     deps:
       - task: build
         vars:
@@ -184,38 +176,18 @@ tasks:
           ARCH: arm64
           KEEP_OTHER_ABIS: "true"
     cmds:
-      - task: compile:go:shared
-        vars:
-          ARCH: amd64
-          PRODUCTION: "true"
-          KEEP_OTHER_ABIS: "true"
-      - task: assemble:apk:release
-
-  package:fat:
-    summary: Packages a production build for all architectures (fat APK)
-    deps:
-      - task: build
-        vars:
-          PRODUCTION: "true"
-          ARCH: arm64
-          KEEP_OTHER_ABIS: "true"
-    cmds:
-      - task: compile:go:shared
-        vars:
-          ARCH: amd64
-          PRODUCTION: "true"
-          KEEP_OTHER_ABIS: "true"
       - task: compile:go:shared
         vars:
           ARCH: arm
           PRODUCTION: "true"
           KEEP_OTHER_ABIS: "true"
-      - task: compile:go:shared
-        vars:
-          ARCH: 386
-          PRODUCTION: "true"
-          KEEP_OTHER_ABIS: "true"
       - task: assemble:apk:release
+
+  # Kept as an alias for callers that still use the old task name.
+  package:default:
+    summary: Packages a production universal APK (arm64-v8a + armeabi-v7a)
+    cmds:
+      - task: package:universal
 
   assemble:apk:
     summary: Assembles a debug APK using Gradle

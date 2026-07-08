@@ -131,6 +131,7 @@ public class WailsBridge {
     private static native void nativeMainThreadCallback(int callbackID);
     private static native void nativeEmitSystemEvent(String name, String json);
     private static native void nativeEmitEvent(String name, String json);
+    private static native void nativeHandleDeepLink(String url);
 
     public WailsBridge(Activity activity) {
         this.activity = activity;
@@ -251,6 +252,17 @@ public class WailsBridge {
      * Emit an arbitrary custom event with a JSON payload to JS. Used by the
      * mobile-feature bridges to deliver asynchronous results.
      */
+    public void handleDeepLink(String url) {
+        if (!initialized || url == null || url.isEmpty()) {
+            return;
+        }
+        try {
+            nativeHandleDeepLink(url);
+        } catch (UnsatisfiedLinkError e) {
+            Log.e(TAG, "nativeHandleDeepLink unavailable", e);
+        }
+    }
+
     public void emitEvent(String name, String json) {
         if (initialized) nativeEmitEvent(name, json);
     }

@@ -87,10 +87,11 @@ Grab the latest release for your system from [GitHub Releases](https://github.co
 |---------|---------------------------|
 | **Linux AppImage** | Bundles GTK 4, WebKitGTK 6, and other libraries via linuxdeploy. No separate WebKit install. Some distros need FUSE or `APPIMAGE_EXTRACT_AND_RUN=1`. |
 | **Linux Flatpak** | Flatpak plus the `org.gnome.Platform` runtime (GTK 4 and WebKitGTK 6). The app bundle does not ship those runtimes itself. |
+| **Linux Arch package** | GTK 4 and WebKitGTK 6.0 from pacman (`sudo pacman -U renbrowser-linux-*.pkg.tar.zst`). |
 | **Linux plain binary** | GTK 4 and WebKitGTK 6.0 at runtime, for example `libgtk-4-1` and `libwebkitgtk-6.0-4` on Debian/Ubuntu 24.04+, Fedora, or Arch. |
 | **Windows `.exe`** | [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Usually already on Windows 10/11. The NSIS installer can install it if missing; the portable `.exe` does not. |
 | **macOS `.app`** | Recent macOS with the system WebKit framework (no extra browser runtime to install). |
-| **Android APK** | Android 5.0 or newer (API 21+). |
+| **Android APK** | Android 5.0 or newer (API 21+). Universal APK covers arm64 and 32-bit ARM. |
 | **Server binary / Docker** | No desktop GUI stack. Static Linux/FreeBSD/NetBSD builds; OpenBSD may link against the system libc. Docker image is linux amd64 only. |
 
 ### Docker or Podman
@@ -152,14 +153,22 @@ Platform-specific builds:
 ```sh
 task build:windows
 task build:darwin
-task build:android      # physical device (arm64)
+task build:android      # universal APK (arm64 + armeabi-v7a)
 task build:android:emu  # emulator (host ABI)
 ```
 
-Installers (AppImage, `.app` bundle, etc.):
+Installers (AppImage, Arch package, `.app` bundle, etc.):
 
 ```sh
 task package
+task package:linux:arch
+```
+
+Nix flake:
+
+```sh
+nix develop
+nix build
 ```
 
 Android builds need the [Android SDK](https://developer.android.com/studio) (API 34, NDK r26+). Set `ANDROID_HOME` and run `task android:install:deps` if the build complains about missing tools.

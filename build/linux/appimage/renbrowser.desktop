@@ -2,8 +2,10 @@
 Type=Application
 Name=Ren Browser
 Comment=Reticulum browser for NomadNet pages
-Exec=renbrowser
+Exec=renbrowser %u
 Icon=renbrowser-256
 Terminal=false
 Categories=Network;Utility;
 StartupWMClass=renbrowser
+MimeType=x-scheme-handler/renbrowser;x-scheme-handler/rns;
+StartupNotify=true

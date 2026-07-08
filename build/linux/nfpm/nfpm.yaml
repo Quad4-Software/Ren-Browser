@@ -12,17 +12,19 @@ priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
 description: "Reticulum browser for NomadNet pages"
 vendor: "Quad4"
-homepage: "https://wails.io"
+homepage: "https://github.com/Quad4-Software/Ren-Browser"
 license: "MIT"
 release: "1"
 
 contents:
   - src: "./bin/renbrowser"
-    dst: "/usr/local/bin/renbrowser"
+    dst: "/usr/bin/renbrowser"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/renbrowser.png"
-  - src: "./build/linux/renbrowser.desktop"
-    dst: "/usr/share/applications/renbrowser.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/io.quad4.renbrowser.png"
+  - src: "./flatpak/io.quad4.renbrowser.svg"
+    dst: "/usr/share/icons/hicolor/scalable/apps/io.quad4.renbrowser.svg"
+  - src: "./flatpak/io.quad4.renbrowser.desktop"
+    dst: "/usr/share/applications/io.quad4.renbrowser.desktop"
 
 # Default dependencies for the GTK4 + WebKitGTK 6.0 stack (Ubuntu 24.04+ / Debian 13+)
 depends:

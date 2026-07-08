@@ -72,10 +72,11 @@ func disableNestedWebKitSandboxIfNeeded() {
 	if os.Getenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS") != "" {
 		return
 	}
-	// AppImages run outside Flatpak's portal-based WebKit launcher and cannot
-	// mount transient AppImage paths into bwrap. Flatpak must keep WebKit's
-	// sandbox enabled so WebKitNetworkProcess/WebKitWebProcess spawn via portal.
-	if runningInAppImage() {
+	// AppImage: WebKit's bwrap launcher cannot see helpers under the transient
+	// AppImage mount. Flatpak (GNOME 50 / glibc 2.42+): WebKit's inner bwrap
+	// fails resolving /proc/self/fd/N for memfd-backed ld-so-conf and aborts
+	// with readPIDFromPeer. The outer Flatpak sandbox still confines the app.
+	if runningInAppImage() || runningInFlatpak() {
 		_ = os.Setenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1")
 	}
 }

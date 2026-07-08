@@ -31,5 +31,19 @@
 		<string>true</string>
 		<key>NSHumanReadableCopyright</key>
 		<string>(c) 2026 Quad4</string>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>io.quad4.renbrowser</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>renbrowser</string>
+					<string>rns</string>
+				</array>
+				<key>CFBundleTypeRole</key>
+				<string>Viewer</string>
+			</dict>
+		</array>
 	</dict>
 </plist>

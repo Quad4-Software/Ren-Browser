@@ -103,6 +103,7 @@ tasks:
         if [ ! -f "$MAIN_M" ]; then
           MAIN_M=build/ios/main.m
         fi
+        DEEPLINK_M=build/ios/deeplink.m
         xcrun -sdk {{.IOS_SDK}} clang \
           -target {{.IOS_TARGET}} \
           -isysroot {{.SDK_PATH}} \
@@ -114,7 +115,7 @@ tasks:
           -framework CoreLocation -framework CoreMotion -framework SystemConfiguration \
           -lresolv \
           -o "{{.BIN_DIR}}/{{.APP_NAME | lower}}" \
-          "$MAIN_M" -Wl,-force_load,"{{.BIN_DIR}}/{{.APP_NAME}}.a"
+          "$MAIN_M" "$DEEPLINK_M" -Wl,-force_load,"{{.BIN_DIR}}/{{.APP_NAME}}.a"
 
   create:app:bundle:
     summary: Creates an iOS `.app` bundle

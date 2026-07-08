@@ -47,6 +47,7 @@ func New(embedded embed.FS, cfg config.Runtime) (*App, error) {
 	if pluginMgr != nil {
 		pluginMgr.SetApp(wailsApp)
 	}
+	wireDeepLinks(wailsApp, browserSvc)
 
 	safe.Go("android-reticulum", func() {
 		stack, err := rns.NewStack(cfg.ReticulumConfig)

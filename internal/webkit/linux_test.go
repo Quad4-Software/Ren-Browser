@@ -28,8 +28,8 @@ func TestDisableNestedWebKitSandboxInFlatpak(t *testing.T) {
 	t.Setenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "")
 	t.Setenv("FLATPAK_ID", "io.quad4.renbrowser")
 	disableNestedWebKitSandboxIfNeeded()
-	if got := os.Getenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS"); got != "" {
-		t.Fatalf("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS = %q, want unset in Flatpak", got)
+	if got := os.Getenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS"); got != "1" {
+		t.Fatalf("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS = %q, want 1 in Flatpak", got)
 	}
 }
 

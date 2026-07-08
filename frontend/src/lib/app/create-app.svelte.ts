@@ -69,6 +69,7 @@ import {
   ShowDownloadDir,
   Shutdown,
   SyncMobileChrome,
+  TakePendingDeepLink,
 } from "../../../bindings/renbrowser/internal/app/browserservice.js";
 import type { WindowChrome } from "../../../bindings/renbrowser/internal/app/models.js";
 import type { DownloadRow } from "$lib/components/DownloadsMenu.svelte";
@@ -129,6 +130,7 @@ import {
   type DownloadResult,
 } from "$lib/browser/download";
 import { blockExternalLinkPointerEvent } from "$lib/browser/navigation-guard";
+import { unwrapDeepLink } from "$lib/browser/deeplink";
 import {
   canOpenTab,
   MAX_TABS,
@@ -2259,6 +2261,40 @@ export function createApp() {
         url = data.url;
       }
     });
+
+    let lastDeepLinkURL = "";
+    let lastDeepLinkAt = 0;
+    const openDeepLinkTarget = (raw: string) => {
+      const unwrapped = unwrapDeepLink(String(raw ?? ""));
+      const normalized = normalizeReticulumURL(unwrapped || String(raw ?? ""));
+      if (!normalized) {
+        return;
+      }
+      const now = Date.now();
+      if (normalized === lastDeepLinkURL && now - lastDeepLinkAt < 1500) {
+        return;
+      }
+      lastDeepLinkURL = normalized;
+      lastDeepLinkAt = now;
+      void openPage(normalized, true);
+      void TakePendingDeepLink().catch(() => {});
+    };
+
+    Events.On("app:deeplink", (event) => {
+      const raw =
+        typeof event.data === "string"
+          ? event.data
+          : String((event as { data?: unknown }).data ?? "");
+      openDeepLinkTarget(raw);
+    });
+
+    void TakePendingDeepLink()
+      .then((pending) => {
+        if (pending) {
+          openDeepLinkTarget(pending);
+        }
+      })
+      .catch(() => {});
 
     restartStatusTimer();
 

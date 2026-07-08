@@ -347,16 +347,16 @@ jobs:
         run: |
           set -euo pipefail
           export ANDROID_KEY_PASSWORD="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
-          task package:android:all
+          task package:android
 
       - name: Build debug APK
         if: steps.android_sign.outputs.available != 'true'
-        run: task build:android:all
+        run: task build:android
 
       - name: Upload APK
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: ${{ steps.android_sign.outputs.available == 'true' && 'android-signed-apks' || 'android-debug-apks' }}
+          name: ${{ steps.android_sign.outputs.available == 'true' && 'android-signed-apk' || 'android-debug-apk' }}
           path: bin/*.apk
           if-no-files-found: error
           retention-days: 7

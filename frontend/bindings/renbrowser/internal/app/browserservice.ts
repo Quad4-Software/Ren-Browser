@@ -232,6 +232,14 @@ export function GoForward(): $CancellablePromise<string> {
     return $Call.ByID(2359808390);
 }
 
+/**
+ * HandleDeepLink accepts an OS-provided launch URL, unwraps it, queues it, and
+ * emits app:deeplink for the frontend.
+ */
+export function HandleDeepLink(rawURL: string): $CancellablePromise<string> {
+    return $Call.ByID(56205635, rawURL);
+}
+
 export function HistoryState(): $CancellablePromise<$models.HistoryState> {
     return $Call.ByID(1224281278);
 }
@@ -424,6 +432,8 @@ export function RetryDownload(id: string): $CancellablePromise<$models.DownloadR
 
 /**
  * RunSelfCheck performs a comprehensive internal health check of the application components.
+ * Set REN_BROWSER_SELF_CHECK_MESH=1 to also seed community TCP interfaces, wait for
+ * announces, and attempt a page fetch against a discovered node.
  */
 export function RunSelfCheck(): $CancellablePromise<$models.SelfCheckResult> {
     return $Call.ByID(4049250422);
@@ -527,6 +537,13 @@ export function Store(): $CancellablePromise<store$0.Store | null> {
 
 export function SyncMobileChrome(chromeBg: string, lightStatusIcons: boolean): $CancellablePromise<void> {
     return $Call.ByID(345790524, chromeBg, lightStatusIcons);
+}
+
+/**
+ * TakePendingDeepLink returns and clears any queued deeplink target.
+ */
+export function TakePendingDeepLink(): $CancellablePromise<string> {
+    return $Call.ByID(1104710201);
 }
 
 export function ToggleFullscreen(): $CancellablePromise<void> {

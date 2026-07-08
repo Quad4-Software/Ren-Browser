@@ -76,7 +76,7 @@ func newWailsApp(browserSvc *app.BrowserService, pluginHost *app.PluginHost, plu
 		services = append(services, application.NewService(pluginHost))
 	}
 
-	return application.New(application.Options{
+	opts := application.Options{
 		Name:                        brand.DisplayName,
 		Description:                 brand.Description,
 		Logger:                      serverlog.WailsLogger(),
@@ -100,7 +100,11 @@ func newWailsApp(browserSvc *app.BrowserService, pluginHost *app.PluginHost, plu
 			Port:            cfg.ServerPort,
 			OuterMiddleware: extra.ServerWrap,
 		},
-	})
+	}
+	if runtime.GOOS != "android" && runtime.GOOS != "ios" && !cfg.Headless && cfg.ServerPort == 0 {
+		opts.SingleInstance = singleInstanceOptions(browserSvc)
+	}
+	return application.New(opts)
 }
 
 func openAssets(embedded embed.FS, cfg config.Runtime) (fs.FS, error) {
@@ -129,6 +133,7 @@ func registerEvents() {
 	application.RegisterEvent[plugins.Manifest]("plugin:unloaded")
 	application.RegisterEvent[string]("plugin:error")
 	application.RegisterEvent[map[string]string]("plugin:scheme")
+	application.RegisterEvent[string](app.DeepLinkEvent)
 }
 
 func AssetHandlerForServer(loader *assets.Loader, pluginMgr *plugins.Manager, cfg config.Runtime) http.Handler {

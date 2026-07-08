@@ -53,6 +53,20 @@
 		</array>
 		<key>CFBundleVersion</key>
 		<string>0.1.0</string>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>io.quad4.renbrowser.dev</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>renbrowser</string>
+					<string>rns</string>
+				</array>
+				<key>CFBundleTypeRole</key>
+				<string>Viewer</string>
+			</dict>
+		</array>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>MinimumOSVersion</key>

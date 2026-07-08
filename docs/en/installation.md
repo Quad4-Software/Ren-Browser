@@ -10,6 +10,7 @@ Get the latest release for your system from [GitHub Releases](https://github.com
 |----------|------|-------|
 | Linux x86_64 | `renbrowser-linux-amd64.AppImage` | `chmod +x` then run. A plain binary is also included. |
 | Linux ARM64 | `renbrowser-linux-arm64.AppImage` | Same steps as x86_64. |
+| Linux Arch | `renbrowser-linux-amd64.pkg.tar.zst` / `renbrowser-linux-arm64.pkg.tar.zst` | `sudo pacman -U` the package for your CPU. |
 | Windows | `renbrowser-windows-amd64.exe` | Run directly. No installer required. |
 | macOS | `renbrowser-macos-universal.zip` | Unzip and open `renbrowser.app`. |
 | Server (Linux x86_64) | `renbrowser-server-linux-amd64` | Headless binary for Docker or self-hosting. |
@@ -17,7 +18,7 @@ Get the latest release for your system from [GitHub Releases](https://github.com
 | Server (Linux ARMv6) | `renbrowser-server-linux-armv6` | Raspberry Pi Zero W and other 32-bit ARMv6 devices. |
 | Server (FreeBSD) | `renbrowser-server-freebsd-amd64`, `renbrowser-server-freebsd-arm64` | Headless on FreeBSD. |
 | Server (OpenBSD / NetBSD) | `renbrowser-server-openbsd-amd64`, `renbrowser-server-netbsd-amd64` | Headless on BSD. |
-| Android | `renbrowser.apk` | When the release pipeline includes it. |
+| Android | `renbrowser-android-universal.apk` | arm64-v8a + armeabi-v7a in one APK. |
 
 Each release ships `SHA256SUMS.txt` so you can verify downloads. See [Security](security.md).
 
@@ -35,10 +36,11 @@ Check only the file you downloaded if the sums file lists many assets.
 |---------|---------------------------|
 | **Linux AppImage** | Bundles GTK 4, WebKitGTK 6, and other libraries. No separate WebKit install. Some distros need FUSE or `APPIMAGE_EXTRACT_AND_RUN=1`. |
 | **Linux Flatpak** | Flatpak plus the `org.gnome.Platform` runtime (GTK 4 and WebKitGTK 6). |
+| **Linux Arch package** | GTK 4 and WebKitGTK 6.0 from pacman. Install with `sudo pacman -U renbrowser-linux-*.pkg.tar.zst`. |
 | **Linux plain binary** | GTK 4 and WebKitGTK 6.0 at runtime (for example on Debian/Ubuntu 24.04+, Fedora, or Arch). |
 | **Windows `.exe`** | [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/). Usually on Windows 10/11. The NSIS installer can install it; the portable `.exe` does not. |
 | **macOS `.app`** | Recent macOS with system WebKit (no extra runtime). |
-| **Android APK** | Android 5.0+ (API 21+). |
+| **Android APK** | Android 5.0+ (API 21+). Universal APK covers arm64 and 32-bit ARM devices. |
 | **Server binary / Docker** | No desktop GUI stack. Use any browser on the host for the UI. Release server builds: Linux amd64/arm64/armv6, FreeBSD amd64/arm64, OpenBSD/NetBSD amd64. |
 
 ## Docker or Podman (server mode)
@@ -97,7 +99,7 @@ Go modules pull Quad4 dependencies from GitHub automatically.
 ```sh
 task build:windows
 task build:darwin
-task build:android      # physical device (arm64)
+task build:android      # universal APK (arm64-v8a + armeabi-v7a)
 task build:android:emu  # emulator (host ABI)
 ```
 
@@ -106,9 +108,22 @@ task build:android:emu  # emulator (host ABI)
 ```sh
 task package                  # current OS
 task package:linux:appimage   # Linux AppImage
+task package:linux:arch       # Arch Linux .pkg.tar.zst
 task package:darwin:universal # macOS universal
 task package:windows          # Windows NSIS installer
 ```
+
+### Nix
+
+This repo ships a Nix flake (`flake.nix`).
+
+```sh
+nix develop          # Go, GTK4, WebKitGTK 6, Node, pnpm, task
+nix build            # desktop package
+nix build .#renbrowser-server
+```
+
+The first `nix build` may fail while computing the `pnpmDeps` hash; paste the hash Nix prints into `flake.nix` and rebuild.
 
 ### Android SDK
 

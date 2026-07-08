@@ -1,0 +1,86 @@
+# Maintainer: Quad4 <https://quad4.io>
+# Arch packaging for Ren Browser.
+#
+# From this repository (recommended while developing):
+#   cd packaging/arch && makepkg -f
+#
+# From a release tarball (AUR / clean build):
+#   RENBROWSER_DIST=1 makepkg -si
+
+pkgname=renbrowser
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Reticulum browser for NomadNet pages'
+arch=('x86_64' 'aarch64')
+url='https://github.com/Quad4-Software/Ren-Browser'
+license=('MIT')
+depends=('gtk4' 'webkitgtk-6.0' 'hicolor-icon-theme')
+makedepends=('go>=1.26' 'git' 'nodejs>=22' 'pnpm' 'pkgconf')
+options=('!lto')
+
+_repo="$(cd "$startdir/../.." && pwd)"
+
+if [[ "${RENBROWSER_DIST:-0}" == "1" ]]; then
+  source=("$pkgname-$pkgver.tar.gz::https://github.com/Quad4-Software/Ren-Browser/archive/refs/tags/v$pkgver.tar.gz")
+  sha256sums=('SKIP')
+else
+  source=()
+  sha256sums=()
+fi
+
+_ensure_src() {
+  local srcroot="$srcdir/$pkgname-$pkgver"
+
+  if [[ "${RENBROWSER_DIST:-0}" == "1" ]]; then
+    if [[ -d "$srcdir/Ren-Browser-$pkgver" ]]; then
+      mv "$srcdir/Ren-Browser-$pkgver" "$srcroot"
+    fi
+    return
+  fi
+
+  mkdir -p "$srcdir"
+  ln -sfn "$_repo" "$srcroot"
+}
+
+prepare() {
+  _ensure_src
+}
+
+build() {
+  # makepkg -e skips prepare(); still link the checkout for local builds.
+  _ensure_src
+  cd "$srcdir/$pkgname-$pkgver"
+  export CGO_ENABLED=1
+  export GOFLAGS='-mod=vendor -buildmode=pie -trimpath'
+  # Keep Go caches out of $srcdir so makepkg -C is not blocked by
+  # read-only toolchain files from GOTOOLCHAIN downloads.
+  # auto: go.mod may require a newer patch than the distro go package.
+  export GOTOOLCHAIN="${GOTOOLCHAIN:-auto}"
+  export GOPATH="${GOPATH:-$HOME/.cache/renbrowser-makepkg/gopath}"
+  export GOCACHE="${GOCACHE:-$HOME/.cache/renbrowser-makepkg/gocache}"
+  export GOMODCACHE="${GOMODCACHE:-$HOME/.cache/renbrowser-makepkg/gomod}"
+  mkdir -p "$GOPATH" "$GOCACHE" "$GOMODCACHE"
+
+  make build
+}
+
+package() {
+  _ensure_src
+  cd "$srcdir/$pkgname-$pkgver"
+
+  install -Dm755 "bin/$pkgname" "$pkgdir/usr/bin/$pkgname"
+  install -Dm644 "flatpak/io.quad4.renbrowser.desktop" \
+    "$pkgdir/usr/share/applications/io.quad4.renbrowser.desktop"
+  install -Dm644 "flatpak/io.quad4.renbrowser.svg" \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/io.quad4.renbrowser.svg"
+  if [[ -f build/appicon.png ]]; then
+    install -Dm644 build/appicon.png \
+      "$pkgdir/usr/share/icons/hicolor/128x128/apps/io.quad4.renbrowser.png"
+  fi
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+
+  sed -i \
+    -e 's|^Exec=.*|Exec=renbrowser %u|' \
+    -e 's|^Icon=.*|Icon=io.quad4.renbrowser|' \
+    "$pkgdir/usr/share/applications/io.quad4.renbrowser.desktop"
+}

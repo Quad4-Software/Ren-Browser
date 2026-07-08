@@ -7,6 +7,7 @@
 
 /* Begin PBXBuildFile section */
 		C0DEBEEF0000000000000001 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C0DEBEEF0000000000000002 /* main.m */; };
+		C0DEBEEF00000000000000D1 /* deeplink.m in Sources */ = {isa = PBXBuildFile; fileRef = C0DEBEEF00000000000000D2 /* deeplink.m */; };
 		C0DEBEEF00000000000000F1 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C0DEBEEF0000000000000101 /* UIKit.framework */; };
 		C0DEBEEF00000000000000F2 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C0DEBEEF0000000000000102 /* Foundation.framework */; };
 		C0DEBEEF00000000000000F3 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C0DEBEEF0000000000000103 /* WebKit.framework */; };
@@ -18,6 +19,7 @@
 
 /* Begin PBXFileReference section */
 		C0DEBEEF0000000000000002 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		C0DEBEEF00000000000000D2 /* deeplink.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = deeplink.m; sourceTree = "<group>"; };
 		C0DEBEEF0000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C0DEBEEF0000000000000004 /* Ren Browser.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Ren Browser.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C0DEBEEF0000000000000101 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
@@ -51,6 +53,7 @@
 			isa = PBXGroup;
 			children = (
 				C0DEBEEF0000000000000002 /* main.m */,
+				C0DEBEEF00000000000000D2 /* deeplink.m */,
 				C0DEBEEF0000000000000003 /* Info.plist */,
 			);
 			path = main;
@@ -165,6 +168,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C0DEBEEF0000000000000001 /* main.m in Sources */,
+				C0DEBEEF00000000000000D1 /* deeplink.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

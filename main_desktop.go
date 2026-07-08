@@ -133,10 +133,10 @@ func relocateForAppImage(cfg *config.Runtime) {
 	// standard host paths for its own sandboxed view and has no idea our
 	// helpers live under a transient AppImage mount point, so it can't see
 	// them there and the dbus-proxy exec fails. There is no supported way to
-	// add that mount from outside WebKit, so fall back to WebKit's own
-	// documented escape hatch for nested-sandbox conflicts (the same one
-	// Flatpak uses when an outer sandbox already exists). This only affects
-	// the AppImage build; Flatpak keeps WebKit's portal launcher enabled.
+	// add that mount from outside WebKit, so fall back to WebKit's documented
+	// escape hatch for nested-sandbox conflicts. Flatpak sets the same env in
+	// finish-args (and via internal/webkit) for the GNOME 50 / glibc 2.42+
+	// BubblewrapLauncher crash.
 	_ = os.Setenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1")
 }
 

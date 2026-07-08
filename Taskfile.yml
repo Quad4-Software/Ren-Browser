@@ -256,31 +256,15 @@ tasks:
       - task: darwin:build
 
   build:android:
-    desc: Build debug APK for Android (arm64 for physical devices)
+    desc: Build debug universal APK for Android (arm64-v8a + armeabi-v7a)
     cmds:
       - task: android:build
         vars:
           ARCH: arm64
-      - task: android:assemble:apk
-
-  build:android:all:
-    desc: Build debug APK for all Android architectures (fat debug APK)
-    cmds:
-      - task: android:build
-        vars:
-          ARCH: arm64
-          KEEP_OTHER_ABIS: "true"
-      - task: android:compile:go:shared
-        vars:
-          ARCH: amd64
           KEEP_OTHER_ABIS: "true"
       - task: android:compile:go:shared
         vars:
           ARCH: arm
-          KEEP_OTHER_ABIS: "true"
-      - task: android:compile:go:shared
-        vars:
-          ARCH: 386
           KEEP_OTHER_ABIS: "true"
       - task: android:assemble:apk
 
@@ -291,14 +275,14 @@ tasks:
       - task: android:assemble:apk
 
   package:android:
-    desc: Package production APK for Android (arm64 + x86_64)
+    desc: Package production universal APK for Android (arm64-v8a + armeabi-v7a)
     cmds:
-      - task: android:package:default
+      - task: android:package:universal
 
-  package:android:all:
-    desc: Package production APK for all Android architectures (arm64, x86_64, arm, 386)
+  package:linux:arch:
+    desc: Build an Arch Linux package (.pkg.tar.zst)
     cmds:
-      - task: android:package:fat
+      - task: linux:create:aur
 
   run:android:
     desc: Build, install, and launch on Android emulator

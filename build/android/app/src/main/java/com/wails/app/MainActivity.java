@@ -102,6 +102,29 @@ public class MainActivity extends AppCompatActivity {
         waitForBackendThenLoad();
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleIncomingIntent(intent);
+    }
+
+    private void handleIncomingIntent(Intent intent) {
+        if (intent == null || bridge == null || !bridge.isInitialized()) {
+            return;
+        }
+        Uri data = intent.getData();
+        if (data == null) {
+            return;
+        }
+        String url = data.toString();
+        if (url == null || url.isEmpty()) {
+            return;
+        }
+        if (DEBUG) Log.d(TAG, "Incoming deeplink: " + url);
+        bridge.handleDeepLink(url);
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
         webView = findViewById(R.id.webview);
@@ -271,7 +294,10 @@ public class MainActivity extends AppCompatActivity {
             final int attempts = 120;
             for (int i = 0; i < attempts; i++) {
                 if (bridge.isBackendReady()) {
-                    runOnUiThread(this::loadApplication);
+                    runOnUiThread(() -> {
+                        loadApplication();
+                        handleIncomingIntent(getIntent());
+                    });
                     return;
                 }
                 try {
