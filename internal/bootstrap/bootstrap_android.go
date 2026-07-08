@@ -17,6 +17,7 @@ import (
 
 func New(embedded embed.FS, cfg config.Runtime) (*App, error) {
 	paths.InitAndroid()
+	HandleResetIfNeeded(cfg)
 
 	_, loader, err := openAssetsAndLoader(embedded, cfg)
 	if err != nil {

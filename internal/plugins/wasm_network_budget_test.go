@@ -84,7 +84,7 @@ func TestPluginHTTPFetchBudget(t *testing.T) {
 	beginWasmFetchBudget("test.plugin", 2)
 	t.Cleanup(func() { endWasmFetchBudget("test.plugin") })
 
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		if err := consumeWasmFetchBudget("test.plugin"); err != nil {
 			t.Fatalf("fetch %d: %v", i, err)
 		}

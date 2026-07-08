@@ -192,7 +192,7 @@ func MustStringToUTF16uintptr(input string) uintptr {
 }
 
 // MustStringToUTF16 converts s to UTF-16 encoding, stripping any embedded NULs and panicking on error.
-// 
+//
 // The returned slice is suitable for Windows API calls that expect a UTF-16 encoded string.
 func MustStringToUTF16(input string) []uint16 {
 	input = stripNulls(input)

@@ -33,11 +33,11 @@ type clientInfo struct {
 // WebSocketBroadcaster manages WebSocket connections and broadcasts events to all connected clients.
 // It implements WailsEventListener to receive events from the application.
 type WebSocketBroadcaster struct {
-	clients  map[*websocket.Conn]*clientInfo
-	windows  map[string]*BrowserWindow // maps runtime clientId (nanoid) to BrowserWindow
-	mu       sync.RWMutex
-	app      *App
-	nextID   atomic.Uint64
+	clients map[*websocket.Conn]*clientInfo
+	windows map[string]*BrowserWindow // maps runtime clientId (nanoid) to BrowserWindow
+	mu      sync.RWMutex
+	app     *App
+	nextID  atomic.Uint64
 }
 
 // NewWebSocketBroadcaster creates a new WebSocket broadcaster.

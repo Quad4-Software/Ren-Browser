@@ -120,10 +120,37 @@ func AdaptCommunityItemsForPlatform(items []CommunityInterface) []CommunityInter
 	return out
 }
 
+func isOverlayInterface(item CommunityInterface) bool {
+	net := strings.ToLower(strings.TrimSpace(item.Network))
+	if net == "yggdrasil" || net == "i2p" || net == "onion" || net == "tor" {
+		return true
+	}
+	t := strings.ToLower(strings.TrimSpace(item.Type))
+	if strings.Contains(t, "i2p") || strings.Contains(t, "yggdrasil") || strings.Contains(t, "onion") || strings.Contains(t, "tor") {
+		return true
+	}
+	tn := strings.ToLower(strings.TrimSpace(item.TypeName))
+	if strings.Contains(tn, "i2p") || strings.Contains(tn, "yggdrasil") || strings.Contains(tn, "onion") || strings.Contains(tn, "tor") {
+		return true
+	}
+	host := strings.ToLower(strings.TrimSpace(item.Host))
+	if strings.HasSuffix(host, ".i2p") || strings.HasSuffix(host, ".onion") {
+		return true
+	}
+	name := strings.ToLower(strings.TrimSpace(item.Name))
+	if strings.Contains(name, "i2p") || strings.Contains(name, "yggdrasil") || strings.Contains(name, "onion") || strings.Contains(name, "tor") {
+		return true
+	}
+	return false
+}
+
 func FilterSeedableInterfaces(items []CommunityInterface) []CommunityInterface {
 	out := make([]CommunityInterface, 0, len(items))
 	for _, item := range items {
 		if strings.TrimSpace(item.Config) == "" {
+			continue
+		}
+		if isOverlayInterface(item) {
 			continue
 		}
 		if IsTCPClientInterface(item) {

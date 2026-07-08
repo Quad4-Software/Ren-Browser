@@ -69,6 +69,14 @@ func TestApplyEnvNativeTitlebar(t *testing.T) {
 	}
 }
 
+func TestApplyEnvReset(t *testing.T) {
+	t.Setenv("REN_BROWSER_RESET", "true")
+	cfg := config.ApplyEnv(config.Runtime{})
+	if !cfg.Reset {
+		t.Fatal("expected reset to be true")
+	}
+}
+
 func TestLoadDotEnvDoesNotOverrideExisting(t *testing.T) {
 	dir := t.TempDir()
 	path := dir + "/.env"

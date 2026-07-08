@@ -3,9 +3,9 @@
 package cfd
 
 import (
-	"reflect"
 	"fmt"
 	"os"
+	"reflect"
 )
 
 type FileFilter struct {

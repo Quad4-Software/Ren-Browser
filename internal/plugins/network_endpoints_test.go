@@ -4,6 +4,7 @@ package plugins
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -37,13 +38,7 @@ const local = "http://localhost:8080/ignore";
 	if endpoints[1] != "User-configured LibreTranslate instance" {
 		t.Fatalf("manifest endpoint = %q", endpoints[1])
 	}
-	foundGoogle := false
-	for _, endpoint := range endpoints {
-		if endpoint == "https://translate.googleapis.com/translate_a/single" {
-			foundGoogle = true
-			break
-		}
-	}
+	foundGoogle := slices.Contains(endpoints, "https://translate.googleapis.com/translate_a/single")
 	if !foundGoogle {
 		t.Fatalf("scanned google endpoint missing from %#v", endpoints)
 	}

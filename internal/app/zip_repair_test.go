@@ -49,10 +49,7 @@ func loadFixtureEpub(t *testing.T) []byte {
 func stripZipCentralDirectory(t *testing.T, body []byte) []byte {
 	t.Helper()
 	searchStart := len(body) - zipEndCentralSize
-	minStart := len(body) - 65557
-	if minStart < 0 {
-		minStart = 0
-	}
+	minStart := max(len(body)-65557, 0)
 	var eocdOffset int = -1
 	for i := searchStart; i >= minStart; i-- {
 		if binary.LittleEndian.Uint32(body[i:]) == zipEndCentralSig {

@@ -226,6 +226,7 @@ export function createApp() {
   let nativeTitlebar = $state(false);
   let uiLanguage = $state("");
   let docsLanguage = $state("");
+  let initialSetupComplete = $state(false);
   let micronRenderer = $state<MicronRendererPreference>("auto");
   let micronWasmEnabled = $state(true);
   let micronWasmReady = $state(false);
@@ -1341,6 +1342,7 @@ export function createApp() {
 
   async function completeInitialSetup() {
     await CompleteInitialSetup();
+    initialSetupComplete = true;
     initialSetupOpen = false;
     initialSetupStep = "welcome";
     initialSetupError = "";
@@ -1468,6 +1470,7 @@ export function createApp() {
     nativeTitlebar = !!prefs.nativeTitlebar;
     uiLanguage = prefs.uiLanguage ?? "";
     docsLanguage = prefs.docsLanguage ?? "";
+    initialSetupComplete = !!prefs.initialSetupComplete;
     initUILocale(uiLanguage);
     micronWasmEnabled = prefs.micronWasmEnabled ?? true;
     micronWasmAvailable = await isMicronWasmAvailable();
@@ -1501,6 +1504,7 @@ export function createApp() {
       tabHoverPreviews,
       micronPreserveLayout,
       settingsSectionsCollapsed,
+      initialSetupComplete,
     };
   }
 

@@ -38,6 +38,7 @@ type Runtime struct {
 	AuthIPWhitelist string
 	AuthSessionHrs  int
 	LogLevel        string
+	Reset           bool
 }
 
 func ParseFlags() Runtime {
@@ -54,6 +55,7 @@ func ParseFlags() Runtime {
 	flag.StringVar(&cfg.ImportProfile, "import-profile", "", "Import profile data from a JSON file at startup")
 	flag.BoolVar(&cfg.PublicMode, "public-mode", false, "Store favorites, history, and tabs in the browser (localStorage) instead of the server database")
 	flag.BoolVar(&cfg.ResetWindow, "reset-window", false, "Ignore saved window size and position on startup")
+	flag.BoolVar(&cfg.Reset, "reset", false, "Reset the browser (delete config, cache, database, and settings)")
 	flag.BoolVar(&cfg.NativeTitlebar, "native-titlebar", false, "Use the native OS title bar instead of custom window controls")
 	flag.BoolVar(&cfg.NoLandlock, "no-landlock", false, "Disable Landlock LSM filesystem sandbox (Linux)")
 	flag.BoolVar(&cfg.Landlock, "landlock", false, "Force Landlock LSM sandbox on Linux even when auto-detection would skip it")
@@ -144,6 +146,9 @@ func ApplyEnv(cfg Runtime) Runtime {
 	}
 	if !cfg.ResetWindow {
 		cfg.ResetWindow = envBool("REN_BROWSER_RESET_WINDOW")
+	}
+	if !cfg.Reset {
+		cfg.Reset = envBool("REN_BROWSER_RESET")
 	}
 	if !cfg.NativeTitlebar {
 		cfg.NativeTitlebar = envBool("REN_BROWSER_NATIVE_TITLEBAR")

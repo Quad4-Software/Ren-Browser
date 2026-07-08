@@ -43,11 +43,11 @@ var defaultWindowEventMapping = map[string]map[WindowEventType]WindowEventType{
 		Mac.WindowShouldClose:        Common.WindowClosing,
 	},
 	"linux": {
-		Linux.WindowDeleteEvent: Common.WindowClosing,
-		Linux.WindowFocusIn:     Common.WindowFocus,
-		Linux.WindowFocusOut:    Common.WindowLostFocus,
-		Linux.WindowDidMove:     Common.WindowDidMove,
-		Linux.WindowDidResize:   Common.WindowDidResize,
+		Linux.WindowDeleteEvent:  Common.WindowClosing,
+		Linux.WindowFocusIn:      Common.WindowFocus,
+		Linux.WindowFocusOut:     Common.WindowLostFocus,
+		Linux.WindowDidMove:      Common.WindowDidMove,
+		Linux.WindowDidResize:    Common.WindowDidResize,
 		Linux.WindowLoadFinished: Common.WindowShow,
 	},
 }

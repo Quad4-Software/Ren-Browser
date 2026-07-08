@@ -13,6 +13,8 @@ import (
 )
 
 func New(embedded embed.FS, cfg config.Runtime) (*App, error) {
+	HandleResetIfNeeded(cfg)
+
 	_, loader, err := openAssetsAndLoader(embedded, cfg)
 	if err != nil {
 		return nil, err

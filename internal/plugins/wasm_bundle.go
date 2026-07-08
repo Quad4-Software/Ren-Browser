@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -71,9 +72,7 @@ func ParseWasmBundle(data []byte) (WasmBundle, error) {
 			if err := json.Unmarshal(content, &files); err != nil {
 				return WasmBundle{}, fmt.Errorf("parse embedded files: %w", err)
 			}
-			for k, v := range files {
-				bundle.Files[k] = v
-			}
+			maps.Copy(bundle.Files, files)
 		case wasmSectionSignature:
 			bundle.Signature = append([]byte(nil), content...)
 		}

@@ -5,12 +5,12 @@ import (
 )
 
 type wailsError struct {
-	cause           error
-	msg             string
-	errorType       ErrorType
+	cause     error
+	msg       string
+	errorType ErrorType
 }
 
-func (w *wailsError) Cause() error          { return w.cause }
+func (w *wailsError) Cause() error { return w.cause }
 func (w *wailsError) Error() string {
 	errMsg := fmt.Sprintf("%s: %s", w.errorType, w.msg)
 	if w.cause != nil {
@@ -18,17 +18,16 @@ func (w *wailsError) Error() string {
 	}
 	return errMsg
 }
-func (w *wailsError) Msg() string           { return w.msg }
-func (w *wailsError) ErrorType() ErrorType  { return w.errorType }
-func (w *wailsError) Unwrap() error  { return w.cause }
-
+func (w *wailsError) Msg() string          { return w.msg }
+func (w *wailsError) ErrorType() ErrorType { return w.errorType }
+func (w *wailsError) Unwrap() error        { return w.cause }
 
 func NewInvalidWindowCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidWindowCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidWindowCallError,
 	}
 }
 
@@ -39,9 +38,9 @@ func WrapInvalidWindowCallErrorf(err error, message string, args ...any) error {
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidWindowCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidWindowCallError,
 	}
 }
 
@@ -56,9 +55,9 @@ func HasInvalidWindowCallError(err error) bool {
 func NewInvalidApplicationCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidApplicationCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidApplicationCallError,
 	}
 }
 
@@ -69,9 +68,9 @@ func WrapInvalidApplicationCallErrorf(err error, message string, args ...any) er
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidApplicationCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidApplicationCallError,
 	}
 }
 
@@ -86,9 +85,9 @@ func HasInvalidApplicationCallError(err error) bool {
 func NewInvalidBrowserCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidBrowserCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidBrowserCallError,
 	}
 }
 
@@ -99,9 +98,9 @@ func WrapInvalidBrowserCallErrorf(err error, message string, args ...any) error 
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidBrowserCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidBrowserCallError,
 	}
 }
 
@@ -116,9 +115,9 @@ func HasInvalidBrowserCallError(err error) bool {
 func NewInvalidSystemCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidSystemCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidSystemCallError,
 	}
 }
 
@@ -129,9 +128,9 @@ func WrapInvalidSystemCallErrorf(err error, message string, args ...any) error {
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidSystemCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidSystemCallError,
 	}
 }
 
@@ -146,9 +145,9 @@ func HasInvalidSystemCallError(err error) bool {
 func NewInvalidScreensCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidScreensCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidScreensCallError,
 	}
 }
 
@@ -159,9 +158,9 @@ func WrapInvalidScreensCallErrorf(err error, message string, args ...any) error 
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidScreensCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidScreensCallError,
 	}
 }
 
@@ -176,9 +175,9 @@ func HasInvalidScreensCallError(err error) bool {
 func NewInvalidDialogCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidDialogCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidDialogCallError,
 	}
 }
 
@@ -189,9 +188,9 @@ func WrapInvalidDialogCallErrorf(err error, message string, args ...any) error {
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidDialogCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidDialogCallError,
 	}
 }
 
@@ -206,9 +205,9 @@ func HasInvalidDialogCallError(err error) bool {
 func NewInvalidContextMenuCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidContextMenuCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidContextMenuCallError,
 	}
 }
 
@@ -219,9 +218,9 @@ func WrapInvalidContextMenuCallErrorf(err error, message string, args ...any) er
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidContextMenuCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidContextMenuCallError,
 	}
 }
 
@@ -236,9 +235,9 @@ func HasInvalidContextMenuCallError(err error) bool {
 func NewInvalidClipboardCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidClipboardCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidClipboardCallError,
 	}
 }
 
@@ -249,9 +248,9 @@ func WrapInvalidClipboardCallErrorf(err error, message string, args ...any) erro
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidClipboardCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidClipboardCallError,
 	}
 }
 
@@ -266,9 +265,9 @@ func HasInvalidClipboardCallError(err error) bool {
 func NewInvalidBindingCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidBindingCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidBindingCallError,
 	}
 }
 
@@ -279,9 +278,9 @@ func WrapInvalidBindingCallErrorf(err error, message string, args ...any) error 
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidBindingCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidBindingCallError,
 	}
 }
 
@@ -296,9 +295,9 @@ func HasInvalidBindingCallError(err error) bool {
 func NewBindingCallFailedErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       BindingCallFailedError,
+		cause:     nil,
+		msg:       msg,
+		errorType: BindingCallFailedError,
 	}
 }
 
@@ -309,9 +308,9 @@ func WrapBindingCallFailedErrorf(err error, message string, args ...any) error {
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       BindingCallFailedError,
+		cause:     err,
+		msg:       msg,
+		errorType: BindingCallFailedError,
 	}
 }
 
@@ -326,9 +325,9 @@ func HasBindingCallFailedError(err error) bool {
 func NewInvalidEventsCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidEventsCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidEventsCallError,
 	}
 }
 
@@ -339,9 +338,9 @@ func WrapInvalidEventsCallErrorf(err error, message string, args ...any) error {
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidEventsCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidEventsCallError,
 	}
 }
 
@@ -356,9 +355,9 @@ func HasInvalidEventsCallError(err error) bool {
 func NewInvalidRuntimeCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidRuntimeCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidRuntimeCallError,
 	}
 }
 
@@ -369,9 +368,9 @@ func WrapInvalidRuntimeCallErrorf(err error, message string, args ...any) error 
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidRuntimeCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidRuntimeCallError,
 	}
 }
 
@@ -386,9 +385,9 @@ func HasInvalidRuntimeCallError(err error) bool {
 func NewInvalidIOSCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidIOSCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidIOSCallError,
 	}
 }
 
@@ -399,9 +398,9 @@ func WrapInvalidIOSCallErrorf(err error, message string, args ...any) error {
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidIOSCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidIOSCallError,
 	}
 }
 
@@ -416,9 +415,9 @@ func HasInvalidIOSCallError(err error) bool {
 func NewInvalidAndroidCallErrorf(message string, args ...any) error {
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           nil,
-		msg:             msg,
-		errorType:       InvalidAndroidCallError,
+		cause:     nil,
+		msg:       msg,
+		errorType: InvalidAndroidCallError,
 	}
 }
 
@@ -429,9 +428,9 @@ func WrapInvalidAndroidCallErrorf(err error, message string, args ...any) error 
 
 	msg := fmt.Sprintf(message, args...)
 	return &wailsError{
-		cause:           err,
-		msg:             msg,
-		errorType:       InvalidAndroidCallError,
+		cause:     err,
+		msg:       msg,
+		errorType: InvalidAndroidCallError,
 	}
 }
 
@@ -442,4 +441,3 @@ func IsInvalidAndroidCallError(err error) bool {
 func HasInvalidAndroidCallError(err error) bool {
 	return Has(err, InvalidAndroidCallError)
 }
-

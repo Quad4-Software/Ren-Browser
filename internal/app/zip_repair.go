@@ -33,10 +33,7 @@ func zipHasEndOfCentralDirectory(body []byte) bool {
 		return false
 	}
 	searchStart := len(body) - zipEndCentralSize
-	minStart := len(body) - 65557
-	if minStart < 0 {
-		minStart = 0
-	}
+	minStart := max(len(body)-65557, 0)
 	for i := searchStart; i >= minStart; i-- {
 		if binary.LittleEndian.Uint32(body[i:]) == zipEndCentralSig {
 			return true

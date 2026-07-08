@@ -65,7 +65,7 @@ type gf256 struct {
 func newGF256() gf256 {
 	var g gf256
 	x := 1
-	for i := 0; i < 255; i++ {
+	for i := range 255 {
 		g.exp[i] = byte(x)
 		g.log[x] = byte(i)
 		x <<= 1
@@ -91,14 +91,14 @@ func gfMul(a, b byte) byte {
 func rsEncode(data []byte, ecCount int) []byte {
 	gen := make([]byte, ecCount+1)
 	gen[0] = 1
-	for i := 0; i < ecCount; i++ {
+	for i := range ecCount {
 		for j := ecCount; j > 0; j-- {
 			gen[j] = gfMul(gen[j], gf.exp[i]) ^ gen[j-1]
 		}
 		gen[0] = gfMul(gen[0], gf.exp[i])
 	}
 	msg := append(append([]byte{}, data...), make([]byte, ecCount)...)
-	for i := 0; i < len(data); i++ {
+	for i := range data {
 		coef := msg[i]
 		if coef == 0 {
 			continue
@@ -145,10 +145,7 @@ func encodeDataCodewords(data []byte, ver int) []byte {
 	for _, c := range data {
 		buf.write(int(c), 8)
 	}
-	term := v.dataBytes*8 - len(buf.bits)
-	if term > 4 {
-		term = 4
-	}
+	term := min(v.dataBytes*8-len(buf.bits), 4)
 	if term > 0 {
 		buf.write(0, term)
 	}
@@ -177,12 +174,12 @@ func interleave(ver int, data []byte) []byte {
 		blocks[i] = append(chunk, rsEncode(chunk, ec)...)
 	}
 	out := make([]byte, 0, (blockData+ec)*v.blocks)
-	for offset := 0; offset < blockData; offset++ {
+	for offset := range blockData {
 		for i := 0; i < v.blocks; i++ {
 			out = append(out, blocks[i][offset])
 		}
 	}
-	for offset := 0; offset < ec; offset++ {
+	for offset := range ec {
 		for i := 0; i < v.blocks; i++ {
 			out = append(out, blocks[i][blockData+offset])
 		}
@@ -279,20 +276,20 @@ func placeTiming(m *matrix) {
 
 func reserveMetadata(m *matrix, ver int) {
 	size := m.size
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		if i != 6 {
 			m.setFunc(8, i, false)
 		}
 		m.setFunc(i, 8, false)
 	}
-	for i := 0; i < 7; i++ {
+	for i := range 7 {
 		m.setFunc(8, size-1-i, false)
 		m.setFunc(size-1-i, 8, false)
 	}
 	m.setFunc(8, 8, false)
 	m.setFunc(8, size-8, true)
 	if ver >= 7 {
-		for i := 0; i < 6; i++ {
+		for i := range 6 {
 			m.setFunc(8, size-11+i, false)
 			m.setFunc(size-11+i, 8, false)
 		}
@@ -307,10 +304,10 @@ func placeFormat(m *matrix, bits uint16) {
 	for i, c := range coords {
 		m.setFunc(c[0], c[1], (bits>>uint(14-i))&1 == 1)
 	}
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		m.setFunc(m.size-1-i, 8, (bits>>uint(i))&1 == 1)
 	}
-	for i := 0; i < 7; i++ {
+	for i := range 7 {
 		m.setFunc(8, m.size-7+i, (bits>>uint(8+i))&1 == 1)
 	}
 }
@@ -344,7 +341,7 @@ func placeData(m *matrix, codewords []byte) {
 			if !up {
 				y = m.size - 1 - row
 			}
-			for dx := 0; dx < 2; dx++ {
+			for dx := range 2 {
 				x := col - dx
 				if m.get(x, y)&modFunc != 0 {
 					continue
