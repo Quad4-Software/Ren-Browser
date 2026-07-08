@@ -49,11 +49,13 @@ export async function isMicronWasmAvailable(): Promise<boolean> {
   if (!isMicronWasmCapable()) {
     return false;
   }
-  if (isMicronWasmBundled() && bundledWasmByteLength > 0) {
-    return true;
-  }
   if (isMicronWasmBundled()) {
-    return hasStoredMicronWasmParsers();
+    if (bundledWasmByteLength === 0) {
+      await probeBundledMicronWasmByteLength();
+    }
+    if (bundledWasmByteLength > 0) {
+      return true;
+    }
   }
   return hasStoredMicronWasmParsers();
 }
