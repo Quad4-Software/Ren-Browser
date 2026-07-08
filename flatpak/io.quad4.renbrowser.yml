@@ -21,6 +21,12 @@ finish-args:
   - --talk-name=org.freedesktop.portal.Desktop
   - --talk-name=org.freedesktop.portal.FileChooser
   - --talk-name=org.freedesktop.portal.OpenURI
+  # Disable WebKit's *inner* sandbox (the outer Flatpak sandbox still applies).
+  # Required on GNOME 50 / glibc 2.42+ where WebKit's bwrap launcher fails
+  # resolving /proc/self/fd/N for glibc's anonymous memfd-backed ld-so-conf,
+  # causing launch crashes (readPIDFromPeer / Can't find source path).
+  # Remove once WebKitGTK's BubblewrapLauncher migrates path-based binds to --bind-fd.
+  - --env=WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
 
 modules:
   - name: renbrowser
