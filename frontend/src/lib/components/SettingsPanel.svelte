@@ -99,6 +99,7 @@
     onMicronWasmReadyChange: (ready: boolean) => void;
     onResetDefaults: () => void;
     onResetBrowser: () => void;
+    onRestartReticulum: () => void;
     onShutdown: () => void;
     onToggleInterface: (name: string, enabled: boolean) => void;
     onExportTheme: () => void;
@@ -165,6 +166,7 @@
     onMicronWasmReadyChange,
     onResetDefaults,
     onResetBrowser,
+    onRestartReticulum,
     onShutdown,
     onToggleInterface,
     onExportTheme,
@@ -698,6 +700,13 @@
     onToggle={toggleSettingsSection}
   >
     <p class="hint">{t("settings.reticulumInterfacesHint")}</p>
+
+    <p class="hint" style="margin-top: 1rem;">{t("settings.restartReticulumHint")}</p>
+    <div class="reset-row" style="margin-bottom: 1rem;">
+      <button type="button" class="reset-btn" onclick={onRestartReticulum}
+        >{t("settings.restartReticulum")}</button
+      >
+    </div>
 
     <ul class="ifaces">
       {#if interfaces.length === 0}

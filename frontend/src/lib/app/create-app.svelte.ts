@@ -53,6 +53,7 @@ import {
   ResetDatabase,
   ResetSettings,
   ResetBrowser,
+  RestartReticulum,
   ReloadReticulumConfig,
   SaveTabs,
   SaveReticulumConfigText,
@@ -238,6 +239,7 @@ export function createApp() {
   let identifyConfirmOpen = $state(false);
   let resetDbConfirmOpen = $state(false);
   let resetBrowserConfirmOpen = $state(false);
+  let restartReticulumConfirmOpen = $state(false);
   let closeAllConfirmOpen = $state(false);
   let shutdownConfirmOpen = $state(false);
   let clearHistoryConfirmOpen = $state(false);
@@ -1686,18 +1688,32 @@ export function createApp() {
     resetBrowserConfirmOpen = true;
   }
 
+  function requestRestartReticulum() {
+    restartReticulumConfirmOpen = true;
+  }
+
   function requestShutdown() {
     shutdownConfirmOpen = true;
   }
 
   function confirmShutdown() {
     shutdownConfirmOpen = false;
-    await Shutdown();
+    void Shutdown();
   }
 
   async function confirmResetBrowser() {
     resetBrowserConfirmOpen = false;
     await ResetBrowser();
+  }
+
+  async function confirmRestartReticulum() {
+    restartReticulumConfirmOpen = false;
+    try {
+      await RestartReticulum();
+      await loadInterfaces();
+    } catch (err) {
+      configError = formatBindingError(err, "Restart failed");
+    }
   }
 
   async function confirmResetDatabase() {
@@ -2553,6 +2569,12 @@ export function createApp() {
     set resetBrowserConfirmOpen(value) {
       resetBrowserConfirmOpen = value;
     },
+    get restartReticulumConfirmOpen() {
+      return restartReticulumConfirmOpen;
+    },
+    set restartReticulumConfirmOpen(value) {
+      restartReticulumConfirmOpen = value;
+    },
     get closeAllConfirmOpen() {
       return closeAllConfirmOpen;
     },
@@ -2751,9 +2773,11 @@ export function createApp() {
     confirmIdentify,
     requestResetDatabase,
     requestResetBrowser,
+    requestRestartReticulum,
     requestShutdown,
     confirmShutdown,
     confirmResetBrowser,
+    confirmRestartReticulum,
     confirmResetDatabase,
     resetDefaults,
     saveUILanguage,

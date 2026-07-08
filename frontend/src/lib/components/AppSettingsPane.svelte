@@ -60,6 +60,7 @@
   onMicronWasmReadyChange={app.setMicronWasmReady}
   onResetDefaults={app.resetDefaults}
   onResetBrowser={app.requestResetBrowser}
+  onRestartReticulum={app.requestRestartReticulum}
   onShutdown={app.requestShutdown}
   onToggleInterface={app.toggleInterface}
   onExportTheme={() => void app.exportThemeFile()}

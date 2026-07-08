@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -327,17 +328,25 @@ func (s *BrowserService) ListNodes() []nomadnet.Node {
 	stack := s.stack
 	s.mu.RUnlock()
 	stored, err := s.store.ListNodes()
+	var out []nomadnet.Node
 	if stack == nil {
-		if err != nil {
-			return nil
+		if err == nil {
+			out = stored
 		}
-		return enrichNodeHops(s, stored)
+	} else {
+		live := stack.Handler().List()
+		if err != nil || len(stored) == 0 {
+			out = live
+		} else {
+			out = mergeNodes(stored, live)
+		}
 	}
-	live := stack.Handler().List()
-	if err != nil || len(stored) == 0 {
-		return enrichNodeHops(s, live)
+	if len(out) > 0 {
+		sort.Slice(out, func(i, j int) bool {
+			return out[i].LastSeen > out[j].LastSeen
+		})
 	}
-	return enrichNodeHops(s, mergeNodes(stored, live))
+	return enrichNodeHops(s, out)
 }
 
 func enrichNodeHops(s *BrowserService, nodes []nomadnet.Node) []nomadnet.Node {

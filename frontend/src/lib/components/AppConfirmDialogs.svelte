@@ -57,6 +57,15 @@
 />
 
 <ConfirmDialog
+  open={app.restartReticulumConfirmOpen}
+  title={t("settings.restartReticulum")}
+  message={t("settings.restartReticulumConfirm")}
+  confirmLabel={t("settings.restartReticulum")}
+  onConfirm={app.confirmRestartReticulum}
+  onCancel={() => (app.restartReticulumConfirmOpen = false)}
+/>
+
+<ConfirmDialog
   open={app.clearHistoryConfirmOpen}
   title={t("history.clear")}
   message={t("history.clearConfirm")}

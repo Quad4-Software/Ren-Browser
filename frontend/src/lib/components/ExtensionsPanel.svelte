@@ -486,6 +486,8 @@
     margin: 0;
     color: var(--ren-muted);
     font-size: 0.85rem;
+    word-break: break-all;
+    overflow-wrap: anywhere;
   }
 
   .install {

@@ -380,6 +380,15 @@ export function RenderRawBase64(path: string, rawB64: string): $CancellablePromi
     return $Call.ByID(1458605216, path, rawB64);
 }
 
+/**
+ * ResetBrowser performs a full reset of the browser data and configuration.
+ * It closes the database, stops Reticulum, deletes the data directory and
+ * Reticulum config, and then exits the application.
+ */
+export function ResetBrowser(): $CancellablePromise<void> {
+    return $Call.ByID(2872976902);
+}
+
 export function ResetDatabase(): $CancellablePromise<void> {
     return $Call.ByID(2200853935);
 }
@@ -394,6 +403,14 @@ export function ResetWindowState(): $CancellablePromise<$models.WindowState> {
 
 export function ResolveMicronLink(currentURL: string, destination: string, fieldsSpec: string, inputs: micron$0.FieldInput[] | null): $CancellablePromise<string> {
     return $Call.ByID(1146851467, currentURL, destination, fieldsSpec, inputs);
+}
+
+/**
+ * RestartReticulum stops the current Reticulum stack, loads a fresh one from the
+ * configuration file, starts it, and attaches it to the browser service.
+ */
+export function RestartReticulum(): $CancellablePromise<void> {
+    return $Call.ByID(3884692862);
 }
 
 /**
