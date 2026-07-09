@@ -16,12 +16,6 @@ describe("micron ASCII / force-monospace regressions", () => {
     expect(plainText(html)).toContain("ASCII");
   });
 
-  it("keeps force-monospace even when preserveLayout is false", () => {
-    const html = renderClientMicronPage(url, art, "js", { preserveLayout: false });
-    expect(html).toMatch(/Mu-mnt/);
-    expect(plainText(html)).toContain("ASCII");
-  });
-
   it("keeps column characters present after render", () => {
     const html = renderClientMicronPage(url, "|===|", "js");
     const plain = plainText(html);

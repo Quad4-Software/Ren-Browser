@@ -123,7 +123,6 @@ export function renderClientMicronPage(
   url: string,
   source: string,
   engine: MicronEffectiveEngine,
-  _opts?: { preserveLayout?: boolean },
 ): string {
   const path = pagePathFromURL(url);
   const nodeHash = nodeHashFromURL(url);
@@ -133,7 +132,7 @@ export function renderClientMicronPage(
     nomad_micron_wasm_use: useWasm,
     darkTheme: darkThemeFromDocument(),
     // Always emit monospace cells so ASCII/box art stays aligned.
-    // preserveLayout only affects CSS overflow in ContentViewer.
+    // ContentViewer preserve-layout is CSS-only and does not affect this.
     forceMonospace: true,
     renderMarkdown: true,
     renderHtml: true,
