@@ -30,6 +30,7 @@ import {
   GetPageCacheStats,
   GetRuntimeConfig,
   GetSandboxStatus,
+  GetStatus,
   GoBack,
   GoForward,
   HistoryState,
@@ -60,10 +61,12 @@ import {
   SaveReticulumConfigText,
   SetBrowserPrefs,
   SetDownloadDir,
+  SetEnableTransport,
   SetInterfaceEnabled,
   SetKeybinds,
   SetLogLevel,
   SetNativeTitlebar,
+  SetShareInstance,
   SetTheme,
   ShowConfigDir,
   ShowDownloadDir,
@@ -172,6 +175,7 @@ import type {
   NetworkEntry,
   Node,
   PageResponse,
+  ReticulumStatusRow,
   SandboxStatus,
   StoreHealth,
   TabSnapshot,
@@ -208,6 +212,13 @@ export function createApp() {
   let favorites = $state<string[]>([]);
   let history = $state<HistoryEntry[]>([]);
   let interfaces = $state<InterfaceRow[]>([]);
+  let reticulumStatus = $state<ReticulumStatusRow>({
+    enableTransport: false,
+    shareInstance: false,
+    connectedToSharedInstance: false,
+    sharedInstanceMode: "disabled",
+    transportActive: false,
+  });
   let configPath = $state("");
   let logLevel = $state(3);
   let systemFonts = $state<string[]>(["system-ui", "sans-serif", "monospace"]);
@@ -246,6 +257,7 @@ export function createApp() {
   let resetDbConfirmOpen = $state(false);
   let resetBrowserConfirmOpen = $state(false);
   let restartReticulumConfirmOpen = $state(false);
+  let transportMobileConfirmOpen = $state(false);
   let closeAllConfirmOpen = $state(false);
   let shutdownConfirmOpen = $state(false);
   let clearHistoryConfirmOpen = $state(false);
@@ -1189,6 +1201,22 @@ export function createApp() {
   async function loadInterfaces() {
     interfaces = (await ListInterfaces()) as InterfaceRow[];
     configPath = await ConfigPath();
+    await loadReticulumStatus();
+  }
+
+  async function loadReticulumStatus() {
+    try {
+      const status = await GetStatus();
+      reticulumStatus = {
+        enableTransport: Boolean(status?.enableTransport),
+        shareInstance: Boolean(status?.shareInstance),
+        connectedToSharedInstance: Boolean(status?.connectedToSharedInstance),
+        sharedInstanceMode: status?.sharedInstanceMode || "disabled",
+        transportActive: Boolean(status?.transportActive),
+      };
+    } catch {
+      // Keep last known status if the binding is unavailable.
+    }
   }
 
   async function syncMobileChromeTheme(current = theme) {
@@ -2140,6 +2168,30 @@ export function createApp() {
     await loadInterfaces();
   }
 
+  async function applyEnableTransport(enabled: boolean) {
+    await SetEnableTransport(enabled);
+    await loadReticulumStatus();
+  }
+
+  async function toggleTransport(enabled: boolean) {
+    if (enabled && mobileUI) {
+      transportMobileConfirmOpen = true;
+      return;
+    }
+    await applyEnableTransport(enabled);
+  }
+
+  async function confirmEnableTransportMobile() {
+    transportMobileConfirmOpen = false;
+    await applyEnableTransport(true);
+  }
+
+  async function toggleShareInstance(enabled: boolean) {
+    await SetShareInstance(enabled);
+    await loadReticulumStatus();
+    showPluginToast(t("settings.shareInstanceRestartHint"));
+  }
+
   async function exportThemeFile() {
     const json = await ExportTheme();
     const blob = new Blob([json], { type: "application/json" });
@@ -2496,6 +2548,9 @@ export function createApp() {
     get interfaces() {
       return interfaces;
     },
+    get reticulumStatus() {
+      return reticulumStatus;
+    },
     get configPath() {
       return configPath;
     },
@@ -2640,6 +2695,12 @@ export function createApp() {
     },
     set restartReticulumConfirmOpen(value) {
       restartReticulumConfirmOpen = value;
+    },
+    get transportMobileConfirmOpen() {
+      return transportMobileConfirmOpen;
+    },
+    set transportMobileConfirmOpen(value) {
+      transportMobileConfirmOpen = value;
     },
     get closeAllConfirmOpen() {
       return closeAllConfirmOpen;
@@ -2891,6 +2952,9 @@ export function createApp() {
     reloadPlugins,
     loadStoreHealth,
     toggleInterface,
+    toggleTransport,
+    confirmEnableTransportMobile,
+    toggleShareInstance,
     exportThemeFile,
     importThemeFile,
     clearDevLogsPanel,

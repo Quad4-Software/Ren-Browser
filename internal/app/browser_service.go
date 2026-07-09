@@ -310,6 +310,40 @@ func (s *BrowserService) SetInterfaceEnabled(name string, enabled bool) error {
 	return nil
 }
 
+func (s *BrowserService) SetEnableTransport(enabled bool) error {
+	s.mu.RLock()
+	stack := s.stack
+	s.mu.RUnlock()
+	if stack == nil {
+		return errors.New("reticulum not initialized")
+	}
+	if err := stack.SetEnableTransport(enabled); err != nil {
+		return err
+	}
+	s.log("info", "transport updated", fmt.Sprintf("enabled=%v", enabled))
+	if s.app != nil {
+		s.app.Event.Emit("rns:status", "reload")
+	}
+	return nil
+}
+
+func (s *BrowserService) SetShareInstance(enabled bool) error {
+	s.mu.RLock()
+	stack := s.stack
+	s.mu.RUnlock()
+	if stack == nil {
+		return errors.New("reticulum not initialized")
+	}
+	if err := stack.SetShareInstance(enabled); err != nil {
+		return err
+	}
+	s.log("info", "share instance updated", fmt.Sprintf("enabled=%v", enabled))
+	if s.app != nil {
+		s.app.Event.Emit("rns:status", "reload")
+	}
+	return nil
+}
+
 func (s *BrowserService) SetLogLevel(level int) int {
 	if level < debug.DebugCritical {
 		level = debug.DebugCritical

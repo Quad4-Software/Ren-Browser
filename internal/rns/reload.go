@@ -25,8 +25,6 @@ func sliceEqual(a, b []string) bool {
 }
 
 func interfaceConfigsEqualForReload(a, b *common.InterfaceConfig) bool {
-	a = EffectiveInterfaceConfig(a) // FIXME(user1): drop when BackboneClientInterface is vendored
-	b = EffectiveInterfaceConfig(b) // FIXME(user1): drop when BackboneClientInterface is vendored
 	if a == nil && b == nil {
 		return true
 	}
@@ -54,7 +52,9 @@ func interfaceConfigsEqualForReload(a, b *common.InterfaceConfig) bool {
 		a.Passphrase == b.Passphrase &&
 		a.IFACSize == b.IFACSize &&
 		a.IFACNetname == b.IFACNetname &&
-		a.IFACNetkey == b.IFACNetkey
+		a.IFACNetkey == b.IFACNetkey &&
+		a.Command == b.Command &&
+		a.RespawnDelay == b.RespawnDelay
 }
 
 func (s *Stack) tearDownInterface(iface interfaces.Interface) {
@@ -76,6 +76,11 @@ func (s *Stack) ReloadInterfaces(cfg *common.ReticulumConfig) error {
 	if s.transport == nil {
 		return errors.New("nil transport")
 	}
+	if !s.ownsNetworkInterfaces() {
+		s.cfg = cfg
+		s.transport.SetReticulumConfig(cfg)
+		return nil
+	}
 
 	oldCfg := s.cfg
 	oldByName := make(map[string]interfaces.Interface, len(s.running))
@@ -94,6 +99,7 @@ func (s *Stack) ReloadInterfaces(cfg *common.ReticulumConfig) error {
 		}
 	}
 
+	ctx := s.fromConfigContext()
 	for name, ic := range cfg.Interfaces {
 		if !ic.Enabled {
 			continue
@@ -101,7 +107,7 @@ func (s *Stack) ReloadInterfaces(cfg *common.ReticulumConfig) error {
 		if _, ok := s.running[name]; ok {
 			continue
 		}
-		niface, err := interfaces.NewFromConfig(name, EffectiveInterfaceConfig(ic)) // FIXME(user1): drop EffectiveInterfaceConfig when BackboneClientInterface is vendored
+		niface, err := interfaces.NewFromConfigWithContext(name, ic, ctx)
 		if err != nil {
 			if cfg.PanicOnInterfaceErr {
 				return fmt.Errorf("interface %s: %w", name, err)
@@ -153,4 +159,30 @@ func (s *Stack) setInterfaceEnabled(name string, enabled bool) error {
 		return nil
 	}
 	return s.ReloadInterfaces(s.cfg)
+}
+
+func (s *Stack) SetEnableTransport(enabled bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.cfg == nil {
+		return errConfigNotLoaded
+	}
+	s.cfg.EnableTransport = enabled
+	if err := reticulumconfig.SaveConfig(s.cfg); err != nil {
+		return err
+	}
+	if s.transport != nil {
+		s.transport.SetReticulumConfig(s.cfg)
+	}
+	return nil
+}
+
+func (s *Stack) SetShareInstance(enabled bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.cfg == nil {
+		return errConfigNotLoaded
+	}
+	s.cfg.ShareInstance = enabled
+	return reticulumconfig.SaveConfig(s.cfg)
 }

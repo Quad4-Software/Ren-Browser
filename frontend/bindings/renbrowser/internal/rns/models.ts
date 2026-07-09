@@ -43,4 +43,9 @@ export interface Status {
     "interfaceCount": number;
     "interfacesOnline": number;
     "configPath": string;
+    "enableTransport": boolean;
+    "shareInstance": boolean;
+    "connectedToSharedInstance": boolean;
+    "sharedInstanceMode": string;
+    "transportActive": boolean;
 }

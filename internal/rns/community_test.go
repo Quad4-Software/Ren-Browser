@@ -51,7 +51,7 @@ func TestFilterSeedableInterfaces(t *testing.T) {
 	if len(out) != 2 {
 		t.Fatalf("len = %d, want 2", len(out))
 	}
-	if out[1].Name != "b" || out[1].TypeName != "TCPClientInterface" {
+	if out[1].Name != "b" || out[1].TypeName != "BackboneInterface" {
 		t.Fatalf("backbone item = %+v", out[1])
 	}
 }

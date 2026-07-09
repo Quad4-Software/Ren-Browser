@@ -111,7 +111,7 @@ github.com/wailsapp/wails/v3/pkg/icons
 github.com/wailsapp/wails/v3/pkg/mac
 github.com/wailsapp/wails/v3/pkg/updater
 github.com/wailsapp/wails/v3/pkg/w32
-# github.com/wailsapp/wails/webview2 v1.0.27
+# github.com/wailsapp/wails/webview2 v1.0.28
 ## explicit; go 1.25.0
 github.com/wailsapp/wails/webview2/internal/w32
 github.com/wailsapp/wails/webview2/pkg/combridge
@@ -208,6 +208,7 @@ quad4/reticulum-go/pkg/pathfinder
 quad4/reticulum-go/pkg/rate
 quad4/reticulum-go/pkg/resource
 quad4/reticulum-go/pkg/reticulumconfig
+quad4/reticulum-go/pkg/sharedinstance
 quad4/reticulum-go/pkg/transport
 # quad4/tagparser v0.0.0 => github.com/Quad4-Software/tagparser v0.1.3-0.20260614183136-daa4d5f437ce
 ## explicit; go 1.26.2

@@ -15,6 +15,7 @@
   systemFonts={app.systemFonts}
   keybinds={app.keybinds}
   interfaces={app.interfaces}
+  reticulumStatus={app.reticulumStatus}
   configPath={app.configPath}
   pluginsDir={app.pluginsDir}
   sandboxStatus={app.sandboxStatus}
@@ -66,6 +67,8 @@
   selfTestRunning={app.selfTestRunning}
   onRunSelfTest={app.runSelfTest}
   onToggleInterface={app.toggleInterface}
+  onToggleTransport={app.toggleTransport}
+  onToggleShareInstance={app.toggleShareInstance}
   onExportTheme={() => void app.exportThemeFile()}
   onImportTheme={(json) => void app.importThemeFile(json)}
   onConfigChange={(text) => {

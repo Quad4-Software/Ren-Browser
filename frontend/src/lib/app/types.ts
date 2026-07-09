@@ -64,6 +64,14 @@ export type InterfaceRow = {
   rxBytes: number;
 };
 
+export type ReticulumStatusRow = {
+  enableTransport: boolean;
+  shareInstance: boolean;
+  connectedToSharedInstance: boolean;
+  sharedInstanceMode: string;
+  transportActive: boolean;
+};
+
 export type TabSnapshot = {
   id: string;
   title: string;

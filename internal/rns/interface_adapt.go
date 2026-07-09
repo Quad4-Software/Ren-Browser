@@ -7,82 +7,14 @@ import (
 	"quad4/reticulum-go/pkg/common"
 )
 
-// FIXME(user1): Remove this entire workaround once vendored Reticulum-Go ships
-// BackboneClientInterface and RenBrowser no longer needs to rewrite backbone configs.
-// Until then, community backbone entries (remote/target_host) dial out as TCPClientInterface.
-
-func usesBackboneTCPFallback() bool { return true }
-
-func isBackboneInterfaceType(t string) bool {
-	lower := strings.ToLower(strings.TrimSpace(t))
-	return lower == "backboneinterface" || strings.Contains(lower, "backbone")
-}
-
-// FIXME(user1): Replace with BackboneClientInterface from Reticulum-Go when ready.
-func backboneToTCPClient(cfg *common.InterfaceConfig) (*common.InterfaceConfig, bool) {
-	if cfg == nil || !isBackboneInterfaceType(cfg.Type) {
-		return cfg, false
-	}
-	host := strings.TrimSpace(cfg.TargetHost)
-	port := cfg.TargetPort
-	if port == 0 {
-		port = cfg.Port
-	}
-	if host == "" || port <= 0 {
-		return cfg, false
-	}
-	adapted := *cfg
-	adapted.Type = "TCPClientInterface"
-	adapted.TargetHost = host
-	adapted.TargetPort = port
-	adapted.Address = ""
-	adapted.Port = 0
-	return &adapted, true
-}
-
-// EffectiveInterfaceConfig returns the runtime interface config for the current platform.
-// FIXME(user1): Drop this shim when BackboneClientInterface is available in Reticulum-Go.
+// EffectiveInterfaceConfig returns the runtime interface config.
+// With reticulum-go >= 0.9.9, BackboneClientInterface is native; no rewrite.
 func EffectiveInterfaceConfig(cfg *common.InterfaceConfig) *common.InterfaceConfig {
-	if cfg == nil || !usesBackboneTCPFallback() {
-		return cfg
-	}
-	adapted, ok := backboneToTCPClient(cfg)
-	if !ok {
-		return cfg
-	}
-	return adapted
+	return cfg
 }
 
-// FIXME(user1): Remove after BackboneClientInterface lands; migrates saved backbone client configs.
 func migrateInterfaceConfigs(cfg *common.ReticulumConfig) bool {
-	if cfg == nil || !usesBackboneTCPFallback() {
-		return false
-	}
-	changed := false
-	for name, iface := range cfg.Interfaces {
-		adapted, ok := backboneToTCPClient(iface)
-		if !ok {
-			continue
-		}
-		cfg.Interfaces[name] = adapted
-		changed = true
-	}
-	return changed
-}
-
-// FIXME(user1): Remove when backbone snippets can stay BackboneInterface in config files.
-func rewriteBackboneSnippetToTCP(snippet string) string {
-	lines := strings.Split(snippet, "\n")
-	for i, line := range lines {
-		lower := strings.ToLower(line)
-		if !strings.Contains(lower, "type") || !strings.Contains(lower, "backbone") {
-			continue
-		}
-		replaced := strings.Replace(line, "BackboneInterface", "TCPClientInterface", 1)
-		replaced = strings.Replace(replaced, "backboneinterface", "TCPClientInterface", 1)
-		lines[i] = replaced
-	}
-	return strings.Join(lines, "\n")
+	return false
 }
 
 func IsBackboneInterface(item CommunityInterface) bool {
@@ -97,53 +29,56 @@ func IsBackboneInterface(item CommunityInterface) bool {
 	return strings.Contains(tn, "backbone")
 }
 
-// FIXME(user1): Remove when community directory can expose BackboneClientInterface natively.
-func AdaptCommunityBackboneItem(item CommunityInterface) CommunityInterface {
-	item.Type = "tcp"
-	item.TypeName = "TCPClientInterface"
-	item.Config = rewriteBackboneSnippetToTCP(normalizeConfigSnippet(item.Config))
-	return item
+func IsPipeInterface(item CommunityInterface) bool {
+	if strings.TrimSpace(item.Config) == "" {
+		return false
+	}
+	t := strings.ToLower(strings.TrimSpace(item.Type))
+	tn := strings.ToLower(strings.TrimSpace(item.TypeName))
+	if t == "pipe" || strings.Contains(t, "pipe") {
+		return true
+	}
+	return strings.Contains(tn, "pipe")
 }
 
-func AdaptCommunityItemsForPlatform(items []CommunityInterface) []CommunityInterface {
-	if !usesBackboneTCPFallback() || len(items) == 0 {
-		return items
+func IsI2PInterface(item CommunityInterface) bool {
+	if strings.TrimSpace(item.Config) == "" {
+		return false
 	}
-	out := make([]CommunityInterface, len(items))
-	for i, item := range items {
-		if IsBackboneInterface(item) {
-			out[i] = AdaptCommunityBackboneItem(item)
-		} else {
-			out[i] = item
-		}
+	if strings.Contains(strings.ToLower(strings.TrimSpace(item.Network)), "i2p") {
+		return true
 	}
-	return out
+	t := strings.ToLower(strings.TrimSpace(item.Type))
+	tn := strings.ToLower(strings.TrimSpace(item.TypeName))
+	return strings.Contains(t, "i2p") || strings.Contains(tn, "i2p")
 }
 
 func isOverlayInterface(item CommunityInterface) bool {
 	net := strings.ToLower(strings.TrimSpace(item.Network))
-	if net == "yggdrasil" || net == "i2p" || net == "onion" || net == "tor" {
+	if net == "yggdrasil" || net == "onion" || net == "tor" {
 		return true
 	}
 	t := strings.ToLower(strings.TrimSpace(item.Type))
-	if strings.Contains(t, "i2p") || strings.Contains(t, "yggdrasil") || strings.Contains(t, "onion") || strings.Contains(t, "tor") {
+	if strings.Contains(t, "yggdrasil") || strings.Contains(t, "onion") || strings.Contains(t, "tor") {
 		return true
 	}
 	tn := strings.ToLower(strings.TrimSpace(item.TypeName))
-	if strings.Contains(tn, "i2p") || strings.Contains(tn, "yggdrasil") || strings.Contains(tn, "onion") || strings.Contains(tn, "tor") {
+	if strings.Contains(tn, "yggdrasil") || strings.Contains(tn, "onion") || strings.Contains(tn, "tor") {
 		return true
 	}
 	host := strings.ToLower(strings.TrimSpace(item.Host))
-	if strings.HasSuffix(host, ".i2p") || strings.HasSuffix(host, ".onion") {
+	if strings.HasSuffix(host, ".onion") {
 		return true
 	}
 	name := strings.ToLower(strings.TrimSpace(item.Name))
-	if strings.Contains(name, "i2p") || strings.Contains(name, "yggdrasil") || strings.Contains(name, "onion") || strings.Contains(name, "tor") {
+	if strings.Contains(name, "yggdrasil") || strings.Contains(name, "onion") || strings.Contains(name, "tor") {
 		return true
 	}
 	return false
 }
 
+// FilterSeedableInterfaces keeps TCP client, backbone, pipe, and I2P entries
+// that ship with a config snippet. Overlay networks other than I2P stay excluded.
 func FilterSeedableInterfaces(items []CommunityInterface) []CommunityInterface {
 	out := make([]CommunityInterface, 0, len(items))
 	for _, item := range items {
@@ -153,12 +88,8 @@ func FilterSeedableInterfaces(items []CommunityInterface) []CommunityInterface {
 		if isOverlayInterface(item) {
 			continue
 		}
-		if IsTCPClientInterface(item) {
+		if IsTCPClientInterface(item) || IsBackboneInterface(item) || IsPipeInterface(item) || IsI2PInterface(item) {
 			out = append(out, item)
-			continue
-		}
-		if usesBackboneTCPFallback() && IsBackboneInterface(item) {
-			out = append(out, AdaptCommunityBackboneItem(item))
 		}
 	}
 	return out

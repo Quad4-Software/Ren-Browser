@@ -8,69 +8,19 @@ import (
 	"quad4/reticulum-go/pkg/common"
 )
 
-func TestBackboneToTCPClient(t *testing.T) {
+func TestEffectiveInterfaceConfigPassthrough(t *testing.T) {
 	cfg := &common.InterfaceConfig{
 		Type:       "BackboneInterface",
 		TargetHost: "rns.example.net",
 		TargetPort: 4242,
 		Enabled:    true,
 	}
-	adapted, ok := backboneToTCPClient(cfg)
-	if !ok {
-		t.Fatal("expected conversion")
+	got := EffectiveInterfaceConfig(cfg)
+	if got != cfg {
+		t.Fatal("expected same config pointer")
 	}
-	if adapted.Type != "TCPClientInterface" {
-		t.Fatalf("type = %q", adapted.Type)
-	}
-	if adapted.TargetHost != "rns.example.net" || adapted.TargetPort != 4242 {
-		t.Fatalf("target = %s:%d", adapted.TargetHost, adapted.TargetPort)
-	}
-}
-
-func TestBackboneToTCPClientUsesPortFallback(t *testing.T) {
-	cfg := &common.InterfaceConfig{
-		Type:       "BackboneInterface",
-		TargetHost: "rns.example.net",
-		Port:       7822,
-	}
-	adapted, ok := backboneToTCPClient(cfg)
-	if !ok {
-		t.Fatal("expected conversion")
-	}
-	if adapted.TargetPort != 7822 {
-		t.Fatalf("targetPort = %d", adapted.TargetPort)
-	}
-}
-
-func TestBackboneToTCPClientIgnoresListenAddress(t *testing.T) {
-	cfg := &common.InterfaceConfig{
-		Type:    "BackboneInterface",
-		Address: "127.0.0.1",
-		Port:    4242,
-	}
-	if _, ok := backboneToTCPClient(cfg); ok {
-		t.Fatal("expected no conversion for listen-only backbone config")
-	}
-}
-
-func TestBackboneToTCPClientMissingHost(t *testing.T) {
-	cfg := &common.InterfaceConfig{Type: "BackboneInterface", TargetPort: 4242}
-	if _, ok := backboneToTCPClient(cfg); ok {
-		t.Fatal("expected no conversion without target_host")
-	}
-}
-
-func TestRewriteBackboneSnippetToTCP(t *testing.T) {
-	snippet := "[[MichMesh]]\n  type = BackboneInterface\n  enabled = yes\n  remote = michmesh.example\n  target_port = 4242"
-	out := rewriteBackboneSnippetToTCP(normalizeConfigSnippet(snippet))
-	if strings.Contains(strings.ToLower(out), "backboneinterface") {
-		t.Fatalf("backbone type remains: %q", out)
-	}
-	if !strings.Contains(out, "TCPClientInterface") {
-		t.Fatalf("missing TCP client type: %q", out)
-	}
-	if !strings.Contains(out, "target_host = michmesh.example") {
-		t.Fatalf("missing target_host: %q", out)
+	if got.Type != "BackboneInterface" {
+		t.Fatalf("type = %q", got.Type)
 	}
 }
 
@@ -84,10 +34,33 @@ func TestParseInterfaceFragmentBackboneSnippet(t *testing.T) {
 	if cfg == nil {
 		t.Fatal("missing MichMesh interface")
 	}
-	if cfg.Type != "TCPClientInterface" {
-		t.Fatalf("type = %q, want TCPClientInterface", cfg.Type)
+	if cfg.Type != "BackboneInterface" {
+		t.Fatalf("type = %q, want BackboneInterface", cfg.Type)
 	}
 	if cfg.TargetHost != "michmesh.example" || cfg.TargetPort != 4242 {
 		t.Fatalf("target = %s:%d", cfg.TargetHost, cfg.TargetPort)
+	}
+}
+
+func TestFilterSeedableInterfacesIncludesBackbonePipeI2P(t *testing.T) {
+	items := []CommunityInterface{
+		{Name: "a", Type: "TCPClientInterface", Config: "[[a]]"},
+		{Name: "b", Type: "backbone", TypeName: "BackboneInterface", Config: "[[b]]\n  type = BackboneInterface\n  remote = x.example\n  target_port = 4242"},
+		{Name: "c", Type: "TCPServerInterface", Config: "[[c]]"},
+		{Name: "d", Type: "pipe", TypeName: "PipeInterface", Config: "[[d]]\n  type = PipeInterface\n  command = rnsd"},
+		{Name: "e", Type: "i2p", TypeName: "I2PInterface", Network: "i2p", Config: "[[e]]\n  type = I2PInterface"},
+		{Name: "f", Type: "onion", Network: "onion", Config: "[[f]]"},
+	}
+	out := FilterSeedableInterfaces(items)
+	if len(out) != 4 {
+		t.Fatalf("len = %d, want 4", len(out))
+	}
+	names := make([]string, 0, len(out))
+	for _, item := range out {
+		names = append(names, item.Name)
+	}
+	joined := strings.Join(names, ",")
+	if joined != "a,b,d,e" {
+		t.Fatalf("names = %q", joined)
 	}
 }

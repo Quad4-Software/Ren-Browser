@@ -65,11 +65,6 @@ func loadConfig(override string) (*common.ReticulumConfig, error) {
 		return nil, err
 	}
 	applyRenBrowserDefaults(cfg)
-	if migrateInterfaceConfigs(cfg) { // FIXME(user1): remove migration when backbone client configs are native
-		if err := reticulumconfig.SaveConfig(cfg); err != nil {
-			return nil, err
-		}
-	}
 	cfg.ConfigPath = filepath.Clean(path)
 	return cfg, nil
 }

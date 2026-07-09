@@ -66,6 +66,15 @@
 />
 
 <ConfirmDialog
+  open={app.transportMobileConfirmOpen}
+  title={t("settings.enableTransport")}
+  message={t("settings.enableTransportMobileConfirm")}
+  confirmLabel={t("settings.enableTransport")}
+  onConfirm={app.confirmEnableTransportMobile}
+  onCancel={() => (app.transportMobileConfirmOpen = false)}
+/>
+
+<ConfirmDialog
   open={app.clearHistoryConfirmOpen}
   title={t("history.clear")}
   message={t("history.clearConfirm")}

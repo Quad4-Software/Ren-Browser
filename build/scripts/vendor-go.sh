@@ -4,6 +4,10 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "${root}"
 
+# Ignore a stale vendor/ while resolving modules so go mod tidy bumps
+# (e.g. webview2) can be synced without chicken-and-egg failures.
+export GOFLAGS="${GOFLAGS:--mod=mod}"
+
 bash "${root}/build/scripts/fetch-reticulum-go.sh"
 
 gomod="$(go env GOMODCACHE)"
@@ -15,7 +19,7 @@ go mod download github.com/wailsapp/go-webview2@v1.0.23
 chmod -R u+w "$(dirname "${wv2}")" 2>/dev/null || true
 for arch in arm64 x64 x86; do
   mkdir -p "${wv2}/${arch}"
-  cp "${src}/${arch}/WebView2Loader.dll" "${wv2}/${arch}/"
+  cp -f "${src}/${arch}/WebView2Loader.dll" "${wv2}/${arch}/" 2>/dev/null || true
 done
 
 go mod vendor

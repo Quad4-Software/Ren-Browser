@@ -43,6 +43,14 @@
     rxBytes: number;
   };
 
+  type ReticulumStatusRow = {
+    enableTransport: boolean;
+    shareInstance: boolean;
+    connectedToSharedInstance: boolean;
+    sharedInstanceMode: string;
+    transportActive: boolean;
+  };
+
   type SandboxStatusRow = {
     type: string;
     enabled: boolean;
@@ -55,6 +63,7 @@
     keybinds: KeybindSettings;
     uiLanguage: string;
     interfaces: InterfaceRow[];
+    reticulumStatus: ReticulumStatusRow;
     configPath: string;
     downloadDir: string;
     openLinksInNewTab: boolean;
@@ -103,6 +112,8 @@
     onRestartReticulum: () => void;
     onShutdown: () => void;
     onToggleInterface: (name: string, enabled: boolean) => void;
+    onToggleTransport: (enabled: boolean) => void;
+    onToggleShareInstance: (enabled: boolean) => void;
     onExportTheme: () => void;
     onImportTheme: (json: string) => void;
     onConfigChange: (text: string) => void;
@@ -130,6 +141,7 @@
     keybinds,
     uiLanguage,
     interfaces,
+    reticulumStatus,
     configPath,
     downloadDir = $bindable(),
     openLinksInNewTab,
@@ -173,6 +185,8 @@
     onRestartReticulum,
     onShutdown,
     onToggleInterface,
+    onToggleTransport,
+    onToggleShareInstance,
     onExportTheme,
     onImportTheme,
     onConfigChange,
@@ -708,6 +722,42 @@
   >
     <p class="hint">{t("settings.reticulumInterfacesHint")}</p>
 
+    <div class="rns-toggles">
+      <Toggle
+        label={t("settings.enableTransport")}
+        checked={reticulumStatus.enableTransport}
+        onchange={onToggleTransport}
+      />
+      <p class="hint">{t("settings.enableTransportHint")}</p>
+      <p class="meta">
+        {#if reticulumStatus.connectedToSharedInstance}
+          {t("settings.transportInactiveSharedClient")}
+        {:else if reticulumStatus.transportActive}
+          {t("settings.transportActive")}
+        {:else}
+          {t("settings.transportInactive")}
+        {/if}
+      </p>
+
+      <Toggle
+        label={t("settings.shareInstance")}
+        checked={reticulumStatus.shareInstance}
+        onchange={onToggleShareInstance}
+      />
+      <p class="hint">{t("settings.shareInstanceHint")}</p>
+      <p class="meta">
+        {t("settings.sharedInstanceStatus")}:
+        {#if reticulumStatus.sharedInstanceMode === "server"}
+          {t("settings.sharedInstanceModeServer")}
+        {:else if reticulumStatus.sharedInstanceMode === "client"}
+          {t("settings.sharedInstanceModeClient")}
+        {:else}
+          {t("settings.sharedInstanceModeDisabled")}
+        {/if}
+      </p>
+      <p class="hint">{t("settings.shareInstanceRestartHint")}</p>
+    </div>
+
     <p class="hint" style="margin-top: 1rem;">{t("settings.restartReticulumHint")}</p>
     <div class="reset-row" style="margin-bottom: 1rem;">
       <button type="button" class="reset-btn" onclick={onRestartReticulum}
@@ -1162,6 +1212,16 @@
     margin: 0;
     color: var(--ren-danger);
     font-size: 0.85rem;
+  }
+
+  .rns-toggles {
+    display: grid;
+    gap: 0.45rem;
+    margin: 1rem 0;
+  }
+
+  .rns-toggles .meta {
+    margin: 0;
   }
 
   .ifaces {

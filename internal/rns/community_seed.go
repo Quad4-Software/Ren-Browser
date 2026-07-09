@@ -68,7 +68,7 @@ func ConfigHasOutboundCommunityInterfaces(cfg *common.ReticulumConfig) bool {
 		if t == "tcpclientinterface" || strings.Contains(t, "tcpclient") {
 			return true
 		}
-		if usesBackboneTCPFallback() && strings.Contains(t, "backbone") {
+		if strings.Contains(t, "backbone") || strings.Contains(t, "pipe") || strings.Contains(t, "i2p") {
 			return true
 		}
 	}

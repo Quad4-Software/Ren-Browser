@@ -475,6 +475,10 @@ export function SetDownloadDir(dir: string): $CancellablePromise<string> {
     return $Call.ByID(2475053084, dir);
 }
 
+export function SetEnableTransport(enabled: boolean): $CancellablePromise<void> {
+    return $Call.ByID(2209887871, enabled);
+}
+
 export function SetInterfaceEnabled(name: string, enabled: boolean): $CancellablePromise<void> {
     return $Call.ByID(1901047613, name, enabled);
 }
@@ -493,6 +497,10 @@ export function SetNativeTitlebar(enabled: boolean): $CancellablePromise<$models
 
 export function SetPluginManager(manager: plugins$0.Manager | null): $CancellablePromise<void> {
     return $Call.ByID(3077852421, manager);
+}
+
+export function SetShareInstance(enabled: boolean): $CancellablePromise<void> {
+    return $Call.ByID(2756669151, enabled);
 }
 
 export function SetTheme(theme: $models.ThemeSettings): $CancellablePromise<$models.ThemeSettings> {
