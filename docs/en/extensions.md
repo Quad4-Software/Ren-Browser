@@ -122,7 +122,7 @@ The install preview and extension list show badges:
 | Trusted | Signed by a publisher in the trusted list |
 | Tampered | Extension files changed outside RenBrowser (extension is disabled until you re-enable it) |
 
-During install you can choose **Trust this publisher identity** to add a valid signer to your user trusted list (`~/.renbrowser/trusted_publishers.json`). RenBrowser also ships a small bundled trusted list. The user list is protected by a digest stored in the profile database; external edits without updating the database are detected.
+During install you can choose **Trust this publisher identity** to add a valid signer to your user trusted list (`~/.renbrowser/trusted_publishers.json`). There is no bundled list of trusted publishers. Trust starts empty and grows only from identities you approve. The user list is protected by a digest stored in the profile database. External edits without updating the database are detected.
 
 Sign a directory or zip with `build/scripts/sign-extension.sh` (requires Python `rnid`).
 
