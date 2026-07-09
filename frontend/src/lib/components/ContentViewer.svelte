@@ -152,9 +152,7 @@
       return html;
     }
     try {
-      return renderClientMicronPage(currentURL, raw, micronEngine, {
-        preserveLayout: micronPreserveLayout,
-      });
+      return renderClientMicronPage(currentURL, raw, micronEngine);
     } catch {
       return html;
     }
