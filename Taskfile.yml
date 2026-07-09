@@ -106,8 +106,9 @@ tasks:
   test:regression:
     desc: Reliability and optimization regression suite
     cmds:
-      - go test ./internal/regression/... ./internal/cache/... ./internal/nomadnet/... ./internal/store/... ./internal/app/... ./internal/servermw/... ./internal/limits/... ./internal/apperrors/... ./internal/db/... ./internal/plugins/... ./internal/content/... ./internal/safe/...
+      - go test ./internal/regression/... ./internal/cache/... ./internal/nomadnet/... ./internal/micron/... ./internal/store/... ./internal/app/... ./internal/servermw/... ./internal/limits/... ./internal/apperrors/... ./internal/db/... ./internal/plugins/... ./internal/content/... ./internal/safe/...
       - go test -race -tags=stress -timeout=5m ./internal/cache/...
+      - pnpm --dir frontend exec vitest run src/lib/micron/render-page.test.ts src/lib/micron/ascii-render.test.ts src/lib/components/content-viewer-micron.test.ts src/lib/app/create-app.test.ts
     env:
       GOFLAGS: "-mod=vendor"
 
@@ -225,7 +226,7 @@ tasks:
   test:interop:
     desc: Live Reticulum interop tests (requires network)
     cmds:
-      - go test -tags=interop -timeout=5m ./internal/interop/...
+      - go test -tags=interop -timeout=10m ./internal/interop/...
     env:
       GOFLAGS: "-mod=vendor"
 
