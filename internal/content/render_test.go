@@ -3,6 +3,7 @@ package content_test
 
 import (
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -20,8 +21,12 @@ func TestRenderMicron(t *testing.T) {
 	if out.Kind != "micron" {
 		t.Fatalf("kind = %q", out.Kind)
 	}
-	if !strings.Contains(out.HTML, "Title") {
+	plain := regexp.MustCompile(`<[^>]+>`).ReplaceAllString(out.HTML, "")
+	if !strings.Contains(plain, "Title") {
 		t.Fatalf("html = %s", out.HTML)
+	}
+	if !strings.Contains(out.HTML, `class="Mu-mnt"`) {
+		t.Fatalf("expected force-monospace cells: %s", out.HTML)
 	}
 }
 

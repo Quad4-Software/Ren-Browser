@@ -17,16 +17,22 @@ func TestMicronToHTMLDarkSnapshot(t *testing.T) {
 		"aside note",
 	}, "\n")
 	html := micron.ToHTMLDark(src)
+	plain := plainText(html)
 	want := []string{
 		"Welcome",
 		"Hello mesh.",
-		"/page/index.mu",
 		"aside note",
 	}
 	for _, fragment := range want {
-		if !strings.Contains(html, fragment) {
+		if !strings.Contains(plain, fragment) {
 			t.Fatalf("snapshot missing %q in:\n%s", fragment, html)
 		}
+	}
+	if !strings.Contains(html, "/page/index.mu") {
+		t.Fatalf("snapshot missing link href in:\n%s", html)
+	}
+	if !strings.Contains(html, `class="Mu-mnt"`) {
+		t.Fatalf("expected Mu-mnt cells in:\n%s", html)
 	}
 	if strings.Contains(strings.ToLower(html), "<script") {
 		t.Fatalf("unexpected script in micron html: %s", html)

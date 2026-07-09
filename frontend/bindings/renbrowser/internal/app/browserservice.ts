@@ -352,6 +352,15 @@ export function PluginManager(): $CancellablePromise<plugins$0.Manager | null> {
     return $Call.ByID(1606493335);
 }
 
+/**
+ * PrepareForWake invalidates idle cached links and soft-stale transport paths
+ * after the UI returns from background/suspend. Call before the next page
+ * reload so Fetch does not reuse zombie routes from before sleep.
+ */
+export function PrepareForWake(): $CancellablePromise<nomadnet$0.WakePrepResult> {
+    return $Call.ByID(3516648725);
+}
+
 export function PreviewSuggestedCommunityInterfaces(): $CancellablePromise<rns$0.CommunityInterface[] | null> {
     return $Call.ByID(1578446213);
 }

@@ -201,4 +201,75 @@ describe("createApp controller", () => {
       cleanup();
     });
   });
+
+  it("calls PrepareForWake on android resume before sync", async () => {
+    browserMocks.PrepareForWake.mockResolvedValue({ droppedLinks: 1, expiredPaths: 2 });
+    browserMocks.TakePendingDeepLink.mockResolvedValue("");
+    await withApp(async (app) => {
+      const cleanup = app.mount();
+      await vi.waitFor(() => {
+        expect(runtime.Events.On).toHaveBeenCalledWith(
+          "android:ActivityResumed",
+          expect.any(Function),
+        );
+      });
+      browserMocks.PrepareForWake.mockClear();
+      runtime.emit("android:ActivityResumed");
+      await vi.waitFor(() => {
+        expect(browserMocks.PrepareForWake).toHaveBeenCalled();
+      });
+      cleanup();
+    });
+  });
+
+  it("calls PrepareForWake when document becomes visible", async () => {
+    browserMocks.PrepareForWake.mockResolvedValue({ droppedLinks: 0, expiredPaths: 1 });
+    browserMocks.TakePendingDeepLink.mockResolvedValue("");
+    await withApp(async (app) => {
+      const cleanup = app.mount();
+      await vi.waitFor(() => {
+        expect(runtime.Events.On).toHaveBeenCalledWith("app:deeplink", expect.any(Function));
+      });
+      browserMocks.PrepareForWake.mockClear();
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        get: () => "visible",
+      });
+      document.dispatchEvent(new Event("visibilitychange"));
+      await vi.waitFor(() => {
+        expect(browserMocks.PrepareForWake).toHaveBeenCalled();
+      });
+      cleanup();
+    });
+  });
+
+  it("calls PrepareForWake before ListNodes on resume", async () => {
+    const order: string[] = [];
+    browserMocks.PrepareForWake.mockImplementation(async () => {
+      order.push("wake");
+      return { droppedLinks: 0, expiredPaths: 0 };
+    });
+    browserMocks.ListNodes.mockImplementation(async () => {
+      order.push("nodes");
+      return [];
+    });
+    browserMocks.TakePendingDeepLink.mockResolvedValue("");
+    await withApp(async (app) => {
+      const cleanup = app.mount();
+      await vi.waitFor(() => {
+        expect(runtime.Events.On).toHaveBeenCalledWith(
+          "android:ActivityResumed",
+          expect.any(Function),
+        );
+      });
+      order.length = 0;
+      runtime.emit("android:ActivityResumed");
+      await vi.waitFor(() => {
+        expect(order).toContain("wake");
+        expect(order).toContain("nodes");
+      });
+      expect(order.indexOf("wake")).toBeLessThan(order.indexOf("nodes"));
+      cleanup();
+    });
+  });
 });

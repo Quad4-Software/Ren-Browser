@@ -10,3 +10,11 @@ export interface Node {
     "maxSizeKb": number;
     "lastSeen": number;
 }
+
+/**
+ * WakePrepResult summarizes what PrepareForWake invalidated.
+ */
+export interface WakePrepResult {
+    "droppedLinks": number;
+    "expiredPaths": number;
+}

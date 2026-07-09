@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 import { describe, expect, it } from "vitest";
 import {
+  LARGE_MICRON_RAW_BYTES,
   micronRendererBadgeLabel,
   normalizeMicronRendererPreference,
   nodeHashFromURL,
@@ -28,27 +29,76 @@ describe("micron render-page helpers", () => {
     expect(normalizeMicronRendererPreference("wasm")).toBe("wasm");
   });
 
-  it("resolves auto fallback chain wasm -> go -> js", () => {
+  it("resolves auto to go when server html is present", () => {
     const ctx = {
       wasmEnabled: true,
       wasmAvailable: true,
       wasmReady: true,
       hasServerHtml: true,
     };
-    expect(resolveEffectiveMicronEngine("auto", ctx)).toBe("wasm");
-
-    expect(resolveEffectiveMicronEngine("auto", { ...ctx, wasmReady: false })).toBe("go");
+    expect(resolveEffectiveMicronEngine("auto", ctx)).toBe("go");
 
     expect(
       resolveEffectiveMicronEngine("auto", {
         ...ctx,
-        wasmReady: false,
         hasServerHtml: false,
+      }),
+    ).toBe("wasm");
+
+    expect(
+      resolveEffectiveMicronEngine("auto", {
+        ...ctx,
+        hasServerHtml: false,
+        wasmReady: false,
       }),
     ).toBe("js");
   });
 
-  it("keeps explicit manual preferences", () => {
+  it("forces go for large pages when server html exists", () => {
+    expect(
+      resolveEffectiveMicronEngine("wasm", {
+        wasmEnabled: true,
+        wasmAvailable: true,
+        wasmReady: true,
+        hasServerHtml: true,
+        rawBytes: LARGE_MICRON_RAW_BYTES,
+      }),
+    ).toBe("go");
+
+    expect(
+      resolveEffectiveMicronEngine("auto", {
+        wasmEnabled: true,
+        wasmAvailable: true,
+        wasmReady: true,
+        hasServerHtml: true,
+        rawBytes: LARGE_MICRON_RAW_BYTES + 1,
+      }),
+    ).toBe("go");
+
+    expect(
+      resolveEffectiveMicronEngine("js", {
+        wasmEnabled: true,
+        wasmAvailable: true,
+        wasmReady: true,
+        hasServerHtml: true,
+        rawBytes: LARGE_MICRON_RAW_BYTES,
+      }),
+    ).toBe("js");
+  });
+
+  it("does not force go for large pages without server html", () => {
+    expect(
+      resolveEffectiveMicronEngine("wasm", {
+        wasmEnabled: true,
+        wasmAvailable: true,
+        wasmReady: true,
+        hasServerHtml: false,
+        rawBytes: LARGE_MICRON_RAW_BYTES,
+      }),
+    ).toBe("wasm");
+  });
+
+  it("keeps explicit manual preferences for small pages", () => {
     expect(
       resolveEffectiveMicronEngine("go", {
         wasmEnabled: true,
@@ -66,6 +116,16 @@ describe("micron render-page helpers", () => {
         hasServerHtml: true,
       }),
     ).toBe("js");
+
+    expect(
+      resolveEffectiveMicronEngine("wasm", {
+        wasmEnabled: true,
+        wasmAvailable: true,
+        wasmReady: true,
+        hasServerHtml: true,
+        rawBytes: 1024,
+      }),
+    ).toBe("wasm");
   });
 
   it("preloads wasm for auto and wasm preferences", () => {

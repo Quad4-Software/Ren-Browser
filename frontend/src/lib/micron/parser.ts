@@ -155,6 +155,9 @@ export default class MicronParser extends BaseMicronParser {
   }
 
   injectMonospaceStyles() {
+    if (typeof document === "undefined") {
+      return;
+    }
     if (document.getElementById("micron-monospace-styles")) {
       return;
     }

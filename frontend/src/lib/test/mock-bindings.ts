@@ -147,6 +147,7 @@ export function browserserviceDefaults(): Record<string, unknown> {
     PickPluginWasm: "",
     PickPluginZip: "",
     PluginManager: undefined,
+    PrepareForWake: { droppedLinks: 0, expiredPaths: 0 },
     PreviewSuggestedCommunityInterfaces: [],
     ProfileName: "default",
     ProfilePath: "/tmp/profile",

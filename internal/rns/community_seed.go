@@ -3,23 +3,147 @@ package rns
 
 import (
 	"math/rand"
+	"net"
+	"strconv"
 	"strings"
 
 	"quad4/reticulum-go/pkg/common"
 )
 
-const DefaultCommunityInterfaceCount = 4
+// DefaultCommunityInterfaceCount is how many random community uplinks to seed
+// on first-run / suggested setup. Six gives geographic diversity without
+// opening too many long-lived TCP/backbone sockets.
+const DefaultCommunityInterfaceCount = 6
 
 func PickSeedableCommunityInterfaces(items []CommunityInterface, count int) []CommunityInterface {
-	seedable := FilterSeedableInterfaces(items)
+	seedable := rankSeedableCommunityInterfaces(FilterSeedableInterfaces(items))
 	if len(seedable) == 0 {
 		return nil
 	}
 	rand.Shuffle(len(seedable), func(i, j int) { seedable[i], seedable[j] = seedable[j], seedable[i] })
+	seedable = dedupeCommunityInterfaces(seedable)
 	if count > 0 && len(seedable) > count {
 		seedable = seedable[:count]
 	}
 	return seedable
+}
+
+// rankSeedableCommunityInterfaces prefers clearnet TCP/backbone that look
+// healthy and skips obvious junk (offline, empty host, overlay networks).
+func rankSeedableCommunityInterfaces(items []CommunityInterface) []CommunityInterface {
+	out := make([]CommunityInterface, 0, len(items))
+	for _, item := range items {
+		if !isPreferredCommunitySeed(item) {
+			continue
+		}
+		out = append(out, item)
+	}
+	if len(out) == 0 {
+		return items
+	}
+	return out
+}
+
+func isPreferredCommunitySeed(item CommunityInterface) bool {
+	if strings.TrimSpace(item.Config) == "" {
+		return false
+	}
+	status := strings.ToLower(strings.TrimSpace(item.Status))
+	if status != "" && status != "online" {
+		return false
+	}
+	netName := strings.ToLower(strings.TrimSpace(item.Network))
+	if netName == "i2p" || netName == "yggdrasil" || netName == "onion" || netName == "tor" {
+		return false
+	}
+	if IsI2PInterface(item) {
+		return false
+	}
+	host := strings.TrimSpace(item.Host)
+	if host == "" {
+		host = hostFromConfigSnippet(item.Config)
+	}
+	if host == "" {
+		return false
+	}
+	lowerHost := strings.ToLower(host)
+	if strings.HasSuffix(lowerHost, ".i2p") || strings.HasSuffix(lowerHost, ".onion") {
+		return false
+	}
+	return IsTCPClientInterface(item) || IsBackboneInterface(item)
+}
+
+func hostFromConfigSnippet(snippet string) string {
+	for _, line := range strings.Split(snippet, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if !strings.Contains(trimmed, "=") {
+			continue
+		}
+		eq := strings.IndexByte(trimmed, '=')
+		if eq <= 0 {
+			continue
+		}
+		key := strings.ToLower(strings.TrimSpace(trimmed[:eq]))
+		value := strings.TrimSpace(trimmed[eq+1:])
+		if key == "target_host" || key == "remote" || key == "host" {
+			return value
+		}
+	}
+	return ""
+}
+
+func communityEndpointKey(item CommunityInterface) string {
+	host := strings.ToLower(strings.TrimSpace(item.Host))
+	if host == "" {
+		host = strings.ToLower(hostFromConfigSnippet(item.Config))
+	}
+	port := 0
+	if item.Port != nil {
+		port = *item.Port
+	}
+	if port == 0 {
+		port = portFromConfigSnippet(item.Config)
+	}
+	if host == "" {
+		return "name:" + strings.ToLower(strings.TrimSpace(item.Name))
+	}
+	return net.JoinHostPort(host, strconv.Itoa(port))
+}
+
+func portFromConfigSnippet(snippet string) int {
+	for _, line := range strings.Split(snippet, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if !strings.Contains(trimmed, "=") {
+			continue
+		}
+		eq := strings.IndexByte(trimmed, '=')
+		if eq <= 0 {
+			continue
+		}
+		key := strings.ToLower(strings.TrimSpace(trimmed[:eq]))
+		value := strings.TrimSpace(trimmed[eq+1:])
+		if key == "target_port" || key == "port" {
+			n, err := strconv.Atoi(value)
+			if err == nil {
+				return n
+			}
+		}
+	}
+	return 0
+}
+
+func dedupeCommunityInterfaces(items []CommunityInterface) []CommunityInterface {
+	seen := make(map[string]bool, len(items))
+	out := make([]CommunityInterface, 0, len(items))
+	for _, item := range items {
+		key := communityEndpointKey(item)
+		if key == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, item)
+	}
+	return out
 }
 
 func ApplyCommunityInterfacesToConfig(cfg *common.ReticulumConfig, items []CommunityInterface) []string {

@@ -130,7 +130,7 @@
     "micronPreserveLayout": "Сохранять раскладку строк Micron",
     "micronPreserveLayoutHint": "Фиксированная ширина строк на страницах Micron. Широкая ASCII-графика и меню прокручиваются по горизонтали, а не переносятся.",
     "micronRenderer": "Рендерер Micron (.mu)",
-    "rendererAuto": "Авто (WASM, затем Go, затем JS)",
+    "rendererAuto": "Авто (Go если готов, затем WASM, затем JS)",
     "rendererWasm": "WebAssembly (micron-parser-go)",
     "rendererGo": "Go (сервер micron-parser-go)",
     "rendererJs": "JavaScript (micron-parser-js)",

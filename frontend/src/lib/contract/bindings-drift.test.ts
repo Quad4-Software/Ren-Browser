@@ -30,6 +30,7 @@ describe("bindings contract drift", () => {
       "SetActiveIdentity",
       "GetTabs",
       "SaveTabs",
+      "PrepareForWake",
     ] as const;
 
     for (const name of required) {

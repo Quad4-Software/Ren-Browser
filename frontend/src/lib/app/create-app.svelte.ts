@@ -49,6 +49,7 @@ import {
   OpenURL,
   OpenFreshURL,
   PickDownloadDir,
+  PrepareForWake,
   PreviewSuggestedCommunityInterfaces,
   RetryDownload,
   ResetDatabase,
@@ -198,7 +199,8 @@ export function createApp() {
   let pluginGrantedById = $state<Record<string, string[]>>({});
   let url = $state("");
   let loading = $state(false);
-  let html = $state("");
+  // Large page bodies are reassigned, never deep-mutated; raw avoids proxy cost.
+  let html = $state.raw("");
   let contentType = $state("");
   let error = $state("");
   let errorKind = $state("");
@@ -235,8 +237,8 @@ export function createApp() {
   let pageHighlight = $state("");
   let canGoBack = $state(false);
   let canGoForward = $state(false);
-  let lastRaw = $state("");
-  let binaryB64 = $state("");
+  let lastRaw = $state.raw("");
+  let binaryB64 = $state.raw("");
   let pagePath = $state("");
   let fromCache = $state(false);
   let cachedAt = $state(0);
@@ -325,6 +327,7 @@ export function createApp() {
       wasmAvailable: micronWasmAvailable,
       wasmReady: micronWasmReady,
       hasServerHtml: html.trim().length > 0,
+      rawBytes: lastRaw.length,
     }),
   );
 
@@ -1138,6 +1141,13 @@ export function createApp() {
 
   async function resumeForegroundSync() {
     appForeground = true;
+    // Drop idle links / soft-stale paths before any reload so post-suspend
+    // fetches rediscover instead of hanging on zombie StatusActive caches.
+    try {
+      await PrepareForWake();
+    } catch {
+      // Bindings may be unavailable in tests or early boot.
+    }
     await Promise.all([loadNodes(), loadInterfaces(), refreshHistoryState()]);
     void refreshNetwork();
     void loadStoreHealth();

@@ -130,7 +130,7 @@
     "micronPreserveLayout": "Micron-Zeilenlayout beibehalten",
     "micronPreserveLayoutHint": "Feste Zeilenbreiten auf Micron-Seiten. Breite ASCII-Grafik und Menüs scrollen horizontal statt umzubrechen.",
     "micronRenderer": "Micron-Renderer (.mu)",
-    "rendererAuto": "Automatisch (WASM, dann Go, dann JS)",
+    "rendererAuto": "Automatisch (Go wenn bereit, dann WASM, dann JS)",
     "rendererWasm": "WebAssembly (micron-parser-go)",
     "rendererGo": "Go (micron-parser-go-Server)",
     "rendererJs": "JavaScript (micron-parser-js)",

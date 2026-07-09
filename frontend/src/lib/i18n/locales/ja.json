@@ -130,7 +130,7 @@
     "micronPreserveLayout": "Micron の行レイアウトを保持",
     "micronPreserveLayoutHint": "Micron ページで固定幅の行を維持します。幅の広いアートやメニューは折り返さず横スクロールします。",
     "micronRenderer": "Micron レンダラー (.mu)",
-    "rendererAuto": "自動 (WASM → Go → JS)",
+    "rendererAuto": "自動 (Go 優先 → WASM → JS)",
     "rendererWasm": "WebAssembly (micron-parser-go)",
     "rendererGo": "Go (micron-parser-go サーバー)",
     "rendererJs": "JavaScript (micron-parser-js)",

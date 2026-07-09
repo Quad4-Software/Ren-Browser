@@ -213,22 +213,31 @@ func fileNameFromMetadata(metadata map[string]any) string {
 }
 
 // cachedLink returns the currently active link for destHash, if any, without
-// establishing a new one or touching path discovery.
+// establishing a new one or touching path discovery. Idle links (no traffic
+// beyond linkReuseMaxIdle) are torn down so post-suspend reloads cannot reuse
+// zombie StatusActive entries whose keepalives never ran.
 func (b *Browser) cachedLink(destHash []byte) *rlink.Link {
 	key := hex.EncodeToString(destHash)
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if cached := b.links[key]; cached != nil && cached.GetStatus() == rlink.StatusActive {
-		return cached
+	cached := b.links[key]
+	if cached == nil {
+		delete(b.links, key)
+		return nil
 	}
-	return nil
+	if cached.GetStatus() != rlink.StatusActive || linkIdleDuration(cached) > linkReuseMaxIdle {
+		cached.Teardown()
+		delete(b.links, key)
+		return nil
+	}
+	return cached
 }
 
 func (b *Browser) linkFor(ctx context.Context, destHash []byte, remoteID *identity.Identity) (*rlink.Link, error) {
 	key := hex.EncodeToString(destHash)
 
 	b.mu.Lock()
-	if cached := b.links[key]; cached != nil && cached.GetStatus() == rlink.StatusActive {
+	if cached := b.links[key]; cached != nil && cached.GetStatus() == rlink.StatusActive && linkIdleDuration(cached) <= linkReuseMaxIdle {
 		b.mu.Unlock()
 		return cached, nil
 	}
@@ -286,6 +295,7 @@ func (b *Browser) establishLink(ctx context.Context, destHash []byte, remoteID *
 	}, nil)
 
 	if err := lnk.Establish(); err != nil {
+		b.tr.ExpirePath(destHash)
 		return nil, fmt.Errorf("link establish: %w", err)
 	}
 
@@ -293,9 +303,11 @@ func (b *Browser) establishLink(ctx context.Context, destHash []byte, remoteID *
 	case <-established:
 	case <-ctx.Done():
 		lnk.Teardown()
+		b.tr.ExpirePath(destHash)
 		return nil, fmt.Errorf("no path to node: %s", pathWaitError(ctx.Err()))
 	case <-time.After(45 * time.Second):
 		lnk.Teardown()
+		b.tr.ExpirePath(destHash)
 		return nil, fmt.Errorf("link establish timeout")
 	}
 

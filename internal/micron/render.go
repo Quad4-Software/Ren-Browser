@@ -10,11 +10,6 @@ type Options struct {
 	ForceMonospace bool
 }
 
-// GetForceMonospace is a global hook to dynamically retrieve the ForceMonospace setting.
-var GetForceMonospace func() bool
-
-var darkParser = mp.Parser{DarkTheme: true}
-
 func ToHTML(source string, opts Options) string {
 	p := mp.Parser{
 		DarkTheme:      opts.DarkTheme,
@@ -30,13 +25,11 @@ func ToHTMLDark(source string) string {
 
 func RenderDark(source string) (html, fg, bg string) {
 	pc := mp.ParseHeaderTags(source)
-	force := false
-	if GetForceMonospace != nil {
-		force = GetForceMonospace()
-	}
+	// Always emit Mu-mnt cells so ASCII/box art stays column-aligned.
+	// MicronPreserveLayout is CSS-only (horizontal scroll) and must not gate this.
 	p := mp.Parser{
 		DarkTheme:      true,
-		ForceMonospace: force,
+		ForceMonospace: true,
 	}
 	html = p.ConvertMicronToHTML(source)
 	return html, pc.FG, pc.BG

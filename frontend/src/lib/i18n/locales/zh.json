@@ -130,7 +130,7 @@
     "micronPreserveLayout": "保留 Micron 行布局",
     "micronPreserveLayoutHint": "在 Micron 页面上保持固定宽度行。宽幅艺术和菜单会横向滚动而不是换行。",
     "micronRenderer": "Micron 渲染器 (.mu)",
-    "rendererAuto": "自动（WASM，然后 Go，然后 JS）",
+    "rendererAuto": "自动（有服务端 HTML 时用 Go，然后 WASM，然后 JS）",
     "rendererWasm": "WebAssembly (micron-parser-go)",
     "rendererGo": "Go（micron-parser-go 服务器）",
     "rendererJs": "JavaScript (micron-parser-js)",

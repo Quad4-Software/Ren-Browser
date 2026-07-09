@@ -3,6 +3,7 @@ package regression_test
 
 import (
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -23,8 +24,12 @@ func TestReliabilityPipelineRenderAndClassify(t *testing.T) {
 	if rendered.Kind != "micron" {
 		t.Fatalf("kind=%q", rendered.Kind)
 	}
-	if !strings.Contains(rendered.HTML, "Title") {
+	plain := regexp.MustCompile(`<[^>]+>`).ReplaceAllString(rendered.HTML, "")
+	if !strings.Contains(plain, "Title") {
 		t.Fatal("expected rendered title")
+	}
+	if !strings.Contains(rendered.HTML, `class="Mu-mnt"`) {
+		t.Fatal("expected force-monospace cells for ASCII alignment")
 	}
 
 	kind, _ := apperrors.ClassifyFetch("response too large: received 16 bytes (limit 8)", nil)

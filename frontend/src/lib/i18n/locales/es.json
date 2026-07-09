@@ -130,7 +130,7 @@
     "micronPreserveLayout": "Conservar diseño de líneas Micron",
     "micronPreserveLayoutHint": "Mantiene líneas de ancho fijo en páginas Micron. Arte ASCII y menús anchos se desplazan horizontalmente en lugar de ajustarse.",
     "micronRenderer": "Renderizador Micron (.mu)",
-    "rendererAuto": "Automático (WASM, luego Go, luego JS)",
+    "rendererAuto": "Automático (Go si está listo, luego WASM, luego JS)",
     "rendererWasm": "WebAssembly (micron-parser-go)",
     "rendererGo": "Go (servidor micron-parser-go)",
     "rendererJs": "JavaScript (micron-parser-js)",

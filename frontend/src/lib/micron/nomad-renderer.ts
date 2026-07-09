@@ -340,9 +340,11 @@ export function renderNomadPageByPath(
       renderOptions.nomad_micron_wasm_use === true &&
       typeof globalThis.micronConvert === "function",
   };
+  const darkTheme = renderOptions.darkTheme !== false;
+  const forceMonospace = renderOptions.forceMonospace !== false;
   const p = (pagePathWithoutData || "").toLowerCase();
   if (p.endsWith(".mu")) {
-    const muParser = new MicronParserClass();
+    const muParser = new MicronParserClass(darkTheme, forceMonospace);
     let out = muParser.convertMicronToHtml(content, pagePartials, micronOpts);
     if (nomadDestinationHash) {
       out = isolateNomadLinksInHtml(out, nomadDestinationHash);

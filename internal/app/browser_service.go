@@ -1037,6 +1037,9 @@ func (s *BrowserService) fetchWithRetry(ctx context.Context, nodeHash, path stri
 				return last
 			case <-time.After(wait):
 			}
+			if shouldRefreshPathOnRetry(last.Error) {
+				stack.Browser().RefreshPathForRetry(nodeHash)
+			}
 		}
 		last = stack.Browser().Fetch(ctx, nodeHash, path, req)
 		if last.Error == "" {
@@ -1049,6 +1052,10 @@ func (s *BrowserService) fetchWithRetry(ctx context.Context, nodeHash, path stri
 		}
 	}
 	return last
+}
+
+func shouldRefreshPathOnRetry(errMsg string) bool {
+	return nomadnet.ShouldRefreshPath(errMsg)
 }
 
 func (s *BrowserService) handlePluginScheme(rawURL string, pushHistory bool) (PageResponse, bool) {

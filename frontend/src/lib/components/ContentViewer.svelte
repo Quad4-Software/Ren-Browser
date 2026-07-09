@@ -6,6 +6,7 @@
   import { micronShellStyle } from "$lib/browser/url";
   import { renderDocsPage } from "$lib/browser/docs-render";
   import {
+    LARGE_MICRON_RAW_BYTES,
     parseMicronHeaderColors,
     renderClientMicronPage,
     usesClientMicronRenderer,
@@ -147,34 +148,33 @@
     if (showSource || !isMicron || !usesClientMicronRenderer(micronEngine) || !raw.trim()) {
       return html;
     }
+    if (html.trim() && raw.length >= LARGE_MICRON_RAW_BYTES) {
+      return html;
+    }
     try {
-      return renderClientMicronPage(currentURL, raw, micronEngine);
+      return renderClientMicronPage(currentURL, raw, micronEngine, {
+        preserveLayout: micronPreserveLayout,
+      });
     } catch {
       return html;
     }
   });
 
-  const displayFg = $derived.by(() => {
+  const headerColors = $derived.by(() => {
     if (showSource || !isMicron || !usesClientMicronRenderer(micronEngine) || !raw.trim()) {
-      return pageFg;
+      return { fg: pageFg, bg: pageBg };
+    }
+    if (html.trim() && raw.length >= LARGE_MICRON_RAW_BYTES) {
+      return { fg: pageFg, bg: pageBg };
     }
     try {
-      return parseMicronHeaderColors(raw).fg;
+      return parseMicronHeaderColors(raw);
     } catch {
-      return pageFg;
+      return { fg: pageFg, bg: pageBg };
     }
   });
-
-  const displayBg = $derived.by(() => {
-    if (showSource || !isMicron || !usesClientMicronRenderer(micronEngine) || !raw.trim()) {
-      return pageBg;
-    }
-    try {
-      return parseMicronHeaderColors(raw).bg;
-    } catch {
-      return pageBg;
-    }
-  });
+  const displayFg = $derived(headerColors.fg);
+  const displayBg = $derived(headerColors.bg);
 
   const shellStyle = $derived(micronShellStyle(contentType, displayFg, displayBg));
   const showCacheBanner = $derived(

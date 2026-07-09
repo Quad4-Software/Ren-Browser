@@ -21,6 +21,9 @@ import {
 export type MicronRendererPreference = "auto" | "wasm" | "go" | "js";
 export type MicronEffectiveEngine = "wasm" | "go" | "js";
 
+/** Prefer server-rendered HTML above this raw size to avoid main-thread re-parse. */
+export const LARGE_MICRON_RAW_BYTES = 48 * 1024;
+
 export function usesClientMicronRenderer(engine: MicronEffectiveEngine): boolean {
   return engine === "js" || engine === "wasm";
 }
@@ -49,13 +52,22 @@ export function resolveEffectiveMicronEngine(
     wasmAvailable: boolean;
     wasmReady: boolean;
     hasServerHtml: boolean;
+    rawBytes?: number;
   },
 ): MicronEffectiveEngine {
+  const large = (ctx.rawBytes ?? 0) >= LARGE_MICRON_RAW_BYTES;
+
+  // Large pages already have Go HTML from Navigate; re-parsing with WASM/JS on
+  // the UI thread (DOMPurify + {@html}) is the main source of multi-second lag.
+  if (large && ctx.hasServerHtml && preference !== "js") {
+    return "go";
+  }
+
   if (preference === "wasm") {
     if (ctx.wasmEnabled && ctx.wasmAvailable && ctx.wasmReady && isWebAssemblySupported()) {
       return "wasm";
     }
-    return "js";
+    return ctx.hasServerHtml ? "go" : "js";
   }
   if (preference === "go") {
     return "go";
@@ -63,11 +75,13 @@ export function resolveEffectiveMicronEngine(
   if (preference === "js") {
     return "js";
   }
-  if (ctx.wasmEnabled && ctx.wasmAvailable && ctx.wasmReady && isWebAssemblySupported()) {
-    return "wasm";
-  }
+  // Auto: prefer server Go HTML when present (same micron-parser-go as WASM,
+  // without a second main-thread parse). Then WASM, then JS.
   if (ctx.hasServerHtml) {
     return "go";
+  }
+  if (ctx.wasmEnabled && ctx.wasmAvailable && ctx.wasmReady && isWebAssemblySupported()) {
+    return "wasm";
   }
   return "js";
 }
@@ -109,6 +123,7 @@ export function renderClientMicronPage(
   url: string,
   source: string,
   engine: MicronEffectiveEngine,
+  _opts?: { preserveLayout?: boolean },
 ): string {
   const path = pagePathFromURL(url);
   const nodeHash = nodeHashFromURL(url);
@@ -116,6 +131,10 @@ export function renderClientMicronPage(
   return renderNomadPageByPath(path, source, {}, MicronParser, {
     nomadDestinationHash: nodeHash,
     nomad_micron_wasm_use: useWasm,
+    darkTheme: darkThemeFromDocument(),
+    // Always emit monospace cells so ASCII/box art stays aligned.
+    // preserveLayout only affects CSS overflow in ContentViewer.
+    forceMonospace: true,
     renderMarkdown: true,
     renderHtml: true,
     renderPlaintext: true,
