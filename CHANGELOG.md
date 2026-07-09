@@ -26,6 +26,7 @@ First stable release.
 - Document reader for EPUB and PDF with in-document search and table of contents
 - Extension system with JS and WASM plugins, permission grants, signing, and verification
 - Dark/light themes with JSON import/export and custom accent tokens
+- Optional overlay side panels (Appearance) so panels float over the page instead of shrinking it
 - Localized UI: English, German, Spanish, Russian, Japanese, and Chinese
 - Deep links via `renbrowser://` and `rns://` on desktop, Android, and iOS
 - First-run setup for community interfaces and Reticulum config

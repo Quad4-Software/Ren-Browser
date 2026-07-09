@@ -108,6 +108,8 @@
     "fontFamily": "Font family",
     "fontSize": "Font size ({size}px)",
     "compactToolbar": "Compact toolbar",
+    "overlaySidebars": "Overlay side panels",
+    "overlaySidebarsHint": "Open search, discovery, history, settings, and other panels over the page instead of shrinking the page pane.",
     "customTokens": "Custom tokens",
     "borderColor": "Border color",
     "borderPlaceholder": "#2a3140",

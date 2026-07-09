@@ -289,6 +289,7 @@ export interface ThemeSettings {
     "fontSize": number;
     "customTokens": { [_ in string]?: string } | null;
     "compactToolbar": boolean;
+    "overlaySidebars": boolean;
 }
 
 export interface WindowChrome {

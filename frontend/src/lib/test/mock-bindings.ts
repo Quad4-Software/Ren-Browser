@@ -27,6 +27,7 @@ const defaultTheme = {
   fontSize: 14,
   customTokens: {},
   compactToolbar: false,
+  overlaySidebars: false,
 };
 
 /** Default resolved values for BrowserService bindings used by createApp. */

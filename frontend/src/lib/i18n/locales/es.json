@@ -108,6 +108,8 @@
     "fontFamily": "Familia de fuentes",
     "fontSize": "Tamaño de fuente ({size}px)",
     "compactToolbar": "Barra de herramientas compacta",
+    "overlaySidebars": "Paneles laterales superpuestos",
+    "overlaySidebarsHint": "Abre búsqueda, descubrimiento, historial, ajustes y otros paneles sobre la página en lugar de reducir el panel de la página.",
     "customTokens": "Tokens personalizados",
     "borderColor": "Color del borde",
     "borderPlaceholder": "#2a3140",

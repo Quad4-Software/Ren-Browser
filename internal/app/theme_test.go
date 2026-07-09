@@ -26,12 +26,13 @@ func TestThemeSettingsPersist(t *testing.T) {
 	svc, release := newTestBrowserServiceIn(t, dir)
 
 	want := ThemeSettings{
-		Mode:           "light",
-		Accent:         "#ff0000",
-		FontFamily:     "Georgia, serif",
-		FontSize:       16,
-		CustomTokens:   map[string]string{"border": "#111111"},
-		CompactToolbar: true,
+		Mode:            "light",
+		Accent:          "#ff0000",
+		FontFamily:      "Georgia, serif",
+		FontSize:        16,
+		CustomTokens:    map[string]string{"border": "#111111"},
+		CompactToolbar:  true,
+		OverlaySidebars: true,
 	}
 	svc.SetTheme(want)
 	release()
@@ -56,6 +57,9 @@ func TestThemeSettingsPersist(t *testing.T) {
 	}
 	if !got.CompactToolbar {
 		t.Fatal("expected compactToolbar to persist")
+	}
+	if !got.OverlaySidebars {
+		t.Fatal("expected overlaySidebars to persist")
 	}
 }
 

@@ -8,6 +8,7 @@ export type ThemeSettings = {
   fontSize: number;
   customTokens: Record<string, string>;
   compactToolbar: boolean;
+  overlaySidebars: boolean;
 };
 
 export const defaultTheme = (): ThemeSettings => ({
@@ -17,6 +18,7 @@ export const defaultTheme = (): ThemeSettings => ({
   fontSize: 14,
   customTokens: {},
   compactToolbar: false,
+  overlaySidebars: false,
 });
 
 export function applyTheme(theme: ThemeSettings): void {
@@ -30,6 +32,7 @@ export function applyTheme(theme: ThemeSettings): void {
 
   root.dataset.theme = resolved;
   root.dataset.compactToolbar = theme.compactToolbar ? "true" : "false";
+  root.dataset.overlaySidebars = theme.overlaySidebars ? "true" : "false";
   root.style.setProperty("--ren-accent", theme.accent);
   root.style.setProperty("--ren-font-family", theme.fontFamily);
   root.style.setProperty("--ren-font-size", `${theme.fontSize}px`);

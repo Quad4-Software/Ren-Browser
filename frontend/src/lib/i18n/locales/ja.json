@@ -108,6 +108,8 @@
     "fontFamily": "フォント",
     "fontSize": "フォントサイズ ({size}px)",
     "compactToolbar": "コンパクトツールバー",
+    "overlaySidebars": "サイドパネルをオーバーレイ表示",
+    "overlaySidebarsHint": "検索、ディスカバリー、履歴、設定などのパネルをページ幅を縮めず、ページの上に重ねて開きます。",
     "customTokens": "カスタムトークン",
     "borderColor": "枠線の色",
     "borderPlaceholder": "#2a3140",

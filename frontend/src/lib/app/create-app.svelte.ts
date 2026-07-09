@@ -2576,6 +2576,9 @@ export function createApp() {
     set theme(value) {
       theme = value;
     },
+    get overlaySidebars() {
+      return theme.overlaySidebars;
+    },
     get keybinds() {
       return keybinds;
     },

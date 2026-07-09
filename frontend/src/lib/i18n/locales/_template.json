@@ -108,6 +108,8 @@
     "fontFamily": "",
     "fontSize": "",
     "compactToolbar": "",
+    "overlaySidebars": "",
+    "overlaySidebarsHint": "",
     "customTokens": "",
     "borderColor": "",
     "borderPlaceholder": "",

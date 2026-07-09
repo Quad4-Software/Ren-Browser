@@ -8,5 +8,7 @@ describe("defaultTheme", () => {
     expect(theme.mode).toBe("dark");
     expect(theme.accent).toBe("#60a5fa");
     expect(theme.fontSize).toBe(14);
+    expect(theme.compactToolbar).toBe(false);
+    expect(theme.overlaySidebars).toBe(false);
   });
 });

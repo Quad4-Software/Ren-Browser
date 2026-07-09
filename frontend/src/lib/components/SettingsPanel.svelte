@@ -421,6 +421,14 @@
       checked={theme.compactToolbar}
       onchange={(value) => update("compactToolbar", value)}
     />
+    {#if !mobileUI}
+      <Toggle
+        label={t("settings.overlaySidebars")}
+        checked={theme.overlaySidebars}
+        onchange={(value) => update("overlaySidebars", value)}
+      />
+      <p class="hint">{t("settings.overlaySidebarsHint")}</p>
+    {/if}
   </SettingsSection>
 
   <SettingsSection

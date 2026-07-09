@@ -108,6 +108,8 @@
     "fontFamily": "字体",
     "fontSize": "字号 ({size}px)",
     "compactToolbar": "紧凑工具栏",
+    "overlaySidebars": "侧栏以浮层显示",
+    "overlaySidebarsHint": "打开搜索、发现、历史、设置等面板时叠在页面上方，而不是压缩页面区域。",
     "customTokens": "自定义令牌",
     "borderColor": "边框颜色",
     "borderPlaceholder": "#2a3140",

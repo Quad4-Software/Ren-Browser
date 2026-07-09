@@ -87,12 +87,13 @@ type TabSnapshot = store.TabSnapshot
 type HistoryEntry = store.HistoryEntry
 
 type ThemeSettings struct {
-	Mode           string            `json:"mode"`
-	Accent         string            `json:"accent"`
-	FontFamily     string            `json:"fontFamily"`
-	FontSize       int               `json:"fontSize"`
-	CustomTokens   map[string]string `json:"customTokens"`
-	CompactToolbar bool              `json:"compactToolbar"`
+	Mode            string            `json:"mode"`
+	Accent          string            `json:"accent"`
+	FontFamily      string            `json:"fontFamily"`
+	FontSize        int               `json:"fontSize"`
+	CustomTokens    map[string]string `json:"customTokens"`
+	CompactToolbar  bool              `json:"compactToolbar"`
+	OverlaySidebars bool              `json:"overlaySidebars"`
 }
 
 type BrowserService struct {

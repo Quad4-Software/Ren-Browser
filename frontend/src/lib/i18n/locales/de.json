@@ -108,6 +108,8 @@
     "fontFamily": "Schriftfamilie",
     "fontSize": "Schriftgröße ({size}px)",
     "compactToolbar": "Kompakte Symbolleiste",
+    "overlaySidebars": "Seitenpanels als Overlay",
+    "overlaySidebarsHint": "Öffnet Suche, Entdeckung, Verlauf, Einstellungen und andere Panels über der Seite, statt die Seitenbreite zu verkleinern.",
     "customTokens": "Benutzerdefinierte Tokens",
     "borderColor": "Rahmenfarbe",
     "borderPlaceholder": "#2a3140",

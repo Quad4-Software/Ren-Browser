@@ -9,12 +9,13 @@ const themeSettingKey = "theme"
 
 func DefaultThemeSettings() ThemeSettings {
 	return ThemeSettings{
-		Mode:           "dark",
-		Accent:         "#60a5fa",
-		FontFamily:     "system-ui, -apple-system, Segoe UI, sans-serif",
-		FontSize:       14,
-		CustomTokens:   map[string]string{},
-		CompactToolbar: false,
+		Mode:            "dark",
+		Accent:          "#60a5fa",
+		FontFamily:      "system-ui, -apple-system, Segoe UI, sans-serif",
+		FontSize:        14,
+		CustomTokens:    map[string]string{},
+		CompactToolbar:  false,
+		OverlaySidebars: false,
 	}
 }
 
@@ -38,6 +39,7 @@ func mergeThemeSettings(saved ThemeSettings) ThemeSettings {
 		defaults.CustomTokens = tokens
 	}
 	defaults.CompactToolbar = saved.CompactToolbar
+	defaults.OverlaySidebars = saved.OverlaySidebars
 	return defaults
 }
 
