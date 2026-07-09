@@ -35,9 +35,8 @@
   .label {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: break-word;
+    word-break: normal;
     color: var(--ren-fg);
     font-size: 0.9rem;
   }

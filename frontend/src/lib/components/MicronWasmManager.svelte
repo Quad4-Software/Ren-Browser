@@ -285,13 +285,15 @@
   .parser-label {
     color: var(--ren-fg);
     font-size: 0.9rem;
-    word-break: break-word;
+    overflow-wrap: break-word;
+    word-break: normal;
   }
 
   .parser-detail {
     color: var(--ren-muted);
     font-size: 0.78rem;
-    word-break: break-all;
+    overflow-wrap: anywhere;
+    word-break: normal;
   }
 
   .remove-btn {

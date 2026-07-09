@@ -1185,7 +1185,8 @@
     margin: 0;
     color: var(--ren-muted);
     font-size: 0.82rem;
-    word-break: break-all;
+    overflow-wrap: break-word;
+    word-break: normal;
   }
 
   .panel-link {

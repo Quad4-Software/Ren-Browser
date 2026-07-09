@@ -125,7 +125,8 @@
     margin: 0.2rem 0 0;
     color: var(--ren-muted);
     font-size: 0.82rem;
-    word-break: break-all;
+    overflow-wrap: anywhere;
+    word-break: normal;
   }
 
   .path-row {
