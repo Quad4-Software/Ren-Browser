@@ -11,6 +11,7 @@ export CGO_ENABLED=0
 goos="${GOOS:-linux}"
 goarch="${GOARCH:-amd64}"
 repro_commit="${GIT_COMMIT:-deadbeef}"
+repro_time="${BUILD_TIME:-2026-07-10T00:00:00Z}"
 out_a="${root}/bin/repro-check-a"
 out_b="${root}/bin/repro-check-b"
 
@@ -25,6 +26,7 @@ build_once() {
   task build:server \
     OUTPUT="${out}" \
     GIT_COMMIT="${repro_commit}" \
+    BUILD_TIME="${repro_time}" \
     GOOS="${goos}" \
     GOARCH="${goarch}"
 }
