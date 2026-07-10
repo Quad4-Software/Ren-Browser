@@ -153,7 +153,7 @@
     "shareInstanceRestartHint": "Reinicia Reticulum para aplicar la configuración de instancia compartida.",
     "sharedInstanceStatus": "Estado de instancia compartida",
     "sharedInstanceModeDisabled": "Sin compartir — este proceso usa sus propias interfaces",
-    "sharedInstanceModeServer": "Sirviendo — otras apps locales pueden conectarse",
+    "sharedInstanceModeServer": "Sirviendo: otras apps locales pueden conectarse",
     "sharedInstanceModeClient": "Conectado — usando otra instancia compartida local",
     "transportActive": "Transporte activo",
     "transportInactive": "Transporte inactivo",

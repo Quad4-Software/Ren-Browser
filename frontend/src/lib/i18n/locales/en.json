@@ -153,7 +153,7 @@
     "shareInstanceRestartHint": "Restart Reticulum to apply the shared instance setting.",
     "sharedInstanceStatus": "Shared instance status",
     "sharedInstanceModeDisabled": "Not sharing — this process owns its own interfaces",
-    "sharedInstanceModeServer": "Serving — other local apps can connect to this instance",
+    "sharedInstanceModeServer": "Serving: other local apps can connect to this instance",
     "sharedInstanceModeClient": "Connected — using another local shared instance",
     "transportActive": "Transport active",
     "transportInactive": "Transport inactive",

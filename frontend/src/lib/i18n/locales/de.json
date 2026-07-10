@@ -153,7 +153,7 @@
     "shareInstanceRestartHint": "Starten Sie Reticulum neu, um die Einstellung für die gemeinsame Instanz anzuwenden.",
     "sharedInstanceStatus": "Status der gemeinsamen Instanz",
     "sharedInstanceModeDisabled": "Nicht geteilt — dieser Prozess besitzt eigene Schnittstellen",
-    "sharedInstanceModeServer": "Server — andere lokale Apps können sich verbinden",
+    "sharedInstanceModeServer": "Server: andere lokale Apps können sich verbinden",
     "sharedInstanceModeClient": "Verbunden — nutzt eine andere lokale gemeinsame Instanz",
     "transportActive": "Transport aktiv",
     "transportInactive": "Transport inaktiv",

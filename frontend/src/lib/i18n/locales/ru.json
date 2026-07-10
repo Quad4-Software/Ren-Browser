@@ -153,7 +153,7 @@
     "shareInstanceRestartHint": "Перезапустите Reticulum, чтобы применить настройку общего экземпляра.",
     "sharedInstanceStatus": "Статус общего экземпляра",
     "sharedInstanceModeDisabled": "Не делится — этот процесс использует свои интерфейсы",
-    "sharedInstanceModeServer": "Сервер — другие локальные приложения могут подключаться",
+    "sharedInstanceModeServer": "Сервер: другие локальные приложения могут подключаться",
     "sharedInstanceModeClient": "Подключён — используется другой локальный общий экземпляр",
     "transportActive": "Транспорт активен",
     "transportInactive": "Транспорт неактивен",

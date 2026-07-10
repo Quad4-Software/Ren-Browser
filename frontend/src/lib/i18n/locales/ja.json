@@ -153,7 +153,7 @@
     "shareInstanceRestartHint": "共有インスタンス設定を適用するには Reticulum を再起動してください。",
     "sharedInstanceStatus": "共有インスタンスの状態",
     "sharedInstanceModeDisabled": "非共有 — このプロセスが自身のインターフェースを所有",
-    "sharedInstanceModeServer": "提供中 — 他のローカルアプリが接続可能",
+    "sharedInstanceModeServer": "提供中: 他のローカルアプリが接続可能",
     "sharedInstanceModeClient": "接続中 — 別のローカル共有インスタンスを使用",
     "transportActive": "トランスポート有効",
     "transportInactive": "トランスポート無効",

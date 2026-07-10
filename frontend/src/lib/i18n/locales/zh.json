@@ -153,7 +153,7 @@
     "shareInstanceRestartHint": "重启 Reticulum 以应用共享实例设置。",
     "sharedInstanceStatus": "共享实例状态",
     "sharedInstanceModeDisabled": "未共享 — 本进程使用自己的接口",
-    "sharedInstanceModeServer": "服务中 — 其他本地应用可连接",
+    "sharedInstanceModeServer": "服务中: 其他本地应用可连接",
     "sharedInstanceModeClient": "已连接 — 正在使用其他本地共享实例",
     "transportActive": "传输已激活",
     "transportInactive": "传输未激活",
