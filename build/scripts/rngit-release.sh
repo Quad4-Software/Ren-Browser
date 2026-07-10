@@ -8,13 +8,17 @@ RNGIT_REMOTE="${RNGIT_REMOTE:-rns://06a54b505bb67b25ef3f8097e8001edc/public/ren-
 VERSION="${VERSION:-$(grep '^version:' build/brand.yml | sed 's/version: *//' | tr -d '"')}"
 DIST_DIR="${DIST_DIR:-${root}/dist}"
 LOCAL=false
+SKIP_BUILD=false
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--local] [--version VERSION] [--dist PATH]
+Usage: $(basename "$0") [--local] [--skip-build] [--version VERSION] [--dist PATH]
 
 Build Ren Browser release binaries (no AppImage or installers) and publish
 them with rngit release create.
+
+If --skip-build is provided, the script will not run any 'task' commands and
+will expect the required artifacts to already be present in the --dist directory.
 
 Artifacts:
   renbrowser-linux-amd64
@@ -30,6 +34,10 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --local|-L)
       LOCAL=true
+      shift
+      ;;
+    --skip-build)
+      SKIP_BUILD=true
       shift
       ;;
     --version)
@@ -64,47 +72,60 @@ if ! command -v rngit >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ -z "${ANDROID_HOME:-}" && -z "${ANDROID_SDK_ROOT:-}" ]]; then
-  echo "$(basename "$0"): ANDROID_HOME or ANDROID_SDK_ROOT is required." >&2
-  exit 1
-fi
-
-for var in ANDROID_KEYSTORE_FILE ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
-  if [[ -z "${!var:-}" ]]; then
-    echo "$(basename "$0"): ${var} is required for a signed release APK." >&2
+if [[ "${SKIP_BUILD}" == "false" ]]; then
+  if [[ -z "${ANDROID_HOME:-}" && -z "${ANDROID_SDK_ROOT:-}" ]]; then
+    echo "$(basename "$0"): ANDROID_HOME or ANDROID_SDK_ROOT is required." >&2
     exit 1
   fi
-done
 
-if [[ ! -f "${ANDROID_KEYSTORE_FILE}" ]]; then
-  echo "$(basename "$0"): keystore not found: ${ANDROID_KEYSTORE_FILE}" >&2
-  exit 1
+  for var in ANDROID_KEYSTORE_FILE ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+    if [[ -z "${!var:-}" ]]; then
+      echo "$(basename "$0"): ${var} is required for a signed release APK." >&2
+      exit 1
+    fi
+  done
+
+  if [[ ! -f "${ANDROID_KEYSTORE_FILE}" ]]; then
+    echo "$(basename "$0"): keystore not found: ${ANDROID_KEYSTORE_FILE}" >&2
+    exit 1
+  fi
+
+  echo "Cleaning bin/"
+  rm -rf bin
+  mkdir -p bin
+
+  echo "Preparing ${DIST_DIR}"
+  rm -rf "${DIST_DIR}"
+  mkdir -p "${DIST_DIR}"
+
+  echo "Building Linux amd64 desktop binary..."
+  task linux:build ARCH=amd64 OUTPUT=bin/renbrowser-linux-amd64
+  install -m 755 bin/renbrowser-linux-amd64 "${DIST_DIR}/renbrowser-linux-amd64"
+
+  echo "Building Windows amd64 binary..."
+  task windows:build ARCH=amd64
+  install -m 644 bin/renbrowser.exe "${DIST_DIR}/renbrowser-windows-amd64.exe"
+  rm -f bin/renbrowser.exe
+
+  echo "Building Linux amd64 server binary..."
+  task build:server GOOS=linux GOARCH=amd64 OUTPUT=bin/renbrowser-server-linux-amd64
+  install -m 755 bin/renbrowser-server-linux-amd64 "${DIST_DIR}/renbrowser-server-linux-amd64"
+
+  echo "Building signed Android release APK..."
+  task package:android
+  install -m 644 bin/renbrowser.apk "${DIST_DIR}/renbrowser-android.apk"
+else
+  echo "Skipping build; ensuring ${DIST_DIR} exists..."
+  if [[ ! -d "${DIST_DIR}" ]]; then
+    echo "$(basename "$0"): --skip-build provided but ${DIST_DIR} does not exist." >&2
+    exit 1
+  fi
+  # Check for at least one expected artifact to avoid empty releases
+  if [[ -z "$(ls -A "${DIST_DIR}")" ]]; then
+    echo "$(basename "$0"): --skip-build provided but ${DIST_DIR} is empty." >&2
+    exit 1
+  fi
 fi
-
-echo "Cleaning bin/"
-rm -rf bin
-mkdir -p bin
-
-echo "Preparing ${DIST_DIR}"
-rm -rf "${DIST_DIR}"
-mkdir -p "${DIST_DIR}"
-
-echo "Building Linux amd64 desktop binary..."
-task linux:build ARCH=amd64 OUTPUT=bin/renbrowser-linux-amd64
-install -m 755 bin/renbrowser-linux-amd64 "${DIST_DIR}/renbrowser-linux-amd64"
-
-echo "Building Windows amd64 binary..."
-task windows:build ARCH=amd64
-install -m 644 bin/renbrowser.exe "${DIST_DIR}/renbrowser-windows-amd64.exe"
-rm -f bin/renbrowser.exe
-
-echo "Building Linux amd64 server binary..."
-task build:server GOOS=linux GOARCH=amd64 OUTPUT=bin/renbrowser-server-linux-amd64
-install -m 755 bin/renbrowser-server-linux-amd64 "${DIST_DIR}/renbrowser-server-linux-amd64"
-
-echo "Building signed Android release APK..."
-task package:android
-install -m 644 bin/renbrowser.apk "${DIST_DIR}/renbrowser-android.apk"
 
 echo "Release artifacts:"
 ls -la "${DIST_DIR}"

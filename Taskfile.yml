@@ -427,13 +427,15 @@ tasks:
   release:rngit:
     desc: Build Linux/Windows/server/APK binaries and publish an rngit release
     cmds:
-      - bash build/scripts/rngit-release.sh
+      - bash build/scripts/rngit-release.sh {{if .SKIP_BUILD}}--skip-build{{end}}
     env:
       GOFLAGS: "-mod=vendor"
 
   release:rngit:local:
     desc: Build release binaries and create a local rngit manifest without uploading
     cmds:
-      - bash build/scripts/rngit-release.sh --local
+      - bash build/scripts/rngit-release.sh --local {{if .SKIP_BUILD}}--skip-build{{end}}
     env:
       GOFLAGS: "-mod=vendor"
+
+  # ...
