@@ -88,6 +88,10 @@ export function DeleteIdentity(id: string): $CancellablePromise<void> {
     return $Call.ByID(2149079298, id);
 }
 
+export function DeleteInterface(name: string): $CancellablePromise<void> {
+    return $Call.ByID(1486848707, name);
+}
+
 export function DevLog(level: string, message: string, detail: string): $CancellablePromise<void> {
     return $Call.ByID(2873310536, level, message, detail);
 }
