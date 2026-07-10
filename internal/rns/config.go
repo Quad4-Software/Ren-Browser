@@ -24,6 +24,9 @@ func ensureRenBrowserConfig(path string) error {
 			return err
 		}
 		applyRenBrowserDefaults(cfg)
+		// Explicitly set these only on first creation
+		cfg.EnableTransport = false
+		cfg.ShareInstance = false
 		return reticulumconfig.SaveConfig(cfg)
 	}
 	return nil
@@ -36,9 +39,6 @@ func applyRenBrowserDefaults(cfg *common.ReticulumConfig) {
 	if cfg.AppName == "" || cfg.AppName == "Go Client" {
 		cfg.AppName = brand.DisplayName
 	}
-
-	cfg.EnableTransport = false
-	cfg.ShareInstance = false
 }
 
 func loadConfig(override string) (*common.ReticulumConfig, error) {
