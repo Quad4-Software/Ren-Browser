@@ -311,6 +311,24 @@ func (s *BrowserService) SetInterfaceEnabled(name string, enabled bool) error {
 	return nil
 }
 
+func (s *BrowserService) DeleteInterface(name string) error {
+	s.mu.RLock()
+	stack := s.stack
+	s.mu.RUnlock()
+	if stack == nil {
+		return errors.New("reticulum not initialized")
+	}
+	err := stack.DeleteInterface(name)
+	if err != nil {
+		return err
+	}
+	s.log("info", "interface deleted", name)
+	if s.app != nil {
+		s.app.Event.Emit("rns:status", "reload")
+	}
+	return nil
+}
+
 func (s *BrowserService) SetEnableTransport(enabled bool) error {
 	s.mu.RLock()
 	stack := s.stack

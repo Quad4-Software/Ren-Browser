@@ -753,15 +753,21 @@
         onchange={onToggleShareInstance}
       />
       <p class="hint">{t("settings.shareInstanceHint")}</p>
-      <p class="meta">
-        {t("settings.sharedInstanceStatus")}:
-        {#if reticulumStatus.sharedInstanceMode === "server"}
-          {t("settings.sharedInstanceModeServer")}
-        {:else if reticulumStatus.sharedInstanceMode === "client"}
-          {t("settings.sharedInstanceModeClient")}
-        {:else}
-          {t("settings.sharedInstanceModeDisabled")}
-        {/if}
+      <p class="meta sharedInstanceStatus">
+        <span class="label">{t("settings.sharedInstanceStatus")}:</span>
+        <span
+          class="status-badge"
+          class:server={reticulumStatus.sharedInstanceMode === "server"}
+          class:client={reticulumStatus.sharedInstanceMode === "client"}
+        >
+          {#if reticulumStatus.sharedInstanceMode === "server"}
+            {t("settings.sharedInstanceModeServer")}
+          {:else if reticulumStatus.sharedInstanceMode === "client"}
+            {t("settings.sharedInstanceModeClient")}
+          {:else}
+            {t("settings.sharedInstanceModeDisabled")}
+          {/if}
+        </span>
       </p>
       <p class="hint">{t("settings.shareInstanceRestartHint")}</p>
     </div>
@@ -1297,6 +1303,38 @@
 
   .meta {
     font-size: 0.8rem;
+  }
+
+  .sharedInstanceStatus {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.35rem;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--ren-surface-muted);
+    color: var(--ren-muted);
+    border: 1px solid var(--ren-border);
+  }
+
+  .status-badge.server {
+    background: color-mix(in srgb, var(--ren-accent) 12%, var(--ren-surface-muted));
+    color: var(--ren-accent);
+    border-color: color-mix(in srgb, var(--ren-accent) 35%, var(--ren-border));
+  }
+
+  .status-badge.client {
+    background: color-mix(in srgb, var(--ren-success, #3d9a5f) 12%, var(--ren-surface-muted));
+    color: var(--ren-success, #3d9a5f);
+    border-color: color-mix(in srgb, var(--ren-success, #3d9a5f) 35%, var(--ren-border));
   }
 
   .sandbox-card {

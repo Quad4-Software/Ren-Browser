@@ -255,6 +255,8 @@
     padding: 0.65rem 0.85rem;
     background: var(--ren-chrome-bg);
     border-bottom: 1px solid var(--ren-border);
+    position: relative;
+    z-index: 1000;
   }
 
   .nav-cluster,

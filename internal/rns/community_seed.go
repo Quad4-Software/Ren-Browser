@@ -74,7 +74,7 @@ func isPreferredCommunitySeed(item CommunityInterface) bool {
 }
 
 func hostFromConfigSnippet(snippet string) string {
-	for _, line := range strings.Split(snippet, "\n") {
+	for line := range strings.SplitSeq(snippet, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if !strings.Contains(trimmed, "=") {
 			continue
@@ -111,7 +111,7 @@ func communityEndpointKey(item CommunityInterface) string {
 }
 
 func portFromConfigSnippet(snippet string) int {
-	for _, line := range strings.Split(snippet, "\n") {
+	for line := range strings.SplitSeq(snippet, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if !strings.Contains(trimmed, "=") {
 			continue

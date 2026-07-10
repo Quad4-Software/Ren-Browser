@@ -147,3 +147,9 @@ func (s *Stack) SetInterfaceEnabled(name string, enabled bool) error {
 	defer s.mu.Unlock()
 	return s.setInterfaceEnabled(name, enabled)
 }
+
+func (s *Stack) DeleteInterface(name string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.deleteInterface(name)
+}

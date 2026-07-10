@@ -161,6 +161,23 @@ func (s *Stack) setInterfaceEnabled(name string, enabled bool) error {
 	return s.ReloadInterfaces(s.cfg)
 }
 
+func (s *Stack) deleteInterface(name string) error {
+	if s.cfg == nil {
+		return errConfigNotLoaded
+	}
+	if _, ok := s.cfg.Interfaces[name]; !ok {
+		return errInterfaceNotFound
+	}
+	delete(s.cfg.Interfaces, name)
+	if err := reticulumconfig.SaveConfig(s.cfg); err != nil {
+		return err
+	}
+	if !s.started {
+		return nil
+	}
+	return s.ReloadInterfaces(s.cfg)
+}
+
 func (s *Stack) SetEnableTransport(enabled bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

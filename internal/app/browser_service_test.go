@@ -28,3 +28,12 @@ func TestHistoryNavigation(t *testing.T) {
 		t.Fatal("expected can go forward after back")
 	}
 }
+
+func TestDeleteInterface(t *testing.T) {
+	svc := newTestService(t)
+
+	err := svc.DeleteInterface("non_existent")
+	if err == nil {
+		t.Fatal("expected error for non-existent interface")
+	}
+}
