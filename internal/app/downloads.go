@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -255,11 +256,27 @@ func downloadNameFromURL(rawURL string) string {
 	if rawURL == "license:" {
 		return "LICENSE"
 	}
+
+	// Check for 'a' parameter in query string (rngit artifact name)
+	if u, err := url.Parse(rawURL); err == nil && u != nil {
+		if name := u.Query().Get("a"); name != "" {
+			return sanitizeDownloadFilename(name)
+		}
+	} else if q := strings.Index(rawURL, "?"); q >= 0 {
+		// Fallback for non-standard URLs that url.Parse might fail on
+		query := rawURL[q+1:]
+		for _, part := range strings.Split(query, "&") {
+			if strings.HasPrefix(part, "a=") {
+				return sanitizeDownloadFilename(strings.TrimPrefix(part, "a="))
+			}
+		}
+	}
+
 	path := rawURL
 	if _, after, ok := strings.Cut(rawURL, ":/"); ok {
 		path = after
 	}
-	if q := strings.IndexAny(path, "?`"); q >= 0 {
+	if q := strings.IndexAny(path, "?` "); q >= 0 {
 		path = path[:q]
 	}
 	leaf := filepath.Base(strings.TrimSuffix(path, "/"))
