@@ -11,8 +11,9 @@ APP_NAME ?= renbrowser
 BIN_DIR ?= bin
 VERSION := $(shell grep '^version:' build/brand.yml | sed 's/version: *//' | tr -d '"')
 GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
+BUILD_TIME := $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 SERVER_BIN := $(BIN_DIR)/$(APP_NAME)-server
-LDFLAGS := -w -s -X renbrowser/internal/buildinfo.Version=$(VERSION) -X renbrowser/internal/buildinfo.Commit=$(GIT_COMMIT)
+LDFLAGS := -w -s -X renbrowser/internal/buildinfo.Version=$(VERSION) -X renbrowser/internal/buildinfo.Commit=$(GIT_COMMIT) -X renbrowser/internal/buildinfo.BuildTime=$(BUILD_TIME)
 
 help:
 	@printf '%s\n' \
