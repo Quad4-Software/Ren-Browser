@@ -7,8 +7,11 @@ package main
 import (
 	"embed"
 	"log"
+	"os"
 
 	"renbrowser/internal/bootstrap"
+	"renbrowser/internal/brand"
+	"renbrowser/internal/buildinfo"
 	"renbrowser/internal/config"
 )
 
@@ -17,6 +20,10 @@ var embeddedAssets embed.FS
 
 func main() {
 	cfg := config.ParseFlags()
+	if cfg.Version {
+		buildinfo.PrintVersion(brand.DisplayName)
+		os.Exit(0)
+	}
 
 	appBundle, err := bootstrap.New(embeddedAssets, cfg)
 	if err != nil {

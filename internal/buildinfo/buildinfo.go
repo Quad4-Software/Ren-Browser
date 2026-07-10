@@ -2,8 +2,9 @@
 package buildinfo
 
 var (
-	Version = "dev"
-	Commit  = "dev"
+	Version   = "dev"
+	Commit    = "dev"
+	BuildTime = "unknown"
 )
 
 func BuildLabel() string {
@@ -11,4 +12,10 @@ func BuildLabel() string {
 		return "dev"
 	}
 	return Commit
+}
+
+func PrintVersion(appName string) {
+	println(appName + " " + Version)
+	println("commit: " + Commit)
+	println("build time: " + BuildTime)
 }

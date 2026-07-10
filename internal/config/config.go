@@ -41,10 +41,13 @@ type Runtime struct {
 	Reset           bool
 	Headless        bool
 	SelfCheck       bool
+	Version         bool
 }
 
 func ParseFlags() Runtime {
 	var cfg Runtime
+	flag.BoolVar(&cfg.Version, "v", false, "Show version information and exit")
+	flag.BoolVar(&cfg.Version, "version", false, "Show version information and exit")
 	flag.StringVar(&cfg.ReticulumConfig, "config", "", "Reticulum config file path")
 	flag.StringVar(&cfg.AssetsDir, "assets-dir", "", "Serve frontend from directory instead of embedded assets")
 	flag.StringVar(&cfg.AssetsZip, "assets-zip", "", "Serve frontend from zip archive")

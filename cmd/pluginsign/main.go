@@ -9,10 +9,15 @@ import (
 	"os/exec"
 	"strings"
 
+	"renbrowser/internal/buildinfo"
 	"renbrowser/internal/plugins"
 )
 
 func main() {
+	if len(os.Args) >= 2 && (os.Args[1] == "-v" || os.Args[1] == "-version" || os.Args[1] == "--version") {
+		buildinfo.PrintVersion("pluginsign")
+		os.Exit(0)
+	}
 	if len(os.Args) < 2 {
 		usage()
 		os.Exit(2)

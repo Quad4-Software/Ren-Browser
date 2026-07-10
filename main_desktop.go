@@ -15,6 +15,8 @@ import (
 
 	"renbrowser/internal/app"
 	"renbrowser/internal/bootstrap"
+	"renbrowser/internal/brand"
+	"renbrowser/internal/buildinfo"
 	"renbrowser/internal/config"
 	"renbrowser/internal/safe"
 	"renbrowser/internal/sandbox"
@@ -25,6 +27,10 @@ var embeddedAssets embed.FS
 
 func main() {
 	cfg := config.ParseFlags()
+	if cfg.Version {
+		buildinfo.PrintVersion(brand.DisplayName)
+		os.Exit(0)
+	}
 	relocateForAppImage(&cfg)
 	opts := sandbox.OptionsFromRuntime(cfg)
 	opts.ServerMode = false

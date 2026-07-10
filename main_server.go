@@ -23,6 +23,10 @@ var embeddedAssets embed.FS
 
 func main() {
 	cfg := config.ParseFlags()
+	if cfg.Version {
+		buildinfo.PrintVersion(brand.DisplayName + " server")
+		os.Exit(0)
+	}
 	serverlog.InitWithLevel(config.ParseLogLevel(cfg.LogLevel))
 	opts := sandbox.OptionsFromRuntime(cfg)
 	opts.ServerMode = true
