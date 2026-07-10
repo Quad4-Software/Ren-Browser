@@ -92,7 +92,7 @@ The table below lists every **intentional** outbound connection path in applicat
 | When | Destination | Purpose | Code |
 |------|-------------|---------|------|
 | Settings → Community interfaces refresh | `https://directory.rns.recipes/api/directory/submitted?search=&type=&status=online` | Fetch live Reticulum community interface directory. Falls back to an embedded snapshot on failure. | `internal/rns/community.go` |
-| First Reticulum config creation | Hosts from community directory (e.g. `rns.michmesh.net:7822` as a disabled default; up to 4 enabled peers from directory data) | Seed default TCP client interfaces. | `internal/rns/config.go`, `internal/rns/data/community_directory.json` |
+| First Reticulum config creation | None (transport and sharing disabled by default) | Initialize empty Reticulum configuration. | `internal/rns/config.go` |
 | Settings → Micron WASM Manager (user adds a GitHub release) | `https://github.com/Quad4-Software/Micron-Parser-Go/releases/download/{tag}/micron-parser-go.wasm` and `.../SHASUMS256.txt` | Download and SHA-256–verify an optional Micron parser WASM binary. | `internal/micronwasm/fetch.go` |
 
 The community directory URL is also fetched at **build time** to refresh the embedded snapshot (`build/scripts/fetch-community-directory.mjs`). Override for builds only: `REN_BROWSER_COMMUNITY_DIRECTORY_URL`.
