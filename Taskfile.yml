@@ -10,6 +10,8 @@ vars:
   TRIVY_SKIP_DIR_FLAGS: --skip-dirs vendor --skip-dirs frontend/node_modules --skip-dirs bin --skip-dirs .cache --skip-dirs third_party --skip-dirs build/android/.gradle --skip-dirs build/android/build
   GIT_COMMIT:
     sh: git rev-parse --short HEAD 2>/dev/null || echo dev
+  BUILD_TIME:
+    sh: date -u +'%Y-%m-%dT%H:%M:%SZ'
 
 includes:
   common: ./build/Taskfile.yml

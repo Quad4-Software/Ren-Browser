@@ -356,7 +356,7 @@ tasks:
       GOARCH: '{{.GOARCH | default ARCH}}'
       GOARM: '{{.GOARM | default "7"}}'
     vars:
-      BUILD_FLAGS: '-tags server{{if eq .DEV "true"}}{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -buildvcs=false -gcflags=all="-l"{{else}},production{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -trimpath -buildvcs=false -ldflags="-w -s -X renbrowser/internal/buildinfo.Version={{.VERSION}} -X renbrowser/internal/buildinfo.Commit={{.GIT_COMMIT}}"{{end}}'
+      BUILD_FLAGS: '-tags server{{if eq .DEV "true"}}{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -buildvcs=false -gcflags=all="-l"{{else}},production{{if eq .OBFUSCATED "true"}},wails_obfuscated{{end}}{{if .EXTRA_TAGS}},{{.EXTRA_TAGS}}{{end}} -trimpath -buildvcs=false -ldflags="-w -s -X renbrowser/internal/buildinfo.Version={{.VERSION}} -X renbrowser/internal/buildinfo.Commit={{.GIT_COMMIT}} -X renbrowser/internal/buildinfo.BuildTime={{.BUILD_TIME}}"{{end}}'
       SERVER_OUTPUT: '{{.OUTPUT | default (printf "%s/%s-server%s" .BIN_DIR .APP_NAME (exeExt))}}'
 
   build:server:windows-legacy:

@@ -753,6 +753,10 @@ jobs:
           cd release
           sha256sum * > SHA256SUMS.txt
 
+      - name: Monitor binary size
+        shell: bash
+        run: bash build/scripts/ci/monitor-binary-size.sh release
+
       - name: Release notes
         shell: bash
         run: |
