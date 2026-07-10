@@ -259,21 +259,31 @@ func downloadNameFromURL(rawURL string) string {
 
 	// Check for 'a' parameter in query string (rngit artifact name)
 	if u, err := url.Parse(rawURL); err == nil && u != nil {
+		// Prioritize splitting by & or | if a= is present
+		if q := u.RawQuery; strings.Contains(q, "a=") {
+			for _, part := range strings.FieldsFunc(q, func(r rune) bool { return r == '&' || r == '|' }) {
+				if after, ok := strings.CutPrefix(part, "a="); ok {
+					return sanitizeDownloadFilename(after)
+				}
+			}
+		}
 		if name := u.Query().Get("a"); name != "" {
 			return sanitizeDownloadFilename(name)
 		}
-	} else if q := strings.Index(rawURL, "?"); q >= 0 {
+	} else if _, after, ok := strings.Cut(rawURL, "?"); ok {
 		// Fallback for non-standard URLs that url.Parse might fail on
-		query := rawURL[q+1:]
-		for _, part := range strings.Split(query, "&") {
-			if strings.HasPrefix(part, "a=") {
-				return sanitizeDownloadFilename(strings.TrimPrefix(part, "a="))
+		query := after
+		for _, part := range strings.FieldsFunc(query, func(r rune) bool { return r == '&' || r == '|' }) {
+			if after, ok := strings.CutPrefix(part, "a="); ok {
+				return sanitizeDownloadFilename(after)
 			}
 		}
 	}
 
 	path := rawURL
-	if _, after, ok := strings.Cut(rawURL, ":/"); ok {
+	if u, err := url.Parse(rawURL); err == nil && u != nil && u.Scheme != "" {
+		path = u.Path
+	} else if _, after, ok := strings.Cut(rawURL, ":/"); ok {
 		path = after
 	}
 	if q := strings.IndexAny(path, "?` "); q >= 0 {

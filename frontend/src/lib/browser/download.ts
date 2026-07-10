@@ -41,6 +41,15 @@ export function pageDownloadName(url: string, contentType: string): string {
   // Check for 'a' parameter in query string
   try {
     const u = new URL(url.includes("://") ? url : `mesh://${url}`);
+    // Prioritize splitting by & or | if a= is present
+    const q = u.search;
+    if (q.includes("a=")) {
+      for (const part of q.slice(1).split(/[&|]/)) {
+        if (part.startsWith("a=")) {
+          return part.slice(2);
+        }
+      }
+    }
     const a = u.searchParams.get("a");
     if (a) {
       return a;
@@ -49,7 +58,7 @@ export function pageDownloadName(url: string, contentType: string): string {
     const q = url.indexOf("?");
     if (q >= 0) {
       const query = url.slice(q + 1);
-      for (const part of query.split("&")) {
+      for (const part of query.split(/[&|]/)) {
         if (part.startsWith("a=")) {
           return part.slice(2);
         }

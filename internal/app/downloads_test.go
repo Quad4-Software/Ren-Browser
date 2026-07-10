@@ -10,12 +10,28 @@ import (
 )
 
 func TestDownloadNameFromURL(t *testing.T) {
-	got := downloadNameFromURL("abb3ebcd03cb2388a838e70c001291f9:/file/guide.zip?token=abc")
-	if got != "guide.zip" {
-		t.Fatalf("got %q", got)
+	cases := []struct {
+		url  string
+		want string
+	}{
+		{"abb3ebcd03cb2388a838e70c001291f9:/file/guide.zip?token=abc", "guide.zip"},
+		{"config:", "reticulum.conf"},
+		{"rns://abb3ebcd03cb2388a838e70c001291f9/file/artifact?g=public|r=MeshChatX|t=v4.7.1|a=manifest.rsm", "manifest.rsm"},
+		{"rns://abb3ebcd03cb2388a838e70c001291f9/file/artifact?a=foo.bar&b=baz", "foo.bar"},
+		{"/file/artifact?a=test.txt", "test.txt"},
+		{"/file/artifact", "artifact"},
+		{"about:", "about.html"},
+		{"editor:", "editor.mu"},
+		{"license:", "LICENSE"},
+		{"", "download.bin"},
+		{"http://example.com/", "download.bin"},
+		{"http://example.com/file.txt", "file.txt"},
 	}
-	if downloadNameFromURL("config:") != "reticulum.conf" {
-		t.Fatalf("config download name = %q", downloadNameFromURL("config:"))
+	for _, tc := range cases {
+		got := downloadNameFromURL(tc.url)
+		if got != tc.want {
+			t.Errorf("downloadNameFromURL(%q) = %q; want %q", tc.url, got, tc.want)
+		}
 	}
 }
 
