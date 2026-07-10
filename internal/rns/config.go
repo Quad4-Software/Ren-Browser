@@ -37,16 +37,8 @@ func applyRenBrowserDefaults(cfg *common.ReticulumConfig) {
 		cfg.AppName = brand.DisplayName
 	}
 
-	if _, exists := cfg.Interfaces["RNS Testnet TCP"]; !exists {
-		cfg.Interfaces["RNS Testnet TCP"] = &common.InterfaceConfig{
-			Name:        "RNS Testnet TCP",
-			Type:        "TCPClientInterface",
-			Enabled:     false,
-			TargetHost:  "rns.michmesh.net",
-			TargetPort:  7822,
-			I2PTunneled: false,
-		}
-	}
+	cfg.EnableTransport = false
+	cfg.ShareInstance = false
 }
 
 func loadConfig(override string) (*common.ReticulumConfig, error) {
