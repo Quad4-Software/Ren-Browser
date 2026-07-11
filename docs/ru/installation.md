@@ -44,6 +44,7 @@ sha256sum -c SHA256SUMS.txt
 Смонтируйте конфиг Reticulum и данные профиля. Образ работает не от root — передайте UID/GID хоста:
 
 ```sh
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
 docker run --rm -p 8080:8080 \
   --user "$(id -u):$(id -g)" \
   -e HOME=/data \

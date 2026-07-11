@@ -48,6 +48,7 @@ sha256sum -c SHA256SUMS.txt
 コンテナがメッシュに参加できるよう、Reticulum の設定とプロファイルデータをマウントします。イメージは非 root ユーザーで実行されるため、ホストの UID/GID を渡してください：
 
 ```sh
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
 docker run --rm -p 8080:8080 \
   --user "$(id -u):$(id -g)" \
   -e HOME=/data \

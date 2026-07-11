@@ -426,13 +426,16 @@ tasks:
       Note: The internal container port is always 8080. The PORT variable
       only changes the host port mapping. Ensure your app uses port 8080
       or modify the Dockerfile to match your ServerOptions.Port setting.
+      Creates ~/.reticulum-go and ~/.renbrowser before mounting so Docker
+      does not create those directories as root.
     deps:
       - task: build:docker
         vars:
           TAG:
             ref: .TAG
     cmds:
-      - docker run --rm -p {{.PORT | default "8080"}}:8080 {{.TAG | default (printf "%s:latest" .APP_NAME)}}
+      - mkdir -p "${HOME}/.reticulum-go" "${HOME}/.renbrowser"
+      - docker run --rm -p {{.PORT | default "8080"}}:8080 --user "$(id -u):$(id -g)" -e HOME=/data -v "${HOME}/.reticulum-go:/data/.reticulum-go" -v "${HOME}/.renbrowser:/data/.renbrowser" -e REN_BROWSER_CONFIG=/data/.reticulum-go/config {{.TAG | default (printf "%s:latest" .APP_NAME)}}
     vars:
       TAG: "{{.TAG}}"
       PORT: "{{.PORT}}"

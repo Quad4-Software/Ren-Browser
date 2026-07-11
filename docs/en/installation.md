@@ -47,9 +47,10 @@ Check only the file you downloaded if the sums file lists many assets.
 
 Official image: `ghcr.io/quad4-software/renbrowser`
 
-Mount your Reticulum config and profile data so the container can join the mesh. The image runs as a non-root user, so pass your host UID/GID:
+Mount your Reticulum config and profile data so the container can join the mesh. The image runs as a non-root user, so create the host directories first (otherwise Docker creates them as root) and pass your host UID/GID:
 
 ```sh
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
 docker run --rm -p 8080:8080 \
   --user "$(id -u):$(id -g)" \
   -e HOME=/data \

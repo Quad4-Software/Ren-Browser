@@ -71,11 +71,14 @@ Recorre esta lista:
 Cuando ejecutas la imagen Docker `renbrowser`, monta el directorio Reticulum del host y ejecuta como tu usuario del host para que el contenedor sin root pueda leer claves y escribir almacenamiento de la mesh:
 
 ```sh
---user "$(id -u):$(id -g)" \
--e HOME=/data \
--v "$HOME/.reticulum-go:/data/.reticulum-go" \
--v "$HOME/.renbrowser:/data/.renbrowser" \
--e REN_BROWSER_CONFIG=/data/.reticulum-go/config
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
+docker run --rm -p 8080:8080 \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/data \
+  -v "$HOME/.reticulum-go:/data/.reticulum-go" \
+  -v "$HOME/.renbrowser:/data/.renbrowser" \
+  -e REN_BROWSER_CONFIG=/data/.reticulum-go/config \
+  ghcr.io/quad4-software/renbrowser:latest
 ```
 
 No montes la configuración en solo lectura; Reticulum debe poder actualizar el almacenamiento junto al archivo de configuración.

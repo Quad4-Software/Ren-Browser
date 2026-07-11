@@ -29,6 +29,7 @@ ghcr.io/quad4-software/renbrowser:latest
 Ejemplo de ejecución:
 
 ```sh
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
 docker run --rm -p 8080:8080 \
   --user "$(id -u):$(id -g)" \
   -e HOME=/data \

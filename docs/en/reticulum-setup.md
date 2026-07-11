@@ -68,14 +68,17 @@ Work through this list:
 
 ## Server and Docker
 
-When you run the `renbrowser` Docker image, mount the host Reticulum directory and run as your host user so the non-root container can read keys and write mesh storage:
+When you run the `renbrowser` Docker image, create the host directories first, mount them, and run as your host user so the non-root container can read keys and write mesh storage:
 
 ```sh
---user "$(id -u):$(id -g)" \
--e HOME=/data \
--v "$HOME/.reticulum-go:/data/.reticulum-go" \
--v "$HOME/.renbrowser:/data/.renbrowser" \
--e REN_BROWSER_CONFIG=/data/.reticulum-go/config
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
+docker run --rm -p 8080:8080 \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/data \
+  -v "$HOME/.reticulum-go:/data/.reticulum-go" \
+  -v "$HOME/.renbrowser:/data/.renbrowser" \
+  -e REN_BROWSER_CONFIG=/data/.reticulum-go/config \
+  ghcr.io/quad4-software/renbrowser:latest
 ```
 
 Do not mount the config read-only; Reticulum needs to update storage next to the config file.

@@ -71,11 +71,14 @@ Gehen Sie diese Liste durch:
 Wenn Sie das Docker-Image `renbrowser` betreiben, binden Sie das Reticulum-Verzeichnis des Hosts ein und starten Sie als Ihr Host-Benutzer, damit der nicht-root Container Schlüssel lesen und Mesh-Speicher schreiben kann:
 
 ```sh
---user "$(id -u):$(id -g)" \
--e HOME=/data \
--v "$HOME/.reticulum-go:/data/.reticulum-go" \
--v "$HOME/.renbrowser:/data/.renbrowser" \
--e REN_BROWSER_CONFIG=/data/.reticulum-go/config
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
+docker run --rm -p 8080:8080 \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/data \
+  -v "$HOME/.reticulum-go:/data/.reticulum-go" \
+  -v "$HOME/.renbrowser:/data/.renbrowser" \
+  -e REN_BROWSER_CONFIG=/data/.reticulum-go/config \
+  ghcr.io/quad4-software/renbrowser:latest
 ```
 
 Binden Sie die Konfiguration nicht schreibgeschützt ein; Reticulum muss den Speicher neben der Konfigurationsdatei aktualisieren können.

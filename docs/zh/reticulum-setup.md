@@ -71,11 +71,14 @@ NomadNet 页面存储在 Reticulum 目标地址上。在地址栏中你可以使
 运行 `renbrowser` Docker 镜像时，挂载主机 Reticulum 目录并以主机用户身份运行，使非 root 容器能够读取密钥并写入网状网络存储：
 
 ```sh
---user "$(id -u):$(id -g)" \
--e HOME=/data \
--v "$HOME/.reticulum-go:/data/.reticulum-go" \
--v "$HOME/.renbrowser:/data/.renbrowser" \
--e REN_BROWSER_CONFIG=/data/.reticulum-go/config
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
+docker run --rm -p 8080:8080 \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/data \
+  -v "$HOME/.reticulum-go:/data/.reticulum-go" \
+  -v "$HOME/.renbrowser:/data/.renbrowser" \
+  -e REN_BROWSER_CONFIG=/data/.reticulum-go/config \
+  ghcr.io/quad4-software/renbrowser:latest
 ```
 
 不要以只读方式挂载配置；Reticulum 需要在配置文件旁边更新存储。

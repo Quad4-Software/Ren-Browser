@@ -71,11 +71,14 @@ NomadNet ページは Reticulum のデスティネーションに存在します
 `renbrowser` Docker イメージを実行する場合は、非 root コンテナが鍵を読み取りメッシュストレージに書き込めるよう、ホストの Reticulum ディレクトリをマウントしてホストユーザーとして実行してください：
 
 ```sh
---user "$(id -u):$(id -g)" \
--e HOME=/data \
--v "$HOME/.reticulum-go:/data/.reticulum-go" \
--v "$HOME/.renbrowser:/data/.renbrowser" \
--e REN_BROWSER_CONFIG=/data/.reticulum-go/config
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
+docker run --rm -p 8080:8080 \
+  --user "$(id -u):$(id -g)" \
+  -e HOME=/data \
+  -v "$HOME/.reticulum-go:/data/.reticulum-go" \
+  -v "$HOME/.renbrowser:/data/.renbrowser" \
+  -e REN_BROWSER_CONFIG=/data/.reticulum-go/config \
+  ghcr.io/quad4-software/renbrowser:latest
 ```
 
 設定をリードオンリーでマウントしないでください。Reticulum は設定ファイルの隣にストレージを更新する必要があります。

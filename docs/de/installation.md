@@ -44,6 +44,7 @@ Offizielles Image: `ghcr.io/quad4-software/renbrowser`
 Binden Sie Reticulum-Konfiguration und Profildaten ein. Das Image läuft nicht als root; geben Sie UID/GID des Hosts an:
 
 ```sh
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
 docker run --rm -p 8080:8080 \
   --user "$(id -u):$(id -g)" \
   -e HOME=/data \

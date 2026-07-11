@@ -26,9 +26,10 @@ Published image:
 ghcr.io/quad4-software/renbrowser:latest
 ```
 
-Example run:
+Example run (create the host directories first so Docker does not create them as root):
 
 ```sh
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
 docker run --rm -p 8080:8080 \
   --user "$(id -u):$(id -g)" \
   -e HOME=/data \

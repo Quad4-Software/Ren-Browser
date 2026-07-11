@@ -48,6 +48,7 @@ sha256sum -c SHA256SUMS.txt
 挂载你的 Reticulum 配置和配置文件数据，使容器能够加入网状网络。该镜像以非 root 用户运行，因此需要传入你的主机 UID/GID：
 
 ```sh
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
 docker run --rm -p 8080:8080 \
   --user "$(id -u):$(id -g)" \
   -e HOME=/data \

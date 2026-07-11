@@ -98,9 +98,10 @@ Grab the latest release for your system from [GitHub Releases](https://github.co
 
 The published image is `ghcr.io/quad4-software/renbrowser`.
 
-Mount your Reticulum config so the container can join the mesh. The image runs as a non-root user, so pass your host UID/GID and map config and profile data under `/data`:
+The image runs as a non-root user, so create the host directories first (otherwise Docker creates them as root), pass your host UID/GID, and map config and profile data under `/data`:
 
 ```sh
+mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
 docker run --rm -p 8080:8080 \
   --user "$(id -u):$(id -g)" \
   -e HOME=/data \
