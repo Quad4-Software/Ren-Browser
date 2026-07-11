@@ -753,7 +753,7 @@
 
   .tab-preview-popover {
     position: fixed;
-    z-index: 950;
+    z-index: 1100;
     width: 280px;
     border: 1px solid var(--ren-border);
     border-radius: calc(var(--ren-radius) + 2px);
