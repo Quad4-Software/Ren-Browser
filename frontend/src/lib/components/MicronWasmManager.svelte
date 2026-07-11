@@ -13,7 +13,6 @@
   } from "$lib/micron/wasm-store";
   import { formatBindingError } from "$lib/browser/binding-errors.js";
   import {
-    invalidateNomadMicronWasmPreload,
     isMicronWasmBundled,
     isWebAssemblySupported,
     preloadNomadMicronWasm,
@@ -24,7 +23,7 @@
   type Props = {
     selectedParserId: string;
     wasmEnabled: boolean;
-    onSelectParser: (parserId: string) => void;
+    onSelectParser: (parserId: string) => void | Promise<void>;
     onWasmReadyChange: (ready: boolean) => void;
   };
 
@@ -50,12 +49,12 @@
 
   async function activateParser(parserId: string) {
     error = "";
-    onSelectParser(parserId);
+    onWasmReadyChange(false);
+    await onSelectParser(parserId);
     if (!wasmEnabled || !wasmSupported) {
       onWasmReadyChange(false);
       return;
     }
-    invalidateNomadMicronWasmPreload();
     const ready = await preloadNomadMicronWasm(parserId);
     onWasmReadyChange(ready);
     if (!ready && parserId !== BUNDLED_MICRON_WASM_PARSER_ID) {

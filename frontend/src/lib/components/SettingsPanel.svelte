@@ -105,7 +105,7 @@
     onChangeMicronRenderer: (value: MicronRendererPreference) => void;
     onChangeMicronWasmEnabled: (value: boolean) => void;
     onChangeMicronPreserveLayout: (value: boolean) => void;
-    onChangeMicronWasmParser: (parserId: string) => void;
+    onChangeMicronWasmParser: (parserId: string) => void | Promise<void>;
     onMicronWasmReadyChange: (ready: boolean) => void;
     onResetDefaults: () => void;
     onResetBrowser: () => void;

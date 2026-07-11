@@ -1498,6 +1498,8 @@ export function createApp() {
     micronWasmAvailable = await isMicronWasmAvailable();
     micronWasmParserLabel = await resolveMicronWasmParserLabel(parserId);
     if (shouldPreloadMicronWasm(micronRenderer, micronWasmEnabled) && micronWasmAvailable) {
+      // Drop ready before load so first paint cannot stick on wasm-without-convert.
+      micronWasmReady = false;
       micronWasmReady = await ensureMicronWasmReady(true, parserId);
     } else {
       micronWasmReady = false;

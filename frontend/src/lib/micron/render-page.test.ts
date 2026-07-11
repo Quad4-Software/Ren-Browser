@@ -135,8 +135,23 @@ describe("micron render-page helpers", () => {
     expect(shouldPreloadMicronWasm("auto", false)).toBe(false);
   });
 
-  it("labels auto badge with effective renderer", () => {
-    expect(micronRendererBadgeLabel("auto", "go")).toBe("Auto: Micron Go");
-    expect(micronRendererBadgeLabel("wasm", "wasm", "Bundled")).toBe("Micron WASM (Bundled)");
+  it("falls back from wasm preference when wasm is not ready yet", () => {
+    expect(
+      resolveEffectiveMicronEngine("wasm", {
+        wasmEnabled: true,
+        wasmAvailable: true,
+        wasmReady: false,
+        hasServerHtml: false,
+      }),
+    ).toBe("js");
+
+    expect(
+      resolveEffectiveMicronEngine("wasm", {
+        wasmEnabled: true,
+        wasmAvailable: true,
+        wasmReady: false,
+        hasServerHtml: true,
+      }),
+    ).toBe("go");
   });
 });

@@ -126,9 +126,8 @@
 
   async function renderPreviewNow() {
     try {
-      const { wasmId } = parsedChoice();
-      const engine = resolvePreviewEngine();
-      if (engine === "wasm") {
+      const { engine: preference, wasmId } = parsedChoice();
+      if (preference === "wasm" && micronWasmEnabled && wasmSupported) {
         localWasmReady = await ensureMicronWasmReady(micronWasmEnabled, wasmId);
         if (!localWasmReady) {
           previewError = t("editor.parserWasmUnavailable");
@@ -139,6 +138,7 @@
           return;
         }
       }
+      const engine = resolvePreviewEngine();
       previewHtml = renderClientMicronPage(previewURL(), source, engine);
       const colors = parseMicronHeaderColors(source);
       pageFg = colors.fg;

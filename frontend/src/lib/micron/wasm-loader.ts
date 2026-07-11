@@ -25,6 +25,8 @@ type IntegrityHashes = {
 };
 
 let resolvedPromise: Promise<boolean> | null = null;
+let pendingParserId: string | null = null;
+let loadEpoch = 0;
 let loadedParserId: string | null = null;
 let integrityHashes: IntegrityHashes | null = null;
 let bundledWasmByteLength = 0;
@@ -285,14 +287,18 @@ async function instantiateOnce(parserId: string): Promise<void> {
 }
 
 export function teardownNomadMicronWasmRuntime(): void {
-  document.getElementById(wasmExecDomId)?.remove();
+  if (typeof document !== "undefined") {
+    document.getElementById(wasmExecDomId)?.remove();
+  }
   globalThis.micronConvert = undefined;
   globalThis.Go = undefined;
   loadedParserId = null;
 }
 
 export function invalidateNomadMicronWasmPreload(): void {
+  loadEpoch += 1;
   resolvedPromise = null;
+  pendingParserId = null;
   integrityHashes = null;
   teardownNomadMicronWasmRuntime();
 }
@@ -306,27 +312,41 @@ export function preloadNomadMicronWasm(parserId = BUNDLED_MICRON_WASM_PARSER_ID)
     injectMicronWasmStyles();
     return Promise.resolve(true);
   }
-  if (loadedParserId !== targetId) {
+  if (resolvedPromise !== null && pendingParserId === targetId) {
+    return resolvedPromise;
+  }
+  if (loadedParserId !== null || pendingParserId !== null) {
     invalidateNomadMicronWasmPreload();
   }
-  if (resolvedPromise === null) {
-    resolvedPromise = (async () => {
-      try {
-        await instantiateOnce(targetId);
-        const ok = typeof globalThis.micronConvert === "function";
-        if (ok) {
-          injectMicronWasmStyles();
-        }
-        return ok;
-      } catch (err) {
-        console.warn(err);
-        resolvedPromise = null;
-        loadedParserId = null;
-        teardownNomadMicronWasmRuntime();
+  const epoch = loadEpoch;
+  pendingParserId = targetId;
+  resolvedPromise = (async () => {
+    try {
+      await instantiateOnce(targetId);
+      if (epoch !== loadEpoch) {
         return false;
       }
-    })();
-  }
+      const ok = typeof globalThis.micronConvert === "function";
+      if (ok) {
+        injectMicronWasmStyles();
+      }
+      return ok;
+    } catch (err) {
+      console.warn(err);
+      if (epoch !== loadEpoch) {
+        return false;
+      }
+      resolvedPromise = null;
+      pendingParserId = null;
+      loadedParserId = null;
+      teardownNomadMicronWasmRuntime();
+      return false;
+    } finally {
+      if (epoch === loadEpoch) {
+        pendingParserId = null;
+      }
+    }
+  })();
   return resolvedPromise;
 }
 
