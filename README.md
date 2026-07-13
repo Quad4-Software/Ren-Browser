@@ -4,53 +4,6 @@ A modern browser for Reticulum Network using Reticulum-Go and Micron-Parser-Go.
 
 This project is under heavy active development and may be unstable on some platformas until v1.0
 
-<p align="center"><img src="screenshots/desktop/dark/home.png" alt="Ren Browser" width="720" /></p>
-
-<details>
-<summary>Desktop (dark and light)</summary>
-
-<p align="center">
-  <img src="screenshots/desktop/dark/home.png" alt="Desktop home (dark)" width="720" />
-  <img src="screenshots/desktop/light/home.png" alt="Desktop home (light)" width="720" />
-</p>
-
-<p align="center">
-  <img src="screenshots/desktop/dark/about.png" alt="About page (dark)" width="720" />
-  <img src="screenshots/desktop/light/about.png" alt="About page (light)" width="720" />
-</p>
-
-<p align="center">
-  <img src="screenshots/desktop/dark/settings.png" alt="Settings sidebar (dark)" width="720" />
-  <img src="screenshots/desktop/light/settings.png" alt="Settings sidebar (light)" width="720" />
-</p>
-
-<p align="center">
-  <img src="screenshots/desktop/dark/editor.png" alt="Micron editor (dark)" width="720" />
-  <img src="screenshots/desktop/light/editor.png" alt="Micron editor (light)" width="720" />
-</p>
-
-<p align="center">
-  <img src="screenshots/desktop/dark/discovery.png" alt="Discovery panel (dark)" width="720" />
-  <img src="screenshots/desktop/light/discovery.png" alt="Discovery panel (light)" width="720" />
-</p>
-
-</details>
-
-<details>
-<summary>Mobile (dark and light)</summary>
-
-<p align="center">
-  <img src="screenshots/mobile/dark/home.png" alt="Mobile home (dark)" width="360" />
-  <img src="screenshots/mobile/light/home.png" alt="Mobile home (light)" width="360" />
-</p>
-
-<p align="center">
-  <img src="screenshots/mobile/dark/settings.png" alt="Mobile settings (dark)" width="360" />
-  <img src="screenshots/mobile/light/settings.png" alt="Mobile settings (light)" width="360" />
-</p>
-
-</details>
-
 ## Features
 
 - **NomadNet compatible** - renders Micron (`.mu`) pages served over Reticulum.
