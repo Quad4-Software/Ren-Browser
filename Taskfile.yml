@@ -424,6 +424,27 @@ tasks:
     cmds:
       - task: common:run:docker
 
+
+  tree-manifest:
+    desc: Print SHA-256 inventory of git-tracked files (excludes renbrowser.rsm)
+    cmds:
+      - sh build/scripts/tree-manifest.sh generate
+
+  tree-rsm-sign:
+    desc: Sign tree inventory into renbrowser.rsm (requires RNS_ID_PATH)
+    cmds:
+      - sh build/scripts/sign-tree-rsm.sh
+
+  tree-rsm-verify:
+    desc: Verify renbrowser.rsm signature and byte-level file hashes
+    cmds:
+      - sh build/scripts/verify-tree-rsm.sh
+
+  tree-workspace-clean:
+    desc: Recheck inventory and fail on unexpected workspace changes
+    cmds:
+      - sh build/scripts/verify-workspace-clean.sh "${RNS_INVENTORY_OUT:-/tmp/renbrowser-tree-inventory.txt}"
+
   release:rngit:
     desc: Build Linux/Windows/server/APK binaries and publish an rngit release
     cmds:

@@ -28,6 +28,7 @@ permissions:
 env:
   GOFLAGS: -mod=vendor
   PNPM_CONFIG_STRICT_DEP_BUILDS: "false"
+  RNS_REQUIRED_SIGNER: e46112d44649266d71fe2193e00a4710
 
 jobs:
   go:
@@ -75,6 +76,9 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: task test:contract
 
+      - name: Verify workspace clean
+        uses: ./.github/actions/verify-workspace-clean
+
   reproducible-binary:
     name: Reproducible server binary
     runs-on: ubuntu-latest
@@ -90,6 +94,9 @@ jobs:
 
       - name: Reproducible binary check
         run: task check:reproducible
+
+      - name: Verify workspace clean
+        uses: ./.github/actions/verify-workspace-clean
 
   benchmark:
     name: Go benchmarks

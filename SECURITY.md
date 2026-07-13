@@ -30,6 +30,24 @@ Official release binaries and packages are built in **automation on GitHub**, no
 
 **Docker images** for `renbrowser` published to GitHub Container Registry are built in CI with **build provenance and an SBOM** attached by Docker Buildx.
 
+
+### Source tree integrity (`.rsm`)
+
+The repository root includes a signed rnid message file, `renbrowser.rsm`. It embeds a SHA-256 inventory of every git-tracked file (except itself). CI verifies the signature against the required signer identity `e46112d44649266d71fe2193e00a4710`, then re-hashes file bytes. Jobs also recheck the inventory at the end so a compromised runner cannot silently add or modify tracked files.
+
+Verify locally:
+
+```bash
+task tree-rsm-verify
+```
+
+Maintainers regenerate the signature after intentional tree changes (requires a private identity file that hashes to the signer above, never commit `*.rid`):
+
+```bash
+export RNS_ID_PATH="$HOME/.local/share/reticulum-go/reticulum-go-release.rid"
+task tree-rsm-sign
+```
+
 ### Practical tips
 
 - Prefer **official download pages** or **GitHub Releases** for your copy of the app.

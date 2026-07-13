@@ -95,3 +95,10 @@ release.keystore
 android-release.keystore
 build/android/*.keystore
 build/android/*.jks
+
+# Local identity and rnid-style artifacts
+*.rid
+*.rsg
+*.rsm
+*.rfe
+!/renbrowser.rsm
