@@ -440,6 +440,11 @@ tasks:
     cmds:
       - sh build/scripts/verify-tree-rsm.sh
 
+  hooks:install:
+    desc: Enable tracked .githooks (pre-commit resigns renbrowser.rsm)
+    cmds:
+      - sh build/scripts/install-git-hooks.sh
+
   tree-workspace-clean:
     desc: Recheck inventory and fail on unexpected workspace changes
     cmds:
