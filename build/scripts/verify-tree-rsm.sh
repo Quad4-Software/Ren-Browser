@@ -26,19 +26,23 @@ INV="$(mktemp "${TMPDIR:-/tmp}/tree-inv-verify.XXXXXX")"
 RAW="$(mktemp "${TMPDIR:-/tmp}/tree-rsm-raw.XXXXXX")"
 trap 'rm -f "$INV" "$RAW"' EXIT INT
 
-if command -v reticulum-go >/dev/null 2>&1; then
-	if ! reticulum-go id -i "$SIGNER" -V "$RSM_PATH" -extract >"$INV"; then
-		echo "verify-tree-rsm.sh: RSM signature verification failed" >&2
-		exit 1
-	fi
-elif command -v rnid >/dev/null 2>&1; then
+if command -v rnid >/dev/null 2>&1; then
 	if ! rnid -i "$SIGNER" -V "$RSM_PATH" >"$RAW" 2>/dev/null; then
 		echo "verify-tree-rsm.sh: RSM signature verification failed" >&2
 		exit 1
 	fi
 	awk -v h="$HEADER" 'BEGIN{p=0} $0==h{p=1} p{print}' "$RAW" >"$INV"
+elif command -v reticulum-go >/dev/null 2>&1; then
+	if ! reticulum-go id -i "$SIGNER" -V "$RSM_PATH" -extract >"$INV" 2>/dev/null; then
+		# Fallback for older reticulum-go without -extract
+		if ! reticulum-go id -i "$SIGNER" -V "$RSM_PATH" >"$RAW" 2>/dev/null; then
+			echo "verify-tree-rsm.sh: RSM signature verification failed" >&2
+			exit 1
+		fi
+		awk -v h="$HEADER" 'BEGIN{p=0} $0==h{p=1} p{print}' "$RAW" >"$INV"
+	fi
 else
-	echo "verify-tree-rsm.sh: need reticulum-go or rnid on PATH" >&2
+	echo "verify-tree-rsm.sh: need rnid or reticulum-go on PATH" >&2
 	exit 1
 fi
 

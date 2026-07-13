@@ -45,12 +45,13 @@ if [ ! -f "$ID_PATH" ]; then
 fi
 
 run_signer() {
-	if command -v reticulum-go >/dev/null 2>&1; then
-		reticulum-go id -i "$ID_PATH" -S "@$1" -w "$RSM_PATH" -f
-	elif command -v rnid >/dev/null 2>&1; then
+	# Prefer rnid. older reticulum-go builds lack -S @file and -extract.
+	if command -v rnid >/dev/null 2>&1; then
 		rnid -i "$ID_PATH" -S -r "$1" -w "$RSM_PATH" -f
+	elif command -v reticulum-go >/dev/null 2>&1; then
+		reticulum-go id -i "$ID_PATH" -S "@$1" -w "$RSM_PATH" -f
 	else
-		echo "sign-tree-rsm.sh: need reticulum-go or rnid on PATH" >&2
+		echo "sign-tree-rsm.sh: need rnid or reticulum-go on PATH" >&2
 		return 1
 	fi
 }
