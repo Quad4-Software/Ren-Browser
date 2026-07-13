@@ -29,8 +29,8 @@ extensions/
 # Plugin test fixtures (tests use extensions/ when present)
 internal/plugins/testdata/
 
-# Vendored deps: Dockerfile.server uses go mod download, not vendor/
-vendor/
+# Vendored deps are copied into the image (GOFLAGS=-mod=vendor). third_party
+# stays out of the context; reticulum-go is already under vendor/quad4/.
 third_party/
 
 # Packaging and mobile trees not needed for server image

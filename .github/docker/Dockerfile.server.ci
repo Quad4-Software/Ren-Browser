@@ -17,6 +17,7 @@ LABEL org.opencontainers.image.version="${IMAGE_VERSION}"
 LABEL org.opencontainers.image.revision="${IMAGE_REVISION}"
 
 COPY server /server
+COPY healthcheck /healthcheck
 COPY frontend-dist /frontend/dist
 
 EXPOSE 8080
@@ -27,5 +28,8 @@ ENV REN_BROWSER_TRUST_PROXY=false
 ENV REN_BROWSER_BASE_PATH=
 
 USER 65532:65532
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+  CMD ["/healthcheck"]
 
 ENTRYPOINT ["/server"]

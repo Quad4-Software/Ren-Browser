@@ -13,7 +13,7 @@
 # the builder and runtime libc compatible (a glibc builder -> a glibc runtime).
 # The Taskfile passes these through: task build:docker CGO_ENABLED=1 GO_IMAGE=... RUNTIME_IMAGE=...
 
-ARG GO_IMAGE=golang:alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648
+ARG GO_IMAGE=golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2
 ARG RUNTIME_IMAGE=gcr.io/distroless/static-debian12@sha256:9c346e4be81b5ca7ff31a0d89eaeade58b0f95cfd3baed1f36083ddb47ca3160
 ARG CGO_ENABLED=0
 
@@ -34,8 +34,8 @@ RUN if command -v apk >/dev/null 2>&1; then \
 # Copy source code
 COPY . .
 
-# Download dependencies (Quad4 modules resolve via replace -> GitHub in go.mod)
-RUN go mod download
+# Build against vendor/ (reticulum-go is a local replace; vendor ships it).
+ENV GOFLAGS=-mod=vendor
 
 # Build the production server binary.
 # - server,production tags: HTTP server mode with production code paths (no dev
@@ -44,11 +44,15 @@ RUN go mod download
 #   override with --build-arg CGO_ENABLED=1 (see header) for CGO apps.
 RUN CGO_ENABLED=0 go build -tags server,production -trimpath -buildvcs=false -ldflags="-s -w" -o server .
 
+# Distroless has no shell/curl/wget; use a tiny static probe of GET /health.
+RUN CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags="-s -w" -o healthcheck ./cmd/healthcheck
+
 # Runtime stage - minimal image
 FROM ${RUNTIME_IMAGE}
 
 # Copy the binary
 COPY --from=builder /app/server /server
+COPY --from=builder /app/healthcheck /healthcheck
 
 # Copy frontend assets
 COPY --from=builder /app/frontend/dist /frontend/dist
@@ -64,6 +68,9 @@ ENV REN_BROWSER_TRUST_PROXY=false
 ENV REN_BROWSER_BASE_PATH=
 
 USER 65532:65532
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
+  CMD ["/healthcheck"]
 
 # Run the server
 ENTRYPOINT ["/server"]

@@ -60,6 +60,9 @@ jobs:
       - name: Build server
         run: task build:server
 
+      - name: Build healthcheck
+        run: CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags="-s -w" -o bin/healthcheck ./cmd/healthcheck
+
       - name: Server smoke
         run: bash build/scripts/server-smoke.sh
 
@@ -69,6 +72,7 @@ jobs:
           set -euo pipefail
           mkdir -p .docker/server
           cp bin/renbrowser-server .docker/server/server
+          cp bin/healthcheck .docker/server/healthcheck
           cp -a frontend/dist .docker/server/frontend-dist
 
       - name: Image coordinates

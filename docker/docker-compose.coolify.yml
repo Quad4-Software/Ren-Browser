@@ -27,6 +27,7 @@ services:
 
   renbrowser:
     image: ${IMAGE:-ghcr.io/quad4-software/renbrowser}:${IMAGE_TAG:-latest}
+    container_name: renbrowser
     build:
       context: ..
       dockerfile: build/docker/Dockerfile.server
@@ -47,6 +48,12 @@ services:
       - renbrowser-data:/data
     expose:
       - "${REN_BROWSER_PORT:-8080}"
+    healthcheck:
+      test: ["/healthcheck"]
+      interval: 30s
+      timeout: 3s
+      start_period: 15s
+      retries: 3
 
 volumes:
   renbrowser-data:

@@ -51,7 +51,7 @@ Mount your Reticulum config and profile data so the container can join the mesh.
 
 ```sh
 mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
-docker run --rm -p 8080:8080 \
+docker run --rm --name renbrowser -p 8080:8080 \
   --user "$(id -u):$(id -g)" \
   -e HOME=/data \
   -v "$HOME/.reticulum-go:/data/.reticulum-go" \

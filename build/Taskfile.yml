@@ -406,7 +406,7 @@ tasks:
       - >-
         docker build
         --build-arg CGO_ENABLED={{.CGO_ENABLED | default "0"}}
-        --build-arg GO_IMAGE={{.GO_IMAGE | default "golang:alpine@sha256:3ad57304ad93bbec8548a0437ad9e06a455660655d9af011d58b993f6f615648"}}
+        --build-arg GO_IMAGE={{.GO_IMAGE | default "golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2"}}
         --build-arg RUNTIME_IMAGE={{.RUNTIME_IMAGE | default "gcr.io/distroless/static-debian12@sha256:9c346e4be81b5ca7ff31a0d89eaeade58b0f95cfd3baed1f36083ddb47ca3160"}}
         -t {{.TAG | default (printf "%s:latest" .APP_NAME)}}
         -f build/docker/Dockerfile.server .
@@ -435,7 +435,7 @@ tasks:
             ref: .TAG
     cmds:
       - mkdir -p "${HOME}/.reticulum-go" "${HOME}/.renbrowser"
-      - docker run --rm -p {{.PORT | default "8080"}}:8080 --user "$(id -u):$(id -g)" -e HOME=/data -v "${HOME}/.reticulum-go:/data/.reticulum-go" -v "${HOME}/.renbrowser:/data/.renbrowser" -e REN_BROWSER_CONFIG=/data/.reticulum-go/config {{.TAG | default (printf "%s:latest" .APP_NAME)}}
+      - docker run --rm --name {{.NAME | default .APP_NAME}} -p {{.PORT | default "8080"}}:8080 --user "$(id -u):$(id -g)" -e HOME=/data -v "${HOME}/.reticulum-go:/data/.reticulum-go" -v "${HOME}/.renbrowser:/data/.renbrowser" -e REN_BROWSER_CONFIG=/data/.reticulum-go/config {{.TAG | default (printf "%s:latest" .APP_NAME)}}
     vars:
       TAG: "{{.TAG}}"
       PORT: "{{.PORT}}"
