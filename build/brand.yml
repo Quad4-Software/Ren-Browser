@@ -14,7 +14,7 @@ description: Reticulum browser for NomadNet pages
 tagline: Reticulum browser for NomadNet pages.
 comments: Micron-first mesh browser for NomadNet
 copyright: "(c) 2026 Quad4"
-version: "0.1.0"
+version: "0.2.0"
 homepage: https://quad4.io
 
 # Stable identifiers (backward compat — change only with a migration plan)

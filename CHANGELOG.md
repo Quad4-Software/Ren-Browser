@@ -5,6 +5,26 @@ All notable changes to Ren Browser are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-07-TBD
+
+### Added
+
+- Android back button/gesture uses mesh history instead of quitting the app
+- Pull-to-refresh is more reliable on Android WebView
+- Settings → Security shows Flatpak, WebKit bwrap, container, and Android status
+- Tree inventory signing/verification (`renbrowser.rsm`) for release integrity checks
+- `rngit-release --skip-build` when artifacts are already built
+
+### Fixed
+
+- Micron WASM loader waits for parser readiness more cleanly
+- Tab preview popover no longer hides under other chrome
+- Docs call out creating host dirs for Reticulum config on install
+
+### Changed
+
+- README screenshot block removed so it reads better on the rngit nomadnet
+
 ## [0.1.0] - 2026-07-10
 
 ### Included
@@ -52,4 +72,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GHCR publishing for the server image
 - Nightly and beta release channels
 
+[0.2.0]: https://github.com/Quad4-Software/Ren-Browser/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Quad4-Software/Ren-Browser/releases/tag/v0.1.0

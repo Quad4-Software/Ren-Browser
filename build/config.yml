@@ -7,7 +7,7 @@ info:
   description: "Reticulum browser for NomadNet pages"
   copyright: "(c) 2026 Quad4"
   comments: "Micron-first mesh browser for NomadNet"
-  version: "0.1.0"
+  version: "0.2.0"
 
 dev_mode:
   root_path: .

@@ -23,7 +23,7 @@
             brand = builtins.readFile ./build/brand.yml;
             m = builtins.match ".*\nversion: \"([^\"]+)\".*" brand;
           in
-          if m == null then "0.1.0" else builtins.elemAt m 0;
+          if m == null then "0.2.0" else builtins.elemAt m 0;
 
         gitCommit =
           if self ? shortRev then

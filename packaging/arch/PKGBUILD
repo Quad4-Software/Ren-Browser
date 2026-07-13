@@ -8,7 +8,7 @@
 #   RENBROWSER_DIST=1 makepkg -si
 
 pkgname=renbrowser
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc='Reticulum browser for NomadNet pages'
 arch=('x86_64' 'aarch64')
