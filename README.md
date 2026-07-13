@@ -55,7 +55,7 @@ The image runs as a non-root user, so create the host directories first (otherwi
 
 ```sh
 mkdir -p "$HOME/.reticulum-go" "$HOME/.renbrowser"
-docker run --rm -p 8080:8080 \
+docker run --rm --name renbrowser -p 8080:8080 \
   --user "$(id -u):$(id -g)" \
   -e HOME=/data \
   -v "$HOME/.reticulum-go:/data/.reticulum-go" \
@@ -213,7 +213,7 @@ task test:interop   # optional; needs a live Reticulum network
 make screenshots    # optional; refresh README preview images
 ```
 
-Prefer [Task](https://taskfile.dev/)? The same targets exist as `task check`, `task screenshots`, and so on. This repo also ships a [Makefile](Makefile) if you do not want Task installed.
+Prefer [Task](https://taskfile.dev/)? The same targets exist as `task check`, `task screenshots`, and so on. This repo also ships a [Makefile](Makefile) if you do not want Task installed. Tree integrity helpers also use Make only: `make tree-rsm-verify`, `make tree-rsm-sign`, and `make hooks-install` (see [SECURITY.md](SECURITY.md)).
 
 ## Project layout
 

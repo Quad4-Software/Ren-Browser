@@ -38,20 +38,20 @@ The repository root includes a signed rnid message file, `renbrowser.rsm`. It em
 Verify locally:
 
 ```bash
-task tree-rsm-verify
+make tree-rsm-verify
 ```
 
 Maintainers regenerate the signature after intentional tree changes (requires a private identity file that hashes to the signer above, never commit `*.rid`):
 
 ```bash
 export RNS_ID_PATH="$HOME/.local/share/reticulum-go/reticulum-go-release.rid"
-task tree-rsm-sign
+make tree-rsm-sign
 ```
 
 Enable the tracked pre-commit hook so commits that change inventory paths resign `renbrowser.rsm` automatically when that identity is available:
 
 ```bash
-task hooks:install
+make hooks-install
 ```
 
 Skip one commit with `SKIP_TREE_RSM_HOOK=1`.

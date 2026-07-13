@@ -3,7 +3,8 @@
 
 SHELL := /bin/bash
 .PHONY: help check format test test-go test-regression frontend-check frontend-test frontend-fmt \
-	build build-frontend build-server screenshots e2e coverage-go server-smoke dev clean vendor mod-tidy gosec sbom
+	build build-frontend build-server screenshots e2e coverage-go server-smoke dev clean vendor mod-tidy gosec sbom \
+	tree-manifest tree-rsm-sign tree-rsm-verify hooks-install
 
 export GOFLAGS ?= -mod=vendor
 export PNPM ?= pnpm
@@ -30,7 +31,10 @@ help:
 		"  make sbom             Generate SPDX and CycloneDX SBOMs (requires Trivy)" \
 		"  make dev              Run Wails dev mode" \
 		"  make vendor           Refresh vendor/ from go.mod" \
-		"  make mod-tidy         go mod tidy + vendor refresh"
+		"  make mod-tidy         go mod tidy + vendor refresh" \
+		"  make tree-rsm-verify  Verify renbrowser.rsm signature and hashes" \
+		"  make tree-rsm-sign    Sign tree inventory (requires RNS_ID_PATH)" \
+		"  make hooks-install    Enable .githooks pre-commit (resigns RSM)"
 
 check: fmt-go test-go gosec frontend-check
 
@@ -114,3 +118,15 @@ mod-tidy:
 
 clean:
 	rm -rf frontend/dist frontend/node_modules bin/$(APP_NAME) bin/$(APP_NAME)-server
+
+tree-manifest:
+	sh build/scripts/tree-manifest.sh generate
+
+tree-rsm-verify:
+	sh build/scripts/verify-tree-rsm.sh
+
+tree-rsm-sign:
+	sh build/scripts/sign-tree-rsm.sh
+
+hooks-install:
+	sh build/scripts/install-git-hooks.sh
