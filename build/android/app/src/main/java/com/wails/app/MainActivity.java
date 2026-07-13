@@ -29,6 +29,8 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -84,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver powerSaveReceiver;
     private ConnectivityManager connectivityManager;
     private ConnectivityManager.NetworkCallback networkCallback;
+    private OnBackInvokedCallback backInvokedCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         setupWebView();
+        registerBackHandler();
         waitForBackendThenLoad();
     }
 
@@ -953,6 +957,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        unregisterBackHandler();
         unregisterSystemEventReceivers();
         if (bridge != null) {
             bridge.shutdown();
@@ -962,12 +967,56 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
+    private void registerBackHandler() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return;
         }
+        backInvokedCallback = this::handleAppBack;
+        getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                backInvokedCallback
+        );
+    }
+
+    private void unregisterBackHandler() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || backInvokedCallback == null) {
+            return;
+        }
+        getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backInvokedCallback);
+        backInvokedCallback = null;
+    }
+
+    /**
+     * Route the system back gesture/button through the Ren mesh history stack
+     * instead of Android WebView history (the UI is a single-page app).
+     */
+    private void handleAppBack() {
+        if (webView == null) {
+            finish();
+            return;
+        }
+        webView.evaluateJavascript(
+                "(function(){try{"
+                        + "if(typeof window.__renHandleAndroidBack==='function'){"
+                        + "return window.__renHandleAndroidBack()===true;}"
+                        + "return false;}catch(e){return false;}})()",
+                value -> {
+                    if ("true".equals(value)) {
+                        return;
+                    }
+                    runOnUiThread(this::finish);
+                }
+        );
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public void onBackPressed() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Predictive back is handled by OnBackInvokedCallback.
+            super.onBackPressed();
+            return;
+        }
+        handleAppBack();
     }
 }
