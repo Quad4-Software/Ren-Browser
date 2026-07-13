@@ -479,11 +479,12 @@
   }
 
   .viewer.mobile-gestures {
-    touch-action: pan-y;
+    touch-action: manipulation;
     overscroll-behavior-y: none;
   }
 
   .viewer.mobile-gestures .content {
+    touch-action: pan-y;
     overscroll-behavior-y: none;
   }
 

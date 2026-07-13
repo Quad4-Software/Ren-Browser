@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { FolderOpen, Network, RefreshCw, ShieldCheck, ShieldOff } from "@lucide/svelte";
+  import { Box, FolderOpen, Network, Package, RefreshCw, ShieldCheck, ShieldOff, Smartphone } from "@lucide/svelte";
   import Toggle from "$lib/components/Toggle.svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import MicronWasmManager from "$lib/components/MicronWasmManager.svelte";
@@ -55,6 +55,13 @@
     type: string;
     enabled: boolean;
     reason?: string;
+    inFlatpak?: boolean;
+    inAppImage?: boolean;
+    inContainer?: boolean;
+    containerRuntime?: string;
+    webkitSandbox?: string;
+    webkitSandboxNote?: string;
+    onAndroid?: boolean;
   };
 
   type Props = {
@@ -244,6 +251,41 @@
       return t("settings.sandboxReasonUnsupportedPlatform");
     }
     return reason;
+  }
+
+  function webkitSandboxLabel(state?: string): string {
+    switch (state) {
+      case "active":
+        return t("settings.webkitSandboxActive");
+      case "disabled":
+        return t("settings.webkitSandboxDisabled");
+      default:
+        return t("settings.webkitSandboxUnavailable");
+    }
+  }
+
+  function webkitSandboxNoteLabel(note?: string): string {
+    switch (note) {
+      case "flatpak":
+        return t("settings.webkitSandboxNoteFlatpak");
+      case "appimage":
+        return t("settings.webkitSandboxNoteAppImage");
+      case "env":
+        return t("settings.webkitSandboxNoteEnv");
+      case "android-webview":
+        return t("settings.webkitSandboxNoteAndroid");
+      case "not-linux":
+        return t("settings.webkitSandboxNoteNotLinux");
+      default:
+        return "";
+    }
+  }
+
+  function containerRuntimeLabel(runtime?: string): string {
+    if (!runtime) {
+      return t("settings.containerDetected");
+    }
+    return t("settings.containerRuntime", { runtime });
   }
 
   function update<K extends keyof ThemeSettings>(key: K, value: ThemeSettings[K]) {
@@ -818,32 +860,137 @@
     collapsed={sectionCollapsed("security")}
     onToggle={toggleSettingsSection}
   >
-    <div class="sandbox-card" class:active={sandboxStatus.enabled}>
-      <div class="sandbox-head">
-        <span class="sandbox-icon" aria-hidden="true">
-          {#if sandboxStatus.enabled}
-            <ShieldCheck size={20} strokeWidth={2} />
-          {:else}
-            <ShieldOff size={20} strokeWidth={2} />
-          {/if}
-        </span>
-        <div class="sandbox-copy">
-          <span class="sandbox-name">{sandboxTypeLabel(sandboxStatus.type)}</span>
-          <span class="sandbox-subtitle">{t("settings.sandboxSubtitle")}</span>
+    <div class="security-stack">
+      <div class="sandbox-card" class:active={sandboxStatus.enabled}>
+        <div class="sandbox-head">
+          <span class="sandbox-icon" aria-hidden="true">
+            {#if sandboxStatus.enabled}
+              <ShieldCheck size={20} strokeWidth={2} />
+            {:else}
+              <ShieldOff size={20} strokeWidth={2} />
+            {/if}
+          </span>
+          <div class="sandbox-copy">
+            <span class="sandbox-name">{sandboxTypeLabel(sandboxStatus.type)}</span>
+            <span class="sandbox-subtitle">{t("settings.sandboxSubtitle")}</span>
+          </div>
+          <span
+            class="sandbox-badge"
+            class:enabled={sandboxStatus.enabled}
+            class:disabled={!sandboxStatus.enabled}
+          >
+            {sandboxStatus.enabled ? t("settings.sandboxEnabled") : t("settings.sandboxDisabled")}
+          </span>
         </div>
-        <span
-          class="sandbox-badge"
-          class:enabled={sandboxStatus.enabled}
-          class:disabled={!sandboxStatus.enabled}
-        >
-          {sandboxStatus.enabled ? t("settings.sandboxEnabled") : t("settings.sandboxDisabled")}
-        </span>
+        {#if sandboxReasonLabel(sandboxStatus.reason)}
+          <p class="sandbox-note">{sandboxReasonLabel(sandboxStatus.reason)}</p>
+        {:else if sandboxStatus.enabled}
+          <p class="sandbox-note active">{t("settings.sandboxActiveHint")}</p>
+        {/if}
       </div>
-      {#if sandboxReasonLabel(sandboxStatus.reason)}
-        <p class="sandbox-note">{sandboxReasonLabel(sandboxStatus.reason)}</p>
-      {:else if sandboxStatus.enabled}
-        <p class="sandbox-note active">{t("settings.sandboxActiveHint")}</p>
-      {/if}
+
+      <div class="sandbox-card" class:active={sandboxStatus.inFlatpak}>
+        <div class="sandbox-head">
+          <span class="sandbox-icon" aria-hidden="true">
+            <Package size={20} strokeWidth={2} />
+          </span>
+          <div class="sandbox-copy">
+            <span class="sandbox-name">{t("settings.flatpakTitle")}</span>
+            <span class="sandbox-subtitle">{t("settings.flatpakSubtitle")}</span>
+          </div>
+          <span
+            class="sandbox-badge"
+            class:enabled={sandboxStatus.inFlatpak}
+            class:disabled={!sandboxStatus.inFlatpak}
+          >
+            {sandboxStatus.inFlatpak ? t("settings.envYes") : t("settings.envNo")}
+          </span>
+        </div>
+        <p class="sandbox-note">
+          {sandboxStatus.inFlatpak ? t("settings.flatpakActiveHint") : t("settings.flatpakInactiveHint")}
+        </p>
+      </div>
+
+      <div
+        class="sandbox-card"
+        class:active={sandboxStatus.webkitSandbox === "active"}
+        class:warn={sandboxStatus.webkitSandbox === "disabled"}
+      >
+        <div class="sandbox-head">
+          <span class="sandbox-icon" aria-hidden="true">
+            {#if sandboxStatus.webkitSandbox === "active"}
+              <ShieldCheck size={20} strokeWidth={2} />
+            {:else}
+              <ShieldOff size={20} strokeWidth={2} />
+            {/if}
+          </span>
+          <div class="sandbox-copy">
+            <span class="sandbox-name">{t("settings.webkitSandboxTitle")}</span>
+            <span class="sandbox-subtitle">{t("settings.webkitSandboxSubtitle")}</span>
+          </div>
+          <span
+            class="sandbox-badge"
+            class:enabled={sandboxStatus.webkitSandbox === "active"}
+            class:disabled={sandboxStatus.webkitSandbox !== "active"}
+            class:warn={sandboxStatus.webkitSandbox === "disabled"}
+          >
+            {webkitSandboxLabel(sandboxStatus.webkitSandbox)}
+          </span>
+        </div>
+        {#if webkitSandboxNoteLabel(sandboxStatus.webkitSandboxNote)}
+          <p class="sandbox-note">{webkitSandboxNoteLabel(sandboxStatus.webkitSandboxNote)}</p>
+        {:else if sandboxStatus.webkitSandbox === "active"}
+          <p class="sandbox-note active">{t("settings.webkitSandboxActiveHint")}</p>
+        {/if}
+      </div>
+
+      <div class="sandbox-card" class:active={sandboxStatus.inContainer}>
+        <div class="sandbox-head">
+          <span class="sandbox-icon" aria-hidden="true">
+            <Box size={20} strokeWidth={2} />
+          </span>
+          <div class="sandbox-copy">
+            <span class="sandbox-name">{t("settings.containerTitle")}</span>
+            <span class="sandbox-subtitle">{t("settings.containerSubtitle")}</span>
+          </div>
+          <span
+            class="sandbox-badge"
+            class:enabled={sandboxStatus.inContainer}
+            class:disabled={!sandboxStatus.inContainer}
+          >
+            {sandboxStatus.inContainer ? t("settings.envYes") : t("settings.envNo")}
+          </span>
+        </div>
+        <p class="sandbox-note">
+          {#if sandboxStatus.inContainer}
+            {containerRuntimeLabel(sandboxStatus.containerRuntime)}
+          {:else}
+            {t("settings.containerInactiveHint")}
+          {/if}
+        </p>
+      </div>
+
+      <div class="sandbox-card" class:active={sandboxStatus.onAndroid}>
+        <div class="sandbox-head">
+          <span class="sandbox-icon" aria-hidden="true">
+            <Smartphone size={20} strokeWidth={2} />
+          </span>
+          <div class="sandbox-copy">
+            <span class="sandbox-name">{t("settings.androidTitle")}</span>
+            <span class="sandbox-subtitle">{t("settings.androidSubtitle")}</span>
+          </div>
+          <span
+            class="sandbox-badge"
+            class:enabled={sandboxStatus.onAndroid}
+            class:disabled={!sandboxStatus.onAndroid}
+          >
+            {sandboxStatus.onAndroid ? t("settings.envYes") : t("settings.envNo")}
+          </span>
+        </div>
+        <p class="sandbox-note">
+          {sandboxStatus.onAndroid ? t("settings.androidActiveHint") : t("settings.androidInactiveHint")}
+        </p>
+      </div>
     </div>
   </SettingsSection>
 
@@ -1346,9 +1493,19 @@
     gap: 0.65rem;
   }
 
+  .security-stack {
+    display: grid;
+    gap: 0.75rem;
+  }
+
   .sandbox-card.active {
     border-color: color-mix(in srgb, var(--ren-success, #3d9a5f) 35%, var(--ren-border));
     background: color-mix(in srgb, var(--ren-success, #3d9a5f) 6%, var(--ren-surface-raised));
+  }
+
+  .sandbox-card.warn {
+    border-color: color-mix(in srgb, var(--ren-warning, #c9852a) 40%, var(--ren-border));
+    background: color-mix(in srgb, var(--ren-warning, #c9852a) 7%, var(--ren-surface-raised));
   }
 
   .sandbox-head {
@@ -1452,6 +1609,12 @@
     color: var(--ren-muted);
     border-color: var(--ren-border);
     background: color-mix(in srgb, var(--ren-muted) 10%, transparent);
+  }
+
+  .sandbox-badge.warn {
+    color: var(--ren-warning, #c9852a);
+    border-color: color-mix(in srgb, var(--ren-warning, #c9852a) 45%, transparent);
+    background: color-mix(in srgb, var(--ren-warning, #c9852a) 12%, transparent);
   }
 
   .sandbox-note {

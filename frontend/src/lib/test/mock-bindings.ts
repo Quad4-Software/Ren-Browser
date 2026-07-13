@@ -100,6 +100,11 @@ export function browserserviceDefaults(): Record<string, unknown> {
       supported: false,
       auto: false,
       disabledByEnv: false,
+      inFlatpak: false,
+      inAppImage: false,
+      inContainer: false,
+      webkitSandbox: "unavailable",
+      onAndroid: false,
     },
     GetStatus: {
       online: true,

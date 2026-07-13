@@ -98,7 +98,18 @@ export type StoreHealth = {
 export type SandboxStatus = {
   type: string;
   enabled: boolean;
+  requested?: boolean;
+  supported?: boolean;
+  auto?: boolean;
+  disabledByEnv?: boolean;
   reason?: string;
+  inFlatpak?: boolean;
+  inAppImage?: boolean;
+  inContainer?: boolean;
+  containerRuntime?: string;
+  webkitSandbox?: string;
+  webkitSandboxNote?: string;
+  onAndroid?: boolean;
 };
 
 export type HistoryEntry = {

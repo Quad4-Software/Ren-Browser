@@ -210,9 +210,52 @@ export function attachMobileGestures(
   };
 
   surface.addEventListener("pointerdown", onPointerDown);
-  surface.addEventListener("pointermove", onPointerMove);
+  surface.addEventListener("pointermove", onPointerMove, { passive: false });
   surface.addEventListener("pointerup", onPointerUp);
   surface.addEventListener("pointercancel", onPointerUp);
+
+  // Android WebView often delivers touchmove as passive for the document.
+  // Mirror pull/back capture with non-passive touch listeners so preventDefault works.
+  const onTouchMove = (event: TouchEvent) => {
+    if (activePointerId === null || mode === "none" || event.touches.length !== 1) {
+      return;
+    }
+    const touch = event.touches[0];
+    if (!touch) {
+      return;
+    }
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+
+    if (mode === "back") {
+      if (deltaX < 0) {
+        return;
+      }
+      report({
+        pullOffset: 0,
+        pullTriggered: false,
+        backOffset: clampBackOffset(deltaX),
+        backTriggered: shouldTriggerBack(deltaX, deltaY),
+      });
+      event.preventDefault();
+      return;
+    }
+
+    if (mode === "pull") {
+      if (deltaY < 0 || options.getScrollTop() > 1) {
+        return;
+      }
+      report({
+        pullOffset: clampPullOffset(deltaY),
+        pullTriggered: shouldTriggerPull(deltaY),
+        backOffset: 0,
+        backTriggered: false,
+      });
+      event.preventDefault();
+    }
+  };
+
+  surface.addEventListener("touchmove", onTouchMove, { passive: false });
 
   return {
     teardown: () => {
@@ -220,6 +263,7 @@ export function attachMobileGestures(
       surface.removeEventListener("pointermove", onPointerMove);
       surface.removeEventListener("pointerup", onPointerUp);
       surface.removeEventListener("pointercancel", onPointerUp);
+      surface.removeEventListener("touchmove", onTouchMove);
       resetProgress();
     },
   };

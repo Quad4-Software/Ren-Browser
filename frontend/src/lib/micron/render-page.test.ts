@@ -18,6 +18,12 @@ describe("micron render-page helpers", () => {
     expect(usesClientMicronRenderer("wasm")).toBe(true);
   });
 
+  it("formats renderer badge labels", () => {
+    expect(micronRendererBadgeLabel("auto", "go")).toBe("Auto: Micron Go");
+    expect(micronRendererBadgeLabel("wasm", "wasm", "micron-rs")).toBe("Micron WASM (micron-rs)");
+    expect(micronRendererBadgeLabel("js", "js")).toBe("Micron JS");
+  });
+
   it("parses node hash and path from mesh urls", () => {
     const url = "abb3ebcd03cb2388a838e70c001291f9:/page/index.mu";
     expect(nodeHashFromURL(url)).toBe("abb3ebcd03cb2388a838e70c001291f9");

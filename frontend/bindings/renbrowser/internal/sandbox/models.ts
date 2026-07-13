@@ -12,4 +12,11 @@ export interface Status {
     "auto": boolean;
     "disabledByEnv": boolean;
     "reason"?: string;
+    "inFlatpak": boolean;
+    "inAppImage": boolean;
+    "inContainer": boolean;
+    "containerRuntime"?: string;
+    "webkitSandbox": string;
+    "webkitSandboxNote"?: string;
+    "onAndroid": boolean;
 }

@@ -266,7 +266,19 @@ export function createApp() {
   let publicMode = $state(false);
   let serverMode = $state(false);
   let storeHealth = $state<StoreHealth>({ ok: true, path: "" });
-  let sandboxStatus = $state<SandboxStatus>({ type: "none", enabled: false });
+  let sandboxStatus = $state<SandboxStatus>({
+    type: "none",
+    enabled: false,
+    requested: false,
+    supported: false,
+    auto: false,
+    disabledByEnv: false,
+    inFlatpak: false,
+    inAppImage: false,
+    inContainer: false,
+    webkitSandbox: "unavailable",
+    onAndroid: false,
+  });
   let selfTestResult = $state<SelfCheckResult | null>(null);
   let selfTestRunning = $state(false);
   let meshOnline = $state(true);
@@ -1724,8 +1736,82 @@ export function createApp() {
     sandboxStatus = {
       type: status.type ?? "none",
       enabled: !!status.enabled,
+      requested: !!status.requested,
+      supported: !!status.supported,
+      auto: !!status.auto,
+      disabledByEnv: !!status.disabledByEnv,
       reason: status.reason,
+      inFlatpak: !!status.inFlatpak,
+      inAppImage: !!status.inAppImage,
+      inContainer: !!status.inContainer,
+      containerRuntime: status.containerRuntime,
+      webkitSandbox: status.webkitSandbox || "unavailable",
+      webkitSandboxNote: status.webkitSandboxNote,
+      onAndroid: !!status.onAndroid,
     };
+  }
+
+  function handleAndroidBack(): boolean {
+    const closeConfirm = (): boolean => {
+      if (identifyConfirmOpen) {
+        identifyConfirmOpen = false;
+        return true;
+      }
+      if (resetDbConfirmOpen) {
+        resetDbConfirmOpen = false;
+        return true;
+      }
+      if (resetBrowserConfirmOpen) {
+        resetBrowserConfirmOpen = false;
+        return true;
+      }
+      if (restartReticulumConfirmOpen) {
+        restartReticulumConfirmOpen = false;
+        return true;
+      }
+      if (transportMobileConfirmOpen) {
+        transportMobileConfirmOpen = false;
+        return true;
+      }
+      if (closeAllConfirmOpen) {
+        closeAllConfirmOpen = false;
+        return true;
+      }
+      if (shutdownConfirmOpen) {
+        shutdownConfirmOpen = false;
+        return true;
+      }
+      if (clearHistoryConfirmOpen) {
+        clearHistoryConfirmOpen = false;
+        return true;
+      }
+      return false;
+    };
+
+    if (closeConfirm()) {
+      return true;
+    }
+    if (downloadsOpen) {
+      downloadsOpen = false;
+      return true;
+    }
+    if (mobileTabsOpen) {
+      mobileTabsOpen = false;
+      return true;
+    }
+    if (findOpen) {
+      findOpen = false;
+      return true;
+    }
+    if (activePanel !== "browser") {
+      activePanel = "browser";
+      return true;
+    }
+    if (canGoBack) {
+      void goBack();
+      return true;
+    }
+    return false;
   }
 
   function requestResetDatabase() {
@@ -2450,6 +2536,11 @@ export function createApp() {
       handleAppBackground();
     });
 
+    const androidBackWindow = window as Window & {
+      __renHandleAndroidBack?: () => boolean;
+    };
+    androidBackWindow.__renHandleAndroidBack = handleAndroidBack;
+
     const onKeyDown = (event: KeyboardEvent) => {
       handleGlobalKeyDown(event);
     };
@@ -2483,6 +2574,9 @@ export function createApp() {
       document.removeEventListener("click", blockExternalLink, true);
       document.removeEventListener("auxclick", blockExternalLink, true);
       window.removeEventListener("resize", onResize);
+      if (androidBackWindow.__renHandleAndroidBack === handleAndroidBack) {
+        delete androidBackWindow.__renHandleAndroidBack;
+      }
       if (persistTimer) {
         clearTimeout(persistTimer);
       }
