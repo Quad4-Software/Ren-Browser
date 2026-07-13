@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"renbrowser/internal/runtimeenv"
 )
 
 // ApplyLinuxDefaults sets WebKitGTK environment defaults on Linux.
@@ -76,21 +78,17 @@ func disableNestedWebKitSandboxIfNeeded() {
 	// AppImage mount. Flatpak (GNOME 50 / glibc 2.42+): WebKit's inner bwrap
 	// fails resolving /proc/self/fd/N for memfd-backed ld-so-conf and aborts
 	// with readPIDFromPeer. The outer Flatpak sandbox still confines the app.
-	if runningInAppImage() || runningInFlatpak() {
+	if runtimeenv.InAppImage() || runtimeenv.InFlatpak() {
 		_ = os.Setenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "1")
 	}
 }
 
 func runningInAppImage() bool {
-	return strings.TrimSpace(os.Getenv("APPIMAGE")) != ""
+	return runtimeenv.InAppImage()
 }
 
 func runningInFlatpak() bool {
-	if os.Getenv("FLATPAK_ID") != "" {
-		return true
-	}
-	_, err := os.Stat("/.flatpak-info")
-	return err == nil
+	return runtimeenv.InFlatpak()
 }
 
 func init() {

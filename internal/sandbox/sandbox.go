@@ -11,13 +11,20 @@ import (
 
 // Status describes process-level filesystem sandboxing for the settings UI.
 type Status struct {
-	Type          string `json:"type"`
-	Enabled       bool   `json:"enabled"`
-	Requested     bool   `json:"requested"`
-	Supported     bool   `json:"supported"`
-	Auto          bool   `json:"auto"`
-	DisabledByEnv bool   `json:"disabledByEnv"`
-	Reason        string `json:"reason,omitempty"`
+	Type              string `json:"type"`
+	Enabled           bool   `json:"enabled"`
+	Requested         bool   `json:"requested"`
+	Supported         bool   `json:"supported"`
+	Auto              bool   `json:"auto"`
+	DisabledByEnv     bool   `json:"disabledByEnv"`
+	Reason            string `json:"reason,omitempty"`
+	InFlatpak         bool   `json:"inFlatpak"`
+	InAppImage        bool   `json:"inAppImage"`
+	InContainer       bool   `json:"inContainer"`
+	ContainerRuntime  string `json:"containerRuntime,omitempty"`
+	WebKitSandbox     string `json:"webkitSandbox"`
+	WebKitSandboxNote string `json:"webkitSandboxNote,omitempty"`
+	OnAndroid         bool   `json:"onAndroid"`
 }
 
 // Options controls whether Landlock is attempted and which paths are whitelisted.
