@@ -426,7 +426,7 @@ tasks:
 
 
   tree-manifest:
-    desc: Print SHA-256 inventory of git-tracked files (excludes renbrowser.rsm)
+    desc: Print SHA-256 inventory of git-tracked files (excludes renbrowser.rsm and vendor/)
     cmds:
       - sh build/scripts/tree-manifest.sh generate
 
