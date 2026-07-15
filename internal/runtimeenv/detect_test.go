@@ -52,6 +52,20 @@ func TestWebKitSandbox_DisabledByEnv(t *testing.T) {
 	}
 }
 
+func TestWebKitSandbox_UnavailableInContainer(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("linux only")
+	}
+	t.Setenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS", "")
+	state, note := webkitSandboxStatus(Info{InContainer: true, ContainerRuntime: "docker"})
+	if state != "unavailable" {
+		t.Fatalf("state=%q want unavailable", state)
+	}
+	if note != "container" {
+		t.Fatalf("note=%q want container", note)
+	}
+}
+
 func TestDetectContainer_Env(t *testing.T) {
 	t.Setenv("container", "podman")
 	ok, name := detectContainer()

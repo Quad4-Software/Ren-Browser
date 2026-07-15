@@ -2,7 +2,8 @@
 package rns
 
 import (
-	"math/rand"
+	"crypto/rand"
+	"math/big"
 	"net"
 	"strconv"
 	"strings"
@@ -20,12 +21,23 @@ func PickSeedableCommunityInterfaces(items []CommunityInterface, count int) []Co
 	if len(seedable) == 0 {
 		return nil
 	}
-	rand.Shuffle(len(seedable), func(i, j int) { seedable[i], seedable[j] = seedable[j], seedable[i] })
+	cryptoShuffle(seedable)
 	seedable = dedupeCommunityInterfaces(seedable)
 	if count > 0 && len(seedable) > count {
 		seedable = seedable[:count]
 	}
 	return seedable
+}
+
+func cryptoShuffle(items []CommunityInterface) {
+	for i := len(items) - 1; i > 0; i-- {
+		n, err := rand.Int(rand.Reader, big.NewInt(int64(i+1)))
+		if err != nil {
+			return
+		}
+		j := int(n.Int64())
+		items[i], items[j] = items[j], items[i]
+	}
 }
 
 // rankSeedableCommunityInterfaces prefers clearnet TCP/backbone that look

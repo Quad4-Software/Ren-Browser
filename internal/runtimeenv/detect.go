@@ -74,6 +74,12 @@ func webkitSandboxStatus(info Info) (string, string) {
 	if runtime.GOOS != "linux" {
 		return "unavailable", "not-linux"
 	}
+	// Container deployments are typically the server binary (no WebKitGTK).
+	// Even a desktop build in Docker rarely has working nested bwrap.
+	// Do not report "active" from env absence alone inside a container.
+	if info.InContainer {
+		return "unavailable", "container"
+	}
 	if strings.TrimSpace(os.Getenv("WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS")) != "" {
 		switch {
 		case info.InFlatpak:

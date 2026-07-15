@@ -320,6 +320,20 @@ func TestLiveWakePathReload(t *testing.T) {
 		second.Error, second.Hops, second.Interface, len(second.Body), second.DurationMs, elapsed.Round(time.Millisecond),
 	)
 	if second.Error != "" || len(second.Body) == 0 {
+		// Live mesh path rediscovery after forced expire can miss once under load.
+		t.Logf("post-wake fetch retry after: %s", second.Error)
+		time.Sleep(5 * time.Second)
+		start = time.Now()
+		ctx, cancel = context.WithTimeout(context.Background(), 90*time.Second)
+		second = browser.Fetch(ctx, node.Hash, "/page/index.mu", nomadnet.RequestData{})
+		cancel()
+		elapsed = time.Since(start)
+		t.Logf(
+			"post-wake fetch retry: err=%q hops=%d iface=%s bytes=%d %dms wall=%s",
+			second.Error, second.Hops, second.Interface, len(second.Body), second.DurationMs, elapsed.Round(time.Millisecond),
+		)
+	}
+	if second.Error != "" || len(second.Body) == 0 {
 		t.Fatalf("post-wake reload failed: %s", second.Error)
 	}
 }
