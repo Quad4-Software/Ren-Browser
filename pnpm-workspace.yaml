@@ -12,7 +12,3 @@ pnpm:
   pmOnFail: error
   allowBuilds:
     esbuild: true
-
-packageConfigs:
-  frontend:
-    minimumReleaseAge: 10080
