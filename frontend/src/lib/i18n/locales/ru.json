@@ -203,6 +203,7 @@
     "webkitSandboxNoteEnv": "Вложенный WebKit bwrap отключён через WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS.",
     "webkitSandboxNoteAndroid": "Android использует песочницу системного WebView вместо WebKitGTK bwrap.",
     "webkitSandboxNoteNotLinux": "Песочница WebKitGTK bwrap применяется только в Linux desktop-сборках.",
+    "webkitSandboxNoteContainer": "Вложенный WebKitGTK bwrap не применяется в контейнерах. Landlock и внешняя изоляция контейнера по-прежнему действуют.",
     "containerTitle": "Контейнер",
     "containerSubtitle": "Docker, Podman или другая среда контейнеров",
     "containerDetected": "Запущено внутри контейнера.",

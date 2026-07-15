@@ -203,6 +203,7 @@
     "webkitSandboxNoteEnv": "Verschachteltes WebKit-bwrap ist durch WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS deaktiviert.",
     "webkitSandboxNoteAndroid": "Android nutzt die System-WebView-Sandbox statt WebKitGTK-bwrap.",
     "webkitSandboxNoteNotLinux": "WebKitGTK-bwrap-Sandboxing gilt nur für Linux-Desktop-Builds.",
+    "webkitSandboxNoteContainer": "Verschachteltes WebKitGTK-bwrap gilt nicht in Containern. Landlock und die äußere Container-Isolation gelten weiterhin.",
     "containerTitle": "Container",
     "containerSubtitle": "Docker, Podman oder andere Container-Runtime",
     "containerDetected": "Läuft in einem Container.",

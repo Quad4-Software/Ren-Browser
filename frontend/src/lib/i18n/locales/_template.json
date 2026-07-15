@@ -203,6 +203,7 @@
     "webkitSandboxNoteEnv": "",
     "webkitSandboxNoteAndroid": "",
     "webkitSandboxNoteNotLinux": "",
+    "webkitSandboxNoteContainer": "",
     "containerTitle": "",
     "containerSubtitle": "",
     "containerDetected": "",

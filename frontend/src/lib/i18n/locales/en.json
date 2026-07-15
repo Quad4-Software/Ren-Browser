@@ -203,6 +203,7 @@
     "webkitSandboxNoteEnv": "Nested WebKit bwrap is disabled by WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS.",
     "webkitSandboxNoteAndroid": "Android uses the system WebView sandbox instead of WebKitGTK bwrap.",
     "webkitSandboxNoteNotLinux": "WebKitGTK bwrap sandboxing applies on Linux desktop builds only.",
+    "webkitSandboxNoteContainer": "Nested WebKitGTK bwrap does not apply in container runtimes. Landlock and the outer container isolation still apply.",
     "containerTitle": "Container",
     "containerSubtitle": "Docker, Podman, or other container runtime",
     "containerDetected": "Running inside a container.",

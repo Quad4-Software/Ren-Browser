@@ -203,6 +203,7 @@
     "webkitSandboxNoteEnv": "El bwrap anidado de WebKit está desactivado por WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS.",
     "webkitSandboxNoteAndroid": "Android usa el sandbox del WebView del sistema en lugar de bwrap de WebKitGTK.",
     "webkitSandboxNoteNotLinux": "El sandbox bwrap de WebKitGTK solo aplica en builds de escritorio Linux.",
+    "webkitSandboxNoteContainer": "El bwrap anidado de WebKitGTK no aplica en contenedores. Landlock y el aislamiento del contenedor siguen aplicando.",
     "containerTitle": "Contenedor",
     "containerSubtitle": "Docker, Podman u otro runtime de contenedores",
     "containerDetected": "Ejecutándose dentro de un contenedor.",

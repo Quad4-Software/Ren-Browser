@@ -203,6 +203,7 @@
     "webkitSandboxNoteEnv": "WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS により入れ子の WebKit bwrap が無効です。",
     "webkitSandboxNoteAndroid": "Android は WebKitGTK bwrap ではなくシステム WebView サンドボックスを使います。",
     "webkitSandboxNoteNotLinux": "WebKitGTK bwrap サンドボックスは Linux デスクトップビルドのみ対象です。",
+    "webkitSandboxNoteContainer": "コンテナ実行時は入れ子の WebKitGTK bwrap は適用されません。Landlock と外側のコンテナ分離は引き続き有効です。",
     "containerTitle": "コンテナ",
     "containerSubtitle": "Docker、Podman、その他のコンテナランタイム",
     "containerDetected": "コンテナ内で実行中です。",

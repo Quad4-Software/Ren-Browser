@@ -203,6 +203,7 @@
     "webkitSandboxNoteEnv": "已通过 WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS 禁用嵌套 WebKit bwrap。",
     "webkitSandboxNoteAndroid": "Android 使用系统 WebView 沙箱，而不是 WebKitGTK bwrap。",
     "webkitSandboxNoteNotLinux": "WebKitGTK bwrap 沙箱仅适用于 Linux 桌面构建。",
+    "webkitSandboxNoteContainer": "嵌套 WebKitGTK bwrap 不适用于容器运行时。Landlock 与外层容器隔离仍然生效。",
     "containerTitle": "容器",
     "containerSubtitle": "Docker、Podman 或其他容器运行时",
     "containerDetected": "正在容器中运行。",
