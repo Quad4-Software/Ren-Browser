@@ -152,9 +152,9 @@
     "shareInstanceHint": "Comparte este stack de Reticulum con otras apps locales o únete a una instancia compartida existente. Cambiar esto requiere reiniciar Reticulum.",
     "shareInstanceRestartHint": "Reinicia Reticulum para aplicar la configuración de instancia compartida.",
     "sharedInstanceStatus": "Estado de instancia compartida",
-    "sharedInstanceModeDisabled": "Sin compartir — este proceso usa sus propias interfaces",
+    "sharedInstanceModeDisabled": "Sin compartir - este proceso usa sus propias interfaces",
     "sharedInstanceModeServer": "Sirviendo: otras apps locales pueden conectarse",
-    "sharedInstanceModeClient": "Conectado — usando otra instancia compartida local",
+    "sharedInstanceModeClient": "Conectado - usando otra instancia compartida local",
     "transportActive": "Transporte activo",
     "transportInactive": "Transporte inactivo",
     "transportInactiveSharedClient": "Transporte inactivo mientras está conectado a una instancia compartida",
@@ -363,7 +363,7 @@
     "retryStarted": "Descarga reiniciada",
     "retryFailed": "No se pudo reintentar la descarga",
     "retrying": "Reintentando ({attempt}/{max})…",
-    "interrupted": "Interrumpida al cerrar la app; reintenta la descarga",
+    "interrupted": "Interrumpida al cerrar la app. Reintenta la descarga",
     "etaLeft": "{eta} restante",
     "readDocument": "Leer {name}"
   },
@@ -426,7 +426,7 @@
     "loadingConfig": "Cargando configuración de Reticulum...",
     "exportIndexMu": "Exportar como index.mu",
     "parser": "Parser",
-    "parserWasmUnavailable": "No se pudo cargar el parser WebAssembly; la vista previa usa JavaScript."
+    "parserWasmUnavailable": "No se pudo cargar el parser WebAssembly. La vista previa usa JavaScript."
   },
   "config": {
     "title": "Configuración de Reticulum",
@@ -615,9 +615,9 @@
     "connectionFailedDescription": "No se pudo alcanzar este nodo. Comprueba que las interfaces Reticulum estén en línea y que el destino esté disponible en la malla.",
     "connectionLostTitle": "Conexión perdida",
     "connectionLostDescription": "El enlace con el nodo se interrumpió antes de que la página terminara de cargar.",
-    "notFoundTitle": "404 — Página no encontrada",
+    "notFoundTitle": "404: Página no encontrada",
     "notFoundDescription": "Este nodo no tiene una página en esta dirección.",
-    "internalTitle": "500 — Error interno del nodo",
+    "internalTitle": "500: Error interno del nodo",
     "payloadTooLargeTitle": "Respuesta demasiado grande",
     "payloadTooLargeDescription": "Esta página o archivo supera el límite de tamaño configurado y se rechazó para proteger tu dispositivo.",
     "storageFullTitle": "Almacenamiento no disponible",

@@ -54,9 +54,17 @@ runs:
           exit 0
         fi
         # PEP 668 / Homebrew Python: never pip-install into the system interpreter.
-        # On Windows, upgrading via Scripts/pip.exe fails; always use python -m pip.
+        # On Windows, upgrading via Scripts/pip.exe fails. Always use python -m pip.
         VENV="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/renbrowser-rns-venv"
-        python3 -m venv "$VENV"
+        if command -v python3 >/dev/null 2>&1; then
+          PY_CMD=python3
+        elif command -v python >/dev/null 2>&1; then
+          PY_CMD=python
+        else
+          echo "Ensure rnid: python3 or python not found" >&2
+          exit 1
+        fi
+        "$PY_CMD" -m venv "$VENV"
         if [ -x "$VENV/bin/python" ]; then
           PY="$VENV/bin/python"
           BIN="$VENV/bin"

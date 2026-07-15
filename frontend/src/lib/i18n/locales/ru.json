@@ -152,9 +152,9 @@
     "shareInstanceHint": "Делиться этим стеком Reticulum с другими локальными приложениями или подключаться к существующему общему экземпляру. Изменение требует перезапуска Reticulum.",
     "shareInstanceRestartHint": "Перезапустите Reticulum, чтобы применить настройку общего экземпляра.",
     "sharedInstanceStatus": "Статус общего экземпляра",
-    "sharedInstanceModeDisabled": "Не делится — этот процесс использует свои интерфейсы",
+    "sharedInstanceModeDisabled": "Не делится - этот процесс использует свои интерфейсы",
     "sharedInstanceModeServer": "Сервер: другие локальные приложения могут подключаться",
-    "sharedInstanceModeClient": "Подключён — используется другой локальный общий экземпляр",
+    "sharedInstanceModeClient": "Подключён - используется другой локальный общий экземпляр",
     "transportActive": "Транспорт активен",
     "transportInactive": "Транспорт неактивен",
     "transportInactiveSharedClient": "Транспорт неактивен при подключении к общему экземпляру",
@@ -363,7 +363,7 @@
     "retryStarted": "Загрузка запущена снова",
     "retryFailed": "Не удалось повторить загрузку",
     "retrying": "Повтор ({attempt}/{max})…",
-    "interrupted": "Прервано при закрытии приложения — повторите загрузку",
+    "interrupted": "Прервано при закрытии приложения - повторите загрузку",
     "etaLeft": "осталось {eta}",
     "readDocument": "Читать {name}"
   },
@@ -426,7 +426,7 @@
     "loadingConfig": "Загрузка конфигурации Reticulum...",
     "exportIndexMu": "Экспорт как index.mu",
     "parser": "Парсер",
-    "parserWasmUnavailable": "Не удалось загрузить WebAssembly-парсер; предпросмотр использует JavaScript."
+    "parserWasmUnavailable": "Не удалось загрузить WebAssembly-парсер. Предпросмотр использует JavaScript."
   },
   "config": {
     "title": "Конфигурация Reticulum",
@@ -615,9 +615,9 @@
     "connectionFailedDescription": "Не удалось достичь этого узла. Убедитесь, что интерфейсы Reticulum в сети и назначение доступно в mesh.",
     "connectionLostTitle": "Соединение потеряно",
     "connectionLostDescription": "Связь с узлом прервалась до завершения загрузки страницы.",
-    "notFoundTitle": "404 — Страница не найдена",
+    "notFoundTitle": "404: Страница не найдена",
     "notFoundDescription": "На этом узле нет страницы по этому адресу.",
-    "internalTitle": "500 — Внутренняя ошибка узла",
+    "internalTitle": "500: Внутренняя ошибка узла",
     "payloadTooLargeTitle": "Слишком большой ответ",
     "payloadTooLargeDescription": "Эта страница или файл превышают настроенный лимит размера и были отклонены для защиты устройства.",
     "storageFullTitle": "Хранилище недоступно",

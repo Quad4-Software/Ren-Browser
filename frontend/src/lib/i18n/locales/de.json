@@ -152,9 +152,9 @@
     "shareInstanceHint": "Diesen Reticulum-Stack mit anderen lokalen Apps teilen oder einer vorhandenen gemeinsamen Instanz beitreten. Eine Änderung erfordert einen Reticulum-Neustart.",
     "shareInstanceRestartHint": "Starten Sie Reticulum neu, um die Einstellung für die gemeinsame Instanz anzuwenden.",
     "sharedInstanceStatus": "Status der gemeinsamen Instanz",
-    "sharedInstanceModeDisabled": "Nicht geteilt — dieser Prozess besitzt eigene Schnittstellen",
+    "sharedInstanceModeDisabled": "Nicht geteilt - dieser Prozess besitzt eigene Schnittstellen",
     "sharedInstanceModeServer": "Server: andere lokale Apps können sich verbinden",
-    "sharedInstanceModeClient": "Verbunden — nutzt eine andere lokale gemeinsame Instanz",
+    "sharedInstanceModeClient": "Verbunden - nutzt eine andere lokale gemeinsame Instanz",
     "transportActive": "Transport aktiv",
     "transportInactive": "Transport inaktiv",
     "transportInactiveSharedClient": "Transport inaktiv, solange mit einer gemeinsamen Instanz verbunden",
@@ -363,7 +363,7 @@
     "retryStarted": "Download erneut gestartet",
     "retryFailed": "Download konnte nicht erneut gestartet werden",
     "retrying": "Erneuter Versuch ({attempt}/{max})…",
-    "interrupted": "Beim Schließen der App unterbrochen — erneut versuchen",
+    "interrupted": "Beim Schließen der App unterbrochen - erneut versuchen",
     "etaLeft": "noch {eta}",
     "readDocument": "{name} lesen"
   },
@@ -426,7 +426,7 @@
     "loadingConfig": "Reticulum-Konfiguration wird geladen...",
     "exportIndexMu": "Als index.mu exportieren",
     "parser": "Parser",
-    "parserWasmUnavailable": "WebAssembly-Parser konnte nicht geladen werden; Vorschau nutzt JavaScript."
+    "parserWasmUnavailable": "WebAssembly-Parser konnte nicht geladen werden. Vorschau nutzt JavaScript."
   },
   "config": {
     "title": "Reticulum-Konfiguration",
@@ -615,9 +615,9 @@
     "connectionFailedDescription": "Dieser Knoten konnte nicht erreicht werden. Prüfen Sie, ob Reticulum-Schnittstellen online sind und das Ziel im Mesh verfügbar ist.",
     "connectionLostTitle": "Verbindung verloren",
     "connectionLostDescription": "Die Verbindung zum Knoten wurde unterbrochen, bevor die Seite vollständig geladen wurde.",
-    "notFoundTitle": "404 — Seite nicht gefunden",
+    "notFoundTitle": "404: Seite nicht gefunden",
     "notFoundDescription": "Dieser Knoten hat keine Seite unter dieser Adresse.",
-    "internalTitle": "500 — Interner Knotenfehler",
+    "internalTitle": "500: Interner Knotenfehler",
     "payloadTooLargeTitle": "Antwort zu groß",
     "payloadTooLargeDescription": "Diese Seite oder Datei überschreitet das konfigurierte Größenlimit und wurde zum Schutz Ihres Geräts abgelehnt.",
     "storageFullTitle": "Speicher nicht verfügbar",
