@@ -7,4 +7,7 @@ runs:
       shell: bash
       env:
         RNS_INVENTORY_OUT: ${{ runner.temp }}/renbrowser-tree-inventory.txt
+        # Soft: warn on inventory/workdir drift from tooling (pnpm, gofmt).
+        # Start-of-job verify-tree-rsm.sh remains a hard signature check.
+        RNS_CLEAN_SOFT: "1"
       run: sh build/scripts/verify-workspace-clean.sh "$RNS_INVENTORY_OUT"

@@ -1,6 +1,10 @@
 packages:
   - frontend
 
+# Top-level only. Nested under pnpm: is ignored and pnpm then rewrites this file.
+allowBuilds:
+  esbuild: true
+
 pnpm:
   minimumReleaseAge: 1440
   trustPolicy: no-downgrade
@@ -10,5 +14,3 @@ pnpm:
   engineStrict: true
   autoInstallPeers: true
   pmOnFail: error
-  allowBuilds:
-    esbuild: true

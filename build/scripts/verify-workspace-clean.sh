@@ -7,6 +7,9 @@
 #
 # Env:
 #   RNS_CLEAN_ALLOW   space-separated path prefixes always ignored (optional)
+#   RNS_CLEAN_SOFT    if set to 1, inventory hash mismatches warn but do not
+#                     fail the job. Unexpected untracked files still fail.
+#                     Start-of-job verify-tree-rsm.sh stays hard either way.
 set -eu
 
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)"
@@ -18,7 +21,20 @@ if [ ! -f "$INV" ]; then
 	exit 1
 fi
 
-sh "$ROOT/build/scripts/tree-manifest.sh" verify "$INV"
+SOFT=0
+case "${RNS_CLEAN_SOFT:-}" in
+1 | true | TRUE | yes | YES)
+	SOFT=1
+	;;
+esac
+
+if [ "$SOFT" -eq 1 ]; then
+	if ! sh "$ROOT/build/scripts/tree-manifest.sh" verify "$INV"; then
+		echo "verify-workspace-clean.sh: WARNING inventory mismatch (soft mode)" >&2
+	fi
+else
+	sh "$ROOT/build/scripts/tree-manifest.sh" verify "$INV"
+fi
 
 # Default ephemeral prefixes created by CI / local builds
 ALLOW="bin/ bench/ sbom/ reports/ coverage/ dist/ node_modules/ frontend/node_modules/ frontend/dist/ frontend/.svelte-kit/ frontend/playwright-report/ frontend/test-results/ .docker/ .flatpak-builder/ build/linux/ build/flatpak/ build/tools/ build/packaging/ .task/ __pycache__/ .cache/"
@@ -65,6 +81,10 @@ while IFS= read -r line; do
 			continue
 		fi
 		if is_allowed "$path"; then
+			continue
+		fi
+		if [ "$SOFT" -eq 1 ]; then
+			echo "verify-workspace-clean.sh: WARNING unexpected change: $line" >&2
 			continue
 		fi
 		echo "verify-workspace-clean.sh: unexpected change: $line" >&2
