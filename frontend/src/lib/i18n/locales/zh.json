@@ -426,7 +426,7 @@
     "loadingConfig": "正在加载 Reticulum 配置…",
     "exportIndexMu": "导出为 index.mu",
     "parser": "解析器",
-    "parserWasmUnavailable": "WebAssembly 解析器加载失败；预览使用 JavaScript。"
+    "parserWasmUnavailable": "WebAssembly 解析器加载失败。预览使用 JavaScript。"
   },
   "config": {
     "title": "Reticulum 配置",
