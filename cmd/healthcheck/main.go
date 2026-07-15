@@ -25,9 +25,16 @@ func main() {
 		path = "/" + base + "/health"
 	}
 
+	for _, c := range port {
+		if c < '0' || c > '9' {
+			os.Exit(1)
+		}
+	}
+
+	// Host is always loopback. Port is digits-only from container env.
 	url := fmt.Sprintf("http://127.0.0.1:%s%s", port, path)
 	client := &http.Client{Timeout: 2 * time.Second}
-	resp, err := client.Get(url)
+	resp, err := client.Get(url) // #nosec G704 -- fixed 127.0.0.1 health probe
 	if err != nil {
 		os.Exit(1)
 	}

@@ -76,25 +76,25 @@ import (
 
 const (
 \tCompany            = ${goString(brand.company)}
-\tDisplayName         = ${goString(brand.displayName)}
-\tSlug                = ${goString(brand.slug)}
-\tBundleID            = ${goString(brand.bundleId)}
-\tDescription         = ${goString(brand.description)}
-\tTagline             = ${goString(brand.tagline)}
-\tComments            = ${goString(brand.comments)}
-\tCopyright           = ${goString(brand.copyright)}
-\tVersion             = ${goString(brand.version)}
-\tHomepage            = ${goString(brand.homepage)}
-\tDataDirName         = ${goString(brand.dataDir)}
-\tDBFileName          = ${goString(brand.dbFile)}
-\tEnvPrefix           = ${goString(brand.envPrefix)}
-\tLocalStoragePrefix  = ${goString(brand.localStoragePrefix)}
-\tIndexedDBName       = ${goString(brand.indexedDbName)}
-\tProxyHeader         = ${goString(brand.proxyHeader)}
-\tTempFilePrefix      = ${goString(brand.tempFilePrefix)}
-\tWailsVersion        = ${goString(brand.wailsVersion)}
-\tWasmExecDomID        = ${goString(wasmExecID)}
-\tWasmGlobalFlag       = ${goString(wasmGlobalFlag)}
+\tDisplayName        = ${goString(brand.displayName)}
+\tSlug               = ${goString(brand.slug)}
+\tBundleID           = ${goString(brand.bundleId)}
+\tDescription        = ${goString(brand.description)}
+\tTagline            = ${goString(brand.tagline)}
+\tComments           = ${goString(brand.comments)}
+\tCopyright          = ${goString(brand.copyright)}
+\tVersion            = ${goString(brand.version)}
+\tHomepage           = ${goString(brand.homepage)}
+\tDataDirName        = ${goString(brand.dataDir)}
+\tDBFileName         = ${goString(brand.dbFile)}
+\tEnvPrefix          = ${goString(brand.envPrefix)}
+\tLocalStoragePrefix = ${goString(brand.localStoragePrefix)}
+\tIndexedDBName      = ${goString(brand.indexedDbName)}
+\tProxyHeader        = ${goString(brand.proxyHeader)}
+\tTempFilePrefix     = ${goString(brand.tempFilePrefix)}
+\tWailsVersion       = ${goString(brand.wailsVersion)}
+\tWasmExecDomID      = ${goString(wasmExecID)}
+\tWasmGlobalFlag     = ${goString(wasmGlobalFlag)}
 )
 
 func DataDir() string {

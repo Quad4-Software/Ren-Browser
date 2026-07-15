@@ -1,6 +1,15 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Box, FolderOpen, Network, Package, RefreshCw, ShieldCheck, ShieldOff, Smartphone } from "@lucide/svelte";
+  import {
+    Box,
+    FolderOpen,
+    Network,
+    Package,
+    RefreshCw,
+    ShieldCheck,
+    ShieldOff,
+    Smartphone,
+  } from "@lucide/svelte";
   import Toggle from "$lib/components/Toggle.svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import MicronWasmManager from "$lib/components/MicronWasmManager.svelte";
@@ -276,6 +285,8 @@
         return t("settings.webkitSandboxNoteAndroid");
       case "not-linux":
         return t("settings.webkitSandboxNoteNotLinux");
+      case "container":
+        return t("settings.webkitSandboxNoteContainer");
       default:
         return "";
     }
@@ -907,7 +918,9 @@
           </span>
         </div>
         <p class="sandbox-note">
-          {sandboxStatus.inFlatpak ? t("settings.flatpakActiveHint") : t("settings.flatpakInactiveHint")}
+          {sandboxStatus.inFlatpak
+            ? t("settings.flatpakActiveHint")
+            : t("settings.flatpakInactiveHint")}
         </p>
       </div>
 
@@ -988,7 +1001,9 @@
           </span>
         </div>
         <p class="sandbox-note">
-          {sandboxStatus.onAndroid ? t("settings.androidActiveHint") : t("settings.androidInactiveHint")}
+          {sandboxStatus.onAndroid
+            ? t("settings.androidActiveHint")
+            : t("settings.androidInactiveHint")}
         </p>
       </div>
     </div>
