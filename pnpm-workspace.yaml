@@ -7,5 +7,12 @@ pnpm:
   trustPolicyIgnoreAfter: 525600
   blockExoticSubdeps: true
   strictDepBuilds: false
+  engineStrict: true
+  autoInstallPeers: true
+  pmOnFail: error
   allowBuilds:
     esbuild: true
+
+packageConfigs:
+  frontend:
+    minimumReleaseAge: 10080
