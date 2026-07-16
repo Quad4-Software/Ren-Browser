@@ -1,6 +1,57 @@
+diff --git a/src/internal/bytealg/indexbyte_arm64.s b/src/internal/bytealg/indexbyte_arm64.s
+index 458479e5..551417d9 100644
+--- a/src/internal/bytealg/indexbyte_arm64.s
++++ b/src/internal/bytealg/indexbyte_arm64.s
+@@ -4,6 +4,15 @@
+ 
+ #include "textflag.h"
+ 
++// Go asm supports #ifdef/#ifndef only, not #if defined.
++// Same pattern as runtime/tls_arm64.h for shared GOOS flags.
++#ifdef GOOS_android
++#define INDEXBYTE_MTE
++#endif
++#ifdef GOOS_ios
++#define INDEXBYTE_MTE
++#endif
++
+ // func IndexByte(b []byte, c byte) int
+ // input:
+ //   R0: b ptr
+@@ -34,7 +43,7 @@ TEXT ·IndexByteString<ABIInternal>(SB),NOSPLIT,$0-32
+ 	// identify exactly which byte has matched.
+ 
+ 	CBZ	R1, fail
+-#ifdef GOOS_android
++#ifdef INDEXBYTE_MTE
+ 	ADD	R0, R1, R20   // R20 = end of data
+ 	BIC	$0xf, R0, R21 // R21 = earliest we can read
+ #endif
+@@ -55,8 +64,8 @@ TEXT ·IndexByteString<ABIInternal>(SB),NOSPLIT,$0-32
+ 	// Input string is not 32-byte aligned. We calculate the
+ 	// syndrome value for the aligned 32 bytes block containing
+ 	// the first bytes and mask off the irrelevant part.
+-#ifdef GOOS_android
+-	// Android requires us to not read outside an aligned 16-byte
++#ifdef INDEXBYTE_MTE
++	// Android/iOS require us to not read outside an aligned 16-byte
+ 	// region because MTE might be enforced.
+ 	CMP	R21, R3
+ 	BLO	2(PC)
+@@ -88,7 +97,7 @@ TEXT ·IndexByteString<ABIInternal>(SB),NOSPLIT,$0-32
+ 	CBNZ	R6, tail
+ 
+ loop:
+-#ifdef GOOS_android
++#ifdef INDEXBYTE_MTE
+ 	CMP	R21, R3
+ 	BLO	2(PC)
+ 	VLD1	(R3), [V1.B16]
+diff --git a/src/runtime/string.go b/src/runtime/string.go
+index 7207f834..8d43ce6a 100644
 --- a/src/runtime/string.go
 +++ b/src/runtime/string.go
-@@ -507,8 +507,10 @@ func findnull(s *byte) int {
+@@ -506,9 +506,11 @@ func findnull(s *byte) int {
  	// It must be the minimum page size for any architecture Go
  	// runs on. It's okay (just a minor performance loss) if the
  	// actual system page size is larger than this value.
@@ -15,36 +66,3 @@
  
  	offset := 0
  	ptr := unsafe.Pointer(s)
---- a/src/internal/bytealg/indexbyte_arm64.s
-+++ b/src/internal/bytealg/indexbyte_arm64.s
-@@ -34,7 +34,7 @@ TEXT ·IndexByteString(SB),NOSPLIT,$0-32
- 	// identify exactly which byte has matched.
- 
- 	CBZ	R1, fail
--#ifdef GOOS_android
-+#if defined(GOOS_android) || defined(GOOS_ios)
- 	ADD	R0, R1, R20   // R20 = end of data
- 	BIC	$0xf, R0, R21 // R21 = earliest we can read
- #endif
-@@ -55,9 +55,9 @@ TEXT ·IndexByteString(SB),NOSPLIT,$0-32
- 	// Input string is not 32-byte aligned. We calculate the
- 	// syndrome value for the aligned 32 bytes block containing
- 	// the first bytes and mask off the irrelevant part.
--#ifdef GOOS_android
--	// Android requires us to not read outside an aligned 16-byte
--	// region because MTE might be enforced.
-+#if defined(GOOS_android) || defined(GOOS_ios)
-+	// Android/iOS require us to not read outside an aligned 16-byte
-+	// region because MTE might be enforced.
- 	CMP	R21, R3
- 	BLO	2(PC)
- 	VLD1	(R3), [V1.B16]
-@@ -88,7 +88,7 @@ TEXT ·IndexByteString(SB),NOSPLIT,$0-32
- 	CBNZ	R6, tail
- 
- loop:
--#ifdef GOOS_android
-+#if defined(GOOS_android) || defined(GOOS_ios)
- 	CMP	R21, R3
- 	BLO	2(PC)
- 	VLD1	(R3), [V1.B16]

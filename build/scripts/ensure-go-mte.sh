@@ -9,6 +9,7 @@
 #   GO_MTE_DIR   install root (default: build/tools/go-mte)
 #   GO_MTE_REF   go git ref to build (default: pinned tip commit)
 #   GO_MTE_FORCE=1  rebuild even when stamp matches
+#   GO_MTE_BUILD_DIR  scratch dir for make.bash (default: cache outside module)
 #
 # Usage:
 #   bash build/scripts/ensure-go-mte.sh
@@ -49,6 +50,8 @@ have_toolchain() {
   # Tip must still carry the upstream Android MTE findnull change.
   grep -q 'goos.IsAndroid' "${toolchain_dir}/src/runtime/string.go" 2>/dev/null || return 1
   grep -q 'goos.IsIos' "${toolchain_dir}/src/runtime/string.go" 2>/dev/null || return 1
+  # Stale installs that still contain Go's test/ tree poison go test ./...
+  [ ! -d "${toolchain_dir}/test" ] || return 1
   return 0
 }
 
@@ -88,8 +91,11 @@ echo "  install:   ${toolchain_dir}"
 echo "  bootstrap: ${bootstrap} ($(go version))"
 
 mkdir -p "$(dirname "${toolchain_dir}")"
-# Prefer project disk over /tmp (tmpfs quotas are often too small for make.bash).
-workdir="${root}/build/tools/go-mte-build"
+# Scratch must stay outside the renbrowser module. A failed build left under
+# build/tools/go-mte-build previously made go test ./... and go mod tidy fail
+# on Go's relative-import test trees.
+cache_root="${XDG_CACHE_HOME:-${HOME}/.cache}/renbrowser"
+workdir="${GO_MTE_BUILD_DIR:-${cache_root}/go-mte-build}"
 rm -rf "${workdir}"
 mkdir -p "${workdir}"
 tmp="${workdir}/src"
@@ -97,7 +103,7 @@ mkdir -p "${tmp}"
 cleanup() { rm -rf "${workdir}"; }
 trap cleanup EXIT
 
-# Keep Go's compile scratch on the same volume.
+# Keep Go's compile scratch on the same volume as the workdir.
 export GOTMPDIR="${workdir}/gotmp"
 mkdir -p "${GOTMPDIR}"
 export TMPDIR="${GOTMPDIR}"
@@ -133,6 +139,16 @@ trap - EXIT
 rm -rf "${workdir}"
 # History is not needed at build time and bloats CI caches.
 rm -rf "${toolchain_dir}/.git"
+# Go's top-level test/ tree is not inside module std. If left under
+# build/tools/go-mte it is picked up by the parent module's go test ./...
+# and go mod tidy (relative imports, mixed packages). Strip it and other
+# non-runtime trees from the installed GOROOT.
+rm -rf \
+  "${toolchain_dir}/test" \
+  "${toolchain_dir}/api" \
+  "${toolchain_dir}/doc" \
+  "${toolchain_dir}/misc" \
+  "${toolchain_dir}/.github"
 
 echo "${desired_stamp}" > "${stamp_file}"
 

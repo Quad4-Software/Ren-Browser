@@ -33,7 +33,8 @@ build/linux/appimage/build
 build/linux/appimage/AppDir
 build/flatpak/
 .flatpak-builder
-build/tools/
+build/tools/*
+!build/tools/go.mod
 build/packaging/
 *.pkg.tar.*
 *.pkg.tar
