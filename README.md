@@ -144,13 +144,18 @@ export ANDROID_KEY_PASSWORD='your-key-password'
 task package:android
 ```
 
-#### Android memory tagging (GrapheneOS)
+#### Android / iOS memory tagging (MTE)
 
-On GrapheneOS, memory tagging (MTE) is often enabled by default. The app manifest sets `android:memtagMode="off"`, but GrapheneOS can still force native memory tagging on the app, so that flag may not be enough.
+Stock Go 1.26.x still crashes under ARM Memory Tagging Extension (`SEGV_MTESERR`) because `C.GoString` / `runtime.findnull` over-reads tagged C memory. Tip has the Android fix (CLs 749062 / 751020). Go 1.27 should ship it. Upstream iOS support is still open (CL 751000).
 
-If Ren Browser crashes on launch try turning off memory tagging for this app in system settings.
+Android and iOS app builds therefore use a local tip toolchain under `build/tools/go-mte` (gitignored), with a small iOS parity patch. First mobile build compiles that toolchain once (needs network + a bootstrap Go). Desktop and server builds keep system Go from `go.mod`.
 
-This is a known Go + MTE issue on Android ([golang/go#59090](https://github.com/golang/go/issues/59090)) next version should ship with fix.
+```sh
+task toolchain:mte   # optional: prebuild the mobile Go toolchain
+task build:android
+```
+
+Override pin with `GO_MTE_REF=<commit>` or force a rebuild with `GO_MTE_FORCE=1`.
 
 ## Using the app
 

@@ -130,6 +130,8 @@ The first `nix build` may fail while computing the `pnpmDeps` hash; paste the ha
 
 Android builds need the [Android SDK](https://developer.android.com/studio) (API 34, NDK r26+). Set `ANDROID_HOME` and run `task android:install:deps` if the build reports missing tools.
 
+Android and iOS Go compiles use a tip toolchain with MTE fixes (`task toolchain:mte`). The first mobile build downloads and builds that toolchain under `build/tools/go-mte`.
+
 ## Server binary from source
 
 ```sh

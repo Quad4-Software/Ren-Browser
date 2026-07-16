@@ -140,7 +140,10 @@ tasks:
           done
         fi
 
-        go build -buildmode=c-shared -overlay build/android/overlay.json {{.BUILD_FLAGS}} \
+        # Mobile builds use a tip Go toolchain with Android MTE fixes
+        # (and an iOS parity patch). Desktop/server keep system Go.
+        bash "{{.ROOT_DIR}}/build/scripts/with-go-mte.sh" build -buildmode=c-shared \
+          -overlay build/android/overlay.json {{.BUILD_FLAGS}} \
           -o build/android/app/src/main/jniLibs/$JNI_DIR/libwails.so
     vars:
       BUILD_FLAGS: '{{if eq .PRODUCTION "true"}}-tags production,android -trimpath -buildvcs=false -ldflags="-w -s"{{else}}-tags android,debug -buildvcs=false -gcflags=all="-l"{{end}}'

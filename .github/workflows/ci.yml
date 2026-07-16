@@ -386,6 +386,15 @@ jobs:
       - name: Setup Android SDK
         uses: ./.github/actions/setup-android
 
+      - name: Cache mobile MTE Go toolchain
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: build/tools/go-mte
+          key: go-mte-${{ runner.os }}-${{ hashFiles('build/patches/go/mte-ios.patch', 'build/scripts/ensure-go-mte.sh') }}
+
+      - name: Ensure mobile MTE Go toolchain
+        run: task toolchain:mte
+
       - name: Detect Android signing
         id: android_sign
         shell: bash
@@ -541,6 +550,15 @@ jobs:
           install-linux-deps: "false"
           install-wails: "true"
           cache-node: "false"
+
+      - name: Cache mobile MTE Go toolchain
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        with:
+          path: build/tools/go-mte
+          key: go-mte-${{ runner.os }}-${{ hashFiles('build/patches/go/mte-ios.patch', 'build/scripts/ensure-go-mte.sh') }}
+
+      - name: Ensure mobile MTE Go toolchain
+        run: task toolchain:mte
 
       - name: Build iOS App
         run: task ios:package

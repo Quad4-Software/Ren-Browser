@@ -1,0 +1,50 @@
+--- a/src/runtime/string.go
++++ b/src/runtime/string.go
+@@ -507,8 +507,10 @@ func findnull(s *byte) int {
+ 	// It must be the minimum page size for any architecture Go
+ 	// runs on. It's okay (just a minor performance loss) if the
+ 	// actual system page size is larger than this value.
+-	// For Android, we set the page size to the MTE size, as MTE
+-	// might be enforced. See issue 59090.
+-	const pageSize = 4096*(1-goos.IsAndroid) + 16*goos.IsAndroid
++	// For Android and iOS, scan at the MTE granule size, as MTE
++	// might be enforced. See issue 59090. Upstream Android CLs
++	// 749062 and 751020. iOS CL 751000 is still open so we also
++	// enable the IndexByteString MTE-safe path for GOOS=ios.
++	const pageSize = 4096*(1-goos.IsAndroid)*(1-goos.IsIos) + 16*(goos.IsAndroid|goos.IsIos)
+ 
+ 	offset := 0
+ 	ptr := unsafe.Pointer(s)
+--- a/src/internal/bytealg/indexbyte_arm64.s
++++ b/src/internal/bytealg/indexbyte_arm64.s
+@@ -34,7 +34,7 @@ TEXT ·IndexByteString(SB),NOSPLIT,$0-32
+ 	// identify exactly which byte has matched.
+ 
+ 	CBZ	R1, fail
+-#ifdef GOOS_android
++#if defined(GOOS_android) || defined(GOOS_ios)
+ 	ADD	R0, R1, R20   // R20 = end of data
+ 	BIC	$0xf, R0, R21 // R21 = earliest we can read
+ #endif
+@@ -55,9 +55,9 @@ TEXT ·IndexByteString(SB),NOSPLIT,$0-32
+ 	// Input string is not 32-byte aligned. We calculate the
+ 	// syndrome value for the aligned 32 bytes block containing
+ 	// the first bytes and mask off the irrelevant part.
+-#ifdef GOOS_android
+-	// Android requires us to not read outside an aligned 16-byte
+-	// region because MTE might be enforced.
++#if defined(GOOS_android) || defined(GOOS_ios)
++	// Android/iOS require us to not read outside an aligned 16-byte
++	// region because MTE might be enforced.
+ 	CMP	R21, R3
+ 	BLO	2(PC)
+ 	VLD1	(R3), [V1.B16]
+@@ -88,7 +88,7 @@ TEXT ·IndexByteString(SB),NOSPLIT,$0-32
+ 	CBNZ	R6, tail
+ 
+ loop:
+-#ifdef GOOS_android
++#if defined(GOOS_android) || defined(GOOS_ios)
+ 	CMP	R21, R3
+ 	BLO	2(PC)
+ 	VLD1	(R3), [V1.B16]
