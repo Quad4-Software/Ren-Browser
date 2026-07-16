@@ -9,6 +9,9 @@
 # Paths under any vendor/ directory are excluded (Go module vendor trees are
 # refreshed by vendor:go and are not first-party inventory).
 #
+# Generate and verify both hash git index blobs (not the working tree), so
+# Windows autocrlf checkouts do not false-fail.
+#
 # Paths are listed via newline-delimited git ls-files (POSIX sh / dash safe).
 # Do not use read -d or sort -z (bash/GNU-only).
 #
@@ -119,7 +122,14 @@ verify() {
 			fail=1
 			continue
 		fi
-		got="$(file_sha256 "$path")"
+		# Hash the git index blob (same as generate), not the working tree.
+		# Windows runners with core.autocrlf rewrite text files to CRLF on
+		# disk, which would false-fail a working-tree byte compare.
+		if git cat-file -e ":$path" 2>/dev/null; then
+			got="$(index_sha256 "$path")"
+		else
+			got="$(file_sha256 "$path")"
+		fi
 		if [ "$got" != "$hash" ]; then
 			echo "tree-manifest.sh: modified: $path" >&2
 			echo "  expected $hash" >&2
