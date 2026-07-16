@@ -1,6 +1,5 @@
 # Pinned third-party actions (bump tag and SHA together when upgrading):
 #   actions/checkout@v7.0.0                 9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-#   docker/metadata-action@v6.2.0           dc802804100637a589fabce1cb79ff13a1411302
 #   docker/login-action@v4.4.0              af1e73f918a031802d376d3c8bbc3fe56130a9b0
 #   docker/setup-buildx-action@v4.2.0       bb05f3f5519dd87d3ba754cc423b652a5edd6d2c
 #   docker/build-push-action@v7.3.0         53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
@@ -82,19 +81,12 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302
-        with:
-          images: ghcr.io/${{ steps.image.outputs.name }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=tag
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,prefix=sha-
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=nightly,enable=${{ github.event_name == 'schedule' || startsWith(github.ref, 'refs/tags/nightly-') }}
-            type=raw,value=beta,enable=${{ github.ref_name == 'beta' }}
+        shell: bash
+        env:
+          IMAGE: ghcr.io/${{ steps.image.outputs.name }}
+          IMAGE_VERSION: ${{ steps.version.outputs.version }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: bash build/scripts/docker-image-meta.sh
 
       - name: Login to GHCR
         uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0
