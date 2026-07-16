@@ -19,18 +19,19 @@ func TestMaxFetchBytesDiffersForFiles(t *testing.T) {
 	}
 }
 
-func TestParseURLPreservesCachedRequestSuffix(t *testing.T) {
+func TestParseURLRequestSuffixStable(t *testing.T) {
 	raw := "abb3ebcd03cb2388a838e70c001291f9:/page/form.mu`category=general|field.user=alice"
 	parsed, err := nomadnet.ParseURL(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if parsed.Request.CacheKeySuffix() == "" {
-		t.Fatal("expected cached suffix")
+	got := parsed.Request.CacheKeySuffix()
+	if got == "" {
+		t.Fatal("expected request suffix")
 	}
 	again := parsed.Request.CacheKeySuffix()
-	if again != parsed.Request.CacheKeySuffix() {
-		t.Fatalf("suffix changed between calls: %q vs %q", again, parsed.Request.CacheKeySuffix())
+	if again != got {
+		t.Fatalf("suffix changed between calls: %q vs %q", again, got)
 	}
 }
 
