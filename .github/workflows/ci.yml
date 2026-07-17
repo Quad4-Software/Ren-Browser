@@ -109,8 +109,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           install-wails: "false"
-
-      - name: Restore benchmark baseline
+          install-linux-deps: "true"
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
         with:
           path: bench/baseline

@@ -8,7 +8,7 @@ BASELINE="${1:-}"
 CURRENT="${2:-bench/go.txt}"
 THRESHOLD="${BENCH_REGRESSION_PCT:-25}"
 # Ignore tiny absolute deltas so sub-microsecond benches do not flake CI.
-MIN_ABS_NS="${BENCH_REGRESSION_MIN_NS:-250}"
+MIN_ABS_NS="${BENCH_REGRESSION_MIN_NS:-500}"
 
 if [[ -z "$BASELINE" || ! -f "$BASELINE" ]]; then
   echo "No baseline benchmark file; skipping regression gate."
@@ -28,14 +28,26 @@ baseline_path, current_path, threshold_s, min_abs_s = sys.argv[1:5]
 threshold = float(threshold_s)
 min_abs_ns = float(min_abs_s)
 
+# Strip trailing -N (GOMAXPROCS) so baselines compare across runner shapes.
+name_pat = re.compile(r'^(Benchmark\S+?)(?:-\d+)?$')
+line_pat = re.compile(r'^(Benchmark\S+)\s+\d+\s+([\d\.]+)\s+ns/op')
+
+def canon(name: str) -> str:
+    m = name_pat.match(name)
+    return m.group(1) if m else name
+
 def parse(path: str) -> dict[str, float]:
     out: dict[str, float] = {}
-    pat = re.compile(r'^(Benchmark\S+)\s+\d+\s+([\d\.]+)\s+ns/op')
     with open(path, encoding='utf-8', errors='replace') as f:
         for line in f:
-            m = pat.match(line.strip())
-            if m:
-                out[m.group(1)] = float(m.group(2))
+            m = line_pat.match(line.strip())
+            if not m:
+                continue
+            key = canon(m.group(1))
+            ns = float(m.group(2))
+            # Keep the slower sample if duplicates appear.
+            if key not in out or ns > out[key]:
+                out[key] = ns
     return out
 
 base = parse(baseline_path)

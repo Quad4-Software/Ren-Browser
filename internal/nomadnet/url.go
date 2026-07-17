@@ -43,12 +43,11 @@ func parseRNSURL(raw string) (PageURL, error) {
 	if path == "" {
 		path = "/page/index.mu"
 	}
-	fields := parseQueryFields(u.RawQuery)
 	node = normalizeHash(node)
 	if node == "" {
 		return PageURL{}, ErrInvalidNode
 	}
-	return PageURL{NodeHash: node, Path: normalizePath(path), Request: parseRequestPairs(fields)}, nil
+	return PageURL{NodeHash: node, Path: normalizePath(path), Request: parseQueryRequest(u.RawQuery)}, nil
 }
 
 func parseMeshURL(raw string) (PageURL, error) {
@@ -62,59 +61,86 @@ func parseMeshURL(raw string) (PageURL, error) {
 	}
 	rest := parts[1]
 	path := rest
-	var fields map[string]string
+	var req RequestData
 	if before, after, ok := strings.Cut(rest, "?"); ok {
 		path = before
-		fields = parseFieldSuffix(after)
+		req = parseFieldSuffixRequest(after)
 	} else if before, after, ok := strings.Cut(rest, "`"); ok {
 		path = before
-		fields = parseBacktickFields(after)
+		req = parseRequestPairs(parseBacktickFields(after))
 	}
-	return PageURL{NodeHash: node, Path: normalizePath(path), Request: parseRequestPairs(fields)}, nil
+	return PageURL{NodeHash: node, Path: normalizePath(path), Request: req}, nil
 }
 
-func parseFieldSuffix(raw string) map[string]string {
+func parseFieldSuffixRequest(raw string) RequestData {
 	if raw == "" {
-		return nil
+		return RequestData{}
 	}
 	if before, after, ok := strings.Cut(raw, "`"); ok {
-		out := parseQueryFields(before)
+		req := parseQueryRequest(before)
 		for k, v := range parseBacktickFields(after) {
-			if out == nil {
-				out = make(map[string]string, 4)
-			}
-			out[k] = v
+			req = mergeRequestPair(req, k, v)
 		}
-		return out
+		return req
 	}
-	return parseQueryFields(raw)
+	return parseQueryRequest(raw)
 }
 
-func parseQueryFields(raw string) map[string]string {
+func parseQueryRequest(raw string) RequestData {
 	if raw == "" {
-		return nil
+		return RequestData{}
 	}
-	var out map[string]string
+	n := strings.Count(raw, "&") + 1
+	req := RequestData{Vars: make(map[string]string, n)}
 	for part := range strings.SplitSeq(raw, "&") {
 		k, v, ok := strings.Cut(part, "=")
 		if !ok {
 			k = part
 			v = ""
 		}
-		key, err := url.QueryUnescape(k)
-		if err != nil {
-			key = k
+		key := queryUnescape(k)
+		val := queryUnescape(v)
+		if key == "" {
+			continue
 		}
-		val, err := url.QueryUnescape(v)
-		if err != nil {
-			val = v
+		kind, name := classifyRequestPair(key)
+		if name == "" {
+			continue
 		}
-		if out == nil {
-			out = make(map[string]string, strings.Count(raw, "&")+1)
+		if kind == "field" {
+			if req.Fields == nil {
+				req.Fields = make(map[string]string, 1)
+			}
+			req.Fields[name] = val
+			continue
 		}
-		out[key] = val
+		req.Vars[name] = val
+	}
+	if len(req.Vars) == 0 {
+		req.Vars = nil
+	}
+	return req
+}
+
+func queryUnescape(s string) string {
+	if !queryNeedsUnescape(s) {
+		return s
+	}
+	out, err := url.QueryUnescape(s)
+	if err != nil {
+		return s
 	}
 	return out
+}
+
+func queryNeedsUnescape(s string) bool {
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if c == '%' || c == '+' {
+			return true
+		}
+	}
+	return false
 }
 
 func parseBacktickFields(raw string) map[string]string {
