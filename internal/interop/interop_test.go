@@ -119,6 +119,71 @@ func containsString(items []string, want string) bool {
 	return false
 }
 
+type reachableFetch struct {
+	node   nomadnet.Node
+	result nomadnet.FetchResult
+}
+
+// fetchFirstReachable shuffles discovered nodes and retries with path refresh
+// so a single unreachable announce does not fail the live interop suite.
+func fetchFirstReachable(
+	t *testing.T,
+	browser *nomadnet.Browser,
+	nodes []nomadnet.Node,
+	maxNodes int,
+	retries int,
+) (reachableFetch, bool) {
+	t.Helper()
+	if len(nodes) == 0 {
+		return reachableFetch{}, false
+	}
+	candidates := append([]nomadnet.Node(nil), nodes...)
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	rng.Shuffle(len(candidates), func(i, j int) {
+		candidates[i], candidates[j] = candidates[j], candidates[i]
+	})
+	if maxNodes > 0 && len(candidates) > maxNodes {
+		candidates = candidates[:maxNodes]
+	}
+	for _, node := range candidates {
+		var lastErr string
+		for attempt := 0; attempt <= retries; attempt++ {
+			if attempt > 0 {
+				time.Sleep(time.Duration(attempt) * 2 * time.Second)
+				browser.RefreshPathForRetry(node.Hash)
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
+			fetch := browser.Fetch(ctx, node.Hash, "/page/index.mu", nomadnet.RequestData{})
+			cancel()
+			lastErr = fetch.Error
+			if fetch.Error == "" && len(fetch.Body) > 0 {
+				t.Logf(
+					"reachable: %s (%s) hops=%d iface=%s %d bytes in %dms (attempt %d)",
+					node.Name,
+					node.Hash,
+					fetch.Hops,
+					fetch.Interface,
+					len(fetch.Body),
+					fetch.DurationMs,
+					attempt+1,
+				)
+				return reachableFetch{node: node, result: fetch}, true
+			}
+			t.Logf(
+				"unreachable attempt %d: %s (%s) hops=%d iface=%s err=%s",
+				attempt+1,
+				node.Name,
+				node.Hash,
+				fetch.Hops,
+				fetch.Interface,
+				fetch.Error,
+			)
+		}
+		t.Logf("giving up on %s (%s): %s", node.Name, node.Hash, lastErr)
+	}
+	return reachableFetch{}, false
+}
+
 func TestLiveNomadNetFetch(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipped with -short")
@@ -185,69 +250,19 @@ func TestLiveNomadNetFetch(t *testing.T) {
 	}
 	t.Logf("discovered %d node(s)", len(nodes))
 
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	rng.Shuffle(len(nodes), func(i, j int) {
-		nodes[i], nodes[j] = nodes[j], nodes[i]
-	})
-
-	const maxNodes = 6
-	const retries = 2
-	success := 0
-	ifaceHits := map[string]int{}
-
-	for i, node := range nodes {
-		if i >= maxNodes {
-			break
-		}
-		var lastErr string
-		var lastIface string
-		var lastHops int
-		ok := false
-		for attempt := 0; attempt <= retries; attempt++ {
-			if attempt > 0 {
-				time.Sleep(time.Duration(attempt) * 2 * time.Second)
-				stack.Browser().RefreshPathForRetry(node.Hash)
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
-			fetch := stack.Browser().Fetch(ctx, node.Hash, "/page/index.mu", nomadnet.RequestData{})
-			cancel()
-			lastErr = fetch.Error
-			lastIface = fetch.Interface
-			lastHops = fetch.Hops
-			if fetch.Error == "" && len(fetch.Body) > 0 {
-				success++
-				ok = true
-				ifaceHits[fetch.Interface]++
-				t.Logf(
-					"ok: %s (%s) hops=%d iface=%s %d bytes in %dms",
-					node.Name,
-					node.Hash,
-					fetch.Hops,
-					fetch.Interface,
-					len(fetch.Body),
-					fetch.DurationMs,
-				)
-				break
-			}
-			t.Logf(
-				"attempt %d failed: %s (%s) hops=%d iface=%s err=%s",
-				attempt+1,
-				node.Name,
-				node.Hash,
-				fetch.Hops,
-				fetch.Interface,
-				fetch.Error,
-			)
-		}
-		if !ok {
-			t.Logf("unreachable after retries: %s (%s) hops=%d iface=%s: %s", node.Name, node.Hash, lastHops, lastIface, lastErr)
-		}
-	}
-
-	t.Logf("interface hit counts: %v", ifaceHits)
-	if success == 0 {
+	got, ok := fetchFirstReachable(t, stack.Browser(), nodes, 6, 2)
+	if !ok {
 		t.Fatal("could not fetch any discovered node")
 	}
+	t.Logf(
+		"ok: %s (%s) hops=%d iface=%s %d bytes in %dms",
+		got.node.Name,
+		got.node.Hash,
+		got.result.Hops,
+		got.result.Interface,
+		len(got.result.Body),
+		got.result.DurationMs,
+	)
 }
 
 // TestLiveWakePathReload maps the post-suspend reload path: after a successful
@@ -279,24 +294,15 @@ func TestLiveWakePathReload(t *testing.T) {
 	if len(nodes) == 0 {
 		t.Fatal("no nodes discovered")
 	}
+	t.Logf("discovered %d node(s) before wake simulation", len(nodes))
 
 	browser := stack.Browser()
-	var node nomadnet.Node
-	var first nomadnet.FetchResult
-	ok := false
-	for _, candidate := range nodes {
-		ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
-		first = browser.Fetch(ctx, candidate.Hash, "/page/index.mu", nomadnet.RequestData{})
-		cancel()
-		if first.Error == "" && len(first.Body) > 0 {
-			node = candidate
-			ok = true
-			break
-		}
-	}
+	got, ok := fetchFirstReachable(t, browser, nodes, 6, 2)
 	if !ok {
 		t.Fatal("could not fetch any node before wake simulation")
 	}
+	node := got.node
+	first := got.result
 	t.Logf(
 		"pre-wake fetch ok: %s hops=%d iface=%s %dms",
 		node.Name, first.Hops, first.Interface, first.DurationMs,
@@ -323,6 +329,7 @@ func TestLiveWakePathReload(t *testing.T) {
 		// Live mesh path rediscovery after forced expire can miss once under load.
 		t.Logf("post-wake fetch retry after: %s", second.Error)
 		time.Sleep(5 * time.Second)
+		browser.RefreshPathForRetry(node.Hash)
 		start = time.Now()
 		ctx, cancel = context.WithTimeout(context.Background(), 90*time.Second)
 		second = browser.Fetch(ctx, node.Hash, "/page/index.mu", nomadnet.RequestData{})
