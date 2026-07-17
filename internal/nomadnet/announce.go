@@ -17,6 +17,11 @@ const (
 	AppName   = "nomadnetwork"
 	AppAspect = "node"
 	AspectKey = AppName + "." + AppAspect
+
+	// maxAnnounceNodes caps live discovery memory on busy meshes.
+	maxAnnounceNodes = 4096
+	// maxAnnounceNameRunes keeps oversized appData from pinning large strings.
+	maxAnnounceNameRunes = 256
 )
 
 type Node struct {
@@ -73,7 +78,7 @@ func (h *AnnounceHandler) ReceivedAnnounce(destHash []byte, ident any, appData [
 	hash := hex.EncodeToString(destHash)
 	node := Node{
 		Hash:      hash,
-		Name:      name,
+		Name:      truncateRunes(name, maxAnnounceNameRunes),
 		Hops:      hops,
 		Enabled:   enabled,
 		Timestamp: ts,
@@ -83,12 +88,50 @@ func (h *AnnounceHandler) ReceivedAnnounce(destHash []byte, ident any, appData [
 
 	h.mu.Lock()
 	h.nodes[hash] = announcedPeer{node: node, id: id}
+	h.evictOldestLocked()
 	onAnnounce := h.onAnnounce
 	h.mu.Unlock()
 	if onAnnounce != nil {
 		onAnnounce(node)
 	}
 	return nil
+}
+
+func (h *AnnounceHandler) evictOldestLocked() {
+	overflow := len(h.nodes) - maxAnnounceNodes
+	if overflow <= 0 {
+		return
+	}
+	type ranked struct {
+		hash     string
+		lastSeen int64
+	}
+	oldest := make([]ranked, 0, len(h.nodes))
+	for hash, peer := range h.nodes {
+		oldest = append(oldest, ranked{hash: hash, lastSeen: peer.node.LastSeen})
+	}
+	// Partial selection: drop the coldest overflow entries.
+	for i := 0; i < overflow; i++ {
+		minIdx := i
+		for j := i + 1; j < len(oldest); j++ {
+			if oldest[j].lastSeen < oldest[minIdx].lastSeen {
+				minIdx = j
+			}
+		}
+		oldest[i], oldest[minIdx] = oldest[minIdx], oldest[i]
+		delete(h.nodes, oldest[i].hash)
+	}
+}
+
+func truncateRunes(s string, max int) string {
+	if max <= 0 || s == "" {
+		return s
+	}
+	if utf8.RuneCountInString(s) <= max {
+		return s
+	}
+	runes := []rune(s)
+	return string(runes[:max])
 }
 
 func (h *AnnounceHandler) List() []Node {

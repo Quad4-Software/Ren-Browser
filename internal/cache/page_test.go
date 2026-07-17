@@ -43,3 +43,37 @@ func TestPageCacheClear(t *testing.T) {
 		t.Fatalf("len after clear = %d", c.Len())
 	}
 }
+
+func TestPageCacheRAMLRUTouchOnGet(t *testing.T) {
+	c := NewPageCacheWithBudget(2, 1<<20)
+	req := nomadnet.RequestData{}
+	c.Put("node", "/page/a.mu", req, []byte("a"), "micron")
+	c.Put("node", "/page/b.mu", req, []byte("b"), "micron")
+	if _, ok := c.Get("node", "/page/a.mu", req); !ok {
+		t.Fatal("expected hit for a")
+	}
+	c.Put("node", "/page/c.mu", req, []byte("c"), "micron")
+	if _, ok := c.Get("node", "/page/a.mu", req); !ok {
+		t.Fatal("a should remain after LRU touch")
+	}
+	if _, ok := c.Get("node", "/page/b.mu", req); ok {
+		t.Fatal("b should be evicted")
+	}
+}
+
+func TestPageCacheByteBudgetEvictsOldest(t *testing.T) {
+	c := NewPageCacheWithBudget(32, 1000)
+	req := nomadnet.RequestData{}
+	body := make([]byte, 400)
+	for i := 0; i < 5; i++ {
+		path := "/page/" + string(byte('a'+i)) + ".mu"
+		c.Put("node", path, req, body, "micron")
+	}
+	if c.Bytes() > c.MaxBytes() {
+		t.Fatalf("bytes = %d maxBytes = %d", c.Bytes(), c.MaxBytes())
+	}
+	if c.Len() > 2 {
+		t.Fatalf("expected byte budget to keep at most 2 entries, got %d", c.Len())
+	}
+}
+

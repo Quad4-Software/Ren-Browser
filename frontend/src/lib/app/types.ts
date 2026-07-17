@@ -192,6 +192,8 @@ export type AppState = {
   configError: string;
   pageCacheEntries: number;
   pageCacheMax: number;
+  pageCacheRAMEntries: number;
+  pageCacheDiskEntries: number;
   pageCacheClearing: boolean;
   pageCacheEnabled: boolean;
   communityItems: CommunityInterface[];

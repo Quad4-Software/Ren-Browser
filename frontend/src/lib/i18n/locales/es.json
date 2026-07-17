@@ -32,7 +32,8 @@
     "noMatches": "Sin coincidencias",
     "matchCount": "{current} / {total}",
     "txRx": "tx {tx} · rx {rx}",
-    "entries": "{current} / {max} entradas"
+    "entries": "{current} / {max} entradas",
+    "pageCacheStats": "{ram} en memoria · {disk} en disco"
   },
   "language": {
     "title": "Idioma",
@@ -121,7 +122,7 @@
     "mobileDevTools": "Mostrar herramientas de desarrollo",
     "openSearch": "Abrir búsqueda",
     "pageCache": "Caché de páginas",
-    "pageCacheHint": "Las páginas de malla en caché cargan al instante. Desactiva la caché o bórrala si necesitas contenido actualizado de la red.",
+    "pageCacheHint": "Las páginas de malla en caché cargan al instante y persisten en disco entre reinicios. Desactiva la caché o bórrala si necesitas contenido actualizado de la red.",
     "pageCacheEnabled": "Guardar páginas de malla en caché local",
     "clearPageCache": "Borrar caché de páginas",
     "nativeTitlebar": "Usar barra de título nativa",

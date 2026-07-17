@@ -79,8 +79,8 @@
   onOpenConfigDir={() => void app.openConfigFolder()}
   onClearPageCache={() => void app.clearPageCache()}
   onChangePageCacheEnabled={(value) => void app.savePageCacheEnabled(value)}
-  pageCacheEntries={app.pageCacheEntries}
-  pageCacheMax={app.pageCacheMax}
+  pageCacheRAMEntries={app.pageCacheRAMEntries}
+  pageCacheDiskEntries={app.pageCacheDiskEntries}
   pageCacheClearing={app.pageCacheClearing}
   pageCacheEnabled={app.pageCacheEnabled}
   onCommunityRefresh={() => void app.loadCommunityInterfaces()}

@@ -32,7 +32,8 @@
     "noMatches": "无匹配",
     "matchCount": "{current} / {total}",
     "txRx": "tx {tx} · rx {rx}",
-    "entries": "{current} / {max} 条"
+    "entries": "{current} / {max} 条",
+    "pageCacheStats": "内存 {ram} · 磁盘 {disk}"
   },
   "language": {
     "title": "语言",
@@ -121,7 +122,7 @@
     "mobileDevTools": "显示开发者工具",
     "openSearch": "打开搜索",
     "pageCache": "页面缓存",
-    "pageCacheHint": "缓存的网格页面可即时加载。需要从网络获取最新内容时，请禁用或清除缓存。",
+    "pageCacheHint": "缓存的网格页面可即时加载，并在磁盘上跨重启持久保存。需要从网络获取最新内容时，请禁用或清除缓存。",
     "pageCacheEnabled": "在本地缓存网格页面",
     "clearPageCache": "清除页面缓存",
     "nativeTitlebar": "使用系统标题栏",

@@ -32,7 +32,8 @@
     "noMatches": "一致なし",
     "matchCount": "{current} / {total}",
     "txRx": "tx {tx} · rx {rx}",
-    "entries": "{current} / {max} 件"
+    "entries": "{current} / {max} 件",
+    "pageCacheStats": "メモリ {ram} · ディスク {disk}"
   },
   "language": {
     "title": "言語",
@@ -121,7 +122,7 @@
     "mobileDevTools": "開発者ツールを表示",
     "openSearch": "検索を開く",
     "pageCache": "ページキャッシュ",
-    "pageCacheHint": "キャッシュされたメッシュページはすぐに読み込まれます。ネットワークから最新の内容が必要なときは、キャッシュを無効にするかクリアしてください。",
+    "pageCacheHint": "キャッシュされたメッシュページはすぐに読み込まれ、再起動後もディスクに保持されます。ネットワークから最新の内容が必要なときは、キャッシュを無効にするかクリアしてください。",
     "pageCacheEnabled": "メッシュページをローカルにキャッシュ",
     "clearPageCache": "ページキャッシュをクリア",
     "nativeTitlebar": "ネイティブタイトルバーを使う",

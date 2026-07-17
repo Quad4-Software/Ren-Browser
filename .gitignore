@@ -103,3 +103,5 @@ build/android/*.jks
 *.rsm
 *.rfe
 !/renbrowser.rsm
+
+.cache-tmp/

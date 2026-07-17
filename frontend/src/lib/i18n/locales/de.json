@@ -32,7 +32,8 @@
     "noMatches": "Keine Treffer",
     "matchCount": "{current} / {total}",
     "txRx": "tx {tx} · rx {rx}",
-    "entries": "{current} / {max} Einträge"
+    "entries": "{current} / {max} Einträge",
+    "pageCacheStats": "{ram} im Speicher · {disk} auf dem Datenträger"
   },
   "language": {
     "title": "Sprache",
@@ -121,7 +122,7 @@
     "mobileDevTools": "Entwicklertools anzeigen",
     "openSearch": "Suche öffnen",
     "pageCache": "Seitencache",
-    "pageCacheHint": "Gecachte Mesh-Seiten laden sofort. Deaktivieren Sie den Cache oder leeren Sie ihn, wenn Sie frische Inhalte vom Netzwerk benötigen.",
+    "pageCacheHint": "Gecachte Mesh-Seiten laden sofort und bleiben auf dem Datenträger über Neustarts erhalten. Deaktivieren Sie den Cache oder leeren Sie ihn, wenn Sie frische Inhalte vom Netzwerk benötigen.",
     "pageCacheEnabled": "Mesh-Seiten lokal zwischenspeichern",
     "clearPageCache": "Seitencache leeren",
     "nativeTitlebar": "Native Titelleiste verwenden",

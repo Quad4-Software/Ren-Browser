@@ -103,8 +103,8 @@
     communityFromBundle: boolean;
     communityFilter: string;
     communitySelected: Set<number>;
-    pageCacheEntries: number;
-    pageCacheMax: number;
+    pageCacheRAMEntries: number;
+    pageCacheDiskEntries: number;
     pageCacheClearing: boolean;
     pageCacheEnabled: boolean;
     sandboxStatus: SandboxStatusRow;
@@ -219,8 +219,8 @@
     onChangeSectionsCollapsed,
     onPluginsChanged,
     pluginsDir = "",
-    pageCacheEntries = 0,
-    pageCacheMax = 128,
+    pageCacheRAMEntries = 0,
+    pageCacheDiskEntries = 0,
     pageCacheClearing = false,
     pageCacheEnabled = true,
     sandboxStatus = { type: "none", enabled: false },
@@ -563,7 +563,10 @@
     />
     <div class="cache-row">
       <span class="meta"
-        >{t("common.entries", { current: pageCacheEntries, max: pageCacheMax })}</span
+        >{t("common.pageCacheStats", {
+          ram: pageCacheRAMEntries,
+          disk: pageCacheDiskEntries,
+        })}</span
       >
       <button
         type="button"

@@ -300,7 +300,9 @@ export function createApp() {
   let configSaving = $state(false);
   let configError = $state("");
   let pageCacheEntries = $state(0);
-  let pageCacheMax = $state(128);
+  let pageCacheMax = $state(512);
+  let pageCacheRAMEntries = $state(0);
+  let pageCacheDiskEntries = $state(0);
   let pageCacheClearing = $state(false);
   let pageCacheEnabled = $state(true);
   let communityItems = $state<CommunityInterface[]>([]);
@@ -1284,10 +1286,14 @@ export function createApp() {
     try {
       const stats = await GetPageCacheStats();
       pageCacheEntries = stats.entries ?? 0;
-      pageCacheMax = stats.max ?? 128;
+      pageCacheMax = stats.max ?? 512;
+      pageCacheRAMEntries = stats.ramEntries ?? 0;
+      pageCacheDiskEntries = stats.diskEntries ?? 0;
     } catch {
       pageCacheEntries = 0;
-      pageCacheMax = 128;
+      pageCacheMax = 512;
+      pageCacheRAMEntries = 0;
+      pageCacheDiskEntries = 0;
     }
   }
 
@@ -2882,6 +2888,12 @@ export function createApp() {
     },
     get pageCacheMax() {
       return pageCacheMax;
+    },
+    get pageCacheRAMEntries() {
+      return pageCacheRAMEntries;
+    },
+    get pageCacheDiskEntries() {
+      return pageCacheDiskEntries;
     },
     get pageCacheClearing() {
       return pageCacheClearing;

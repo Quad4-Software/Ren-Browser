@@ -187,6 +187,12 @@ export interface NetworkEntry {
 export interface PageCacheStats {
     "entries": number;
     "max": number;
+    "bytes": number;
+    "maxBytes": number;
+    "ramEntries": number;
+    "diskEntries": number;
+    "diskBytes": number;
+    "diskMaxBytes": number;
 }
 
 export interface PageResponse {

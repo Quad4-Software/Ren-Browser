@@ -84,7 +84,16 @@ export function browserserviceDefaults(): Record<string, unknown> {
     GetKeybinds: { bindings: null },
     GetLastPage: emptyPage,
     GetNetworkLog: [],
-    GetPageCacheStats: { entries: 0, max: 128 },
+    GetPageCacheStats: {
+      entries: 0,
+      max: 512,
+      bytes: 0,
+      maxBytes: 268435456,
+      ramEntries: 0,
+      diskEntries: 0,
+      diskBytes: 0,
+      diskMaxBytes: 268435456,
+    },
     GetRecent: [],
     GetReticulumConfigText: "",
     GetRuntimeConfig: {

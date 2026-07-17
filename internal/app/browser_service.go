@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -150,6 +151,12 @@ func NewBrowserServiceWithOptions(stack *rns.Stack, app *application.App, opts S
 	if err != nil {
 		return nil, err
 	}
+	pageCacheDir := filepath.Join(filepath.Dir(dbPath), "page-cache")
+	pageCache, err := cache.OpenPageCache(pageCacheDir, cache.PageCacheOptions{})
+	if err != nil {
+		_ = st.Close()
+		return nil, err
+	}
 	svc := &BrowserService{
 		stack:       stack,
 		app:         app,
@@ -158,8 +165,11 @@ func NewBrowserServiceWithOptions(stack *rns.Stack, app *application.App, opts S
 		profileName: profileName,
 		publicMode:  opts.PublicMode,
 		resetWindow: opts.ResetWindow,
-		pageCache:   cache.NewPageCache(128),
+		pageCache:   pageCache,
 		downloads:   newDownloadManager(),
+	}
+	if diskErr := pageCache.LastDiskError(); diskErr != "" {
+		svc.log("warn", "page cache disk unavailable, using memory only", diskErr)
 	}
 	svc.downloads.onChange = func(items []ActiveDownload) {
 		svc.persistDownloadRecovery(items)
@@ -209,7 +219,9 @@ func (s *BrowserService) bindPersistence() {
 	stack.Handler().SetOnAnnounce(func(node nomadnet.Node) {
 		_ = s.store.UpsertNode(node)
 		if s.app != nil {
-			s.app.Event.Emit("node:discovered", s.ListNodes())
+			// UI only uses this as a debounce ping and re-fetches via ListNodes.
+			// Do not build/marshal the full node list on every announce.
+			s.app.Event.Emit("node:discovered", nil)
 		}
 	})
 }
@@ -671,7 +683,7 @@ func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) Pa
 	s.recordNetwork(resp)
 	if s.app != nil {
 		s.app.Event.Emit("page:loaded", resp)
-		s.app.Event.Emit("node:discovered", s.ListNodes())
+		s.app.Event.Emit("node:discovered", nil)
 	}
 	return resp
 }

@@ -32,7 +32,8 @@
     "noMatches": "No matches",
     "matchCount": "{current} / {total}",
     "txRx": "tx {tx} · rx {rx}",
-    "entries": "{current} / {max} entries"
+    "entries": "{current} / {max} entries",
+    "pageCacheStats": "{ram} in memory · {disk} on disk"
   },
   "language": {
     "title": "Language",
@@ -121,7 +122,7 @@
     "mobileDevTools": "Show developer tools",
     "openSearch": "Open search",
     "pageCache": "Page cache",
-    "pageCacheHint": "Cached mesh pages load instantly. Disable caching or clear the cache when you need fresh content from the network.",
+    "pageCacheHint": "Cached mesh pages load instantly and persist on disk across restarts. Disable caching or clear the cache when you need fresh content from the network.",
     "pageCacheEnabled": "Cache mesh pages locally",
     "clearPageCache": "Clear page cache",
     "nativeTitlebar": "Use native title bar",
