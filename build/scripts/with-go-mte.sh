@@ -3,5 +3,12 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
-eval "$(bash "${root}/build/scripts/ensure-go-mte.sh" --print-env)"
+# Only eval export lines. ensure-go-mte may print build status on stderr, but
+# harden against any accidental stdout noise (e.g. "Building ...").
+env_lines="$(bash "${root}/build/scripts/ensure-go-mte.sh" --print-env | grep '^export ' || true)"
+if [ -z "${env_lines}" ]; then
+  echo "ensure-go-mte.sh --print-env produced no export lines" >&2
+  exit 1
+fi
+eval "${env_lines}"
 exec go "$@"

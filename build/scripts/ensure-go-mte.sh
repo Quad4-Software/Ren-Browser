@@ -40,6 +40,9 @@ for arg in "$@"; do
   esac
 done
 
+# Status must stay on stderr so --print-env output is eval-safe.
+log() { echo "$@" >&2; }
+
 patch_hash="$(sha256sum "${patch_file}" | awk '{print $1}')"
 desired_stamp="${ref}:${patch_hash}"
 
@@ -65,8 +68,8 @@ if have_toolchain && [ "${GO_MTE_FORCE:-0}" != "1" ]; then
   if [ "${print_env}" = "1" ]; then
     print_exports
   else
-    echo "Using MTE Go toolchain at ${toolchain_dir} (${desired_stamp})"
-    "${toolchain_dir}/bin/go" version
+    log "Using MTE Go toolchain at ${toolchain_dir} (${desired_stamp})"
+    "${toolchain_dir}/bin/go" version >&2
   fi
   exit 0
 fi
@@ -85,10 +88,10 @@ if [ ! -f "${patch_file}" ]; then
 fi
 
 bootstrap="$(go env GOROOT)"
-echo "Building MTE Go toolchain"
-echo "  ref:       ${ref}"
-echo "  install:   ${toolchain_dir}"
-echo "  bootstrap: ${bootstrap} ($(go version))"
+log "Building MTE Go toolchain"
+log "  ref:       ${ref}"
+log "  install:   ${toolchain_dir}"
+log "  bootstrap: ${bootstrap} ($(go version))"
 
 mkdir -p "$(dirname "${toolchain_dir}")"
 # Scratch must stay outside the renbrowser module. A failed build left under
@@ -129,7 +132,8 @@ export GOROOT_BOOTSTRAP="${bootstrap}"
 export GOTOOLCHAIN=local
 (
   cd "${tmp}/go/src"
-  ./make.bash
+  # Keep make.bash chatter off stdout so --print-env stays eval-safe.
+  ./make.bash >&2
 )
 
 rm -rf "${toolchain_dir}"
@@ -152,7 +156,7 @@ rm -rf \
 
 echo "${desired_stamp}" > "${stamp_file}"
 
-echo "Built $("${toolchain_dir}/bin/go" version)"
+log "Built $("${toolchain_dir}/bin/go" version)"
 if [ "${print_env}" = "1" ]; then
   print_exports
 fi
