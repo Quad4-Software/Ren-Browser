@@ -188,6 +188,19 @@ func pageKeyHash(key pageKey) string {
 	return hex.EncodeToString(sum[:])
 }
 
+func isPageCacheObjectHash(s string) bool {
+	if len(s) != hex.EncodedLen(sha256.Size) {
+		return false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
+}
+
 func (c *PageCache) diskEnabled() bool {
 	return c.dir != ""
 }
@@ -232,7 +245,7 @@ func (c *PageCache) Get(nodeHash, path string, req nomadnet.RequestData) (Entry,
 	if !ok {
 		return Entry{}, false
 	}
-	body, err := os.ReadFile(c.objectPath(hash, ".bin"))
+	body, err := os.ReadFile(c.objectPath(hash, ".bin")) // #nosec G304 -- hash from disk index under page-cache objects dir
 	if err != nil {
 		c.diskErr = err
 		c.removeDiskEntryLocked(hash)
@@ -524,7 +537,11 @@ func (c *PageCache) loadDiskIndex() error {
 			continue
 		}
 		hash := name[:len(name)-len(".meta")]
-		raw, err := os.ReadFile(filepath.Join(objectsDir, name))
+		if !isPageCacheObjectHash(hash) {
+			_ = os.Remove(filepath.Join(objectsDir, filepath.Base(name)))
+			continue
+		}
+		raw, err := os.ReadFile(filepath.Join(objectsDir, filepath.Base(name))) // #nosec G304 -- basename under page-cache objects dir, hash validated
 		if err != nil {
 			continue
 		}
@@ -554,10 +571,14 @@ func (c *PageCache) loadDiskIndex() error {
 			continue
 		}
 		hash := name[:len(name)-len(".bin")]
+		if !isPageCacheObjectHash(hash) {
+			_ = os.Remove(filepath.Join(objectsDir, filepath.Base(name)))
+			continue
+		}
 		if _, ok := haveMeta[hash]; ok {
 			continue
 		}
-		_ = os.Remove(filepath.Join(objectsDir, name))
+		_ = os.Remove(filepath.Join(objectsDir, filepath.Base(name)))
 	}
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].meta.StoredAtUnixMilli < items[j].meta.StoredAtUnixMilli
