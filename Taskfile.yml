@@ -172,7 +172,7 @@ tasks:
     desc: Run Go benchmarks (smoke run for CI artifacts)
     cmds:
       - mkdir -p bench
-      - bash -c 'set -euo pipefail; go test -run="^$" -bench=. -benchmem -count=1 ./internal/cache/... ./internal/content/... ./internal/nomadnet/... | tee bench/go.txt'
+      - bash -c 'set -euo pipefail; go test -run="^$" -bench=. -benchmem -count=5 ./internal/cache/... ./internal/content/... ./internal/nomadnet/... | tee bench/go.txt'
     env:
       GOFLAGS: "-mod=vendor"
 
