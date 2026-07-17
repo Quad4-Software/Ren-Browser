@@ -22,6 +22,7 @@ var (
 	errDiskPartialCommit = errors.New("page cache disk commit incomplete")
 	writeTempDiskFile    = writeTempDiskFileImpl
 	renameDiskFile       = os.Rename
+	mkdirAllDisk         = os.MkdirAll
 )
 
 type pageKey struct {
@@ -134,7 +135,7 @@ func OpenPageCache(dir string, opts PageCacheOptions) (*PageCache, error) {
 	}
 	opts = normalizePageCacheOptions(opts)
 	objectsDir := filepath.Join(dir, "objects")
-	if err := os.MkdirAll(objectsDir, 0o700); err != nil {
+	if err := mkdirAllDisk(objectsDir, 0o700); err != nil {
 		c := NewPageCacheWithBudget(opts.RAMMaxEntries, opts.RAMMaxBytes)
 		c.diskErr = err
 		return c, nil

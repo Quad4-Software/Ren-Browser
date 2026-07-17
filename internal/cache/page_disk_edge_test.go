@@ -24,11 +24,12 @@ func TestPageCachePutUnwritableDiskFallsBackToRAM(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	objects := filepath.Join(dir, "objects")
-	if err := os.Chmod(objects, 0o555); err != nil {
-		t.Fatal(err)
+
+	prev := writeTempDiskFile
+	t.Cleanup(func() { writeTempDiskFile = prev })
+	writeTempDiskFile = func(dir, pattern string, data []byte, perm os.FileMode) (string, error) {
+		return "", &os.PathError{Op: "open", Path: filepath.Join(dir, pattern), Err: syscall.EACCES}
 	}
-	t.Cleanup(func() { _ = os.Chmod(objects, 0o700) })
 
 	c.Put("node", "/page/index.mu", req, []byte("still-cached"), "micron")
 	entry, ok := c.Get("node", "/page/index.mu", req)
@@ -39,8 +40,8 @@ func TestPageCachePutUnwritableDiskFallsBackToRAM(t *testing.T) {
 	if stats.DiskEntries != 0 {
 		t.Fatalf("expected no disk entries, got %d", stats.DiskEntries)
 	}
-	if c.LastDiskError() == "" {
-		t.Fatal("expected LastDiskError after unwritable disk")
+	if !errors.Is(c.diskErr, syscall.EACCES) {
+		t.Fatalf("expected EACCES, got %v", c.diskErr)
 	}
 }
 
@@ -126,13 +127,13 @@ func TestPageCachePutPartialCommitCleansIndex(t *testing.T) {
 }
 
 func TestOpenPageCacheUnwritableRootFallsBackToRAM(t *testing.T) {
-	parent := t.TempDir()
-	if err := os.Chmod(parent, 0o555); err != nil {
-		t.Fatal(err)
+	prev := mkdirAllDisk
+	t.Cleanup(func() { mkdirAllDisk = prev })
+	mkdirAllDisk = func(path string, perm os.FileMode) error {
+		return &os.PathError{Op: "mkdir", Path: path, Err: syscall.EACCES}
 	}
-	t.Cleanup(func() { _ = os.Chmod(parent, 0o700) })
 
-	c, err := OpenPageCache(filepath.Join(parent, "page-cache"), PageCacheOptions{
+	c, err := OpenPageCache(filepath.Join(t.TempDir(), "page-cache"), PageCacheOptions{
 		RAMMaxEntries: 4,
 		RAMMaxBytes:   1024,
 	})
@@ -142,8 +143,8 @@ func TestOpenPageCacheUnwritableRootFallsBackToRAM(t *testing.T) {
 	if c.DiskEnabled() {
 		t.Fatal("expected RAM-only fallback when mkdir fails")
 	}
-	if c.LastDiskError() == "" {
-		t.Fatal("expected LastDiskError when mkdir fails")
+	if !errors.Is(c.diskErr, syscall.EACCES) {
+		t.Fatalf("expected EACCES, got %v", c.diskErr)
 	}
 	req := nomadnet.RequestData{}
 	c.Put("node", "/page/index.mu", req, []byte("ok"), "micron")
@@ -286,11 +287,9 @@ func TestPageCacheClearWithUnwritableDiskClearsRAM(t *testing.T) {
 		t.Fatal(err)
 	}
 	c.Put("node", "/page/a.mu", req, []byte("a"), "micron")
-	objects := filepath.Join(dir, "objects")
-	if err := os.Chmod(objects, 0o555); err != nil {
-		t.Fatal(err)
+	if c.Stats().DiskEntries != 1 {
+		t.Fatal("expected disk entry before clear")
 	}
-	t.Cleanup(func() { _ = os.Chmod(objects, 0o700) })
 
 	cleared := c.Clear()
 	if cleared != 1 {
@@ -300,7 +299,7 @@ func TestPageCacheClearWithUnwritableDiskClearsRAM(t *testing.T) {
 		t.Fatalf("expected empty cache after clear, got %+v", c.Stats())
 	}
 	if _, ok := c.Get("node", "/page/a.mu", req); ok {
-		t.Fatal("expected miss after clear with unwritable disk")
+		t.Fatal("expected miss after clear")
 	}
 }
 
