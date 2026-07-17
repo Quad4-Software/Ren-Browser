@@ -110,6 +110,8 @@ jobs:
         with:
           install-wails: "false"
           install-linux-deps: "true"
+
+      - name: Restore benchmark baseline
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
         with:
           path: bench/baseline
