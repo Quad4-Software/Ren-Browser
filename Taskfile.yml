@@ -228,7 +228,7 @@ tasks:
   test:interop:
     desc: Live Reticulum interop tests (requires network)
     cmds:
-      - go test -tags=interop -timeout=10m ./internal/interop/...
+      - go test -tags=interop -timeout=15m ./internal/interop/...
     env:
       GOFLAGS: "-mod=vendor"
 
