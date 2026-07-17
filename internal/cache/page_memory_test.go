@@ -26,7 +26,7 @@ func TestPageCacheRAMBudgetBoundsHeapGrowth(t *testing.T) {
 	var before runtime.MemStats
 	runtime.ReadMemStats(&before)
 
-	for i := 0; i < puts; i++ {
+	for i := range puts {
 		path := fmt.Sprintf("/page/%d.mu", i)
 		c.Put("node", path, req, body, "micron")
 		if c.Bytes() > ramMaxBytes {
@@ -84,7 +84,7 @@ func TestPageCacheDiskSpillKeepsRAMBounded(t *testing.T) {
 	var before runtime.MemStats
 	runtime.ReadMemStats(&before)
 
-	for i := 0; i < puts; i++ {
+	for i := range puts {
 		path := fmt.Sprintf("/page/%d.mu", i)
 		c.Put("node", path, req, body, "micron")
 		if c.Bytes() > ramMaxBytes {
@@ -121,7 +121,7 @@ func TestPageCacheClearReleasesTrackedBytes(t *testing.T) {
 	c := NewPageCacheWithBudget(64, 2<<20)
 	req := nomadnet.RequestData{}
 	body := make([]byte, 64<<10)
-	for i := 0; i < 40; i++ {
+	for i := range 40 {
 		c.Put("node", fmt.Sprintf("/page/%d.mu", i), req, body, "micron")
 	}
 	if c.Bytes() == 0 {

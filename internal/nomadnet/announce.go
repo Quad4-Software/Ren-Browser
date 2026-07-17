@@ -111,7 +111,7 @@ func (h *AnnounceHandler) evictOldestLocked() {
 		oldest = append(oldest, ranked{hash: hash, lastSeen: peer.node.LastSeen})
 	}
 	// Partial selection: drop the coldest overflow entries.
-	for i := 0; i < overflow; i++ {
+	for i := range overflow {
 		minIdx := i
 		for j := i + 1; j < len(oldest); j++ {
 			if oldest[j].lastSeen < oldest[minIdx].lastSeen {

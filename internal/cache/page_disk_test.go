@@ -135,7 +135,7 @@ func TestPageCacheDiskByteBudgetEvictsOldest(t *testing.T) {
 		t.Fatal(err)
 	}
 	body := make([]byte, 400)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		path := "/page/" + string(byte('a'+i)) + ".mu"
 		c.Put("node", path, req, body, "micron")
 	}

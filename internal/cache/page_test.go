@@ -65,7 +65,7 @@ func TestPageCacheByteBudgetEvictsOldest(t *testing.T) {
 	c := NewPageCacheWithBudget(32, 1000)
 	req := nomadnet.RequestData{}
 	body := make([]byte, 400)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		path := "/page/" + string(byte('a'+i)) + ".mu"
 		c.Put("node", path, req, body, "micron")
 	}
@@ -76,4 +76,3 @@ func TestPageCacheByteBudgetEvictsOldest(t *testing.T) {
 		t.Fatalf("expected byte budget to keep at most 2 entries, got %d", c.Len())
 	}
 }
-
