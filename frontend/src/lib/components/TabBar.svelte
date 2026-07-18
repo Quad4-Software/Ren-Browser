@@ -713,7 +713,7 @@
 
   .context-menu {
     position: fixed;
-    z-index: 1000;
+    z-index: 1100;
     min-width: 11.5rem;
     max-width: calc(100vw - 1rem);
     padding: 0.35rem;
