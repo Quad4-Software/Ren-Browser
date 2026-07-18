@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Settings → Security shows Flatpak, WebKit bwrap, container, and Android status
 - Tree inventory signing/verification (`renbrowser.rsm`) for release integrity checks
 - `rngit-release --skip-build` when artifacts are already built
+- Landlock ABI probing (IOCTL_DEV, IPC scopes, multithreaded TSYNC) and seccomp-bpf denylist hardening on Linux
 
 ### Fixed
 

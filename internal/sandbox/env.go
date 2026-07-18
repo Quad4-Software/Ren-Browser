@@ -9,7 +9,15 @@ import (
 )
 
 func envLandlockOverride() *bool {
-	raw := os.Getenv(brand.EnvPrefix + "_LANDLOCK")
+	return envBoolOverride(brand.EnvPrefix + "_LANDLOCK")
+}
+
+func envSeccompOverride() *bool {
+	return envBoolOverride(brand.EnvPrefix + "_SECCOMP")
+}
+
+func envBoolOverride(key string) *bool {
+	raw := os.Getenv(key)
 	if raw == "" {
 		return nil
 	}

@@ -12,6 +12,10 @@ export interface Status {
     "auto": boolean;
     "disabledByEnv": boolean;
     "reason"?: string;
+    "abi"?: number;
+    "seccompEnabled": boolean;
+    "seccompSupported": boolean;
+    "seccompReason"?: string;
     "inFlatpak": boolean;
     "inAppImage": boolean;
     "inContainer": boolean;

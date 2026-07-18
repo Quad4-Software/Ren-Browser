@@ -180,6 +180,8 @@
     "sandboxDisabled": "",
     "sandboxReason": "",
     "sandboxTypeLandlock": "",
+    "sandboxTypeLandlockSeccomp": "",
+    "sandboxTypeSeccomp": "",
     "sandboxTypeNone": "",
     "sandboxActiveHint": "",
     "sandboxReasonDesktopWebkit": "",

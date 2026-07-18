@@ -64,6 +64,10 @@
     type: string;
     enabled: boolean;
     reason?: string;
+    abi?: number;
+    seccompEnabled?: boolean;
+    seccompSupported?: boolean;
+    seccompReason?: string;
     inFlatpak?: boolean;
     inAppImage?: boolean;
     inContainer?: boolean;
@@ -234,6 +238,12 @@
   const keybindActions = KEYBIND_ACTIONS;
 
   function sandboxTypeLabel(type: string): string {
+    if (type === "landlock+seccomp") {
+      return t("settings.sandboxTypeLandlockSeccomp");
+    }
+    if (type === "seccomp") {
+      return t("settings.sandboxTypeSeccomp");
+    }
     if (type === "landlock") {
       return t("settings.sandboxTypeLandlock");
     }

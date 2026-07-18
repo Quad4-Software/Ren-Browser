@@ -29,6 +29,8 @@ type Runtime struct {
 	NativeTitlebar  bool
 	NoLandlock      bool
 	Landlock        bool
+	NoSeccomp       bool
+	Seccomp         bool
 	Auth            bool
 	AuthReset       bool
 	NoBruteForce    bool
@@ -64,6 +66,8 @@ func ParseFlags() Runtime {
 	flag.BoolVar(&cfg.NativeTitlebar, "native-titlebar", false, "Use the native OS title bar instead of custom window controls")
 	flag.BoolVar(&cfg.NoLandlock, "no-landlock", false, "Disable Landlock LSM filesystem sandbox (Linux)")
 	flag.BoolVar(&cfg.Landlock, "landlock", false, "Force Landlock LSM sandbox on Linux even when auto-detection would skip it")
+	flag.BoolVar(&cfg.NoSeccomp, "no-seccomp", false, "Disable seccomp-bpf syscall hardening (Linux)")
+	flag.BoolVar(&cfg.Seccomp, "seccomp", false, "Force seccomp-bpf hardening on Linux even when auto-detection would skip it")
 	flag.BoolVar(&cfg.Auth, "auth", false, "Enable HTTP basic auth for server mode (prompts to set password on first run)")
 	flag.BoolVar(&cfg.AuthReset, "auth-reset", false, "Reset server auth password and prompt for a new one")
 	flag.BoolVar(&cfg.NoBruteForce, "no-bruteforce-protection", false, "Disable login brute-force IP bans (server mode)")

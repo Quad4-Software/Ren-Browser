@@ -11,8 +11,8 @@ import (
 )
 
 func TestRequested_DisabledByFlag(t *testing.T) {
-	if Requested(Options{NoLandlock: true}) {
-		t.Fatal("expected not requested when --no-landlock")
+	if Requested(Options{NoLandlock: true, NoSeccomp: true}) {
+		t.Fatal("expected not requested when --no-landlock and --no-seccomp")
 	}
 }
 
@@ -20,14 +20,14 @@ func TestRequested_DesktopNotAuto(t *testing.T) {
 	if runtime.GOOS != "linux" {
 		t.Skip("linux only")
 	}
-	if !KernelSupported() {
-		t.Skip("landlock not supported")
+	if !KernelSupported() && !SeccompSupported() {
+		t.Skip("landlock/seccomp not supported")
 	}
 	if Requested(Options{ServerMode: false}) {
-		t.Fatal("desktop should not auto-enable landlock")
+		t.Fatal("desktop should not auto-enable sandbox")
 	}
 	if !Requested(Options{ServerMode: true}) {
-		t.Fatal("server should auto-enable landlock when supported")
+		t.Fatal("server should auto-enable sandbox when supported")
 	}
 }
 

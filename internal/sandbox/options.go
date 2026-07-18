@@ -25,6 +25,8 @@ func OptionsFromRuntime(cfg config.Runtime) Options {
 	opts := Options{
 		NoLandlock:      cfg.NoLandlock,
 		ForceLandlock:   cfg.Landlock,
+		NoSeccomp:       cfg.NoSeccomp,
+		ForceSeccomp:    cfg.Seccomp,
 		DataDir:         paths.Join(brand.DataDirName),
 		ReticulumDir:    retDir,
 		ReticulumConfig: retConfig,
