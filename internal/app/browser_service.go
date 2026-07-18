@@ -115,6 +115,7 @@ type BrowserService struct {
 	lastPage               PageResponse
 	plugins                *plugins.Manager
 	downloads              *downloadManager
+	downloadSlots          chan struct{}
 	shuttingDown           bool
 	shutdownOnce           sync.Once
 	downloadsReconcileOnce sync.Once
@@ -158,15 +159,16 @@ func NewBrowserServiceWithOptions(stack *rns.Stack, app *application.App, opts S
 		return nil, err
 	}
 	svc := &BrowserService{
-		stack:       stack,
-		app:         app,
-		store:       st,
-		storePath:   dbPath,
-		profileName: profileName,
-		publicMode:  opts.PublicMode,
-		resetWindow: opts.ResetWindow,
-		pageCache:   pageCache,
-		downloads:   newDownloadManager(),
+		stack:         stack,
+		app:           app,
+		store:         st,
+		storePath:     dbPath,
+		profileName:   profileName,
+		publicMode:    opts.PublicMode,
+		resetWindow:   opts.ResetWindow,
+		pageCache:     pageCache,
+		downloads:     newDownloadManager(),
+		downloadSlots: make(chan struct{}, maxConcurrentDownloads),
 	}
 	if diskErr := pageCache.LastDiskError(); diskErr != "" {
 		svc.log("warn", "page cache disk unavailable, using memory only", diskErr)
@@ -692,6 +694,13 @@ func (s *BrowserService) DownloadFile(rawURL string) (string, error) {
 	fetch, err := s.fetchFile(rawURL)
 	if err != nil {
 		return "", err
+	}
+	// Prefer DownloadToDir for large files. Base64 doubles peak memory.
+	if len(fetch.Body) > maxDownloadFileB64Bytes {
+		return "", fmt.Errorf(
+			"file too large for in-memory download (%d bytes, limit %d); use DownloadToDir",
+			len(fetch.Body), maxDownloadFileB64Bytes,
+		)
 	}
 	return base64.StdEncoding.EncodeToString(fetch.Body), nil
 }

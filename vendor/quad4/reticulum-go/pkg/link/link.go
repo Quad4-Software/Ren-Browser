@@ -497,9 +497,23 @@ type RequestReceipt struct {
 	timeout       time.Duration
 	bytesReceived int64
 	totalBytes    int64
-	responseCb    func(*RequestReceipt)
-	failedCb      func(*RequestReceipt)
-	progressCb    func(*RequestReceipt)
+	// maxResponseBytes rejects response resource advertisements larger than
+	// this size before part-slot allocation. 0 means unlimited.
+	maxResponseBytes int64
+	responseCb       func(*RequestReceipt)
+	failedCb         func(*RequestReceipt)
+	progressCb       func(*RequestReceipt)
+}
+
+// SetMaxResponseBytes caps the accepted TransferSize for a response resource.
+// Call before the peer's advertisement arrives. 0 leaves the transfer uncapped.
+func (r *RequestReceipt) SetMaxResponseBytes(n int64) {
+	if r == nil {
+		return
+	}
+	r.mutex.Lock()
+	r.maxResponseBytes = n
+	r.mutex.Unlock()
 }
 
 func (r *RequestReceipt) GetRequestID() []byte {
@@ -1121,7 +1135,25 @@ func (l *Link) handleResourceAdvertisement(pkt *packet.Packet) error {
 
 		matched.mutex.Lock()
 		matched.totalBytes = adv.TransferSize
+		maxBytes := matched.maxResponseBytes
 		matched.mutex.Unlock()
+
+		if maxBytes > 0 && adv.TransferSize > maxBytes {
+			debug.Log(
+				debug.DebugInfo,
+				"Response resource rejected (over maxResponseBytes)",
+				"transfer_size",
+				adv.TransferSize,
+				"limit",
+				maxBytes,
+			)
+			_ = l.rejectResource(adv.Hash) // #nosec G104 - best effort
+			l.incomingMu.Lock()
+			l.incomingResourceRequest = nil
+			l.incomingMu.Unlock()
+			l.failRequestReceipt(matched)
+			return nil
+		}
 
 		if err := l.beginIncomingResource(adv); err != nil {
 			debug.Log(debug.DebugInfo, "Failed to begin incoming response resource", "error", err)
@@ -1212,6 +1244,60 @@ func (l *Link) rejectResource(resourceHash []byte) error {
 	}
 	l.recordOutbound()
 	return l.transport.SendPacket(rejectPkt)
+}
+
+// failRequestReceipt marks a pending request as failed and drops it from the
+// pending list. Safe to call when rejecting an oversized response advertisement.
+func (l *Link) failRequestReceipt(r *RequestReceipt) {
+	if r == nil {
+		return
+	}
+	r.mutex.Lock()
+	if r.status != StatusPending {
+		r.mutex.Unlock()
+		return
+	}
+	r.status = StatusFailed
+	cb := r.failedCb
+	r.mutex.Unlock()
+
+	l.requestMutex.Lock()
+	for i, pending := range l.pendingRequests {
+		if pending == r {
+			l.pendingRequests = append(l.pendingRequests[:i], l.pendingRequests[i+1:]...)
+			break
+		}
+	}
+	l.requestMutex.Unlock()
+	if cb != nil {
+		go cb(r)
+	}
+}
+
+// AbortIncomingResponse stops an in-flight response resource transfer for this
+// link: reject to the peer if a hash is known, drop assembled parts, and fail
+// the matching request receipt. Used when the app aborts for size or cancel.
+func (l *Link) AbortIncomingResponse() {
+	if l == nil {
+		return
+	}
+	l.incomingMu.Lock()
+	rx := l.incomingRx
+	pending := l.incomingResourceRequest
+	var hash []byte
+	if rx != nil && rx.adv != nil && len(rx.adv.Hash) > 0 {
+		hash = append([]byte(nil), rx.adv.Hash...)
+	}
+	l.incomingRx = nil
+	l.incomingResourceRequest = nil
+	l.incomingMu.Unlock()
+
+	if len(hash) > 0 {
+		_ = l.rejectResource(hash) // #nosec G104 - best effort
+	}
+	if pending != nil {
+		l.failRequestReceipt(pending)
+	}
 }
 
 func (l *Link) sendResourceResponse(requestID []byte, response any) error {

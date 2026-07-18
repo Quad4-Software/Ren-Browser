@@ -179,8 +179,12 @@ func (b *Browser) FetchWithHooks(ctx context.Context, nodeHash string, path stri
 
 	hooks.stage("waiting", fmt.Sprintf("waiting for response, receiptTimeout=%s", receiptTimeout))
 	maxBytes := limits.MaxFetchBytes(res.Path)
+	if maxBytes > 0 {
+		receipt.SetMaxResponseBytes(int64(maxBytes))
+	}
 	body, metadata, err := waitReceipt(ctx, receipt, receiptTimeout, maxBytes, hooks)
 	if err != nil {
+		b.abortFetch(destHash, lnk)
 		res.Error = err.Error()
 		res.DurationMs = time.Since(start).Milliseconds()
 		hooks.stage("failed", res.Error)
@@ -193,6 +197,24 @@ func (b *Browser) FetchWithHooks(ctx context.Context, nodeHash string, path stri
 	res.DurationMs = time.Since(start).Milliseconds()
 	hooks.stage("done", fmt.Sprintf("received %d bytes in %dms", len(body), res.DurationMs))
 	return res
+}
+
+// abortFetch stops an in-flight response resource and drops the cached link so
+// a rejected or canceled transfer cannot keep allocating part buffers.
+func (b *Browser) abortFetch(destHash []byte, lnk *rlink.Link) {
+	if lnk != nil {
+		lnk.AbortIncomingResponse()
+		lnk.Teardown()
+	}
+	if len(destHash) == 0 {
+		return
+	}
+	key := hex.EncodeToString(destHash)
+	b.mu.Lock()
+	if cached := b.links[key]; cached == lnk || cached == nil {
+		delete(b.links, key)
+	}
+	b.mu.Unlock()
 }
 
 // fileNameFromMetadata extracts the file name Nomad Network attaches to

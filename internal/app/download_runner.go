@@ -13,6 +13,11 @@ var ErrDownloadCanceled = errors.New("download canceled")
 const (
 	downloadMaxAttempts = 4
 	downloadRetryBase   = 2 * time.Second
+	// Cap parallel mesh file transfers so N large /file/ fetches cannot
+	// each hold a full response buffer at once.
+	maxConcurrentDownloads = 4
+	// Legacy DownloadFile base64 path. UI uses DownloadToDir.
+	maxDownloadFileB64Bytes = 16 * 1024 * 1024
 )
 
 func retriableDownloadError(err error) bool {
@@ -48,13 +53,24 @@ func (s *BrowserService) runTrackedDownload(id, rawURL, name string) (string, er
 	s.syncDownloadBackground()
 	defer s.syncDownloadBackground()
 
+	if err := s.acquireDownloadSlot(id); err != nil {
+		return "", trackedDownloadFailure(s.downloads, id, err)
+	}
+	defer s.releaseDownloadSlot()
+
 	var lastErr error
 	for attempt := 1; attempt <= downloadMaxAttempts; attempt++ {
+		if item, ok := s.downloads.findByID(id); ok && item.Status == DownloadStatusCanceled {
+			return "", trackedDownloadFailure(s.downloads, id, ErrDownloadCanceled)
+		}
 		s.downloads.setAttempt(id, attempt)
 		if attempt > 1 {
 			s.downloads.setStatus(id, DownloadStatusRetrying)
 			wait := downloadRetryBase * time.Duration(attempt-1)
 			time.Sleep(wait)
+			if item, ok := s.downloads.findByID(id); ok && item.Status == DownloadStatusCanceled {
+				return "", trackedDownloadFailure(s.downloads, id, ErrDownloadCanceled)
+			}
 		}
 
 		fetch, err := s.fetchFileTracked(rawURL, tracker)
@@ -80,6 +96,36 @@ func (s *BrowserService) runTrackedDownload(id, rawURL, name string) (string, er
 	}
 
 	return "", trackedDownloadFailure(s.downloads, id, lastErr)
+}
+
+func (s *BrowserService) acquireDownloadSlot(id string) error {
+	if s == nil {
+		return nil
+	}
+	slots := s.downloadSlots
+	if slots == nil {
+		return nil
+	}
+	for {
+		if item, ok := s.downloads.findByID(id); ok && item.Status == DownloadStatusCanceled {
+			return ErrDownloadCanceled
+		}
+		select {
+		case slots <- struct{}{}:
+			return nil
+		case <-time.After(200 * time.Millisecond):
+		}
+	}
+}
+
+func (s *BrowserService) releaseDownloadSlot() {
+	if s == nil || s.downloadSlots == nil {
+		return
+	}
+	select {
+	case <-s.downloadSlots:
+	default:
+	}
 }
 
 func trackedDownloadFailure(m *downloadManager, id string, lastErr error) error {

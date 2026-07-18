@@ -255,10 +255,18 @@ func (m *downloadManager) setAttempt(id string, attempt int) {
 
 func (m *downloadManager) setStatus(id string, status DownloadStatus) {
 	m.mu.Lock()
-	if d, ok := m.items[id]; ok {
-		d.Status = status
-		d.UpdatedAt = time.Now().UnixMilli()
+	d, ok := m.items[id]
+	if !ok {
+		m.mu.Unlock()
+		return
 	}
+	// Cancel must stick across retry sleep / setStatus(Retrying).
+	if d.Status == DownloadStatusCanceled {
+		m.mu.Unlock()
+		return
+	}
+	d.Status = status
+	d.UpdatedAt = time.Now().UnixMilli()
 	m.mu.Unlock()
 	m.notify()
 }
