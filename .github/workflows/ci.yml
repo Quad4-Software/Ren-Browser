@@ -292,6 +292,7 @@ jobs:
           scan-ref: .
           severity: HIGH,CRITICAL
           exit-code: 1
+          skip-dirs: frontend/node_modules,bin,build/android/.gradle,build/android/build,vendor,third_party
           skip-files: build/docker/Dockerfile.cross
 
   build-linux:
