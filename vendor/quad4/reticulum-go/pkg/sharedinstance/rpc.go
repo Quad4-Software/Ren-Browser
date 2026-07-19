@@ -101,11 +101,12 @@ func decodeHash(v any) []byte {
 
 // RPCServer listens for authenticated msgpack RPC calls from local clients.
 type RPCServer struct {
-	listener net.Listener
-	authkey  []byte
-	handler  *RPCHandler
-	wg       sync.WaitGroup
-	done     chan struct{}
+	listener  net.Listener
+	authkey   []byte
+	handler   *RPCHandler
+	wg        sync.WaitGroup
+	done      chan struct{}
+	closeOnce sync.Once
 }
 
 // StartRPCServer binds the instance control port and serves requests.
@@ -124,7 +125,7 @@ func StartRPCServer(cfg *common.ReticulumConfig, tr *transport.Transport) (*RPCS
 		ln  net.Listener
 		err error
 	)
-	useUnix := cfg.SharedInstanceType == common.SharedInstanceUnix
+	useUnix := common.SharedInstanceUsesUnix(cfg.SharedInstanceType)
 	if useUnix {
 		name := cfg.InstanceName
 		if name == "" {
@@ -193,10 +194,12 @@ func (s *RPCServer) serve() {
 }
 
 func (s *RPCServer) Close() error {
-	close(s.done)
-	if s.listener != nil {
-		_ = s.listener.Close()
-	}
+	s.closeOnce.Do(func() {
+		close(s.done)
+		if s.listener != nil {
+			_ = s.listener.Close()
+		}
+	})
 	s.wg.Wait()
 	return nil
 }

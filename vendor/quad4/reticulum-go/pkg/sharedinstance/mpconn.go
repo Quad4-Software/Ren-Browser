@@ -5,7 +5,7 @@ package sharedinstance
 
 import (
 	"crypto/hmac"
-	"crypto/md5" // #nosec G501 -- HMAC-MD5 required for Python multiprocessing.connection auth
+	"crypto/md5" // #nosec G501 -- HMAC-MD5 required for multiprocessing.connection auth
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -111,12 +111,17 @@ func sendBytes(w io.Writer, buf []byte) error {
 	return err
 }
 
+// SendFramed writes a length-prefixed multiprocessing.connection frame.
+func SendFramed(w io.Writer, buf []byte) error {
+	return sendBytes(w, buf)
+}
+
 func recvBytes(r io.Reader, maxSize int) ([]byte, error) {
 	header := make([]byte, 4)
 	if _, err := io.ReadFull(r, header); err != nil {
 		return nil, err
 	}
-	size := int32(binary.BigEndian.Uint32(header)) // #nosec G115 -- Python multiprocessing.connection length prefix
+	size := int32(binary.BigEndian.Uint32(header)) // #nosec G115 -- multiprocessing.connection length prefix
 	var n int64
 	switch {
 	case size == -1:
@@ -128,17 +133,30 @@ func recvBytes(r io.Reader, maxSize int) ([]byte, error) {
 	default:
 		n = int64(size)
 	}
-	if maxSize > 0 && n > int64(maxSize) {
-		return nil, fmt.Errorf("message too large: %d", n)
-	}
 	if n < 0 {
 		return nil, errors.New("negative message size")
 	}
-	buf := make([]byte, n)
+	// maxSize must be positive. A zero or negative cap used to skip the
+	// bound and allocate from the wire length alone (allocation bomb).
+	if maxSize <= 0 {
+		return nil, errors.New("maxSize must be positive")
+	}
+	if n > int64(maxSize) {
+		return nil, fmt.Errorf("message too large: %d", n)
+	}
+	if n > int64(^uint(0)>>1) {
+		return nil, fmt.Errorf("message too large: %d", n)
+	}
+	buf := make([]byte, int(n))
 	if _, err := io.ReadFull(r, buf); err != nil {
 		return nil, err
 	}
 	return buf, nil
+}
+
+// RecvFramed reads a length-prefixed multiprocessing.connection frame.
+func RecvFramed(r io.Reader, maxSize int) ([]byte, error) {
+	return recvBytes(r, maxSize)
 }
 
 func createResponse(authkey, message []byte) []byte {
