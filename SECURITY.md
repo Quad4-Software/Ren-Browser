@@ -22,7 +22,7 @@ The **desktop app** uses the system webview (Wails v3). Treat installed plugins 
 
 ### What you download should match what we built
 
-Official release binaries and packages are built in **automation on GitHub**, not by hand. Each tagged release is intended to ship:
+Official release binaries and packages are built in **automation on GitHub** or on RNGit releases. Each tagged release is intended to ship:
 
 - **Installable files** (Linux AppImage and binary, Windows executable, macOS app bundle, headless server binary, and Android APK when the pipeline produces it) from that tag.
 - A **`SHA256SUMS.txt`** file listing checksums for release assets so you can verify downloads.
