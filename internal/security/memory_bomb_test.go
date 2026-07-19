@@ -107,9 +107,13 @@ func TestBase64DownloadAmplification(t *testing.T) {
 
 func TestCompressedResourceDecompressBound(t *testing.T) {
 	// Incoming compressed resources are bounded by AutoCompressMaxSize on the
-	// decompressed side. Still a large single allocation from a linked peer.
-	if resource.AutoCompressMaxSize < 15*1024*1024 {
-		t.Fatalf("AutoCompressMaxSize=%d unexpectedly low", resource.AutoCompressMaxSize)
+	// decompressed side (reticulum-go MaxEfficientSize, currently ~1MiB).
+	want := resource.MaxEfficientSize
+	if resource.AutoCompressMaxSize != want {
+		t.Fatalf("AutoCompressMaxSize=%d want MaxEfficientSize=%d", resource.AutoCompressMaxSize, want)
+	}
+	if want <= 0 || want > 2*1024*1024 {
+		t.Fatalf("MaxEfficientSize=%d outside expected 1..2MiB band", want)
 	}
 	t.Logf("bzip2 decompress ceiling: %d bytes", resource.AutoCompressMaxSize)
 }
