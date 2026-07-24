@@ -5,6 +5,9 @@ packages:
 allowBuilds:
   esbuild: true
 
+overrides:
+  brace-expansion@^2: 2.1.2
+
 pnpm:
   minimumReleaseAge: 1440
   trustPolicy: no-downgrade
