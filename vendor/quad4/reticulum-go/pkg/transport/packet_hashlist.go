@@ -13,12 +13,17 @@ import (
 
 type packetHashList struct {
 	mu   sync.Mutex
+	max  int
 	cur  map[[32]byte]struct{}
 	prev map[[32]byte]struct{}
 }
 
-func newPacketHashList() *packetHashList {
+func newPacketHashList(max int) *packetHashList {
+	if max <= 0 {
+		max = HashlistMaxSize
+	}
 	return &packetHashList{
+		max:  max,
 		cur:  make(map[[32]byte]struct{}),
 		prev: make(map[[32]byte]struct{}),
 	}
@@ -52,7 +57,11 @@ func (hl *packetHashList) add(h []byte) {
 	hl.mu.Lock()
 	defer hl.mu.Unlock()
 	hl.cur[k] = struct{}{}
-	if len(hl.cur) > HashlistMaxSize/2 {
+	rotateAt := hl.max / 2
+	if rotateAt < 1 {
+		rotateAt = 1
+	}
+	if len(hl.cur) > rotateAt {
 		hl.prev = hl.cur
 		hl.cur = make(map[[32]byte]struct{})
 	}
