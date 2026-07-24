@@ -189,26 +189,36 @@ function isAllowedImgSrc(src) {
   return /^data:image\/(png|gif|jpeg|jpg|webp|svg\+xml)/i.test(s);
 }
 
+let nomadPurify = null;
 let nomadPurifyHooksInstalled = false;
 
-function ensureNomadPurifyHooks() {
+function getNomadPurify() {
+  if (!nomadPurify) {
+    nomadPurify = typeof window !== "undefined" ? DOMPurify(window) : DOMPurify;
+    ensureNomadPurifyHooks(nomadPurify);
+  }
+  return nomadPurify;
+}
+
+function ensureNomadPurifyHooks(purify) {
   if (nomadPurifyHooksInstalled) {
     return;
   }
   nomadPurifyHooksInstalled = true;
-  DOMPurify.addHook("uponSanitizeElement", (node) => {
-    if (node.nodeName === "STYLE" && node.textContent) {
+  purify.addHook("uponSanitizeElement", (node) => {
+    if (node.nodeName && node.nodeName.toUpperCase() === "STYLE" && node.textContent) {
       node.textContent = stripExternalFromCss(node.textContent);
     }
   });
-  DOMPurify.addHook("afterSanitizeAttributes", (node) => {
-    if (node.nodeName === "A" && node.hasAttribute("href")) {
+  purify.addHook("afterSanitizeAttributes", (node) => {
+    const tag = node.nodeName ? node.nodeName.toUpperCase() : "";
+    if (tag === "A" && node.hasAttribute("href")) {
       const h = node.getAttribute("href");
       if (!isAllowedNomadHref(h)) {
         node.removeAttribute("href");
       }
     }
-    if (node.nodeName === "IMG" && node.hasAttribute("src")) {
+    if (tag === "IMG" && node.hasAttribute("src")) {
       const s = node.getAttribute("src");
       if (!isAllowedImgSrc(s)) {
         node.removeAttribute("src");
@@ -229,21 +239,67 @@ function ensureNomadPurifyHooks() {
 function basePurifyConfig() {
   return {
     FORBID_TAGS,
+    FORBID_CONTENTS: FORBID_TAGS,
     ADD_TAGS: ["style"],
     ADD_ATTR: ["class", "id", "title", "colspan", "rowspan", "align", "start"],
   };
 }
 
+function postCleanNomadHtml(html) {
+  if (!html) {
+    return html;
+  }
+  let cleaned = String(html).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+  cleaned = cleaned.replace(/<\/?\s*script\b[^>]*>/gi, "");
+  if (typeof document === "undefined") {
+    return cleaned;
+  }
+  try {
+    const template = document.createElement("template");
+    template.innerHTML = cleaned;
+    for (const tag of FORBID_TAGS) {
+      template.content.querySelectorAll(tag).forEach((el) => el.remove());
+    }
+    template.content.querySelectorAll("a[href]").forEach((a) => {
+      const href = a.getAttribute("href");
+      if (!isAllowedNomadHref(href)) {
+        a.removeAttribute("href");
+      }
+    });
+    template.content.querySelectorAll("img[src]").forEach((img) => {
+      const src = img.getAttribute("src");
+      if (!isAllowedImgSrc(src)) {
+        img.removeAttribute("src");
+      }
+    });
+    template.content.querySelectorAll("*").forEach((el) => {
+      for (const attr of [...el.attributes]) {
+        if (attr.name.toLowerCase().startsWith("on")) {
+          el.removeAttribute(attr.name);
+        }
+        if (/^\s*(javascript|vbscript)\s*:/i.test(attr.value)) {
+          el.removeAttribute(attr.name);
+        }
+      }
+    });
+    return template.innerHTML;
+  } catch {
+    return cleaned;
+  }
+}
+
 export function sanitizeNomadHtmlFragment(html) {
-  ensureNomadPurifyHooks();
-  return DOMPurify.sanitize(html, {
-    ...basePurifyConfig(),
-    WHOLE_DOCUMENT: false,
-  });
+  const purify = getNomadPurify();
+  return postCleanNomadHtml(
+    purify.sanitize(html, {
+      ...basePurifyConfig(),
+      WHOLE_DOCUMENT: false,
+    }),
+  );
 }
 
 export function sanitizeNomadHtmlDocument(html) {
-  ensureNomadPurifyHooks();
+  const purify = getNomadPurify();
   let bodyMarkup = html;
   try {
     const parser = new DOMParser();
@@ -260,10 +316,12 @@ export function sanitizeNomadHtmlDocument(html) {
     bodyMarkup = html;
   }
   const wrapped = `<div class="${NOMAD_HTML_ROOT_CLASS}">${bodyMarkup}</div>`;
-  return DOMPurify.sanitize(wrapped, {
-    ...basePurifyConfig(),
-    WHOLE_DOCUMENT: false,
-  });
+  return postCleanNomadHtml(
+    purify.sanitize(wrapped, {
+      ...basePurifyConfig(),
+      WHOLE_DOCUMENT: false,
+    }),
+  );
 }
 
 export function renderNomadMarkdown(markdown, options = {}) {

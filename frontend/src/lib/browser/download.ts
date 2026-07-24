@@ -21,7 +21,32 @@ function meshBarePath(url: string): string {
   return bare.startsWith("/") ? bare : `/${bare}`;
 }
 
+export function sanitizeDownloadFilename(name: string, fallback = "page.txt"): string {
+  let leaf = name.trim().replace(/\\/g, "/");
+  const parts = leaf.split("/").filter(Boolean);
+  leaf = parts.at(-1) ?? "";
+  leaf = leaf.replace(/\0/g, "");
+  leaf = leaf.replace(/[<>:"|?*]/g, "_");
+  if (leaf === "." || leaf === ".." || !leaf) {
+    return fallback;
+  }
+  if (/^[a-zA-Z]:/.test(leaf)) {
+    leaf = leaf.slice(2);
+  }
+  leaf = leaf.replace(/:/g, "_");
+  return leaf || fallback;
+}
+
 export function pageDownloadName(url: string, contentType: string): string {
+  const typeFallback =
+    contentType === "micron" || contentType === "editor"
+      ? "page.mu"
+      : contentType === "html"
+        ? "page.html"
+        : contentType === "markdown"
+          ? "page.md"
+          : "page.txt";
+
   if (url === "editor:") {
     return "editor.mu";
   }
@@ -46,13 +71,13 @@ export function pageDownloadName(url: string, contentType: string): string {
     if (q.includes("a=")) {
       for (const part of q.slice(1).split(/[&|]/)) {
         if (part.startsWith("a=")) {
-          return part.slice(2);
+          return sanitizeDownloadFilename(decodeURIComponent(part.slice(2)), typeFallback);
         }
       }
     }
     const a = u.searchParams.get("a");
     if (a) {
-      return a;
+      return sanitizeDownloadFilename(a, typeFallback);
     }
   } catch {
     const q = url.indexOf("?");
@@ -60,7 +85,11 @@ export function pageDownloadName(url: string, contentType: string): string {
       const query = url.slice(q + 1);
       for (const part of query.split(/[&|]/)) {
         if (part.startsWith("a=")) {
-          return part.slice(2);
+          try {
+            return sanitizeDownloadFilename(decodeURIComponent(part.slice(2)), typeFallback);
+          } catch {
+            return sanitizeDownloadFilename(part.slice(2), typeFallback);
+          }
         }
       }
     }
@@ -69,18 +98,9 @@ export function pageDownloadName(url: string, contentType: string): string {
   const barePath = meshBarePath(url);
   const leaf = barePath.split("/").filter(Boolean).at(-1);
   if (leaf && leaf !== "artifact") {
-    return leaf;
+    return sanitizeDownloadFilename(leaf, typeFallback);
   }
-  if (contentType === "micron" || contentType === "editor") {
-    return "page.mu";
-  }
-  if (contentType === "html") {
-    return "page.html";
-  }
-  if (contentType === "markdown") {
-    return "page.md";
-  }
-  return "page.txt";
+  return typeFallback;
 }
 
 export function isFileURL(url: string): boolean {

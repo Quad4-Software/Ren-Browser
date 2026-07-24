@@ -35,6 +35,15 @@ describe("pageDownloadName", () => {
     expect(pageDownloadName(base, "html")).toBe("page.html");
     expect(pageDownloadName(base, "plaintext")).toBe("page.txt");
   });
+
+  it("sanitizes path traversal from a= download names", () => {
+    expect(
+      pageDownloadName("abb3ebcd03cb2388a838e70c001291f9:/page/x.mu?a=../../etc/passwd", "micron"),
+    ).toBe("passwd");
+    expect(
+      pageDownloadName("abb3ebcd03cb2388a838e70c001291f9:/page/x.mu?a=evil:payload.txt", "micron"),
+    ).toBe("evil_payload.txt");
+  });
 });
 
 describe("isDownloadCanceledError", () => {

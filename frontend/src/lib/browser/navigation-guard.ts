@@ -37,10 +37,15 @@ export function isBlockedNavigationURL(url: string): boolean {
   if (isBlockedExternalHref(trimmed)) {
     return true;
   }
-  if (!WEB_URL_RE.test(trimmed)) {
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith("rns://")) {
     return false;
   }
-  return !trimmed.toLowerCase().startsWith("rns://");
+  // Block any absolute URL form, including smuggled schemes like rns:https://...
+  if (trimmed.includes("://") || WEB_URL_RE.test(trimmed)) {
+    return true;
+  }
+  return false;
 }
 
 export function isAllowedNavigationURL(url: string): boolean {

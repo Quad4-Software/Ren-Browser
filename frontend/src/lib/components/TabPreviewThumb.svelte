@@ -92,9 +92,11 @@
     if (isMicron) {
       return micronPageColors(fg, bg);
     }
+    const fgHex = fg.trim() ? expandHexColor(fg) : "";
+    const bgHex = bg.trim() ? expandHexColor(bg) : "";
     return {
-      fg: fg.trim() ? `#${expandHexColor(fg)}` : "",
-      bg: bg.trim() ? `#${expandHexColor(bg)}` : "",
+      fg: fgHex ? `#${fgHex}` : "",
+      bg: bgHex ? `#${bgHex}` : "",
     };
   });
 

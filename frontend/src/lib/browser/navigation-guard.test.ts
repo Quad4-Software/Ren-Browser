@@ -38,6 +38,11 @@ describe("isBlockedNavigationURL", () => {
     );
     expect(isBlockedNavigationURL("hello:panel")).toBe(false);
   });
+
+  it("blocks smuggled absolute URLs", () => {
+    expect(isBlockedNavigationURL("rns:https://evil.example")).toBe(true);
+    expect(isBlockedNavigationURL("mesh:http://evil.example")).toBe(true);
+  });
 });
 
 describe("isAllowedNavigationURL", () => {

@@ -280,8 +280,17 @@ export function tabTitleFromURL(url: string, nodes: DiscoveredNode[] = []): stri
   return `${raw.slice(0, 39)}…`;
 }
 
+const MICRON_HEX_COLOR_RE = /^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{6}$/;
+
+export function isMicronHexColor(color: string): boolean {
+  return MICRON_HEX_COLOR_RE.test(color.trim().replace(/^#/, ""));
+}
+
 export function expandHexColor(color: string): string {
   const c = color.trim().replace(/^#/, "");
+  if (!MICRON_HEX_COLOR_RE.test(c)) {
+    return "";
+  }
   if (c.length === 3) {
     return c
       .split("")
@@ -292,9 +301,11 @@ export function expandHexColor(color: string): string {
 }
 
 export function micronPageColors(pageFg?: string, pageBg?: string): { fg: string; bg: string } {
+  const bg = pageBg?.trim() ? expandHexColor(pageBg) : "";
+  const fg = pageFg?.trim() ? expandHexColor(pageFg) : "";
   return {
-    bg: pageBg?.trim() ? `#${expandHexColor(pageBg)}` : "#000000",
-    fg: pageFg?.trim() ? `#${expandHexColor(pageFg)}` : "#ffffff",
+    bg: bg ? `#${bg}` : "#000000",
+    fg: fg ? `#${fg}` : "#ffffff",
   };
 }
 

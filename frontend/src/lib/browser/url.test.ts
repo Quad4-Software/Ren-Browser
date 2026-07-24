@@ -187,6 +187,12 @@ describe("expandHexColor", () => {
   it("passes through 6-digit values", () => {
     expect(expandHexColor("ff00aa")).toBe("ff00aa");
   });
+
+  it("rejects non-hex tokens that are only length-valid", () => {
+    expect(expandHexColor("zzz")).toBe("");
+    expect(expandHexColor('000";x')).toBe("");
+    expect(expandHexColor("red")).toBe("");
+  });
 });
 
 describe("micronShellStyle", () => {
@@ -200,6 +206,12 @@ describe("micronShellStyle", () => {
 
   it("uses defaults when colors are omitted", () => {
     expect(micronShellStyle("micron")).toBe("background:#000000;color:#ffffff");
+  });
+
+  it("falls back to defaults for hostile color injection", () => {
+    expect(micronShellStyle("micron", 'fff" onload="x', "000;}</style><script>")).toBe(
+      "background:#000000;color:#ffffff",
+    );
   });
 });
 

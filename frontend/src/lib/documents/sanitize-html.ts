@@ -26,8 +26,11 @@ const DOCUMENT_FORBID_TAGS = [
 const DOCUMENT_SANITIZE = {
   USE_PROFILES: { html: true },
   FORBID_TAGS: DOCUMENT_FORBID_TAGS,
+  FORBID_CONTENTS: DOCUMENT_FORBID_TAGS,
   ALLOWED_URI_REGEXP: /^(blob:|data:image\/[a-z0-9+.-]+)/i,
 };
+
+const SAFE_IMG_SRC_RE = /^(blob:|data:image\/[a-z0-9+.-]+)/i;
 
 type DocumentPurify = {
   sanitize: (dirty: string, config?: object) => string;
@@ -67,18 +70,19 @@ function ensureDocumentPurifyHooks(purify: DocumentPurify): void {
   documentPurifyHooksInstalled = true;
 
   purify.addHook("uponSanitizeElement", (node: Element) => {
-    if (node.nodeName === "STYLE" && node.textContent) {
+    if (node.nodeName.toUpperCase() === "STYLE" && node.textContent) {
       node.textContent = stripReaderThemeFromCss(node.textContent);
     }
   });
 
   purify.addHook("afterSanitizeAttributes", (node: Element) => {
-    if (node.nodeName === "A" && node.hasAttribute("href")) {
+    const tag = node.nodeName.toUpperCase();
+    if (tag === "A" && node.hasAttribute("href")) {
       node.removeAttribute("href");
     }
-    if (node.nodeName === "IMG" && node.hasAttribute("src")) {
+    if (tag === "IMG" && node.hasAttribute("src")) {
       const src = node.getAttribute("src") ?? "";
-      if (!/^(blob:|data:image\/[a-z0-9+.-]+)/i.test(src)) {
+      if (!SAFE_IMG_SRC_RE.test(src)) {
         node.removeAttribute("src");
       }
     }
@@ -110,6 +114,63 @@ function stripScriptTags(html: string): string {
   return html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
 }
 
+function postCleanDocumentHtml(html: string): string {
+  if (!html || typeof document === "undefined") {
+    return html;
+  }
+  try {
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    const root = template.content;
+    for (const tag of DOCUMENT_FORBID_TAGS) {
+      root.querySelectorAll(tag).forEach((el) => el.remove());
+    }
+    root.querySelectorAll("a[href]").forEach((el) => {
+      el.removeAttribute("href");
+    });
+    root.querySelectorAll("img[src]").forEach((img) => {
+      const src = img.getAttribute("src") ?? "";
+      if (!SAFE_IMG_SRC_RE.test(src)) {
+        img.removeAttribute("src");
+      }
+    });
+    root.querySelectorAll("[style]").forEach((el) => {
+      const style = el.getAttribute("style");
+      if (!style) {
+        return;
+      }
+      const cleaned = stripReaderThemeFromInlineStyle(style);
+      if (cleaned) {
+        el.setAttribute("style", cleaned);
+      } else {
+        el.removeAttribute("style");
+      }
+    });
+    root.querySelectorAll("style").forEach((el) => {
+      if (el.textContent) {
+        el.textContent = stripReaderThemeFromCss(el.textContent);
+      }
+    });
+    root.querySelectorAll("*").forEach((el) => {
+      for (const attr of [...el.attributes]) {
+        if (attr.name.toLowerCase().startsWith("on")) {
+          el.removeAttribute(attr.name);
+        }
+        if (
+          /^\s*(javascript|vbscript)\s*:/i.test(attr.value) ||
+          /^\s*data\s*:\s*text\/html/i.test(attr.value)
+        ) {
+          el.removeAttribute(attr.name);
+        }
+      }
+    });
+    return template.innerHTML;
+  } catch {
+    return html;
+  }
+}
+
 export function sanitizeDocumentHtml(html: string): string {
-  return String(getDocumentPurify().sanitize(stripScriptTags(html), DOCUMENT_SANITIZE));
+  const once = String(getDocumentPurify().sanitize(stripScriptTags(html), DOCUMENT_SANITIZE));
+  return postCleanDocumentHtml(once);
 }
