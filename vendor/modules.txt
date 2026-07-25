@@ -163,7 +163,7 @@ go.bug.st/serial/unixutils
 ## explicit; go 1.20
 go.uber.org/goleak
 go.uber.org/goleak/internal/stack
-# golang.org/x/crypto v0.52.0
+# golang.org/x/crypto v0.53.0
 ## explicit; go 1.25.0
 golang.org/x/crypto/argon2
 golang.org/x/crypto/blake2b
@@ -173,7 +173,7 @@ golang.org/x/crypto/curve25519
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/internal/alias
 golang.org/x/crypto/internal/poly1305
-# golang.org/x/net v0.55.0
+# golang.org/x/net v0.56.0
 ## explicit; go 1.25.0
 golang.org/x/net/bpf
 golang.org/x/net/http/httpguts
@@ -183,7 +183,7 @@ golang.org/x/net/internal/iana
 golang.org/x/net/internal/socket
 golang.org/x/net/ipv4
 golang.org/x/net/ipv6
-# golang.org/x/sync v0.20.0
+# golang.org/x/sync v0.21.0
 ## explicit; go 1.25.0
 golang.org/x/sync/errgroup
 # golang.org/x/sys v0.46.0
@@ -196,7 +196,7 @@ golang.org/x/sys/windows/registry
 # golang.org/x/term v0.44.0
 ## explicit; go 1.25.0
 golang.org/x/term
-# golang.org/x/text v0.37.0
+# golang.org/x/text v0.39.0
 ## explicit; go 1.25.0
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
