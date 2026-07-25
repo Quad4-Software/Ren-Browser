@@ -50,6 +50,7 @@ tasks:
     cmds:
       - bash "{{.ROOT_DIR}}/build/scripts/fetch-reticulum-go.sh"
       - go mod tidy -e
+      - bash "{{.ROOT_DIR}}/build/scripts/ensure-go-mod-vendor-deps.sh"
       - bash "{{.ROOT_DIR}}/build/scripts/sync-vendor-golang-x.sh"
     env:
       GOFLAGS: "-mod=mod"
