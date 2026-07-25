@@ -55,12 +55,14 @@ net_ver="$(mod_ver golang.org/x/net)"
 sync_ver="$(mod_ver golang.org/x/sync)"
 text_ver="$(mod_ver golang.org/x/text)"
 
-sed -i \
+modules_tmp="$(mktemp)"
+sed \
   -e "s|^# golang.org/x/crypto v.*|# golang.org/x/crypto ${crypto_ver}|" \
   -e "s|^# golang.org/x/net v.*|# golang.org/x/net ${net_ver}|" \
   -e "s|^# golang.org/x/sync v.*|# golang.org/x/sync ${sync_ver}|" \
   -e "s|^# golang.org/x/text v.*|# golang.org/x/text ${text_ver}|" \
-  "${modules}"
+  "${modules}" > "${modules_tmp}"
+mv "${modules_tmp}" "${modules}"
 
 copy_listed_packages golang.org/x/crypto "${crypto_ver}"
 copy_listed_packages golang.org/x/net "${net_ver}"
