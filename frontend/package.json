@@ -29,7 +29,7 @@
   "dependencies": {
     "@lucide/svelte": "^1.23.0",
     "@wailsio/runtime": "latest",
-    "dompurify": "^3.4.11",
+    "dompurify": "^3.4.12",
     "jszip": "^3.10.1",
     "marked": "^18.0.5",
     "micron-parser": "github:RFnexus/micron-parser-js",
