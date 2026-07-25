@@ -268,7 +268,7 @@ tasks:
   mod:tidy:
     desc: Refresh go.mod, go.sum, and vendor/
     cmds:
-      - go mod tidy
+      - go mod tidy -e
       - task: vendor:go
     env:
       GOFLAGS: "-mod=mod"
