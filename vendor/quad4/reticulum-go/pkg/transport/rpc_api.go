@@ -40,6 +40,8 @@ type InterfaceStat struct {
 	PRBurstActive             bool     `msgpack:"pr_burst_active"`
 	Status                    bool     `msgpack:"status"`
 	Mode                      byte     `msgpack:"mode"`
+	Gravity                   int      `msgpack:"gravity"`
+	AnnouncesToInternal       bool     `msgpack:"announces_to_internal"`
 	Clients                   *int     `msgpack:"clients"`
 	Bitrate                   int64    `msgpack:"bitrate"`
 	RTTMs                     *float64 `msgpack:"rtt_ms,omitempty"`
@@ -55,6 +57,7 @@ type InterfaceStat struct {
 	PaddingFail               uint64   `msgpack:"padding_fail"`
 	ProofFail                 uint64   `msgpack:"proof_fail"`
 	LRProofHopMismatch        uint64   `msgpack:"lrproof_hop_mismatch"`
+	PathRebalance             uint64   `msgpack:"path_rebalance"`
 	RequestSkewReject         uint64   `msgpack:"request_skew_reject"`
 	BlackholeHit              uint64   `msgpack:"blackhole_hit"`
 	LinkStaleClose            uint64   `msgpack:"link_stale_close"`
@@ -75,20 +78,26 @@ type InterfaceStat struct {
 	IntegritySamples60        uint64   `msgpack:"integrity_samples_60s"`
 	StaleCloses               uint64   `msgpack:"stale_closes"`
 	ActiveLinks               int      `msgpack:"active_links,omitempty"`
+	BlockedIPs                *int     `msgpack:"blocked_ips,omitempty"`
+	BlockedIPList             []string `msgpack:"blocked_ip_list,omitempty"`
 }
 
 // InterfaceStatsResponse is the top-level interface stats RPC payload.
 type InterfaceStatsResponse struct {
-	Interfaces      []InterfaceStat `msgpack:"interfaces"`
-	RXB             uint64          `msgpack:"rxb"`
-	TXB             uint64          `msgpack:"txb"`
-	RXS             float64         `msgpack:"rxs"`
-	TXS             float64         `msgpack:"txs"`
-	TransportID     []byte          `msgpack:"transport_id"`
-	TransportUptime float64         `msgpack:"transport_uptime"`
-	NetmonFlap      uint64          `msgpack:"netmon_flap"`
-	ActiveLinks     int             `msgpack:"active_links"`
-	Health          health.Snapshot `msgpack:"health"`
+	Interfaces         []InterfaceStat `msgpack:"interfaces"`
+	RXB                uint64          `msgpack:"rxb"`
+	TXB                uint64          `msgpack:"txb"`
+	RXS                float64         `msgpack:"rxs"`
+	TXS                float64         `msgpack:"txs"`
+	TransportID        []byte          `msgpack:"transport_id"`
+	TransportUptime    float64         `msgpack:"transport_uptime"`
+	NetmonFlap         uint64          `msgpack:"netmon_flap"`
+	ActiveLinks        int             `msgpack:"active_links"`
+	Health             health.Snapshot `msgpack:"health"`
+	PathCount          int             `msgpack:"path_count"`
+	PacketHashCount    int             `msgpack:"packet_hash_count"`
+	AnnounceCacheCount int             `msgpack:"announce_cache_count"`
+	SeenAnnounceCount  int             `msgpack:"seen_announce_count"`
 }
 
 // RateTableEntry is one rate-table row for shared-instance RPC.
@@ -206,8 +215,12 @@ func (t *Transport) GetInterfaceStatsRPC() InterfaceStatsResponse {
 			Type:      "Interface",
 			Status:    iface.IsOnline(),
 			Mode:      byte(iface.GetMode()),
+			Gravity:   interfaceGravity(iface),
 			RXB:       rx,
 			TXB:       tx,
+		}
+		if v, ok := iface.(interface{ AnnouncesToInternalFlag() bool }); ok {
+			st.AnnouncesToInternal = v.AnnouncesToInternalFlag()
 		}
 		if hasher, ok := iface.(interface{ InterfaceHash() []byte }); ok {
 			st.Hash = hasher.InterfaceHash()
@@ -220,10 +233,13 @@ func (t *Transport) GetInterfaceStatsRPC() InterfaceStatsResponse {
 		case interface{ GetBitrate() uint64 }:
 			st.Bitrate = int64(br.GetBitrate()) // #nosec G115 -- bitrate display only
 		}
+		if clients, ok := iface.(interface{ Clients() int }); ok {
+			n := clients.Clients()
+			st.Clients = &n
+		}
 		if parent, ok := iface.(interface {
 			Connectable() bool
 			Base32() string
-			Clients() int
 		}); ok {
 			connectable := parent.Connectable()
 			st.I2PConnectable = &connectable
@@ -231,8 +247,16 @@ func (t *Transport) GetInterfaceStatsRPC() InterfaceStatsResponse {
 				endpoint := b32 + ".b32.i2p"
 				st.I2PB32 = &endpoint
 			}
-			clients := parent.Clients()
-			st.Clients = &clients
+		}
+		if blocked, ok := iface.(interface {
+			BlockedIPCount() int
+			BlockedIPs() []string
+		}); ok {
+			n := blocked.BlockedIPCount()
+			st.BlockedIPs = &n
+			if list := blocked.BlockedIPs(); len(list) > 0 {
+				st.BlockedIPList = append([]string(nil), list...)
+			}
 		}
 		if peer, ok := iface.(interface{ TunnelState() uint32 }); ok {
 			label := i2pTunnelStateLabel(peer.TunnelState())
@@ -290,6 +314,7 @@ func (t *Transport) GetInterfaceStatsRPC() InterfaceStatsResponse {
 		st.PaddingFail = hs.PaddingFail.Total
 		st.ProofFail = hs.ProofFail.Total
 		st.LRProofHopMismatch = hs.LRProofHopMismatch.Total
+		st.PathRebalance = hs.PathRebalance.Total
 		st.RequestSkewReject = hs.RequestSkewReject.Total
 		st.BlackholeHit = hs.BlackholeHit.Total
 		st.LinkStaleClose = hs.LinkStaleClose.Total
@@ -325,6 +350,11 @@ func (t *Transport) GetInterfaceStatsRPC() InterfaceStatsResponse {
 	if !t.startTime.IsZero() {
 		resp.TransportUptime = time.Since(t.startTime).Seconds()
 	}
+	ms := t.memoryStatsUnlocked()
+	resp.PathCount = ms.Paths
+	resp.PacketHashCount = ms.PacketHashes
+	resp.AnnounceCacheCount = ms.AnnouncePacketCache
+	resp.SeenAnnounceCount = ms.SeenAnnounces
 	return resp
 }
 
@@ -402,7 +432,7 @@ func (t *Transport) DropAnnounceQueuesRPC() int {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 	n := len(t.heldAnnounces)
-	t.heldAnnounces = make(map[string]*PathAnnounceEntry)
+	t.heldAnnounces = make(map[hash16]*PathAnnounceEntry)
 	return n
 }
 

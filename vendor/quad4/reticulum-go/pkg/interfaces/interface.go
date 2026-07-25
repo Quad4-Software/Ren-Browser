@@ -12,6 +12,7 @@ import (
 
 	"quad4/reticulum-go/pkg/common"
 	"quad4/reticulum-go/pkg/debug"
+	"quad4/reticulum-go/pkg/protect"
 )
 
 // Interface is the package-local name for a network interface.
@@ -67,6 +68,13 @@ type BaseInterface struct {
 	// AnnouncesFromInternal controls rebroadcast of announces learned via an
 	// internal-mode next hop (default true).
 	AnnouncesFromInternal bool
+
+	// AnnouncesToInternal allows boundary next hops to feed internal interfaces
+	// (RNS 1.4.1). Default false.
+	AnnouncesToInternal bool
+
+	// Gravity is configured pathing affinity (RNS 1.4.1).
+	Gravity int
 
 	// ReceiveOnly blocks transmit when true (Python outgoing = no).
 	// Zero value is false so unset interfaces still transmit.
@@ -155,7 +163,12 @@ func (i *BaseInterface) ProcessIncoming(data []byte) {
 	i.Mutex.Lock()
 	i.RxBytes += uint64(len(data))
 	i.RxPackets++
+	name := i.Name
 	i.Mutex.Unlock()
+
+	if d := protect.AdmitPacket(name, len(data)); !d.Allow {
+		return
+	}
 
 	stripped, ok := common.ApplyIFACInbound(i, data)
 	if !ok {
@@ -265,6 +278,22 @@ func (i *BaseInterface) RecursivePRsEnabled() bool {
 // may be rebroadcast (default true).
 func (i *BaseInterface) AnnouncesFromInternalFlag() bool {
 	return i.AnnouncesFromInternal
+}
+
+// AnnouncesToInternalFlag reports whether this interface may feed announces
+// onto internal-mode interfaces (RNS 1.4.1).
+func (i *BaseInterface) AnnouncesToInternalFlag() bool {
+	return i.AnnouncesToInternal
+}
+
+// GetGravity returns configured pathing affinity.
+func (i *BaseInterface) GetGravity() int {
+	return i.Gravity
+}
+
+// SetGravity sets configured pathing affinity.
+func (i *BaseInterface) SetGravity(g int) {
+	i.Gravity = g
 }
 
 // AllowsOutgoing reports whether this interface may transmit (config OUT).

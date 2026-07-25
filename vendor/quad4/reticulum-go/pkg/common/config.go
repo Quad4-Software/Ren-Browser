@@ -113,6 +113,12 @@ type InterfaceConfig struct {
 	// Empty means full.
 	Mode string
 
+	// Gravity is pathing affinity (RNS 1.4.1). Higher values win path table
+	// contests when the same announce emission arrives on multiple interfaces.
+	// Zero is the Python default unless default_gravity is set globally.
+	Gravity    int
+	GravitySet bool
+
 	// RecursivePRs enables path discovery for unknown destinations on this
 	// interface.
 	RecursivePRs bool
@@ -121,6 +127,11 @@ type InterfaceConfig struct {
 	// internal-mode next hop are rebroadcast. Default true when unset.
 	AnnouncesFromInternal    bool
 	AnnouncesFromInternalSet bool
+
+	// AnnouncesToInternal allows a boundary-mode next hop to forward announces
+	// onto internal-mode interfaces (RNS 1.4.1). Default false when unset.
+	AnnouncesToInternal    bool
+	AnnouncesToInternalSet bool
 
 	// Outgoing allows the interface to transmit. Default true when unset.
 	// When false the interface is receive-only (Python OUT = False).
@@ -137,7 +148,7 @@ type InterfaceConfig struct {
 	// Zero means the Python default of 6 hours. Config key announce_interval
 	// is minutes and is converted at parse time.
 	DiscoveryAnnounceIntervalSec int
-	// DiscoveryStampValue overrides the proof-of-work cost (default 14).
+	// DiscoveryStampValue overrides the proof-of-work cost (default 16).
 	DiscoveryStampValue int
 	// DiscoveryEncrypt encrypts announces with the network identity.
 	DiscoveryEncrypt bool
@@ -213,6 +224,28 @@ type ReticulumConfig struct {
 	// sandbox is enabled. Default true. Soft-fails if the kernel rejects the filter.
 	EnableSeccomp bool
 
+	// DefaultGravity is the pathing affinity applied to interfaces that do not
+	// set gravity explicitly (RNS 1.4.1). Zero matches Python DEFAULT_GRAVITY.
+	DefaultGravity    int
+	DefaultGravitySet bool
+
+	// AutoconnectInterfaceGravity is applied to discovered autoconnect peers
+	// when autoconnect is enabled (RNS 1.4.1).
+	AutoconnectInterfaceGravity    int
+	AutoconnectInterfaceGravitySet bool
+
+	// AutoconnectInterfaceMode overrides the mode for autoconnected interfaces.
+	AutoconnectInterfaceMode string
+
+	// AutoconnectAnnouncesToInternal sets announces_to_internal on autoconnect peers.
+	AutoconnectAnnouncesToInternal    bool
+	AutoconnectAnnouncesToInternalSet bool
+
+	// AllowLinkPathRebalance enables LRPROOF-based hop rebalancing (RNS 1.4.1).
+	// Default true. Go adds dampening and gravity-aware refusals on top.
+	AllowLinkPathRebalance    bool
+	AllowLinkPathRebalanceSet bool
+
 	// EnableControlAPI turns on the localhost JSON control API (pkg/controlapi)
 	// that lets non-Go applications use destinations, links, and announces
 	// without embedding the Reticulum stack.
@@ -242,6 +275,12 @@ type ReticulumConfig struct {
 	// runtime GCs more aggressively and large allocations may fail instead of
 	// growing unbounded. Zero leaves the runtime default (unlimited).
 	SoftMemoryLimitBytes int64
+
+	// DoSProtection selects IDS/IPS style flood and OOM gates off detect prevent or auto.
+	// Go-only. Default auto. Detect warns on stdout and increments health counters.
+	// Prevent also sheds ingress refuses excess accepts and drops overloaded handlers.
+	// Auto learns quietly persists baselines via msgpack then arms prevent and relearns on change.
+	DoSProtection string
 
 	// IdentityBackend selects identity at-rest storage: "file" (default),
 	// "secretservice" (Freedesktop Secret Service), or "keyring" (Linux kernel

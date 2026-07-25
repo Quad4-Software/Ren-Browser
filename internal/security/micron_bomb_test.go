@@ -36,7 +36,6 @@ func TestMicronLeadingAngleRecursion(t *testing.T) {
 	// parseLineInto recurses once per leading '<'. Deep stacks can panic.
 	depths := []int{1000, 10000, 50000}
 	for _, depth := range depths {
-		depth := depth
 		t.Run(itoa(depth), func(t *testing.T) {
 			done := make(chan any, 1)
 			go func() {

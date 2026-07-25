@@ -28,6 +28,7 @@ import (
 	"quad4/reticulum-go/pkg/interfaces"
 	"quad4/reticulum-go/pkg/packet"
 	"quad4/reticulum-go/pkg/pathfinder"
+	"quad4/reticulum-go/pkg/protect"
 	"quad4/reticulum-go/pkg/rate"
 )
 
@@ -49,7 +50,9 @@ type hash16 struct {
 }
 
 type destinationPacketReceiver interface {
-	Receive(pkt *packet.Packet, iface common.NetworkInterface)
+	// Receive decrypts and delivers. Returns false when decrypt or delivery fails
+	// so callers must not send opportunistic proofs for undelivered packets.
+	Receive(pkt *packet.Packet, iface common.NetworkInterface) bool
 }
 
 type destinationLinkRequestHandler interface {
@@ -72,6 +75,58 @@ func hash16FromSlice(b []byte) hash16 {
 	return k
 }
 
+func destKey(h []byte) hash16 {
+	return hash16FromSlice(h)
+}
+
+// packetCopyPoolMaxCap is the largest buffer returned to the HandlePacket copy pool.
+const packetCopyPoolMaxCap = 8192
+
+var packetCopyPool = sync.Pool{
+	New: func() any {
+		b := make([]byte, 0, 1500)
+		return &b
+	},
+}
+
+// packetCopy holds a pooled slice header pointer so put never stores a stack address.
+type packetCopy struct {
+	buf []byte
+	bp  *[]byte
+}
+
+func getPacketCopy(n int) packetCopy {
+	if n <= 0 {
+		return packetCopy{}
+	}
+	if n > packetCopyPoolMaxCap {
+		return packetCopy{buf: make([]byte, n)}
+	}
+	bp := packetCopyPool.Get().(*[]byte)
+	buf := *bp
+	if cap(buf) < n {
+		buf = make([]byte, n)
+		*bp = buf[:0]
+	} else {
+		buf = buf[:n]
+	}
+	return packetCopy{buf: buf, bp: bp}
+}
+
+func putPacketCopy(pc packetCopy) {
+	if pc.bp == nil {
+		return
+	}
+	if cap(pc.buf) == 0 || cap(pc.buf) > packetCopyPoolMaxCap {
+		b := make([]byte, 0, 1500)
+		*pc.bp = b
+		packetCopyPool.Put(pc.bp)
+		return
+	}
+	*pc.bp = pc.buf[:0]
+	packetCopyPool.Put(pc.bp)
+}
+
 type pendingDiscoveryPR struct {
 	destHash []byte
 	exclude  common.NetworkInterface
@@ -84,7 +139,7 @@ type Transport struct {
 	links                 map[hash16]LinkInterface
 	destinations          map[hash16]registeredDestination
 	announceRate          *rate.Limiter
-	seenAnnounces         map[string]time.Time
+	seenAnnounces         map[[32]byte]time.Time
 	packetHandleSem       chan struct{}
 	pendingAnnounceJobs   []delayedAnnounceJob
 	pendingAnnounceMu     sync.Mutex
@@ -94,43 +149,50 @@ type Transport struct {
 	receipts              []*packet.PacketReceipt
 	receiptsMutex         sync.RWMutex
 	pathStates            map[[PathMapKeySize]byte]byte
-	discoveryPathRequests map[string]*DiscoveryPathRequest
+	discoveryPathRequests map[hash16]*DiscoveryPathRequest
 	discoveryPRTags       map[string]bool
-	announceTable         map[string]*PathAnnounceEntry
-	heldAnnounces         map[string]*PathAnnounceEntry
-	announcePacketCache   map[string]*packet.Packet
-	pendingLocalPathReqs  map[string]common.NetworkInterface
+	announceTable         map[hash16]*PathAnnounceEntry
+	heldAnnounces         map[hash16]*PathAnnounceEntry
+	announcePacketCache   map[hash16]*cachedAnnounce
+	pendingLocalPathReqs  map[hash16]common.NetworkInterface
 	transportIdentity     *identity.Identity
 	// transportIDCache is the truncated hash of transportIdentity, kept so
 	// relay hot paths can compare TransportID without rehashing every packet.
 	transportIDCache []byte
 	// rpcIdentity is the persisted transport identity used for shared-instance
 	// RPC auth when an ephemeral wire identity is active.
-	rpcIdentity          *identity.Identity
-	networkIdentity      *identity.Identity
-	networkDestination   *destination.Destination
-	networkInstanceDest  *destination.Destination
-	pathRequestDest      any
-	blackholeTable       *blackhole.Table
-	localHopsDelta       int
-	probeDestination     *destination.Destination
-	linkTable            *linkRelayTable
-	reverseTable         *reverseTable
-	packetHashes         *packetHashList
-	lastPathRequest      map[[PathMapKeySize]byte]time.Time
-	ifaceStates          *ifaceStateTable
-	pendingDiscoveryPRs  []pendingDiscoveryPR
-	pendingDiscoveryPRMu sync.Mutex
-	discoveryDraining    atomic.Bool
-	pathPersistMemory    atomic.Bool
-	pathPersistDisabled  atomic.Bool
-	pathPersistDir       string
-	pathPersistDirty     atomic.Bool
-	pathPersistSaving    sync.Mutex
-	pendingPathEntries   []pendingPathEntry
-	done                 chan struct{}
-	stopOnce             sync.Once
-	startTime            time.Time
+	rpcIdentity             *identity.Identity
+	networkIdentity         *identity.Identity
+	networkDestination      *destination.Destination
+	networkInstanceDest     *destination.Destination
+	pathRequestDest         any
+	blackholeTable          *blackhole.Table
+	localHopsDelta          int
+	probeDestination        *destination.Destination
+	linkTable               *linkRelayTable
+	reverseTable            *reverseTable
+	packetHashes            *packetHashList
+	lastPathRequest         map[[PathMapKeySize]byte]time.Time
+	ifaceStates             *ifaceStateTable
+	pendingDiscoveryPRs     []pendingDiscoveryPR
+	pendingDiscoveryPRMu    sync.Mutex
+	discoveryDraining       atomic.Bool
+	pathPersistMemory       atomic.Bool
+	pathPersistDisabled     atomic.Bool
+	pathPersistDir          string
+	pathPersistDirty        atomic.Bool
+	pathPersistGen          atomic.Uint64
+	pathPersistSaving       sync.Mutex
+	pendingPathEntries      []pendingPathEntry
+	done                    chan struct{}
+	stopOnce                sync.Once
+	startTime               time.Time
+	destinationsLastCleaned atomic.Int64
+	knownDestCleaning       atomic.Bool
+
+	rebalanceMu     sync.Mutex
+	rebalanceByDest map[[PathMapKeySize]byte]*rebalanceEntry
+	ifacePenalties  map[string]*ifacePenalty
 
 	tunnelMu           sync.Mutex
 	tunnels            map[[32]byte]*tunnelEntry
@@ -199,7 +261,7 @@ func NewTransport(cfg *common.ReticulumConfig) *Transport {
 	t := &Transport{
 		interfaces:            make(map[string]common.NetworkInterface),
 		paths:                 make(map[[PathMapKeySize]byte]*common.Path),
-		seenAnnounces:         make(map[string]time.Time),
+		seenAnnounces:         make(map[[32]byte]time.Time),
 		packetHandleSem:       make(chan struct{}, MaxConcurrentPacketHandlers),
 		announceRate:          rate.NewLimiter(rate.DefaultBurstFreq, AnnounceRateKbps),
 		mutex:                 sync.RWMutex{},
@@ -210,12 +272,12 @@ func NewTransport(cfg *common.ReticulumConfig) *Transport {
 		receipts:              make([]*packet.PacketReceipt, 0),
 		receiptsMutex:         sync.RWMutex{},
 		pathStates:            make(map[[PathMapKeySize]byte]byte),
-		discoveryPathRequests: make(map[string]*DiscoveryPathRequest),
+		discoveryPathRequests: make(map[hash16]*DiscoveryPathRequest),
 		discoveryPRTags:       make(map[string]bool),
-		announceTable:         make(map[string]*PathAnnounceEntry),
-		heldAnnounces:         make(map[string]*PathAnnounceEntry),
-		announcePacketCache:   make(map[string]*packet.Packet),
-		pendingLocalPathReqs:  make(map[string]common.NetworkInterface),
+		announceTable:         make(map[hash16]*PathAnnounceEntry),
+		heldAnnounces:         make(map[hash16]*PathAnnounceEntry),
+		announcePacketCache:   make(map[hash16]*cachedAnnounce),
+		pendingLocalPathReqs:  make(map[hash16]common.NetworkInterface),
 		linkTable:             newLinkRelayTable(),
 		reverseTable:          newReverseTable(),
 		packetHashes:          newPacketHashList(effectivePacketHashlistMax(cfg)),
@@ -230,6 +292,13 @@ func NewTransport(cfg *common.ReticulumConfig) *Transport {
 	storagePath := ""
 	if !inMemory {
 		storagePath = transportStoragePath(cfg)
+	}
+	if cfg != nil {
+		protectStore := ""
+		if storagePath != "" {
+			protectStore = filepath.Join(storagePath, protect.StoreFileName)
+		}
+		protect.ConfigureFromConfig(cfg.DoSProtection, cfg.SoftMemoryLimitBytes, protectStore)
 	}
 
 	transportIdent, err := identity.LoadOrCreateTransportIdentity(storagePath)
@@ -267,6 +336,7 @@ func NewTransport(cfg *common.ReticulumConfig) *Transport {
 
 	go t.startMaintenanceJobs()
 
+	t.ensureRebalanceState()
 	t.initLocalHopsDelta()
 	t.initPathPersistence(cfg)
 	inMemoryKnown := false
@@ -302,6 +372,7 @@ func (t *Transport) startMaintenanceJobs() {
 		select {
 		case <-ticker.C:
 			t.cleanupExpiredPaths()
+			t.cleanupAnnouncePacketCache()
 			t.cleanupExpiredTunnels()
 			t.cleanupExpiredDiscoveryRequests()
 			t.cleanupExpiredAnnounces()
@@ -309,6 +380,7 @@ func (t *Transport) startMaintenanceJobs() {
 			t.cleanupSeenAnnounces()
 			t.persistPathTableIfDirty()
 			identity.PersistKnownDestinationsIfDirty()
+			t.maybeCleanKnownDestinations()
 			if tab := t.BlackholeTable(); tab != nil {
 				tab.SweepExpired()
 			}
@@ -345,6 +417,29 @@ func (t *Transport) sampleInterfaceTraffic() {
 	}
 }
 
+func (t *Transport) maybeCleanKnownDestinations() {
+	last := t.destinationsLastCleaned.Load()
+	now := time.Now().UnixNano()
+	if last != 0 && time.Duration(now-last) < KnownDestinationsInterval {
+		return
+	}
+	if !t.knownDestCleaning.CompareAndSwap(false, true) {
+		return
+	}
+	if !t.destinationsLastCleaned.CompareAndSwap(last, now) {
+		t.knownDestCleaning.Store(false)
+		return
+	}
+	go func() {
+		defer func() {
+			t.destinationsLastCleaned.Store(time.Now().UnixNano())
+			t.knownDestCleaning.Store(false)
+		}()
+		identity.CleanKnownDestinations(t.HasPath)
+		identity.PersistKnownDestinationsIfDirty()
+	}()
+}
+
 func (t *Transport) cleanupSeenAnnounces() {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
@@ -370,7 +465,6 @@ func (t *Transport) cleanupExpiredPaths() {
 			}
 		}
 	}
-	t.pruneOrphanAnnounceCacheUnlocked()
 	t.markPathTableDirty()
 }
 
@@ -383,7 +477,8 @@ func (t *Transport) cleanupExpiredDiscoveryRequests() {
 		if now.After(req.Timeout) {
 			delete(t.discoveryPathRequests, destHash)
 			if debug.Enabled(debug.DebugVerbose) {
-				debug.Log(debug.DebugVerbose, "Expired discovery path request", "dest_hash", fmt.Sprintf("%x", destHash[:8]))
+				debug.Log(debug.DebugVerbose, "Expired discovery path request",
+					"dest_hash", fmt.Sprintf("%x", destHash.bytes[:8]))
 			}
 		}
 	}
@@ -399,7 +494,8 @@ func (t *Transport) cleanupExpiredAnnounces() {
 		if entry != nil && time.Since(entry.CreatedAt) > announceExpiry {
 			delete(t.announceTable, destHash)
 			if debug.Enabled(debug.DebugVerbose) {
-				debug.Log(debug.DebugVerbose, "Expired announce entry", "dest_hash", fmt.Sprintf("%x", destHash[:8]))
+				debug.Log(debug.DebugVerbose, "Expired announce entry",
+					"dest_hash", fmt.Sprintf("%x", destHash.bytes[:8]))
 			}
 		}
 	}
@@ -409,6 +505,44 @@ func (t *Transport) cleanupExpiredAnnounces() {
 			delete(t.heldAnnounces, destHash)
 		}
 	}
+}
+
+// MemoryStats reports sizes of the largest transport in-memory tables.
+type MemoryStats struct {
+	Paths               int
+	PacketHashes        int
+	AnnouncePacketCache int
+	SeenAnnounces       int
+	AnnounceTable       int
+	HeldAnnounces       int
+}
+
+func (t *Transport) memoryStatsUnlocked() MemoryStats {
+	if t == nil {
+		return MemoryStats{}
+	}
+	ph := 0
+	if t.packetHashes != nil {
+		ph = t.packetHashes.Len()
+	}
+	return MemoryStats{
+		Paths:               len(t.paths),
+		PacketHashes:        ph,
+		AnnouncePacketCache: len(t.announcePacketCache),
+		SeenAnnounces:       len(t.seenAnnounces),
+		AnnounceTable:       len(t.announceTable),
+		HeldAnnounces:       len(t.heldAnnounces),
+	}
+}
+
+// MemoryStats returns a snapshot of transport memory-related table sizes.
+func (t *Transport) MemoryStats() MemoryStats {
+	if t == nil {
+		return MemoryStats{}
+	}
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+	return t.memoryStatsUnlocked()
 }
 
 // releaseHeldAnnounces replays announces held by per-interface ingress control
@@ -579,6 +713,7 @@ func (t *Transport) RegisterInterface(name string, iface common.NetworkInterface
 
 	t.registerInterfaceLocked(name, iface)
 	t.activatePendingPathsForInterface(name, iface)
+	t.notifyProtectInterfacesLocked()
 	return nil
 }
 
@@ -596,6 +731,14 @@ func (t *Transport) registerInterfaceLocked(name string, iface common.NetworkInt
 	}
 	t.ifaceStates.put(name, buildIfaceState(cfg))
 	applyIfacePRConfig(iface, cfg)
+}
+
+func (t *Transport) notifyProtectInterfacesLocked() {
+	names := make([]string, 0, len(t.interfaces))
+	for n := range t.interfaces {
+		names = append(names, n)
+	}
+	protect.Default().NotifyInterfaces(names)
 }
 
 func (t *Transport) invalidateInterfaceReferencesLocked(iface common.NetworkInterface) {
@@ -741,6 +884,10 @@ func (t *Transport) Close() error {
 	t.stopOnce.Do(func() {
 		close(t.done)
 	})
+
+	if e := protect.Default(); e != nil {
+		e.StopMemoryMonitor()
+	}
 
 	t.mutex.Lock()
 	for _, iface := range t.interfaces {
@@ -1118,30 +1265,7 @@ func (t *Transport) updatePathUnlocked(destinationHash []byte, nextHop []byte, i
 func (t *Transport) dropPathEntryUnlocked(key [PathMapKeySize]byte) {
 	delete(t.paths, key)
 	delete(t.pathStates, key)
-	delete(t.announcePacketCache, string(key[:]))
-}
-
-// pruneOrphanAnnounceCacheUnlocked drops cached announce payloads whose path
-// row is gone. Caller must hold t.mutex.
-func (t *Transport) pruneOrphanAnnounceCacheUnlocked() {
-	for key := range t.announcePacketCache {
-		if len(key) != PathMapKeySize {
-			delete(t.announcePacketCache, key)
-			continue
-		}
-		var dest [PathMapKeySize]byte
-		copy(dest[:], key)
-		if _, ok := t.paths[dest]; !ok {
-			delete(t.announcePacketCache, key)
-		}
-	}
-}
-
-func effectivePacketHashlistMax(cfg *common.ReticulumConfig) int {
-	if cfg == nil {
-		return common.DefaultMaxPacketHashlistClient
-	}
-	return cfg.EffectiveMaxPacketHashlist()
+	delete(t.announcePacketCache, hash16FromSlice(key[:]))
 }
 
 // evictPathsIfNeededUnlocked drops oldest paths when the soft path-table cap
@@ -1413,17 +1537,28 @@ func (t *Transport) HandlePacket(data []byte, iface common.NetworkInterface) {
 
 	select {
 	case t.packetHandleSem <- struct{}{}:
-		dataCopy := make([]byte, len(data))
-		copy(dataCopy, data)
+		pc := getPacketCopy(len(data))
+		copy(pc.buf, data)
 		go func() {
 			defer func() { <-t.packetHandleSem }()
-			dispatch(dataCopy)
+			defer putPacketCopy(pc)
+			dispatch(pc.buf)
 		}()
 	default:
+		ifaceName := ""
+		if iface != nil {
+			ifaceName = iface.GetName()
+		}
+		if d := protect.AdmitHandler(ifaceName); !d.Allow {
+			return
+		}
 		// Always copy: callers (UDP/Auto) may reuse the buffer after return.
-		dataCopy := make([]byte, len(data))
-		copy(dataCopy, data)
-		dispatch(dataCopy)
+		pc := getPacketCopy(len(data))
+		copy(pc.buf, data)
+		func() {
+			defer putPacketCopy(pc)
+			dispatch(pc.buf)
+		}()
 	}
 }
 
@@ -1567,13 +1702,19 @@ func (t *Transport) handleAnnouncePacket(data []byte, iface common.NetworkInterf
 		debug.Log(debug.DebugInfo, "Verifying signature", "data_len", len(signData))
 	}
 
-	if !id.Verify(signData, signature) {
+	ifaceName := ""
+	if iface != nil {
+		ifaceName = iface.GetName()
+	}
+	d, release := protect.AdmitCrypto(ifaceName)
+	if !d.Allow {
+		return fmt.Errorf("dos_protection refused crypto")
+	}
+	ok := id.Verify(signData, signature)
+	release()
+	if !ok {
 		if debug.Enabled(debug.DebugInfo) {
 			debug.Log(debug.DebugInfo, "Signature verification failed - announce rejected")
-		}
-		ifaceName := ""
-		if iface != nil {
-			ifaceName = iface.GetName()
 		}
 		health.Inc(ifaceName, health.KindAnnounceSigFail)
 		return fmt.Errorf("invalid announce signature")
@@ -1625,7 +1766,6 @@ func (t *Transport) handleAnnouncePacket(data []byte, iface common.NetworkInterf
 
 	hashData := data[2:]
 	announceHash := sha256.Sum256(hashData)
-	hashStr := string(announceHash[:])
 
 	if debug.Enabled(debug.DebugInfo) {
 		debug.Log(debug.DebugInfo, "Announce hash", "hash", fmt.Sprintf("%x", announceHash[:8]))
@@ -1639,7 +1779,7 @@ func (t *Transport) handleAnnouncePacket(data []byte, iface common.NetworkInterf
 	}
 
 	t.mutex.Lock()
-	if last, ok := t.seenAnnounces[hashStr]; ok {
+	if last, ok := t.seenAnnounces[announceHash]; ok {
 		if time.Since(last) < SeenAnnounceTTL {
 			t.mutex.Unlock()
 			if debug.Enabled(debug.DebugInfo) {
@@ -1686,8 +1826,19 @@ func (t *Transport) handleAnnouncePacket(data []byte, iface common.NetworkInterf
 			nextHop = destinationHash
 		}
 		now := time.Now()
-		t.mutex.Lock()
+		annAff := t.pathingAffinity(iface)
+		t.mutex.RLock()
 		destKey := pathMapKey(destinationHash)
+		existingPeek := t.paths[destKey]
+		var curIface common.NetworkInterface
+		if existingPeek != nil {
+			curIface = existingPeek.Interface
+		}
+		t.mutex.RUnlock()
+		curAff := t.pathingAffinity(curIface)
+		affKnown := existingPeek == nil || curIface != nil
+
+		t.mutex.Lock()
 		existing := t.paths[destKey]
 		destinationKnown := existing != nil
 		pathUnresponsive := false
@@ -1699,6 +1850,9 @@ func (t *Transport) handleAnnouncePacket(data []byte, iface common.NetworkInterf
 			announceHops:     uint8(announceHops),
 			randomBlob:       randomHash,
 			now:              now,
+			announceAffinity: annAff,
+			currentAffinity:  curAff,
+			affinityKnown:    affKnown,
 		}, pathUnresponsive)
 		if shouldAdd {
 			t.updatePathUnlocked(destinationHash, nextHop, iface.GetName(), uint8(announceHops), randomHash, announceHash[:], now)
@@ -1726,7 +1880,7 @@ func (t *Transport) handleAnnouncePacket(data []byte, iface common.NetworkInterf
 	}
 
 	t.mutex.Lock()
-	t.seenAnnounces[hashStr] = time.Now()
+	t.seenAnnounces[announceHash] = time.Now()
 	t.mutex.Unlock()
 
 	if iface != nil {
@@ -2082,13 +2236,19 @@ func (t *Transport) handleTransportPacket(data []byte, iface common.NetworkInter
 				debug.Log(debug.DebugInfo, "Routing data packet to destination", "hash", fmt.Sprintf("%x", destHash))
 			}
 
+			delivered := false
 			if destIface.packetReceiver != nil {
-				destIface.packetReceiver.Receive(pkt, iface)
+				delivered = destIface.packetReceiver.Receive(pkt, iface)
 			} else {
 				debug.Log(debug.DebugVerbose, "Destination does not have Receive method")
 			}
-			if d, ok := destIface.raw.(*destination.Destination); ok {
-				t.maybeProvePacket(pkt, d, iface)
+			// Match Python Destination.receive: prove only after successful decrypt
+			// and local delivery. Proving on decrypt failure marks DELIVERED at the
+			// sender while ren-tui never sees Destination_Data.
+			if delivered {
+				if d, ok := destIface.raw.(*destination.Destination); ok {
+					t.maybeProvePacket(pkt, d, iface)
+				}
 			}
 		} else {
 			debug.Log(debug.DebugInfo, common.MsgTransportNoDestForData, "hash", fmt.Sprintf("%x", destHash))
@@ -2202,16 +2362,16 @@ func parsePathRequestWire(data []byte) (destHash, requestorTransportID, tag []by
 }
 
 func (t *Transport) processPathRequest(destHash []byte, attachedIface common.NetworkInterface, requestorTransportID []byte, tag []byte) {
-	destHashStr := string(destHash)
+	destHashKey := destKey(destHash)
 	pathKey := pathMapKey(destHash)
 	isFromLocalClient := isLocalClientInterface(attachedIface)
 	debug.Log(debug.DebugInfo, "Processing path request",
 		"dest_hash", fmt.Sprintf("%x", destHash),
 		"from_local_client", isFromLocalClient)
 
-	destKey := hash16FromSlice(destHash)
+	destKeyLocal := hash16FromSlice(destHash)
 	t.mutex.RLock()
-	localDest, isLocal := t.destinations[destKey]
+	localDest, isLocal := t.destinations[destKeyLocal]
 	path, hasPath := t.paths[pathKey]
 	t.mutex.RUnlock()
 
@@ -2333,7 +2493,7 @@ func (t *Transport) processPathRequest(destHash []byte, attachedIface common.Net
 	debug.Log(debug.DebugInfo, "Attempting to discover unknown path", "dest_hash", fmt.Sprintf("%x", destHash))
 
 	t.mutex.Lock()
-	if _, exists := t.discoveryPathRequests[destHashStr]; exists {
+	if _, exists := t.discoveryPathRequests[destHashKey]; exists {
 		t.mutex.Unlock()
 		debug.Log(debug.DebugInfo, "Path request already pending", "dest_hash", fmt.Sprintf("%x", destHash))
 		return
@@ -2344,7 +2504,7 @@ func (t *Transport) processPathRequest(destHash []byte, attachedIface common.Net
 		Timeout:         time.Now().Add(15 * time.Second),
 		RequestingIface: attachedIface,
 	}
-	t.discoveryPathRequests[destHashStr] = prEntry
+	t.discoveryPathRequests[destHashKey] = prEntry
 	t.mutex.Unlock()
 
 	t.queueDiscoveryPathRequest(destHash, attachedIface)

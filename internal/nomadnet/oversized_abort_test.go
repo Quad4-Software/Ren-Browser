@@ -23,8 +23,8 @@ func TestOversizedAbortTearsDownLink(t *testing.T) {
 	}
 	src := string(raw)
 
-	if !strings.Contains(src, "SetMaxResponseBytes") {
-		t.Fatal("expected SetMaxResponseBytes before waitReceipt")
+	if !strings.Contains(src, "RequestLimited") {
+		t.Fatal("expected RequestLimited with max fetch bytes before waitReceipt")
 	}
 	if !strings.Contains(src, "abortFetch(") {
 		t.Fatal("expected abortFetch on waitReceipt error")
@@ -36,9 +36,6 @@ func TestOversizedAbortTearsDownLink(t *testing.T) {
 	abortSection := src[abortIdx:]
 	if end := strings.Index(abortSection[1:], "\nfunc "); end > 0 {
 		abortSection = abortSection[:end+1]
-	}
-	if !strings.Contains(abortSection, "AbortIncomingResponse()") {
-		t.Fatal("abortFetch must call AbortIncomingResponse")
 	}
 	if !strings.Contains(abortSection, "Teardown()") {
 		t.Fatal("abortFetch must Teardown the link")

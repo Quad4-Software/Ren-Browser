@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sync"
 
+	"quad4/reticulum-go/pkg/common"
 	"quad4/reticulum-go/pkg/debug"
 	"quad4/reticulum-go/pkg/packet"
 )
@@ -57,14 +58,28 @@ func (hl *packetHashList) add(h []byte) {
 	hl.mu.Lock()
 	defer hl.mu.Unlock()
 	hl.cur[k] = struct{}{}
-	rotateAt := hl.max / 2
-	if rotateAt < 1 {
-		rotateAt = 1
-	}
+	rotateAt := max(hl.max/2, 1)
 	if len(hl.cur) > rotateAt {
 		hl.prev = hl.cur
 		hl.cur = make(map[[32]byte]struct{})
 	}
+}
+
+// Len returns the number of hashes in the current and previous generations.
+func (hl *packetHashList) Len() int {
+	if hl == nil {
+		return 0
+	}
+	hl.mu.Lock()
+	defer hl.mu.Unlock()
+	return len(hl.cur) + len(hl.prev)
+}
+
+func effectivePacketHashlistMax(cfg *common.ReticulumConfig) int {
+	if cfg == nil {
+		return common.DefaultMaxPacketHashlistClient
+	}
+	return cfg.EffectiveMaxPacketHashlist()
 }
 
 // packetFilter mirrors Python Transport.packet_filter for duplicate detection

@@ -17,7 +17,7 @@ const (
 	Tagline            = "Reticulum browser for NomadNet pages."
 	Comments           = "Micron-first mesh browser for NomadNet"
 	Copyright          = "(c) 2026 Quad4"
-	Version            = "0.2.0"
+	Version            = "0.2.1"
 	Homepage           = "https://quad4.io"
 	DataDirName        = ".renbrowser"
 	DBFileName         = "renbrowser.db"

@@ -166,7 +166,8 @@ func (b *Browser) FetchWithHooks(ctx context.Context, nodeHash string, path stri
 
 	requestTimeout, receiptTimeout := requestTimeouts(res.Path)
 	hooks.stage("request", fmt.Sprintf("sending request path=%s requestTimeout=%s", res.Path, requestTimeout))
-	receipt, err := lnk.Request(res.Path, buildRequestData(req), requestTimeout)
+	maxBytes := limits.MaxFetchBytes(res.Path)
+	receipt, err := lnk.RequestLimited(res.Path, buildRequestData(req), requestTimeout, maxBytes)
 	if err != nil {
 		res.Error = err.Error()
 		res.DurationMs = time.Since(start).Milliseconds()
@@ -178,10 +179,6 @@ func (b *Browser) FetchWithHooks(ctx context.Context, nodeHash string, path stri
 	}
 
 	hooks.stage("waiting", fmt.Sprintf("waiting for response, receiptTimeout=%s", receiptTimeout))
-	maxBytes := limits.MaxFetchBytes(res.Path)
-	if maxBytes > 0 {
-		receipt.SetMaxResponseBytes(int64(maxBytes))
-	}
 	body, metadata, err := waitReceipt(ctx, receipt, receiptTimeout, maxBytes, hooks)
 	if err != nil {
 		b.abortFetch(destHash, lnk)
@@ -203,7 +200,6 @@ func (b *Browser) FetchWithHooks(ctx context.Context, nodeHash string, path stri
 // a rejected or canceled transfer cannot keep allocating part buffers.
 func (b *Browser) abortFetch(destHash []byte, lnk *rlink.Link) {
 	if lnk != nil {
-		lnk.AbortIncomingResponse()
 		lnk.Teardown()
 	}
 	if len(destHash) == 0 {

@@ -120,6 +120,8 @@ function postCleanDocumentHtml(html: string): string {
   }
   try {
     const template = document.createElement("template");
+    // Post-DOMPurify structural cleanup only. Input is already sanitized.
+    // eslint-disable-next-line no-unsanitized/property -- sanitized document HTML
     template.innerHTML = html;
     const root = template.content;
     for (const tag of DOCUMENT_FORBID_TAGS) {

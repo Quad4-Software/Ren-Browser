@@ -5,6 +5,29 @@ All notable changes to Ren Browser are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-07-25
+
+### Security
+
+- Harden HTML sanitization for document and micron content (XSS-oriented fixes and regression oracles)
+- Safer download filenames and path handling to block traversal-style names
+- Tighter micron rendering, navigation guards, tab preview srcdoc, and URL handling for untrusted mesh content
+
+### Added
+
+- Default Reticulum client limits on first config creation: in-memory paths, known destinations, soft memory budget, and packet hashlist cap (`internal/rns/config.go`)
+- Exploratory security oracle tests for browser, micron, and document HTML surfaces
+
+### Changed
+
+- Bump `quad4/reticulum-go` to v1.0.1
+- NomadNet page fetch uses `Link.RequestLimited` for max response size (matches reticulum-go 1.0.1)
+- Updated `renbrowser.rsm` tree inventory for release signing
+
+### Fixed
+
+- Dependency `brace-expansion` pinned to 2.1.2 in workspace lockfiles
+
 ## [0.2.0] - 2026-07-19
 
 ### Added
@@ -74,5 +97,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GHCR publishing for the server image
 - Nightly and beta release channels
 
+[0.2.1]: https://github.com/Quad4-Software/Ren-Browser/releases/tag/v0.2.1
 [0.2.0]: https://github.com/Quad4-Software/Ren-Browser/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Quad4-Software/Ren-Browser/releases/tag/v0.1.0

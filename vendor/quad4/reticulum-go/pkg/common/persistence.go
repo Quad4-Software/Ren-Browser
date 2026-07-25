@@ -36,6 +36,7 @@ const (
 // RETICULUM_IN_MEMORY_KNOWN_DESTINATIONS=1 to force in-memory tables.
 // RETICULUM_IN_MEMORY_STORAGE=1 forces fully ephemeral storage.
 // RETICULUM_SOFT_MEMORY_LIMIT accepts a byte count or K/M/G suffix.
+// RETICULUM_MAX_PACKET_HASHLIST accepts an integer entry budget.
 func (c *ReticulumConfig) ApplyPersistenceEnv() {
 	if c == nil {
 		return
@@ -52,6 +53,21 @@ func (c *ReticulumConfig) ApplyPersistenceEnv() {
 	if v := strings.TrimSpace(os.Getenv("RETICULUM_SOFT_MEMORY_LIMIT")); v != "" {
 		if n, err := ParseByteSize(v); err == nil && n > 0 {
 			c.SoftMemoryLimitBytes = n
+		}
+	}
+	if v := strings.TrimSpace(os.Getenv("RETICULUM_MAX_PACKET_HASHLIST")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			c.MaxPacketHashlist = n
+		}
+	}
+	if v := strings.TrimSpace(os.Getenv("RETICULUM_MAX_IN_MEMORY_PATHS")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			c.MaxInMemoryPaths = n
+		}
+	}
+	if v := strings.TrimSpace(os.Getenv("RETICULUM_MAX_IN_MEMORY_KNOWN_DESTINATIONS")); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			c.MaxInMemoryKnownDestinations = n
 		}
 	}
 	c.NormalizeInMemoryFlags()
@@ -116,6 +132,21 @@ func (c *ReticulumConfig) EffectiveMaxInMemoryKnownDestinations() int {
 	return c.MaxInMemoryKnownDestinations
 }
 
+// EffectiveMaxInMemoryResourceBytes returns the split-resource staging budget
+// when InMemoryStorage is explicitly enabled.
+func (c *ReticulumConfig) EffectiveMaxInMemoryResourceBytes() int64 {
+	if c == nil || !c.InMemoryStorage {
+		return 0
+	}
+	if c.MaxInMemoryResourceBytes < 0 {
+		return 0
+	}
+	if c.MaxInMemoryResourceBytes == 0 {
+		return DefaultMaxInMemoryResourceBytes
+	}
+	return c.MaxInMemoryResourceBytes
+}
+
 // EffectiveMaxPacketHashlist returns the packet hash loop-filter size.
 // Zero picks DefaultMaxPacketHashlist when transport is enabled, otherwise
 // DefaultMaxPacketHashlistClient. Negative uses DefaultMaxPacketHashlist.
@@ -133,21 +164,6 @@ func (c *ReticulumConfig) EffectiveMaxPacketHashlist() int {
 		return DefaultMaxPacketHashlist
 	}
 	return DefaultMaxPacketHashlistClient
-}
-
-// EffectiveMaxInMemoryResourceBytes returns the split-resource staging budget
-// when InMemoryStorage is explicitly enabled.
-func (c *ReticulumConfig) EffectiveMaxInMemoryResourceBytes() int64 {
-	if c == nil || !c.InMemoryStorage {
-		return 0
-	}
-	if c.MaxInMemoryResourceBytes < 0 {
-		return 0
-	}
-	if c.MaxInMemoryResourceBytes == 0 {
-		return DefaultMaxInMemoryResourceBytes
-	}
-	return c.MaxInMemoryResourceBytes
 }
 
 // ParseByteSize parses a decimal byte count with an optional K, M, or G suffix

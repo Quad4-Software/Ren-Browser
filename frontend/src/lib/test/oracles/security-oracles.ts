@@ -109,6 +109,16 @@ const JS_URI_RE = /(?:^|[\s"'=])javascript\s*:/i;
 const VB_URI_RE = /(?:^|[\s"'=])vbscript\s*:/i;
 const DATA_HTML_URI_RE = /data\s*:\s*text\/html/i;
 
+const FORBIDDEN_OPEN_TAG_CHECKS: { tag: string; re: RegExp }[] = [
+  { tag: "iframe", re: /<\s*iframe\b/i },
+  { tag: "object", re: /<\s*object\b/i },
+  { tag: "embed", re: /<\s*embed\b/i },
+  { tag: "base", re: /<\s*base\b/i },
+  { tag: "meta", re: /<\s*meta\b/i },
+  { tag: "form", re: /<\s*form\b/i },
+  { tag: "link", re: /<\s*link\b/i },
+];
+
 export function assertNoExecutableMarkup(html: string, label: string): void {
   const lower = html.toLowerCase();
   if (SCRIPT_TAG_RE.test(html)) {
@@ -123,8 +133,8 @@ export function assertNoExecutableMarkup(html: string, label: string): void {
   if (DATA_HTML_URI_RE.test(lower)) {
     throw new Error(`oracle(${label}): data:text/html URI survived\n${html.slice(0, 400)}`);
   }
-  for (const tag of ["iframe", "object", "embed", "base", "meta", "form", "link"]) {
-    if (new RegExp(`<\\s*${tag}\\b`, "i").test(html)) {
+  for (const { tag, re } of FORBIDDEN_OPEN_TAG_CHECKS) {
+    if (re.test(html)) {
       throw new Error(`oracle(${label}): forbidden <${tag}> survived\n${html.slice(0, 400)}`);
     }
   }
