@@ -24,8 +24,15 @@ func SanitizeHTML(input string) string {
 	}
 	out := input
 	for range 3 {
+		if !mayContainScript(out) {
+			break
+		}
+		prev := out
 		out = scriptBlockRe.ReplaceAllString(out, "")
 		out = scriptOpenRe.ReplaceAllString(out, "")
+		if out == prev {
+			break
+		}
 	}
 	out = styleBlockRe.ReplaceAllString(out, "")
 	out = iframeRe.ReplaceAllString(out, "")
@@ -47,13 +54,7 @@ func needsHTMLSanitize(s string) bool {
 				return true
 			}
 		case '<':
-			if htmlTagAt(s, i, "script") ||
-				htmlTagAt(s, i, "style") ||
-				htmlTagAt(s, i, "iframe") ||
-				htmlTagAt(s, i, "object") ||
-				htmlTagAt(s, i, "embed") ||
-				htmlTagAt(s, i, "meta") ||
-				htmlTagAt(s, i, "base") {
+			if dangerousHTMLTagAt(s, i) {
 				return true
 			}
 		case ' ', '\t', '\n', '\r':
@@ -68,16 +69,92 @@ func needsHTMLSanitize(s string) bool {
 	return false
 }
 
-func htmlTagAt(s string, i int, tag string) bool {
-	if i+1+len(tag) > len(s) || s[i] != '<' {
+func dangerousHTMLTagAt(s string, i int) bool {
+	if s[i] != '<' {
 		return false
 	}
-	for j := 0; j < len(tag); j++ {
-		if !asciiEqualFoldByte(s[i+1+j], tag[j]) {
+	j := i + 1
+	if j < len(s) && s[j] == '/' {
+		j++
+	}
+	if j >= len(s) {
+		return false
+	}
+	switch asciiLower(s[j]) {
+	case 'b':
+		return htmlTagNameAt(s, j, "base")
+	case 'e':
+		return htmlTagNameAt(s, j, "embed")
+	case 'i':
+		return htmlTagNameAt(s, j, "iframe")
+	case 'm':
+		return htmlTagNameAt(s, j, "meta")
+	case 'o':
+		return htmlTagNameAt(s, j, "object")
+	case 's':
+		if htmlTagNameAt(s, j, "script") || htmlTagNameAt(s, j, "style") {
+			return true
+		}
+		return looksLikePartialTag(s, j, "script")
+	default:
+		return false
+	}
+}
+
+func mayContainScript(s string) bool {
+	n := len(s)
+	for i := 0; i < n; i++ {
+		if s[i] != '<' {
+			continue
+		}
+		j := i + 1
+		if j < n && s[j] == '/' {
+			j++
+		}
+		if j+1 < n && asciiEqualFoldByte(s[j], 's') && asciiEqualFoldByte(s[j+1], 'c') {
+			return true
+		}
+	}
+	return false
+}
+
+func looksLikePartialTag(s string, j int, tag string) bool {
+	for k := 0; k < len(tag); k++ {
+		if j+k >= len(s) {
+			return k > 0
+		}
+		if !asciiEqualFoldByte(s[j+k], tag[k]) {
 			return false
 		}
 	}
 	return true
+}
+
+func htmlTagNameAt(s string, j int, tag string) bool {
+	if j+len(tag) > len(s) {
+		return false
+	}
+	for k := 0; k < len(tag); k++ {
+		if !asciiEqualFoldByte(s[j+k], tag[k]) {
+			return false
+		}
+	}
+	if j+len(tag) == len(s) {
+		return true
+	}
+	switch s[j+len(tag)] {
+	case '>', ' ', '\t', '\n', '\r', '/':
+		return true
+	default:
+		return false
+	}
+}
+
+func asciiLower(b byte) byte {
+	if b >= 'A' && b <= 'Z' {
+		return b + ('a' - 'A')
+	}
+	return b
 }
 
 func asciiEqualFold(a, b string) bool {
