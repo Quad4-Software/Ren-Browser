@@ -603,7 +603,7 @@ func (s *BrowserService) navigate(rawURL string, pushHistory, skipCache bool) Pa
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), s.fetchBudget(parsed.NodeHash, parsed.Path))
 	defer cancel()
 
 	if !skipCache && s.GetBrowserPrefs().PageCacheEnabled {
@@ -733,11 +733,9 @@ func (s *BrowserService) fetchFileTracked(rawURL string, tracker *downloadTracke
 		parsed.Path = "/file/" + strings.TrimPrefix(parsed.Path, "/")
 	}
 
-	// Large files are delivered as multi-packet RNS resource transfers that
-	// can legitimately take minutes on slow or high-hop interfaces, so this
-	// needs far more headroom than a page fetch; see requestTimeouts in
-	// internal/nomadnet/browser.go for the matching inner timeouts.
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	// File responses are RNS resource transfers. FetchBudget floors this
+	// at 300s and grows it when slow interfaces need a longer path/link window.
+	ctx, cancel := context.WithTimeout(context.Background(), s.fetchBudget(parsed.NodeHash, parsed.Path))
 	defer cancel()
 	if tracker != nil {
 		var trackerCancel context.CancelFunc
@@ -1057,6 +1055,17 @@ func errString(err error) string {
 		return ""
 	}
 	return err.Error()
+}
+
+func (s *BrowserService) fetchBudget(nodeHash, path string) time.Duration {
+	s.mu.RLock()
+	stack := s.stack
+	s.mu.RUnlock()
+	var tr *transport.Transport
+	if stack != nil {
+		tr = stack.Transport()
+	}
+	return nomadnet.FetchBudget(tr, nodeHash, path)
 }
 
 func (s *BrowserService) fetchWithRetry(ctx context.Context, nodeHash, path string, req nomadnet.RequestData) nomadnet.FetchResult {

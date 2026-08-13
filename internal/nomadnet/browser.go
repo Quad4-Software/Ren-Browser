@@ -4,6 +4,7 @@ package nomadnet
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -23,6 +24,8 @@ const (
 	fileRequestTimeout    = 280 * time.Second
 	fileReceiptTimeout    = 285 * time.Second
 )
+
+var errLinkEstablishTimeout = errors.New("link establish timeout")
 
 // requestTimeouts picks how long to wait for a response before giving up.
 // /file/ responses are delivered as RNS resource transfers that can span
@@ -131,8 +134,9 @@ func (b *Browser) FetchWithHooks(ctx context.Context, nodeHash string, path stri
 	if lnk != nil {
 		hooks.stage("link", "reusing cached active link")
 	} else {
-		hooks.stage("path", "waiting for path to node")
-		if err := waitPath(ctx, b.tr, destHash, pathWaitDefault); err != nil {
+		pathWait := pathResponseWindow(b.tr, destHash)
+		hooks.stage("path", fmt.Sprintf("waiting for path to node, timeout=%s", pathWait))
+		if err := waitPath(ctx, b.tr, destHash, pathWait); err != nil {
 			res.Hops = transportHops(b.tr, destHash, b.handler, res.NodeHash)
 			res.Error = fmt.Sprintf("no path to node: %s", pathWaitError(err))
 			res.DurationMs = time.Since(start).Milliseconds()
@@ -153,7 +157,7 @@ func (b *Browser) FetchWithHooks(ctx context.Context, nodeHash string, path stri
 			return res
 		}
 
-		hooks.stage("link", "establishing link")
+		hooks.stage("link", fmt.Sprintf("establishing link, timeout=%s", linkEstablishWindow(b.tr, destHash)))
 		lnk, err = b.linkFor(ctx, destHash, remoteID)
 		if err != nil {
 			res.Error = err.Error()
@@ -312,25 +316,54 @@ func (b *Browser) establishLink(ctx context.Context, destHash []byte, remoteID *
 		}
 	}, nil)
 
+	wait := linkEstablishWindow(b.tr, destHash)
+
 	if err := lnk.Establish(); err != nil {
 		b.tr.ExpirePath(destHash)
 		return nil, fmt.Errorf("link establish: %w", err)
 	}
 
-	select {
-	case <-established:
-	case <-ctx.Done():
+	if err := waitLinkEstablished(ctx, lnk, established, wait); err != nil {
 		lnk.Teardown()
 		b.tr.ExpirePath(destHash)
-		return nil, fmt.Errorf("no path to node: %s", pathWaitError(ctx.Err()))
-	case <-time.After(45 * time.Second):
-		lnk.Teardown()
-		b.tr.ExpirePath(destHash)
-		return nil, fmt.Errorf("link establish timeout")
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return nil, fmt.Errorf("no path to node: %s", pathWaitError(err))
+		}
+		return nil, err
 	}
 
 	lnk.Start()
 	return lnk, nil
+}
+
+func waitLinkEstablished(ctx context.Context, lnk *rlink.Link, established <-chan struct{}, timeout time.Duration) error {
+	if timeout <= 0 {
+		timeout = pathRequestTimeout + linkEstablishMargin
+	}
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	ticker := time.NewTicker(pathPollInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-established:
+			return nil
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-timer.C:
+			return errLinkEstablishTimeout
+		case <-ticker.C:
+			if lnk == nil {
+				continue
+			}
+			switch lnk.GetStatus() {
+			case rlink.StatusActive:
+				return nil
+			case rlink.StatusFailed, rlink.StatusClosed:
+				return errLinkEstablishTimeout
+			}
+		}
+	}
 }
 
 func receiptStatusLabel(status byte) string {

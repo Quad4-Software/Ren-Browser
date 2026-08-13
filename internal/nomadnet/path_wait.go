@@ -17,7 +17,6 @@ var errInvalidPathDestination = errors.New("invalid destination")
 
 const (
 	pathPollInterval = 40 * time.Millisecond
-	pathWaitDefault  = 45 * time.Second
 )
 
 // Soft reuse limits for mobile suspend/resume. Hard TTL in reticulum-go is
@@ -40,7 +39,7 @@ func waitPath(ctx context.Context, tr *transport.Transport, destHash []byte, tot
 		return errInvalidPathDestination
 	}
 	if total <= 0 {
-		total = pathWaitDefault
+		total = pathResponseWindow(tr, destHash)
 	}
 
 	expireSoftStalePath(tr, destHash)
