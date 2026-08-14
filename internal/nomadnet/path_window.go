@@ -2,6 +2,7 @@
 package nomadnet
 
 import (
+	"math"
 	"reflect"
 	"strings"
 	"time"
@@ -46,6 +47,9 @@ func interfaceBitrate(iface common.NetworkInterface) int64 {
 		}
 	case interface{ GetBitrate() uint64 }:
 		if v := br.GetBitrate(); v > 0 {
+			if v > math.MaxInt64 {
+				return math.MaxInt64
+			}
 			return int64(v)
 		}
 	}

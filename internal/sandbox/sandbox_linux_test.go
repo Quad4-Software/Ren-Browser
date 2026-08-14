@@ -14,6 +14,13 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+func sandboxUnavailable(out []byte) bool {
+	s := string(out)
+	return strings.Contains(s, "not supported") ||
+		strings.Contains(s, "operation not permitted") ||
+		strings.Contains(s, "permission denied")
+}
+
 func TestABIVersion(t *testing.T) {
 	if !KernelSupported() {
 		if ABIVersion() != 0 {
@@ -247,6 +254,9 @@ func TestApply_LandlockAndSeccomp(t *testing.T) {
 	)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		if sandboxUnavailable(out) {
+			t.Skipf("sandbox not available in test environment:\n%s", out)
+		}
 		t.Fatalf("helper failed:\n%s", out)
 	}
 	if !strings.Contains(string(out), "PASS") {
@@ -302,6 +312,9 @@ func TestApply_NoSeccompStillLandlock(t *testing.T) {
 	)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		if sandboxUnavailable(out) {
+			t.Skipf("sandbox not available in test environment:\n%s", out)
+		}
 		t.Fatalf("helper failed:\n%s", out)
 	}
 	if !strings.Contains(string(out), "PASS") {
