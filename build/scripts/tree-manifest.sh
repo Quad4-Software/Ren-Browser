@@ -66,6 +66,10 @@ tracked_paths() {
 }
 
 generate() {
+	if command -v python3 >/dev/null 2>&1 && [ -f "$ROOT/build/scripts/tree_manifest_generate.py" ]; then
+		python3 "$ROOT/build/scripts/tree_manifest_generate.py"
+		return $?
+	fi
 	printf '%s\n' "$MANIFEST_HEADER"
 	tracked_paths | while IFS= read -r f; do
 		[ -n "$f" ] || continue
@@ -97,6 +101,16 @@ load_inventory() {
 verify() {
 	check_tracked="${1:-0}"
 	inv_src="${2:-}"
+	if command -v python3 >/dev/null 2>&1 && [ -f "$ROOT/build/scripts/tree_manifest_generate.py" ]; then
+		cmd=verify
+		[ "$check_tracked" = "1" ] && cmd=verify-tracked
+		if [ "$inv_src" = "-" ] || [ -z "$inv_src" ]; then
+			python3 "$ROOT/build/scripts/tree_manifest_generate.py" "$cmd" -
+		else
+			python3 "$ROOT/build/scripts/tree_manifest_generate.py" "$cmd" "$inv_src"
+		fi
+		return $?
+	fi
 	tmp="$(mktemp "${TMPDIR:-/tmp}/tree-manifest.XXXXXX")"
 	trap 'rm -f "$tmp" "$tmp.expect" "$tmp.actual" "$tmp.tracked"' EXIT INT
 	load_inventory "$inv_src" >"$tmp"
