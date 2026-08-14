@@ -115,7 +115,7 @@
               rm -rf frontend/dist
               mkdir -p frontend
               cp -a ${frontend}/dist frontend/dist
-              # nixpkgs Go may lag the go.mod patch (e.g. 1.26.4 vs 1.26.5).
+              # nixpkgs Go may lag the go.mod patch (e.g. 1.26.5 vs 1.26.6).
               sed -i 's/^go .*/go ${pkgs.go.version}/' go.mod
               bash build/scripts/patch-wails-vendor.sh
             '';

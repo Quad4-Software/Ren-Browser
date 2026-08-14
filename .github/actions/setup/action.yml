@@ -19,7 +19,7 @@ inputs:
   go-version:
     description: Go toolchain version
     required: false
-    default: "1.26.5"
+    default: "1.26.6"
   pnpm-version:
     description: pnpm version
     required: false
