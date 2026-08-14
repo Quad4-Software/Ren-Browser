@@ -959,11 +959,16 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         unregisterBackHandler();
         unregisterSystemEventReceivers();
-        if (bridge != null) {
-            bridge.shutdown();
-        }
         if (webView != null) {
             webView.destroy();
+            webView = null;
+        }
+        if (bridge != null) {
+            bridge.setWebView(null);
+            if (isFinishing()) {
+                bridge.shutdown();
+                bridge = null;
+            }
         }
     }
 

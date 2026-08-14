@@ -138,12 +138,10 @@ public class WailsBridge {
     }
 
     /**
-     * Initialize the native Go library
+     * Initialize the native Go library. Safe to call on activity recreation:
+     * nativeInit rebinds the JNI bridge and only starts the Go runtime once.
      */
     public void initialize() {
-        if (initialized) {
-            return;
-        }
         try {
             nativeInit(this);
             initialized = true;
