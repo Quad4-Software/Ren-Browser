@@ -5,6 +5,26 @@ All notable changes to Ren Browser are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-08-14
+
+### Security
+
+- Improve HTML sanitization in page rendering
+
+### Fixed
+
+- Prevent bitrate calculation overflow in NomadNet by capping values at maximum integer limit
+- Increase wait time to sixty seconds for frontend developer server connection to prevent startup timeouts
+- Ensure safer file editing in vendor synchronization by using temporary files during version updates
+
+### Changed
+
+- Remove live community interface directory fetching
+- Adjust NomadNet fetch budget calculations and connection timeout thresholds
+- Update Go runtime and toolchain version to 1.26.6 in container, configuration, and workflows
+- Upgrade web dependencies including Vite to 8.2.1, DOMPurify to 3.4.13, PostCSS to 8.5.26, and PDF.js to 6.2.108
+- Standardize vendoring operations and update internal Go dependencies
+
 ## [0.2.1] - 2026-07-25
 
 ### Security
@@ -97,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GHCR publishing for the server image
 - Nightly and beta release channels
 
+[0.2.2]: https://github.com/Quad4-Software/Ren-Browser/releases/tag/v0.2.2
 [0.2.1]: https://github.com/Quad4-Software/Ren-Browser/releases/tag/v0.2.1
 [0.2.0]: https://github.com/Quad4-Software/Ren-Browser/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Quad4-Software/Ren-Browser/releases/tag/v0.1.0
