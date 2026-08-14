@@ -90,6 +90,8 @@ type Destination struct {
 	ratchets          []*securemem.Buf
 	ratchetFileLock   sync.Mutex
 
+	groupKey *securemem.Buf
+
 	defaultAppData []byte
 	mutex          sync.RWMutex
 
@@ -225,13 +227,23 @@ func ParseName(full string) (appName string, aspects []string, err error) {
 
 // Hash computes a 16-byte destination hash from identity and app name aspects.
 func Hash(id *identity.Identity, appName string, aspects ...string) []byte {
+	var idHash []byte
+	if id != nil {
+		idHash = identity.TruncatedHash(id.GetPublicKey())
+	}
+	return HashFromIdentityHash(idHash, appName, aspects...)
+}
+
+// HashFromIdentityHash computes a destination hash from a 16-byte identity
+// hash and app name aspects. Python Destination.hash accepts either an
+// Identity or a truncated identity hash.
+func HashFromIdentityHash(identityHash []byte, appName string, aspects ...string) []byte {
 	nameHashFull := sha256.Sum256([]byte(ExpandAppName(appName, aspects...)))
 	nameHash10 := nameHashFull[:10]
 
 	var combined [26]byte
 	n := copy(combined[:], nameHash10)
-	if id != nil {
-		identityHash := identity.TruncatedHash(id.GetPublicKey())
+	if len(identityHash) > 0 {
 		n += copy(combined[n:], identityHash)
 	}
 	finalHashFull := sha256.Sum256(combined[:n])
@@ -240,19 +252,39 @@ func Hash(id *identity.Identity, appName string, aspects ...string) []byte {
 	return out
 }
 
+// HashFromNameAndIdentity hashes a dotted name such as
+// rnstransport.remote.management with a truncated identity hash, matching
+// Python Destination.hash_from_name_and_identity.
+func HashFromNameAndIdentity(fullName string, identityHash []byte) []byte {
+	app, aspects, err := ParseName(fullName)
+	if err != nil {
+		return HashFromIdentityHash(identityHash, fullName)
+	}
+	return HashFromIdentityHash(identityHash, app, aspects...)
+}
+
 // ExpandName returns appName joined with aspects using dots.
 func (d *Destination) ExpandName() string {
 	return ExpandAppName(d.appName, d.aspects...)
 }
 
 // Announce builds and sends an announce packet on registered interfaces.
-// Returns ErrDestTransportNotSet, ErrDestAnnounceNoInterfaces, or
-// ErrDestAnnounceNoWritable when no usable outbound path exists.
+// Returns ErrDestTransportNotSet, ErrDestAnnounceRequiresIn,
+// ErrDestAnnounceNoInterfaces, or ErrDestAnnounceNoWritable when no usable
+// outbound path exists. Access-point interfaces are skipped on unattached
+// local origin, same as Python Transport.outbound.
 func (d *Destination) Announce(pathResponse bool, tag []byte, attachedInterface common.NetworkInterface) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
 	debug.Log(debug.DebugVerbose, "Announcing destination", "name", d.ExpandName(), "path_response", pathResponse)
+
+	if d.destType != Single {
+		return errors.New("only SINGLE destination types can be announced")
+	}
+	if d.direction&In == 0 {
+		return common.ErrDestAnnounceRequiresIn
+	}
 
 	if d.transport == nil {
 		return common.ErrDestTransportNotSet
@@ -260,11 +292,23 @@ func (d *Destination) Announce(pathResponse bool, tag []byte, attachedInterface 
 
 	appData := d.defaultAppData
 
+	var ratchetPub []byte
+	if d.ratchetsEnabled {
+		if err := d.rotateRatchetsLocked(); err != nil {
+			return err
+		}
+		ratchetPub = d.currentRatchetPublicLocked()
+		if len(ratchetPub) > 0 {
+			identity.RememberRatchet(append([]byte(nil), d.hashValue...), ratchetPub)
+		}
+	}
+
 	// Create announce packet using announce package
 	announceObj, err := announce.New(d.identity, d.hashValue, d.ExpandName(), appData, pathResponse, d.transport.GetConfig())
 	if err != nil {
 		return fmt.Errorf("failed to create announce: %w", err)
 	}
+	announceObj.SetRatchetPublic(ratchetPub)
 
 	packet, err := announceObj.GetPacket()
 	if err != nil {
@@ -278,18 +322,16 @@ func (d *Destination) Announce(pathResponse bool, tag []byte, attachedInterface 
 	var lastErr error
 	sent := 0
 	if attachedInterface != nil {
-		if attachedInterface.IsEnabled() && attachedInterface.IsOnline() {
-			if !common.InterfaceAllowsOutgoing(attachedInterface) {
-				debug.Log(debug.DebugVerbose, "Skipping announce on receive-only attached interface", "name", attachedInterface.GetName())
+		if localAnnounceAllowed(attachedInterface, attachedInterface) {
+			debug.Log(debug.DebugVerbose, "Sending announce to attached interface", "name", attachedInterface.GetName())
+			if err := attachedInterface.Send(packet, ""); err != nil {
+				debug.Log(debug.DebugError, "Failed to send announce on attached interface", "error", err)
+				lastErr = err
 			} else {
-				debug.Log(debug.DebugVerbose, "Sending announce to attached interface", "name", attachedInterface.GetName())
-				if err := attachedInterface.Send(packet, ""); err != nil {
-					debug.Log(debug.DebugError, "Failed to send announce on attached interface", "error", err)
-					lastErr = err
-				} else {
-					sent++
-				}
+				sent++
 			}
+		} else if !common.InterfaceAllowsOutgoing(attachedInterface) {
+			debug.Log(debug.DebugVerbose, "Skipping announce on receive-only attached interface", "name", attachedInterface.GetName())
 		}
 	} else {
 		interfaces := d.transport.GetInterfaces()
@@ -297,11 +339,12 @@ func (d *Destination) Announce(pathResponse bool, tag []byte, attachedInterface 
 			return common.ErrDestAnnounceNoInterfaces
 		}
 		for name, iface := range interfaces {
-			if !iface.IsEnabled() || !iface.IsOnline() {
-				continue
-			}
-			if !common.InterfaceAllowsOutgoing(iface) {
-				debug.Log(debug.DebugVerbose, "Skipping announce on receive-only interface", "name", name)
+			if !localAnnounceAllowed(iface, nil) {
+				if iface != nil && !common.InterfaceAllowsOutgoing(iface) {
+					debug.Log(debug.DebugVerbose, "Skipping announce on receive-only interface", "name", name)
+				} else if iface != nil && iface.GetMode() == common.IFModeAccessPoint {
+					debug.Log(debug.DebugVerbose, "Skipping announce on access-point interface", "name", name)
+				}
 				continue
 			}
 			debug.Log(debug.DebugVerbose, "Sending announce to interface", "name", name)
@@ -321,6 +364,25 @@ func (d *Destination) Announce(pathResponse bool, tag []byte, attachedInterface 
 		return common.ErrDestAnnounceNoWritable
 	}
 	return nil
+}
+
+func localAnnounceAllowed(iface, attached common.NetworkInterface) bool {
+	if iface == nil {
+		return false
+	}
+	if attached != nil && iface != attached {
+		return false
+	}
+	if !iface.IsEnabled() || !iface.IsOnline() {
+		return false
+	}
+	if !common.InterfaceAllowsOutgoing(iface) {
+		return false
+	}
+	if attached == nil && iface.GetMode() == common.IFModeAccessPoint {
+		return false
+	}
+	return true
 }
 
 // AcceptsLinks marks whether this destination should accept incoming links.
@@ -386,7 +448,7 @@ func (d *Destination) SetPacketCallback(callback common.PacketCallback) {
 
 func (d *Destination) Receive(pkt *packet.Packet, iface common.NetworkInterface) bool {
 	if pkt != nil && pkt.PacketType == packet.PacketTypeLinkReq {
-		debug.Log(debug.DebugInfo, "Received link request for destination")
+		debug.Log(debug.DebugVerbose, "Received link request for destination")
 		if err := d.HandleIncomingLinkRequest(pkt, d.transport, iface); err != nil {
 			debug.Log(debug.DebugError, "Failed to handle incoming link request", "error", err)
 		}
@@ -398,7 +460,9 @@ func (d *Destination) Receive(pkt *packet.Packet, iface common.NetworkInterface)
 	d.mutex.RUnlock()
 
 	if callback == nil {
-		debug.Log(debug.DebugInfo, common.MsgDestNoPacketCallback, "hash", fmt.Sprintf("%x", d.GetHash()))
+		if debug.Enabled(debug.DebugInfo) {
+			debug.Log(debug.DebugInfo, common.MsgDestNoPacketCallback, "hash", fmt.Sprintf("%x", d.GetHash()))
+		}
 		return false
 	}
 
@@ -408,7 +472,7 @@ func (d *Destination) Receive(pkt *packet.Packet, iface common.NetworkInterface)
 		return false
 	}
 
-	debug.Log(debug.DebugInfo, "Destination received packet", "bytes", len(plaintext))
+	debug.Log(debug.DebugVerbose, "Destination received packet", "bytes", len(plaintext))
 
 	callback(plaintext, iface)
 	return true
@@ -461,6 +525,87 @@ func (d *Destination) ProofRequestedCallback() common.ProofRequestedCallback {
 	d.mutex.RLock()
 	defer d.mutex.RUnlock()
 	return d.proofCallback
+}
+
+// CreateKeys generates a 64-byte GROUP Token key. Matches Python Destination.create_keys.
+func (d *Destination) CreateKeys() error {
+	if d.destType == Plain {
+		return errors.New("a plain destination does not hold any keys")
+	}
+	if d.destType == Single {
+		return errors.New("a single destination holds keys through an Identity instance")
+	}
+	if d.destType != Group {
+		return errors.New("unsupported destination type for create keys")
+	}
+	key, err := cryptography.GenerateTokenKey()
+	if err != nil {
+		return err
+	}
+	defer securemem.WipeBytes(key)
+	return d.storeGroupKey(key)
+}
+
+// LoadPrivateKey loads a 32-byte or 64-byte GROUP Token key.
+// Matches Python Destination.load_private_key.
+func (d *Destination) LoadPrivateKey(key []byte) error {
+	if d.destType == Plain {
+		return errors.New("a plain destination does not hold any keys")
+	}
+	if d.destType == Single {
+		return errors.New("a single destination holds keys through an Identity instance")
+	}
+	if d.destType != Group {
+		return errors.New("unsupported destination type for load private key")
+	}
+	if len(key) != cryptography.TokenKeySize && len(key) != cryptography.TokenKeySize128 {
+		return errors.New("token key must be 32 or 64 bytes")
+	}
+	return d.storeGroupKey(key)
+}
+
+// GetPrivateKey returns a copy of the GROUP Token key.
+// Matches Python Destination.get_private_key.
+func (d *Destination) GetPrivateKey() ([]byte, error) {
+	if d.destType == Plain {
+		return nil, errors.New("a plain destination does not hold any keys")
+	}
+	if d.destType == Single {
+		return nil, errors.New("a single destination holds keys through an Identity instance")
+	}
+	key := d.groupKeyCopy()
+	if len(key) == 0 {
+		return nil, errors.New("no private key held by GROUP destination. Did you create or load one?")
+	}
+	return key, nil
+}
+
+func (d *Destination) storeGroupKey(key []byte) error {
+	buf, err := securemem.New(len(key))
+	if err != nil {
+		return err
+	}
+	if err := buf.CopyFrom(key); err != nil {
+		_ = buf.Close()
+		return err
+	}
+	d.mutex.Lock()
+	old := d.groupKey
+	d.groupKey = buf
+	d.mutex.Unlock()
+	if old != nil {
+		_ = old.Close()
+	}
+	return nil
+}
+
+func (d *Destination) groupKeyCopy() []byte {
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
+	if d.groupKey == nil {
+		return nil
+	}
+	return d.groupKey.CopyOut()
 }
 
 func (d *Destination) EnableRatchets(path string) bool {
@@ -694,17 +839,25 @@ func (d *Destination) Encrypt(plaintext []byte) ([]byte, error) {
 
 	switch d.destType {
 	case Single:
-		recipientKey := d.identity.GetEncryptionKey()
-		debug.Log(debug.DebugVerbose, "Encrypting for single recipient", "key", fmt.Sprintf("%x", recipientKey[:8]))
-		return d.identity.Encrypt(plaintext, recipientKey)
-	case Group:
-		key := d.identity.GetCurrentRatchetKey()
-		if key == nil {
-			debug.Log(debug.DebugInfo, "Cannot encrypt: no ratchet key available")
-			return nil, errors.New("no ratchet key available")
+		var ratchetBuf [identity.RatchetSize / 8]byte
+		n := identity.CopyRatchet(d.hashValue, ratchetBuf[:])
+		if n > 0 {
+			selectedRatchet := ratchetBuf[:n]
+			rid := d.identity.GetRatchetID(selectedRatchet)
+			d.setLatestRatchetID(rid)
+			debug.Log(debug.DebugVerbose, "Encrypting for single recipient with ratchet", "ratchet_id", fmt.Sprintf("%x", rid))
+			return d.identity.Encrypt(plaintext, selectedRatchet)
 		}
+		debug.Log(debug.DebugVerbose, "Encrypting for single recipient with identity key")
+		return d.identity.Encrypt(plaintext, nil)
+	case Group:
+		key := d.groupKeyCopy()
+		if len(key) == 0 {
+			return nil, errors.New("no private key held by GROUP destination. Did you create or load one?")
+		}
+		defer securemem.WipeBytes(key)
 		debug.Log(debug.DebugVerbose, "Encrypting for group destination")
-		return d.identity.EncryptWithHMAC(plaintext, key)
+		return cryptography.EncryptToken(key, plaintext)
 	default:
 		debug.Log(debug.DebugInfo, "Unsupported destination type for encryption", "destType", d.destType)
 		return nil, errors.New("unsupported destination type for encryption")
@@ -716,19 +869,61 @@ func (d *Destination) Decrypt(ciphertext []byte) ([]byte, error) {
 		return ciphertext, nil
 	}
 
+	if d.destType == Group {
+		key := d.groupKeyCopy()
+		if len(key) == 0 {
+			return nil, errors.New("no private key held by GROUP destination. Did you create or load one?")
+		}
+		defer securemem.WipeBytes(key)
+		return cryptography.DecryptToken(key, ciphertext)
+	}
+
 	if d.identity == nil {
 		return nil, errors.New("no identity available for decryption")
 	}
 
-	// Create empty ratchet receiver to get latest ratchet ID if available
 	ratchetReceiver := &common.RatchetIDReceiver{}
+	d.mutex.RLock()
+	enforceRatchets := d.enforceRatchets
+	ratchets := d.ratchetViewsLocked()
+	if len(ratchets) == 0 {
+		d.mutex.RUnlock()
+		plaintext, err := d.identity.Decrypt(ciphertext, nil, enforceRatchets, ratchetReceiver)
+		if err != nil {
+			return nil, err
+		}
+		d.setLatestRatchetID(ratchetReceiver.LatestRatchetID)
+		return plaintext, nil
+	}
+	plaintext, err := d.identity.Decrypt(ciphertext, ratchets, enforceRatchets, ratchetReceiver)
+	d.mutex.RUnlock()
+	if err != nil {
+		debug.Log(debug.DebugError, "Decryption with ratchets failed, reloading ratchets from storage and retrying", "error", err)
+		d.mutex.Lock()
+		reloadErr := d.reloadRatchets()
+		d.mutex.Unlock()
+		if reloadErr != nil {
+			debug.Log(debug.DebugError, "Failed to reload ratchets for retry", "error", reloadErr)
+			return nil, err
+		}
+		ratchets = d.GetRatchets()
+		plaintext, err = d.identity.Decrypt(ciphertext, ratchets, enforceRatchets, ratchetReceiver)
+		if err != nil {
+			return nil, err
+		}
+		debug.Log(debug.DebugInfo, "Decryption succeeded after ratchet reload")
+	}
 
-	// Call Decrypt with full parameter list:
-	// - ciphertext: the encrypted data
-	// - ratchets: nil since we're not providing specific ratchets
-	// - enforceRatchets: false to allow fallback to normal decryption
-	// - ratchetIDReceiver: to receive the latest ratchet ID used
-	return d.identity.Decrypt(ciphertext, nil, false, ratchetReceiver)
+	d.setLatestRatchetID(ratchetReceiver.LatestRatchetID)
+	return plaintext, nil
+}
+
+// setLatestRatchetID records the ratchet ID used by the most recent successful
+// decryption, or clears it when identity-key decryption was used instead.
+func (d *Destination) setLatestRatchetID(id []byte) {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	d.latestRatchetID = id
 }
 
 func (d *Destination) Sign(data []byte) ([]byte, error) {
@@ -930,7 +1125,10 @@ func (d *Destination) reloadRatchets() error {
 func (d *Destination) RotateRatchets() error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
+	return d.rotateRatchetsLocked()
+}
 
+func (d *Destination) rotateRatchetsLocked() error {
 	if !d.ratchetsEnabled {
 		return errors.New("ratchets not enabled")
 	}
@@ -964,7 +1162,7 @@ func (d *Destination) RotateRatchets() error {
 	ratchetPub, err := cryptography.PublicKeyFromPrivate(newRatchet)
 	securemem.WipeBytes(newRatchet)
 	if err == nil {
-		d.latestRatchetID = identity.TruncatedHash(ratchetPub)[:identity.NameHashLength/8]
+		d.latestRatchetID = d.identity.GetRatchetID(ratchetPub)
 	}
 
 	d.cleanRatchets()
@@ -1005,4 +1203,56 @@ func (d *Destination) GetRatchets() [][]byte {
 		}
 	}
 	return ratchetsCopy
+}
+
+func (d *Destination) ratchetViewsLocked() [][]byte {
+	if !d.ratchetsEnabled {
+		return nil
+	}
+	views := make([][]byte, 0, len(d.ratchets))
+	for _, buf := range d.ratchets {
+		if buf != nil {
+			views = append(views, buf.Bytes())
+		}
+	}
+	return views
+}
+
+// RatchetsEnabled reports whether this destination has ratchets turned on.
+func (d *Destination) RatchetsEnabled() bool {
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
+	return d.ratchetsEnabled
+}
+
+// LatestRatchetID returns the ratchet ID from the last encrypt or decrypt
+// that used a ratchet, or nil.
+func (d *Destination) LatestRatchetID() []byte {
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
+	if len(d.latestRatchetID) == 0 {
+		return nil
+	}
+	return append([]byte(nil), d.latestRatchetID...)
+}
+
+// CurrentRatchetPublic returns the public key of the latest local ratchet,
+// or nil if ratchets are disabled or none have been rotated yet.
+func (d *Destination) CurrentRatchetPublic() []byte {
+	d.mutex.RLock()
+	defer d.mutex.RUnlock()
+	return d.currentRatchetPublicLocked()
+}
+
+func (d *Destination) currentRatchetPublicLocked() []byte {
+	if !d.ratchetsEnabled || len(d.ratchets) == 0 || d.ratchets[0] == nil {
+		return nil
+	}
+	priv := d.ratchets[0].CopyOut()
+	defer securemem.WipeBytes(priv)
+	pub, err := identity.RatchetPublicBytes(priv)
+	if err != nil {
+		return nil
+	}
+	return pub
 }

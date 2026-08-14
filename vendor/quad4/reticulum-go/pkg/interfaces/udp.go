@@ -10,7 +10,6 @@ import (
 
 	"quad4/reticulum-go/pkg/common"
 	"quad4/reticulum-go/pkg/debug"
-	"quad4/reticulum-go/pkg/protect"
 )
 
 type UDPInterface struct {
@@ -55,6 +54,7 @@ func NewUDPInterfaceWithRetries(name string, addr string, target string, enabled
 	}
 
 	ui.MTU = 1064
+	ui.Bitrate = BitrateGuess
 	if maxReconnectTries > 0 {
 		ui.initReconnectDriver()
 	}
@@ -170,13 +170,22 @@ func (ui *UDPInterface) GetPacketCallback() common.PacketCallback {
 }
 
 func (ui *UDPInterface) ProcessIncoming(data []byte) {
+	ui.ProcessIncomingFromAddr(data, "")
+}
+
+// ProcessIncomingFromAddr is ProcessIncoming plus an optional remote address
+// string. A UDP socket is commonly shared by many remote senders, so this
+// gives each sender its own fair-share sub-bucket instead of letting one
+// flooding peer exhaust the whole interface budget and cool down every
+// other peer using the same socket. See admitIncomingFrom.
+func (ui *UDPInterface) ProcessIncomingFromAddr(data []byte, peerKey string) {
 	ui.Mutex.Lock()
 	ui.RxBytes += uint64(len(data))
 	ui.RxPackets++
 	name := ui.Name
 	ui.Mutex.Unlock()
 
-	if d := protect.AdmitPacket(name, len(data)); !d.Allow {
+	if !admitIncomingFrom(ui, name, data, peerKey) {
 		return
 	}
 
@@ -340,7 +349,7 @@ func (ui *UDPInterface) readLoop() {
 		default:
 		}
 
-		n, _, err := conn.ReadFromUDP(buffer)
+		n, from, err := conn.ReadFromUDP(buffer)
 		if err != nil {
 			ui.Mutex.RLock()
 			stillOnline := ui.Online
@@ -362,7 +371,11 @@ func (ui *UDPInterface) readLoop() {
 			return
 		}
 
-		ui.ProcessIncoming(buffer[:n])
+		peerKey := ""
+		if from != nil {
+			peerKey = from.String()
+		}
+		ui.ProcessIncomingFromAddr(buffer[:n], peerKey)
 	}
 }
 

@@ -36,7 +36,12 @@ const (
 	KISSTFesc   = 0xDD
 	KISSCmdData = 0x00
 
-	DefaultMTU      = 1064
+	DefaultMTU = 1064
+	// streamReadChunk is the socket read size for HDLC and KISS stream
+	// interfaces. Assembled frames still cap at the packet MTU. Reading more
+	// than one MTU per syscall lets TCP QUIC VSOCK and similar underlays
+	// deliver many frames per Read.
+	streamReadChunk = 64 * 1024
 	BitrateGuessVal = 10 * 1000 * 1000
 	ReconnectWait   = 5
 	InitialTimeout  = 5
@@ -94,6 +99,7 @@ const (
 
 const (
 	WSBufferSize         = 4096
+	maxWSMessageQueue    = 256
 	WSHTTPSPort          = 443
 	WSHTTPPort           = 80
 	WSVersion            = "13"
@@ -115,3 +121,18 @@ const (
 	WSOpcodePing         = 0x09
 	WSOpcodePong         = 0x0A
 )
+
+func streamReadSize(mtu int) int {
+	if mtu > streamReadChunk {
+		return mtu
+	}
+	return streamReadChunk
+}
+
+func enqueueWSMessage(q [][]byte, data []byte) [][]byte {
+	cp := append([]byte(nil), data...)
+	if len(q) >= maxWSMessageQueue {
+		q = q[1:]
+	}
+	return append(q, cp)
+}

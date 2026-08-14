@@ -94,6 +94,7 @@ type I2PInterfacePeer struct {
 	tunnelID          []byte
 	maxReconnectTries int
 	sendMu            sync.Mutex
+	txFrame           []byte
 	lastRead          time.Time
 	lastWrite         time.Time
 	lastError         string
@@ -101,7 +102,14 @@ type I2PInterfacePeer struct {
 	wdReset           atomic.Bool
 	done              chan struct{}
 	stopOnce          sync.Once
+	peerKey           string
 }
+
+// i2pAcceptedPeerSeq gives each accepted I2P peer a unique protect fair-share
+// key. RemoteAddr() on a SAM-tunneled stream commonly resolves to the local
+// SAM bridge socket and is identical across accepted peers, so it cannot be
+// used alone to tell concurrent peers apart.
+var i2pAcceptedPeerSeq atomic.Uint64
 
 func NewI2PInterface(name string, cfg *common.InterfaceConfig, ctx *FromConfigContext) (*I2PInterface, error) {
 	if cfg == nil {
@@ -362,6 +370,7 @@ func NewI2PInterfacePeer(parent *I2PInterface, name, targetDest string, maxRecon
 		neverConnected:    true,
 		maxReconnectTries: maxReconnect,
 		done:              make(chan struct{}),
+		txFrame:           make([]byte, 0, DefaultMTU*2+4),
 	}
 	peer.In = true
 	peer.Out = true
@@ -381,6 +390,7 @@ func newI2PInterfacePeerAccepted(parent *I2PInterface, name string, conn net.Con
 		initiator:     false,
 		parentCount:   true,
 		done:          make(chan struct{}),
+		txFrame:       make([]byte, 0, DefaultMTU*2+4),
 	}
 	peer.In = true
 	peer.Out = true
@@ -390,6 +400,14 @@ func newI2PInterfacePeerAccepted(parent *I2PInterface, name string, conn net.Con
 	applyI2PPeerConfig(peer, parent.cfg)
 	peer.Online = true
 	_ = setI2PConnTimeouts(conn)
+	seq := i2pAcceptedPeerSeq.Add(1)
+	remote := ""
+	if conn != nil {
+		if ra := conn.RemoteAddr(); ra != nil {
+			remote = ra.String()
+		}
+	}
+	peer.peerKey = fmt.Sprintf("%s#%d", remote, seq)
 	return peer
 }
 
@@ -619,11 +637,11 @@ func (peer *I2PInterfacePeer) ProcessOutgoing(data []byte) error {
 
 	var frame []byte
 	if peer.kissFraming {
-		frame = appendFrameKISS(nil, data)
+		frame = appendFrameKISS(peer.txFrame[:0], data)
 	} else {
-		frame = append([]byte{HDLCFlag}, escapeHDLC(data)...)
-		frame = append(frame, HDLCFlag)
+		frame = appendFrameHDLC(peer.txFrame[:0], data)
 	}
+	peer.txFrame = frame
 	_, err = conn.Write(frame)
 	if err == nil {
 		peer.Mutex.Lock()
@@ -660,6 +678,7 @@ func (peer *I2PInterfacePeer) readLoop() {
 		feed = decoder.feed
 	}
 
+	buf := make([]byte, streamReadSize(peer.MTU))
 	for {
 		select {
 		case <-peer.done:
@@ -672,7 +691,6 @@ func (peer *I2PInterfacePeer) readLoop() {
 		if conn == nil {
 			return
 		}
-		buf := make([]byte, peer.MTU)
 		n, err := conn.Read(buf)
 		if err != nil || n == 0 {
 			peer.Mutex.Lock()
@@ -712,7 +730,7 @@ func (peer *I2PInterfacePeer) deliverFrame(data []byte) {
 		peer.parent.RxPackets++
 		peer.parent.Mutex.Unlock()
 	}
-	peer.ProcessIncoming(data)
+	peer.ProcessIncomingFrom(data, peer.peerKey)
 }
 
 func (peer *I2PInterfacePeer) readWatchdog() {

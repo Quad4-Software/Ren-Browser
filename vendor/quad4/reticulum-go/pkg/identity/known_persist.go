@@ -164,6 +164,9 @@ func InitKnownDestinationsPersistence(configPath string, inMemory bool) {
 		knownPersistDisabled.Store(true)
 		return
 	}
+	if dir, err := storage.RatchetsDir(configPath); err == nil {
+		_ = os.MkdirAll(dir, 0o700)
+	}
 
 	loadKnownDestinationsFromDisk(configPath)
 }
@@ -206,12 +209,12 @@ func loadKnownDestinationsFromDisk(configPath string) {
 		if id == nil {
 			continue
 		}
-		canonicalKey := hex.EncodeToString(rec.destHash)
-		knownDestinations[canonicalKey] = []any{
-			rec.packetRaw,
-			rec.destHash,
-			id,
-			rec.appData,
+		canonicalKey := knownDestKey(rec.destHash)
+		knownDestinations[canonicalKey] = knownDestEntry{
+			pkt:  rec.packetRaw,
+			hash: rec.destHash,
+			id:   id,
+			app:  rec.appData,
 		}
 		rememberedAt := int64(rec.rememberedAt)
 		if rememberedAt <= 0 {
@@ -266,34 +269,21 @@ func saveKnownDestinations(force bool) {
 
 	knownDestinationsLock.RLock()
 	export := make(map[string][]any, len(knownDestinations))
-	for hashKey, data := range knownDestinations {
-		if len(data) < 4 {
+	for hashKey, e := range knownDestinations {
+		if e.id == nil || len(e.hash) == 0 {
 			continue
 		}
-		destHash, _ := data[1].([]byte)
-		id, _ := data[2].(*Identity)
-		appData, _ := data[3].([]byte)
-		if id == nil || len(destHash) == 0 {
-			continue
-		}
-		var packetHash []byte
-		if packetBytes, ok := data[0].([]byte); ok {
-			packetHash = packetBytes
-		}
-		key := hashKey
-		if key == "" {
-			key = hex.EncodeToString(destHash)
-		}
-		meta := knownDestMetaByKey[key]
+		key := hex.EncodeToString(hashKey[:])
+		meta := knownDestMetaByKey[hashKey]
 		rememberedAt := float64(meta.rememberedAt)
 		if rememberedAt == 0 {
 			rememberedAt = float64(time.Now().Unix())
 		}
 		export[key] = []any{
 			rememberedAt,
-			packetHash,
-			id.GetPublicKey(),
-			appData,
+			e.pkt,
+			e.id.GetPublicKey(),
+			e.app,
 			float64(meta.lastUsed),
 		}
 	}

@@ -61,6 +61,7 @@ type Link struct {
 
 	remoteIdentity *identity.Identity
 	sessionKey     *securemem.Buf
+	aesBlock       cipher.Block
 	linkID         []byte
 
 	rtt               float64
@@ -116,6 +117,10 @@ type Link struct {
 	channel      *channel.Channel
 	channelMutex sync.RWMutex
 
+	// channelReceipts tracks outstanding Channel.Send envelopes awaiting link proof.
+	channelReceiptMu sync.Mutex
+	channelReceipts  map[*packet.Packet]*packet.PacketReceipt
+
 	incomingMu              sync.Mutex
 	incomingRx              *incomingResourceAsm
 	incomingResourceRequest *RequestReceipt
@@ -160,8 +165,11 @@ func HandleIncomingLinkRequest(pkt *packet.Packet, dest *destination.Destination
 	startTime := time.Now()
 	debug.Log(debug.DebugInfo, "Creating link for incoming request", "dest_hash", fmt.Sprintf("%x", dest.GetHash()), "interface", networkIface.GetName())
 
-	if transport != nil && !transport.CanAcceptIncomingLink() {
-		return nil, errors.New("incoming link limit reached")
+	if transport != nil {
+		if !transport.BeginIncomingHandshake() {
+			return nil, errors.New("incoming link limit reached")
+		}
+		defer transport.EndIncomingHandshake()
 	}
 
 	ifaceName := ""
@@ -232,6 +240,12 @@ func (l *Link) Establish() error {
 	l.status.Store(int32(StatusPending))
 	l.requestTime = time.Now()
 	l.expectedHops = l.transport.HopsTo(l.destination.GetHash())
+	hops := int(l.expectedHops)
+	if hops < 1 || l.expectedHops >= HopCountUnreachable {
+		hops = 1
+	}
+	firstHop := l.transport.FirstHopTimeout(l.destination.GetHash())
+	l.establishmentTimeout = time.Duration((firstHop + float64(hops)*EstablishmentTimeoutPerHop) * float64(time.Second))
 
 	if err := l.prepareLinkRequestLocked(); err != nil {
 		debug.Log(debug.DebugError, "Failed to prepare link request", "error", err, "elapsed", time.Since(startTime).Seconds())
@@ -398,12 +412,17 @@ func (l *Link) HandleIdentification(data []byte) error {
 	}
 
 	// Match Python 1.3.9: set remote identity and fire the callback only once.
-	if l.remoteIdentity == nil {
-		l.remoteIdentity = remoteIdentity
-		if l.identifiedCallback != nil {
-			debug.Log(debug.DebugVerbose, "Executing identified callback for remote identity", "public_key", fmt.Sprintf("%x", pubKey[:8]))
-			l.identifiedCallback(l, remoteIdentity)
-		}
+	l.mutex.Lock()
+	if l.remoteIdentity != nil {
+		l.mutex.Unlock()
+		return nil
+	}
+	l.remoteIdentity = remoteIdentity
+	cb := l.identifiedCallback
+	l.mutex.Unlock()
+	if cb != nil {
+		debug.Log(debug.DebugVerbose, "Executing identified callback for remote identity", "public_key", fmt.Sprintf("%x", pubKey[:8]))
+		cb(l, remoteIdentity)
 	}
 
 	return nil
@@ -867,6 +886,25 @@ func (l *Link) SetPacketCallback(callback func([]byte, *packet.Packet)) {
 	}
 }
 
+func (l *Link) deliverOrQueuePlainPacket(plaintext []byte, pkt *packet.Packet) {
+	l.packetCbMu.RLock()
+	cb := l.packetCallback
+	l.packetCbMu.RUnlock()
+	if cb != nil {
+		cb(plaintext, pkt)
+		return
+	}
+	l.pendingPlainMu.Lock()
+	dropped := len(l.pendingPlainData) > 0
+	l.pendingPlainData = append([]byte(nil), plaintext...)
+	l.pendingPlainMu.Unlock()
+	if dropped {
+		debug.Log(debug.DebugInfo, common.MsgLinkNoPacketCallbackDropped)
+	} else {
+		debug.Log(debug.DebugInfo, common.MsgLinkNoPacketCallback)
+	}
+}
+
 func (l *Link) SetResourceCallback(callback func(any) bool) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
@@ -1041,28 +1079,6 @@ func (l *Link) HandleInbound(pkt *packet.Packet) error {
 	return nil
 }
 
-func (l *Link) deliverOrQueuePlainPacket(plaintext []byte, pkt *packet.Packet) {
-	l.packetCbMu.RLock()
-	cb := l.packetCallback
-	l.packetCbMu.RUnlock()
-	if cb != nil {
-		data := append([]byte(nil), plaintext...)
-		go func() {
-			cb(data, pkt)
-		}()
-		return
-	}
-	l.pendingPlainMu.Lock()
-	dropped := len(l.pendingPlainData) > 0
-	l.pendingPlainData = append([]byte(nil), plaintext...)
-	l.pendingPlainMu.Unlock()
-	if dropped {
-		debug.Log(debug.DebugInfo, common.MsgLinkNoPacketCallbackDropped)
-	} else {
-		debug.Log(debug.DebugInfo, common.MsgLinkNoPacketCallback)
-	}
-}
-
 func (l *Link) signalOutgoingResourceComplete() {
 	l.outgoingMu.Lock()
 	ch := l.outgoingResCompleteChan
@@ -1167,9 +1183,9 @@ func (l *Link) handleDataPacket(pkt *packet.Packet) error {
 		l.maybeProveInboundData(pkt)
 	case packet.ContextRequest:
 		if l.destination != nil {
-			if max, ok := l.destination.MaxRequestSize(); ok && len(plaintext) > max {
+			if maxSize, ok := l.destination.MaxRequestSize(); ok && len(plaintext) > maxSize {
 				debug.Log(debug.DebugInfo, "Ignored request with excessive size",
-					"bytes", len(plaintext), "max", max)
+					"bytes", len(plaintext), "max", maxSize)
 				return nil
 			}
 		}
@@ -1244,7 +1260,13 @@ func (l *Link) handleChannelPacket(pkt *packet.Packet) error {
 		return err
 	}
 
-	return l.GetChannel().HandleInbound(plaintext)
+	err = l.GetChannel().HandleInbound(plaintext)
+	// Channel reliability depends on link proofs so the sender can clear its
+	// TX ring only after the peer has processed the envelope.
+	if proveErr := l.ProvePacket(pkt); proveErr != nil {
+		debug.Log(debug.DebugInfo, "Failed to prove channel packet", "error", proveErr)
+	}
+	return err
 }
 
 func (l *Link) handleResourceAdvertisement(pkt *packet.Packet) error {
@@ -1287,15 +1309,12 @@ func (l *Link) processResourceAdvertisement(plaintext []byte) error {
 			debug.Log(debug.DebugInfo, "Ignoring request resource advertisement")
 			return nil
 		}
-		if max, ok := l.destination.MaxRequestSize(); ok && int(adv.TransferSize) > max {
+		if maxSize, ok := l.destination.MaxRequestSize(); ok && int(adv.TransferSize) > maxSize {
 			debug.Log(debug.DebugInfo, "Ignored request resource with excessive size",
-				"bytes", adv.TransferSize, "max", max)
+				"bytes", adv.TransferSize, "max", maxSize)
 			return nil
 		}
-		if err := l.beginIncomingResource(adv); err != nil {
-			return err
-		}
-		return nil
+		return l.beginIncomingResource(adv)
 	}
 
 	if adv.IsResponse && adv.RequestID != nil {
@@ -1896,9 +1915,9 @@ func (l *Link) handleRequest(plaintext []byte, requestID []byte) error {
 	if l.destination == nil {
 		return errors.New("no destination for request handling")
 	}
-	if max, ok := l.destination.MaxRequestSize(); ok && len(plaintext) > max {
+	if maxSize, ok := l.destination.MaxRequestSize(); ok && len(plaintext) > maxSize {
 		debug.Log(debug.DebugInfo, "Ignored request with excessive size",
-			"bytes", len(plaintext), "max", max)
+			"bytes", len(plaintext), "max", maxSize)
 		return nil
 	}
 
@@ -2240,47 +2259,41 @@ func maxFloat(a, b float64) float64 {
 	return b
 }
 
-func encryptWithKeys(sessionKey, hmacKey, data []byte) ([]byte, error) {
+func encryptWithKeys(sessionKey, hmacKey, data []byte, block cipher.Block) ([]byte, error) {
 	if sessionKey == nil || hmacKey == nil {
 		return nil, errors.New("no session keys available")
 	}
 
-	block, err := aes.NewCipher(sessionKey)
-	if err != nil {
-		return nil, err
-	}
-
-	iv := make([]byte, aes.BlockSize)
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return nil, err
+	if block == nil {
+		var err error
+		block, err = aes.NewCipher(sessionKey)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	padding := aes.BlockSize - len(data)%aes.BlockSize
-	padtext := make([]byte, len(data)+padding)
-	copy(padtext, data)
-	for i := len(data); i < len(padtext); i++ {
-		padtext[i] = byte(padding)
+	ctLen := len(data) + padding
+	result := make([]byte, aes.BlockSize+ctLen+sha256.Size)
+	if _, err := io.ReadFull(rand.Reader, result[:aes.BlockSize]); err != nil {
+		return nil, err
+	}
+	copy(result[aes.BlockSize:aes.BlockSize+len(data)], data)
+	padByte := byte(padding)
+	for i := aes.BlockSize + len(data); i < aes.BlockSize+ctLen; i++ {
+		result[i] = padByte
 	}
 
-	mode := cipher.NewCBCEncrypter(block, iv) // #nosec G407
-	ciphertext := make([]byte, len(padtext))
-	mode.CryptBlocks(ciphertext, padtext)
-
-	signedParts := make([]byte, len(iv)+len(ciphertext))
-	copy(signedParts, iv)
-	copy(signedParts[len(iv):], ciphertext)
+	mode := cipher.NewCBCEncrypter(block, result[:aes.BlockSize]) // #nosec G407
+	ct := result[aes.BlockSize : aes.BlockSize+ctLen]
+	mode.CryptBlocks(ct, ct)
 
 	h := hmac.New(sha256.New, hmacKey)
-	h.Write(signedParts)
-	mac := h.Sum(nil)
-
-	result := make([]byte, len(signedParts)+len(mac))
-	copy(result, signedParts)
-	copy(result[len(signedParts):], mac)
-	return result, nil
+	h.Write(result[:aes.BlockSize+ctLen])
+	return h.Sum(result[:aes.BlockSize+ctLen]), nil
 }
 
-func decryptWithKeys(sessionKey, hmacKey, data []byte) ([]byte, error) {
+func decryptWithKeys(sessionKey, hmacKey, data []byte, block cipher.Block) ([]byte, error) {
 	if sessionKey == nil || hmacKey == nil {
 		return nil, errors.New("no session keys available")
 	}
@@ -2298,9 +2311,12 @@ func decryptWithKeys(sessionKey, hmacKey, data []byte) ([]byte, error) {
 		return nil, errHMACVerificationFailed
 	}
 
-	block, err := aes.NewCipher(sessionKey)
-	if err != nil {
-		return nil, err
+	if block == nil {
+		var err error
+		block, err = aes.NewCipher(sessionKey)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if len(signedParts) < aes.BlockSize {
 		return nil, errors.New("ciphertext is too short")
@@ -2334,11 +2350,38 @@ func snapshotSessionKeysLocked(l *Link, sessionDst, hmacDst []byte) bool {
 	return true
 }
 
+func (l *Link) refreshAESBlockLocked() {
+	l.aesBlock = nil
+	if l.sessionKey == nil {
+		return
+	}
+	sk := bufBytes(l.sessionKey)
+	var key []byte
+	if l.mode == ModeAES128CBC {
+		if len(sk) < 16 {
+			return
+		}
+		key = sk[:16]
+	} else if len(sk) >= 32 {
+		key = sk[:32]
+	} else if len(sk) >= 16 {
+		key = sk[:16]
+	} else {
+		return
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return
+	}
+	l.aesBlock = block
+}
+
 func (l *Link) encrypt(data []byte) ([]byte, error) {
 	var sessionKey, hmacKey [32]byte
 	l.mutex.RLock()
 	ok := snapshotSessionKeysLocked(l, sessionKey[:], hmacKey[:])
 	mode := l.mode
+	block := l.aesBlock
 	l.mutex.RUnlock()
 	if !ok {
 		return nil, errors.New("no session keys available")
@@ -2346,9 +2389,9 @@ func (l *Link) encrypt(data []byte) ([]byte, error) {
 	defer securemem.WipeBytes(sessionKey[:])
 	defer securemem.WipeBytes(hmacKey[:])
 	if mode == ModeAES128CBC {
-		return encryptWithKeys(sessionKey[:16], hmacKey[:16], data)
+		return encryptWithKeys(sessionKey[:16], hmacKey[:16], data, block)
 	}
-	return encryptWithKeys(sessionKey[:], hmacKey[:], data)
+	return encryptWithKeys(sessionKey[:], hmacKey[:], data, block)
 }
 
 // encryptLocked encrypts data while the link mutex is already held by the caller.
@@ -2360,9 +2403,9 @@ func (l *Link) encryptLocked(data []byte) ([]byte, error) {
 	defer securemem.WipeBytes(sessionKey[:])
 	defer securemem.WipeBytes(hmacKey[:])
 	if l.mode == ModeAES128CBC {
-		return encryptWithKeys(sessionKey[:16], hmacKey[:16], data)
+		return encryptWithKeys(sessionKey[:16], hmacKey[:16], data, l.aesBlock)
 	}
-	return encryptWithKeys(sessionKey[:], hmacKey[:], data)
+	return encryptWithKeys(sessionKey[:], hmacKey[:], data, l.aesBlock)
 }
 
 func (l *Link) decrypt(data []byte) ([]byte, error) {
@@ -2379,6 +2422,7 @@ func (l *Link) decrypt(data []byte) ([]byte, error) {
 	l.mutex.RLock()
 	ok := snapshotSessionKeysLocked(l, sessionKey[:], hmacKey[:])
 	mode := l.mode
+	block := l.aesBlock
 	l.mutex.RUnlock()
 	if !ok {
 		debug.Log(debug.DebugError, "Decrypt failed: no session keys", "link_id", fmt.Sprintf("%x", l.linkID))
@@ -2392,7 +2436,7 @@ func (l *Link) decrypt(data []byte) ([]byte, error) {
 		sk = sessionKey[:16]
 		hk = hmacKey[:16]
 	}
-	plaintext, err := decryptWithKeys(sk, hk, data)
+	plaintext, err := decryptWithKeys(sk, hk, data, block)
 	if err != nil {
 		ifaceName := l.attachedIfaceName()
 		switch {
@@ -2444,6 +2488,19 @@ func (l *Link) SetRTT(rtt float64) {
 	l.rtt = rtt
 }
 
+// EstablishmentTimeout is the wait this link uses for proof and RTT during
+// handshake. Initiators set it from first-hop airtime plus per-hop timeout.
+// Applications that must use a timer should wait this value plus a small
+// margin instead of a flat 15 seconds.
+func (l *Link) EstablishmentTimeout() time.Duration {
+	if l == nil {
+		return time.Duration(EstablishmentTimeoutPerHop * float64(time.Second))
+	}
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+	return l.establishmentTimeout
+}
+
 func (l *Link) GetStatus() byte {
 	switch l.status.Load() {
 	case int32(StatusPending):
@@ -2475,6 +2532,7 @@ func (l *Link) Send(data []byte) any {
 		DestinationHash: l.linkID,
 		Data:            data,
 		CreateReceipt:   false,
+		Link:            l,
 	}
 
 	encrypted, err := l.encrypt(data)
@@ -2492,24 +2550,55 @@ func (l *Link) Send(data []byte) any {
 		return nil
 	}
 
+	receipt := packet.NewPacketReceipt(pkt)
+	receipt.SetLink(l)
+	if l.transport != nil {
+		l.transport.RegisterReceipt(receipt)
+	}
+	l.channelReceiptMu.Lock()
+	if l.channelReceipts == nil {
+		l.channelReceipts = make(map[*packet.Packet]*packet.PacketReceipt)
+	}
+	l.channelReceipts[pkt] = receipt
+	l.channelReceiptMu.Unlock()
+
 	return pkt
 }
 
 func (l *Link) SetPacketTimeout(pkt any, callback func(any), timeout time.Duration) {
-	if packetObj, ok := pkt.(*packet.Packet); ok {
-		go func() {
-			time.Sleep(timeout)
-			if callback != nil {
-				callback(packetObj)
-			}
-		}()
+	packetObj, ok := pkt.(*packet.Packet)
+	if !ok || callback == nil {
+		return
 	}
+	go func() {
+		time.Sleep(timeout)
+		l.channelReceiptMu.Lock()
+		receipt := l.channelReceipts[packetObj]
+		l.channelReceiptMu.Unlock()
+		if receipt != nil && receipt.IsDelivered() {
+			return
+		}
+		callback(packetObj)
+	}()
 }
 
 func (l *Link) SetPacketDelivered(pkt any, callback func(any)) {
-	if callback != nil {
-		go callback(pkt)
+	packetObj, ok := pkt.(*packet.Packet)
+	if !ok || callback == nil {
+		return
 	}
+	l.channelReceiptMu.Lock()
+	receipt := l.channelReceipts[packetObj]
+	l.channelReceiptMu.Unlock()
+	if receipt == nil {
+		return
+	}
+	receipt.SetDeliveryCallback(func(*packet.PacketReceipt) {
+		l.channelReceiptMu.Lock()
+		delete(l.channelReceipts, packetObj)
+		l.channelReceiptMu.Unlock()
+		callback(packetObj)
+	})
 }
 
 func (l *Link) Resend(pkt any) error {
@@ -2992,13 +3081,15 @@ func (l *Link) sendTeardownPacket() error {
 // peer_sig_pub. For initiators that is the destination identity signing key.
 func (l *Link) Validate(signature, message []byte) bool {
 	l.mutex.RLock()
-	defer l.mutex.RUnlock()
+	peerSig := append([]byte(nil), l.peerSigPub...)
+	remote := l.remoteIdentity
+	l.mutex.RUnlock()
 
-	if len(l.peerSigPub) == ed25519.PublicKeySize {
-		return ed25519.Verify(l.peerSigPub, message, signature)
+	if len(peerSig) == ed25519.PublicKeySize {
+		return ed25519.Verify(peerSig, message, signature)
 	}
-	if l.remoteIdentity != nil {
-		return l.remoteIdentity.Verify(message, signature)
+	if remote != nil {
+		return remote.Verify(message, signature)
 	}
 	return false
 }
@@ -3145,8 +3236,8 @@ func (l *Link) HandleLinkRequest(pkt *packet.Packet, ownerIdentity *identity.Ide
 	peerPub := pkt.Data[0:KeySize]
 	peerSigPub := pkt.Data[KeySize:ECPubSize]
 
-	l.peerPub = peerPub
-	l.peerSigPub = peerSigPub
+	l.peerPub = append([]byte(nil), peerPub...)
+	l.peerSigPub = append([]byte(nil), peerSigPub...)
 	l.linkID = linkIDFromPacket(pkt)
 	l.initiator = false
 
@@ -3311,6 +3402,7 @@ func (l *Link) performHandshakeLocked() error {
 		}
 	}
 	securemem.WipeBytes(derivedKey)
+	l.refreshAESBlockLocked()
 
 	l.status.Store(int32(StatusHandshake))
 	debug.Log(debug.DebugVerbose, "Handshake completed", "key_material_bytes", derivedKeyLength, "link_id", fmt.Sprintf("%x", l.linkID))
@@ -3530,12 +3622,12 @@ func (l *Link) validateLinkProofLocked(pkt *packet.Packet, networkIface common.N
 		debug.Log(debug.DebugVerbose, "Link proof includes MTU", "mtu", mtu, "mode", mode)
 	}
 
-	l.peerPub = peerPub
+	l.peerPub = append([]byte(nil), peerPub...)
 	if l.destination != nil && l.destination.GetIdentity() != nil {
 		destIdent := l.destination.GetIdentity()
 		pubKey := destIdent.GetPublicKey()
 		if len(pubKey) >= ECPubSize {
-			l.peerSigPub = pubKey[KeySize:ECPubSize]
+			l.peerSigPub = append([]byte(nil), pubKey[KeySize:ECPubSize]...)
 		}
 	}
 

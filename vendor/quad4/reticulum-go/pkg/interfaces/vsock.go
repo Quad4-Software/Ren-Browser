@@ -231,10 +231,11 @@ func (vc *VSOCKClientInterface) readLoop() {
 		}
 		vc.ProcessIncoming(payload)
 	})
-	if cap(vc.readBuf) < vc.MTU {
-		vc.readBuf = make([]byte, vc.MTU)
+	n := streamReadSize(vc.MTU)
+	if cap(vc.readBuf) < n {
+		vc.readBuf = make([]byte, n)
 	}
-	buffer := vc.readBuf[:vc.MTU]
+	buffer := vc.readBuf[:n]
 	for {
 		vc.Mutex.RLock()
 		conn := vc.conn
@@ -433,13 +434,14 @@ func (vs *VSOCKServerInterface) SessionCount() int {
 }
 
 func (vs *VSOCKServerInterface) readHDLCLoop(conn net.Conn) {
+	peerKey := conn.RemoteAddr().String()
 	decoder := newHDLCToggleStreamDecoder(vs.MTU, func(payload []byte) {
 		if len(payload) == 0 {
 			return
 		}
-		vs.ProcessIncoming(payload)
+		vs.ProcessIncomingFrom(payload, peerKey)
 	})
-	buf := make([]byte, vs.MTU)
+	buf := make([]byte, streamReadSize(vs.MTU))
 	for {
 		vs.Mutex.RLock()
 		done := vs.done

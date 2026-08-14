@@ -15,6 +15,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"quad4/reticulum-go/pkg/common"
 	"quad4/reticulum-go/pkg/health"
 )
 
@@ -44,10 +45,12 @@ type Options struct {
 	MemorySampleFunc     func() uint64
 	DisableAdaptive      bool
 	DisableCoolDown      bool
+	DisablePeerIsolation bool
 	StorePath            string
 	AutoLearnMinDuration time.Duration
 	AutoLearnMinSamples  int
 	NetworkFingerprint   string
+	TransportNode        bool
 }
 
 type ifaceState struct {
@@ -58,6 +61,17 @@ type ifaceState struct {
 	adaptPeakBPS float64
 	tripAt       []time.Time
 	coolUntil    time.Time
+	peers        map[string]*peerState
+}
+
+// peerState is a per-remote-peer rate sub-bucket scoped to one interface.
+// It exists so a single sender sharing a listener cannot exhaust the whole
+// interface budget and cool down every other peer on it.
+type peerState struct {
+	window    rateWindow
+	tripAt    []time.Time
+	coolUntil time.Time
+	lastSeen  time.Time
 }
 
 type warnKey struct {
@@ -89,9 +103,11 @@ type Engine struct {
 	memSample            func() uint64
 	disableAdaptive      bool
 	disableCoolDown      bool
+	disablePeerIsolation bool
 	storePath            string
 	autoLearnMinDuration time.Duration
 	autoLearnMinSamples  int
+	transportNode        bool
 
 	mu             sync.Mutex
 	ifaces         map[string]*ifaceState
@@ -101,7 +117,7 @@ type Engine struct {
 	handshake      int
 	warns          map[warnKey]*warnState
 	shedMemory     atomic.Bool
-	tripCounts     [reasonCount]uint64
+	tripCounts     [reasonCount]atomic.Uint64
 	autoPhase      atomic.Int32
 	fingerprint    string
 	promoted       bool
@@ -210,9 +226,11 @@ func New(opts Options) *Engine {
 		memSample:            opts.MemorySampleFunc,
 		disableAdaptive:      opts.DisableAdaptive,
 		disableCoolDown:      opts.DisableCoolDown,
+		disablePeerIsolation: opts.DisablePeerIsolation,
 		storePath:            opts.StorePath,
 		autoLearnMinDuration: opts.AutoLearnMinDuration,
 		autoLearnMinSamples:  opts.AutoLearnMinSamples,
+		transportNode:        opts.TransportNode,
 		fingerprint:          opts.NetworkFingerprint,
 		ifaces:               make(map[string]*ifaceState),
 		conns:                make(map[string]int),
@@ -363,7 +381,7 @@ func (e *Engine) TripCount(reason Reason) uint64 {
 	if e == nil || reason < 0 || int(reason) >= len(e.tripCounts) {
 		return 0
 	}
-	return atomic.LoadUint64(&e.tripCounts[reason])
+	return e.tripCounts[reason].Load()
 }
 
 func (e *Engine) ifaceLocked(name string) *ifaceState {
@@ -377,11 +395,15 @@ func (e *Engine) ifaceLocked(name string) *ifaceState {
 
 // AdmitPacket checks cool-down adaptive pps/bps and memory shed.
 func (e *Engine) AdmitPacket(iface string, nbytes int) Decision {
+	return e.admitWithOpts(iface, nbytes, AdmitOpts{})
+}
+
+func (e *Engine) admitWithOpts(iface string, nbytes int, opts AdmitOpts) Decision {
 	if e == nil || e.mode == ModeOff {
 		return Decision{Allow: true}
 	}
 	if e.shedMemory.Load() {
-		return e.decide(iface, ReasonMemory)
+		return e.decideMemory(iface)
 	}
 	now := e.now()
 	e.mu.Lock()
@@ -390,24 +412,66 @@ func (e *Engine) AdmitPacket(iface string, nbytes int) Decision {
 		e.mu.Unlock()
 		return e.decide(iface, ReasonCoolDown)
 	}
+	e.mu.Unlock()
+
+	// Peer fair-share runs before the interface aggregate so one hostile
+	// sender on a shared listener (a busy TCP accept loop or a UDP socket
+	// serving many remote peers) trips its own sub-bucket instead of
+	// exhausting the whole interface budget and cooling down every other
+	// peer sharing it.
+	if opts.PeerKey != "" && !e.disablePeerIsolation {
+		if d, deny := e.checkPeer(iface, opts.PeerKey, nbytes, now); deny {
+			return d
+		}
+	}
+
+	e.mu.Lock()
+	st = e.ifaceLocked(iface)
 	pps, bps := st.window.add(now, nbytes)
 	sampled := false
 	samplePPS, sampleBPS := 0.0, 0.0
+	floorPPS, floorBPS := scaledFloors(opts.Bitrate, e.floorPPS, e.floorBPS, e.maxPPS, e.maxBPS)
 	if !e.disableAdaptive {
 		sampled, samplePPS, sampleBPS = st.noteAdaptive(now, pps, bps)
 	}
 	ppsLimit, bpsLimit := e.maxPPS, e.maxBPS
 	if !e.disableAdaptive {
-		ppsLimit, bpsLimit = st.adapt.tripLine(e.maxPPS, e.maxBPS, e.floorPPS, e.floorBPS)
+		ppsLimit, bpsLimit = st.adapt.tripLine(e.maxPPS, e.maxBPS, floorPPS, floorBPS)
 	}
 	e.mu.Unlock()
 
-	if pps > ppsLimit {
+	overPPS := pps > ppsLimit
+	overBPS := bps > bpsLimit
+	if overPPS || overBPS {
+		if opts.Class.preferKeep() {
+			strictPPS := ppsLimit * 2
+			strictBPS := bpsLimit * 2
+			if pps <= strictPPS && bps <= strictBPS {
+				// Claimed link/proof class packets ride out bursts up to 2x the
+				// trip line, but the packet class byte is unauthenticated wire
+				// data any sender controls. Still record the trip and count it
+				// toward interface cool-down so sustained abuse of this
+				// leniency escalates like any other flood instead of being
+				// invisible to health counters and cool-down forever.
+				leniencyReason := ReasonPPS
+				if overBPS && !overPPS {
+					leniencyReason = ReasonBPS
+				}
+				d := e.tripCoolDownOnly(iface, leniencyReason)
+				if d.Allow {
+					if sampled {
+						e.maybePromoteOrDrift(iface, samplePPS, sampleBPS)
+					}
+				} else {
+					e.resetDriftLocked()
+				}
+				return d
+			}
+		}
 		e.resetDriftLocked()
-		return e.tripWithCoolDown(iface, ReasonPPS)
-	}
-	if bps > bpsLimit {
-		e.resetDriftLocked()
+		if overPPS {
+			return e.tripWithCoolDown(iface, ReasonPPS)
+		}
 		return e.tripWithCoolDown(iface, ReasonBPS)
 	}
 	if sampled {
@@ -453,10 +517,13 @@ func (e *Engine) resetDriftLocked() {
 	e.mu.Unlock()
 }
 
-func (e *Engine) tripWithCoolDown(iface string, reason Reason) Decision {
-	d := e.decide(iface, reason)
+// accumulateCoolDownTrip records now as a trip timestamp for iface and, once
+// CoolDownTripThreshold trips land within CoolDownTripWindow, arms a full
+// CoolDownDuration cool-down for the interface. Returns true when cool-down
+// was just armed by this call.
+func (e *Engine) accumulateCoolDownTrip(iface string) bool {
 	if e.disableCoolDown {
-		return d
+		return false
 	}
 	now := e.now()
 	e.mu.Lock()
@@ -469,17 +536,165 @@ func (e *Engine) tripWithCoolDown(iface string, reason Reason) Decision {
 		}
 	}
 	st.tripAt = append(kept, now)
-	if len(st.tripAt) >= CoolDownTripThreshold {
+	armed := len(st.tripAt) >= CoolDownTripThreshold
+	if armed {
 		st.coolUntil = now.Add(CoolDownDuration)
 		st.tripAt = st.tripAt[:0]
-		e.mu.Unlock()
+	}
+	e.mu.Unlock()
+	return armed
+}
+
+// decideMemory resolves a shed-memory admission. Heap exhaustion is an
+// absolute safety valve rather than a flood-learning signal, so ModeAuto
+// enforces it immediately even while still in the learning phase and before
+// pps/bps prevention has armed. Explicit ModeDetect stays observe-only,
+// matching its documented contract of never blocking.
+func (e *Engine) decideMemory(iface string) Decision {
+	e.recordTrip(iface, ReasonMemory)
+	if e.mode == ModePrevent || e.mode == ModeAuto {
+		return Decision{Allow: false, Trip: true, Reason: ReasonMemory}
+	}
+	return Decision{Allow: true, Trip: true, Reason: ReasonMemory}
+}
+
+// tripCoolDownOnly records a trip for health counters and interface
+// cool-down accounting without applying decide()'s per-packet enforcement
+// deny. It is used by the prefer-keep leniency band so claimed link/proof
+// traffic can still ride out isolated bursts, while sustained abuse of that
+// leniency still escalates to a full interface cool-down like any other
+// flood, instead of being invisible to metrics and cool-down forever.
+func (e *Engine) tripCoolDownOnly(iface string, reason Reason) Decision {
+	e.recordTrip(iface, reason)
+	if e.accumulateCoolDownTrip(iface) {
+		e.recordTrip(iface, ReasonCoolDown)
+		if e.enforcementMode() == ModePrevent {
+			return Decision{Allow: false, Trip: true, Reason: ReasonCoolDown}
+		}
+	}
+	return Decision{Allow: true, Trip: true, Reason: reason}
+}
+
+// peerLocked returns the sub-bucket for peerKey on st, creating one if
+// needed. Must be called with e.mu held. Growth is bounded at
+// MaxTrackedPeersPerIface: idle entries are pruned first, then the least
+// recently seen entry is evicted if still at capacity, so a flood of
+// distinct source identities cannot itself become an unbounded-memory DoS.
+func (e *Engine) peerLocked(st *ifaceState, peerKey string, now time.Time) *peerState {
+	if st.peers == nil {
+		st.peers = make(map[string]*peerState)
+	}
+	ps := st.peers[peerKey]
+	if ps != nil {
+		ps.lastSeen = now
+		return ps
+	}
+	if len(st.peers) >= MaxTrackedPeersPerIface {
+		e.evictStalePeerLocked(st, now)
+	}
+	ps = &peerState{lastSeen: now}
+	st.peers[peerKey] = ps
+	return ps
+}
+
+func (e *Engine) evictStalePeerLocked(st *ifaceState, now time.Time) {
+	var oldestKey string
+	var oldestSeen time.Time
+	for k, ps := range st.peers {
+		if now.Sub(ps.lastSeen) >= PeerIdleEvictAfter {
+			delete(st.peers, k)
+			continue
+		}
+		if oldestKey == "" || ps.lastSeen.Before(oldestSeen) {
+			oldestKey = k
+			oldestSeen = ps.lastSeen
+		}
+	}
+	if len(st.peers) >= MaxTrackedPeersPerIface && oldestKey != "" {
+		delete(st.peers, oldestKey)
+	}
+}
+
+// checkPeer enforces a fair-share budget for a single remote peer sharing
+// iface, independent of the interface-wide aggregate check in admitWithOpts.
+// It is what stops one hostile peer on a shared listener from exhausting
+// the whole interface budget and cooling down every other peer on it.
+// Returns deny=true when the caller should return the decision immediately
+// instead of continuing to the interface-wide check.
+func (e *Engine) checkPeer(iface, peerKey string, nbytes int, now time.Time) (Decision, bool) {
+	e.mu.Lock()
+	st := e.ifaceLocked(iface)
+	if !e.disableCoolDown {
+		if ps := st.peers[peerKey]; ps != nil && now.Before(ps.coolUntil) {
+			e.mu.Unlock()
+			return e.decide(iface, ReasonCoolDown), true
+		}
+	}
+	ps := e.peerLocked(st, peerKey, now)
+	pps, bps := ps.window.add(now, nbytes)
+	ppsLimit, bpsLimit := st.adapt.tripLine(e.maxPPS, e.maxBPS, e.floorPPS, e.floorBPS)
+	e.mu.Unlock()
+
+	peerPPSLimit := ppsLimit * PeerBudgetFraction
+	peerBPSLimit := bpsLimit * PeerBudgetFraction
+	if pps <= peerPPSLimit && bps <= peerBPSLimit {
+		return Decision{Allow: true}, false
+	}
+	reason := ReasonPPS
+	if bps > peerBPSLimit && pps <= peerPPSLimit {
+		reason = ReasonBPS
+	}
+	return e.tripPeerCoolDown(iface, peerKey, reason), true
+}
+
+// tripPeerCoolDown mirrors tripWithCoolDown but scopes cool-down state to a
+// single peer bucket instead of the whole interface, so sustained abuse by
+// one peer never blocks the other peers sharing the same local interface.
+func (e *Engine) tripPeerCoolDown(iface, peerKey string, reason Reason) Decision {
+	d := e.decide(iface, reason)
+	if e.disableCoolDown {
+		return d
+	}
+	now := e.now()
+	e.mu.Lock()
+	st := e.ifaceLocked(iface)
+	ps := e.peerLocked(st, peerKey, now)
+	cutoff := now.Add(-CoolDownTripWindow)
+	kept := ps.tripAt[:0]
+	for _, t := range ps.tripAt {
+		if t.After(cutoff) {
+			kept = append(kept, t)
+		}
+	}
+	ps.tripAt = append(kept, now)
+	armed := len(ps.tripAt) >= CoolDownTripThreshold
+	if armed {
+		ps.coolUntil = now.Add(CoolDownDuration)
+		ps.tripAt = ps.tripAt[:0]
+	}
+	e.mu.Unlock()
+	if !armed {
+		return d
+	}
+	e.recordTrip(iface, ReasonCoolDown)
+	if e.enforcementMode() == ModePrevent {
+		return Decision{Allow: false, Trip: true, Reason: ReasonCoolDown}
+	}
+	return Decision{Allow: true, Trip: true, Reason: ReasonCoolDown}
+}
+
+func (e *Engine) tripWithCoolDown(iface string, reason Reason) Decision {
+	d := e.decide(iface, reason)
+	if e.disableCoolDown {
+		return d
+	}
+	if e.accumulateCoolDownTrip(iface) {
 		e.recordTrip(iface, ReasonCoolDown)
 		if e.enforcementMode() == ModePrevent {
 			return Decision{Allow: false, Trip: true, Reason: ReasonCoolDown}
 		}
 		return Decision{Allow: true, Trip: true, Reason: ReasonCoolDown}
 	}
-	e.mu.Unlock()
 	return d
 }
 
@@ -498,7 +713,7 @@ func (e *Engine) AdmitConn(iface string) (Decision, func()) {
 		return Decision{Allow: true}, noop
 	}
 	if e.shedMemory.Load() {
-		d := e.decide(iface, ReasonMemory)
+		d := e.decideMemory(iface)
 		if !d.Allow {
 			return d, noop
 		}
@@ -547,7 +762,7 @@ func (e *Engine) AdmitResource(estBytes int64) (Decision, func()) {
 	}
 	_ = estBytes
 	if e.shedMemory.Load() {
-		d := e.decide("", ReasonMemory)
+		d := e.decideMemory("")
 		if !d.Allow {
 			return d, noop
 		}
@@ -591,19 +806,19 @@ func (e *Engine) AdmitHandshake(iface string) (Decision, func()) {
 	return e.admitSlot(iface, ReasonHandshake, &e.handshake, e.maxHandshake)
 }
 
-func (e *Engine) admitSlot(iface string, reason Reason, slot *int, max int) (Decision, func()) {
+func (e *Engine) admitSlot(iface string, reason Reason, slot *int, limit int) (Decision, func()) {
 	noop := func() {}
 	if e == nil || e.mode == ModeOff {
 		return Decision{Allow: true}, noop
 	}
 	if e.shedMemory.Load() {
-		d := e.decide(iface, ReasonMemory)
+		d := e.decideMemory(iface)
 		if !d.Allow {
 			return d, noop
 		}
 	}
 	e.mu.Lock()
-	over := *slot >= max
+	over := *slot >= limit
 	if over && e.enforcementMode() == ModePrevent {
 		e.mu.Unlock()
 		return e.decide(iface, reason), noop
@@ -641,7 +856,7 @@ func (e *Engine) decide(iface string, reason Reason) Decision {
 
 func (e *Engine) recordTrip(iface string, reason Reason) {
 	if reason > ReasonNone && int(reason) < len(e.tripCounts) {
-		atomic.AddUint64(&e.tripCounts[reason], 1)
+		e.tripCounts[reason].Add(1)
 	}
 	health.Inc(iface, reason.HealthKind())
 	e.warn(iface, reason)
@@ -690,6 +905,11 @@ func AdmitPacket(iface string, nbytes int) Decision {
 	return Default().AdmitPacket(iface, nbytes)
 }
 
+// AdmitPacketOpts checks the default engine with bitrate and packet class.
+func AdmitPacketOpts(iface string, nbytes int, opts AdmitOpts) Decision {
+	return Default().admitWithOpts(iface, nbytes, opts)
+}
+
 // AdmitHandler checks the default engine.
 func AdmitHandler(iface string) Decision {
 	return Default().AdmitHandler(iface)
@@ -716,16 +936,47 @@ func AdmitHandshake(iface string) (Decision, func()) {
 }
 
 // ConfigureFromConfig installs a default engine from dos_protection soft memory limit and optional store path.
-func ConfigureFromConfig(modeStr string, softMemoryLimit int64, storePath string) *Engine {
+func ConfigureFromConfig(modeStr string, softMemoryLimit int64, storePath string, cfg *common.ReticulumConfig) *Engine {
 	mode, ok := ParseMode(modeStr)
 	if !ok {
 		mode = ModeOff
 	}
-	e := New(Options{
+	opts := Options{
 		Mode:            mode,
 		SoftMemoryLimit: softMemoryLimit,
 		StorePath:       storePath,
-	})
+	}
+	if cfg != nil {
+		opts.TransportNode = cfg.EnableTransport
+		if cfg.EnableTransport {
+			opts.AutoLearnMinDuration = AutoLearnMinDuration * 2
+		}
+		if cfg.DoSMaxPPS > 0 {
+			opts.MaxPPS = cfg.DoSMaxPPS
+		}
+		if cfg.DoSMaxBPS > 0 {
+			opts.MaxBPS = cfg.DoSMaxBPS
+		}
+		if cfg.DoSFloorPPS > 0 {
+			opts.FloorPPS = cfg.DoSFloorPPS
+		}
+		if cfg.DoSFloorBPS > 0 {
+			opts.FloorBPS = cfg.DoSFloorBPS
+		}
+		if cfg.DoSMaxConns > 0 {
+			opts.MaxConns = cfg.DoSMaxConns
+		}
+		if cfg.DoSMaxResources > 0 {
+			opts.MaxResources = cfg.DoSMaxResources
+		}
+		if cfg.DoSMaxCrypto > 0 {
+			opts.MaxCrypto = cfg.DoSMaxCrypto
+		}
+		if cfg.DoSMaxHandshake > 0 {
+			opts.MaxHandshake = cfg.DoSMaxHandshake
+		}
+	}
+	e := New(opts)
 	SetDefault(e)
 	if mode != ModeOff {
 		e.StartMemoryMonitor()

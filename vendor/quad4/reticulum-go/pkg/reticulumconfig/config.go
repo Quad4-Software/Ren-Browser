@@ -88,7 +88,7 @@ func EnsureConfigDir() error {
 // parseBool accepts yes/no/true/false/on/off/1/0, case-insensitive.
 // Unrecognized spellings return ok=false so callers keep their defaults
 // instead of silently treating typos as false (which disabled sandbox/seccomp).
-func parseBool(value string) (bool, bool) {
+func parseBool(value string) (parsed, ok bool) {
 	switch strings.ToLower(strings.TrimSpace(value)) {
 	case "true", "yes", "y", "on", "1":
 		return true, true
@@ -107,6 +107,24 @@ func setBool(dst *bool, value string) bool {
 		*dst = v
 	}
 	return ok
+}
+
+func splitCommaPaths(value string) []string {
+	parts := strings.Split(value, ",")
+	out := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		if _, ok := seen[p]; ok {
+			continue
+		}
+		seen[p] = struct{}{}
+		out = append(out, p)
+	}
+	return out
 }
 
 // sectionFrame is one entry in the parser's section stack.
@@ -265,6 +283,7 @@ func LoadConfig(path string) (*common.ReticulumConfig, error) {
 	}
 
 	cfg.NormalizeInMemoryFlags()
+	cfg.ApplyNodeProfile()
 	return cfg, nil
 }
 
@@ -299,6 +318,20 @@ func applyGlobalOption(cfg *common.ReticulumConfig, key, value string) {
 		setBool(&cfg.EnableSandbox, value)
 	case "enable_seccomp":
 		setBool(&cfg.EnableSeccomp, value)
+	case "sandbox_strict":
+		setBool(&cfg.SandboxStrict, value)
+	case "sandbox_profile":
+		v := strings.ToLower(strings.TrimSpace(value))
+		switch v {
+		case common.SandboxProfileFull, common.SandboxProfileRouter, "":
+			cfg.SandboxProfile = v
+		}
+	case "sandbox_extra_paths":
+		cfg.SandboxExtraPaths = splitCommaPaths(value)
+	case "sandbox_exec_rlimits":
+		setBool(&cfg.SandboxExecRlimits, value)
+	case "control_api_socket":
+		cfg.ControlAPISocket = strings.TrimSpace(value)
 	case "default_gravity":
 		if v, err := strconv.Atoi(strings.TrimSpace(value)); err == nil {
 			cfg.DefaultGravity = v
@@ -351,29 +384,69 @@ func applyGlobalOption(cfg *common.ReticulumConfig, key, value string) {
 				v = "auto"
 			}
 			cfg.DoSProtection = v
+			cfg.DoSProtectionSet = true
 		}
+	case "dos_max_pps":
+		setFloat(value, &cfg.DoSMaxPPS)
+	case "dos_max_bps":
+		if n, err := common.ParseByteSize(value); err == nil {
+			cfg.DoSMaxBPS = float64(n)
+		}
+	case "dos_floor_pps":
+		setFloat(value, &cfg.DoSFloorPPS)
+	case "dos_floor_bps":
+		if n, err := common.ParseByteSize(value); err == nil {
+			cfg.DoSFloorBPS = float64(n)
+		}
+	case "dos_max_conns":
+		setInt(value, &cfg.DoSMaxConns)
+	case "dos_max_resources":
+		setInt(value, &cfg.DoSMaxResources)
+	case "dos_max_crypto":
+		setInt(value, &cfg.DoSMaxCrypto)
+	case "dos_max_handshake":
+		setInt(value, &cfg.DoSMaxHandshake)
 	case "max_in_memory_paths":
 		setInt(value, &cfg.MaxInMemoryPaths)
+		cfg.MaxInMemoryPathsSet = true
 	case "max_in_memory_known_destinations":
 		setInt(value, &cfg.MaxInMemoryKnownDestinations)
+		cfg.MaxInMemoryKnownDestinationsSet = true
 	case "max_in_memory_resource_bytes":
 		if n, err := common.ParseByteSize(value); err == nil {
 			cfg.MaxInMemoryResourceBytes = n
 		}
 	case "max_packet_hashlist":
 		setInt(value, &cfg.MaxPacketHashlist)
+		cfg.MaxPacketHashlistSet = true
+	case "max_packet_handlers":
+		setInt(value, &cfg.MaxPacketHandlers)
+		cfg.MaxPacketHandlersSet = true
+	case "node_profile":
+		v := strings.ToLower(strings.TrimSpace(value))
+		switch v {
+		case common.NodeProfileDefault, common.NodeProfileCoreRouter, common.NodeProfileEmbedded, "":
+			cfg.NodeProfile = v
+		}
 	case "discover_interfaces":
 		setBool(&cfg.DiscoverInterfaces, value)
 	case "watch_interfaces":
-		setBool(&cfg.WatchInterfaces, value)
+		if setBool(&cfg.WatchInterfaces, value) {
+			cfg.WatchInterfacesSet = true
+		}
 	case "backbone_io", "io_backend":
 		cfg.BackboneIO = strings.TrimSpace(value)
+		cfg.BackboneIOSet = true
 	case "static_transport_identity":
 		setBool(&cfg.StaticTransportIdentity, value)
 	case "local_hops_delta":
 		setBool(&cfg.LocalHopsDelta, value)
 	case "respond_to_probes", "allow_probes":
 		setBool(&cfg.RespondToProbes, value)
+	case "enable_remote_management":
+		setBool(&cfg.EnableRemoteManagement, value)
+	case "remote_management_allowed":
+		cfg.RemoteManagementAllowed = parseIdentityHashes(value)
 	case "network_identity":
 		cfg.NetworkIdentityPath = strings.TrimSpace(value)
 	}
@@ -687,6 +760,22 @@ func parseStringList(value string) []string {
 	return out
 }
 
+func parseIdentityHashes(value string) [][]byte {
+	out := make([][]byte, 0)
+	for _, p := range parseStringList(value) {
+		p = strings.ReplaceAll(p, " ", "")
+		if len(p) != 32 {
+			continue
+		}
+		b, err := hex.DecodeString(p)
+		if err != nil || len(b) != 16 {
+			continue
+		}
+		out = append(out, b)
+	}
+	return out
+}
+
 func setIFACSize(value string, dst *int) {
 	v, err := strconv.Atoi(strings.TrimSpace(value))
 	if err != nil || v < ifac.MinSize*8 {
@@ -733,6 +822,17 @@ func SaveConfig(cfg *common.ReticulumConfig) error {
 	fmt.Fprintf(&b, "  panic_on_interface_error = %s\n", boolStr(cfg.PanicOnInterfaceErr))
 	fmt.Fprintf(&b, "  enable_sandbox = %s\n", boolStr(cfg.EnableSandbox))
 	fmt.Fprintf(&b, "  enable_seccomp = %s\n", boolStr(cfg.EnableSeccomp))
+	fmt.Fprintf(&b, "  sandbox_strict = %s\n", boolStr(cfg.SandboxStrict))
+	if cfg.SandboxProfile != "" && cfg.SandboxProfile != common.SandboxProfileFull {
+		fmt.Fprintf(&b, "  sandbox_profile = %s\n", cfg.SandboxProfile)
+	}
+	if len(cfg.SandboxExtraPaths) > 0 {
+		fmt.Fprintf(&b, "  sandbox_extra_paths = %s\n", strings.Join(cfg.SandboxExtraPaths, ", "))
+	}
+	fmt.Fprintf(&b, "  sandbox_exec_rlimits = %s\n", boolStr(cfg.SandboxExecRlimits))
+	if cfg.ControlAPISocket != "" {
+		fmt.Fprintf(&b, "  control_api_socket = %s\n", cfg.ControlAPISocket)
+	}
 	if cfg.DefaultGravitySet {
 		fmt.Fprintf(&b, "  default_gravity = %d\n", cfg.DefaultGravity)
 	}
@@ -754,6 +854,9 @@ func SaveConfig(cfg *common.ReticulumConfig) error {
 	fmt.Fprintf(&b, "  in_memory_path_table = %s\n", boolStr(cfg.InMemoryPathTable))
 	fmt.Fprintf(&b, "  in_memory_known_destinations = %s\n", boolStr(cfg.InMemoryKnownDestinations))
 	fmt.Fprintf(&b, "  in_memory_storage = %s\n", boolStr(cfg.InMemoryStorage))
+	if cfg.NodeProfile != "" && cfg.NodeProfile != common.NodeProfileDefault {
+		fmt.Fprintf(&b, "  node_profile = %s\n", cfg.NodeProfile)
+	}
 	if cfg.IdentityBackend != "" {
 		fmt.Fprintf(&b, "  identity_backend = %s\n", cfg.IdentityBackend)
 	}
@@ -765,6 +868,30 @@ func SaveConfig(cfg *common.ReticulumConfig) error {
 		dos = "off"
 	}
 	fmt.Fprintf(&b, "  dos_protection = %s\n", dos)
+	if cfg.DoSMaxPPS > 0 {
+		fmt.Fprintf(&b, "  dos_max_pps = %g\n", cfg.DoSMaxPPS)
+	}
+	if cfg.DoSMaxBPS > 0 {
+		fmt.Fprintf(&b, "  dos_max_bps = %g\n", cfg.DoSMaxBPS)
+	}
+	if cfg.DoSFloorPPS > 0 {
+		fmt.Fprintf(&b, "  dos_floor_pps = %g\n", cfg.DoSFloorPPS)
+	}
+	if cfg.DoSFloorBPS > 0 {
+		fmt.Fprintf(&b, "  dos_floor_bps = %g\n", cfg.DoSFloorBPS)
+	}
+	if cfg.DoSMaxConns > 0 {
+		fmt.Fprintf(&b, "  dos_max_conns = %d\n", cfg.DoSMaxConns)
+	}
+	if cfg.DoSMaxResources > 0 {
+		fmt.Fprintf(&b, "  dos_max_resources = %d\n", cfg.DoSMaxResources)
+	}
+	if cfg.DoSMaxCrypto > 0 {
+		fmt.Fprintf(&b, "  dos_max_crypto = %d\n", cfg.DoSMaxCrypto)
+	}
+	if cfg.DoSMaxHandshake > 0 {
+		fmt.Fprintf(&b, "  dos_max_handshake = %d\n", cfg.DoSMaxHandshake)
+	}
 	if cfg.MaxInMemoryPaths != 0 {
 		fmt.Fprintf(&b, "  max_in_memory_paths = %d\n", cfg.MaxInMemoryPaths)
 	}
@@ -777,11 +904,24 @@ func SaveConfig(cfg *common.ReticulumConfig) error {
 	if cfg.MaxPacketHashlist != 0 {
 		fmt.Fprintf(&b, "  max_packet_hashlist = %d\n", cfg.MaxPacketHashlist)
 	}
+	if cfg.MaxPacketHandlers != 0 {
+		fmt.Fprintf(&b, "  max_packet_handlers = %d\n", cfg.MaxPacketHandlers)
+	}
 	fmt.Fprintf(&b, "  discover_interfaces = %s\n", boolStr(cfg.DiscoverInterfaces))
 	fmt.Fprintf(&b, "  watch_interfaces = %s\n", boolStr(cfg.WatchInterfaces))
 	fmt.Fprintf(&b, "  static_transport_identity = %s\n", boolStr(cfg.StaticTransportIdentity))
 	fmt.Fprintf(&b, "  local_hops_delta = %s\n", boolStr(cfg.LocalHopsDelta))
 	fmt.Fprintf(&b, "  respond_to_probes = %s\n", boolStr(cfg.RespondToProbes))
+	if cfg.EnableRemoteManagement {
+		fmt.Fprintf(&b, "  enable_remote_management = %s\n", boolStr(cfg.EnableRemoteManagement))
+	}
+	if len(cfg.RemoteManagementAllowed) > 0 {
+		parts := make([]string, len(cfg.RemoteManagementAllowed))
+		for i, h := range cfg.RemoteManagementAllowed {
+			parts[i] = hex.EncodeToString(h)
+		}
+		fmt.Fprintf(&b, "  remote_management_allowed = %s\n", strings.Join(parts, ", "))
+	}
 	if cfg.BackboneIO != "" {
 		fmt.Fprintf(&b, "  backbone_io = %s\n", cfg.BackboneIO)
 	}
