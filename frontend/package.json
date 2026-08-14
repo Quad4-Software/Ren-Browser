@@ -29,11 +29,11 @@
   "dependencies": {
     "@lucide/svelte": "^1.23.0",
     "@wailsio/runtime": "latest",
-    "dompurify": "^3.4.12",
+    "dompurify": "^3.4.13",
     "jszip": "^3.10.1",
     "marked": "^18.0.5",
     "micron-parser": "github:RFnexus/micron-parser-js",
-    "pdfjs-dist": "^6.1.200"
+    "pdfjs-dist": "^6.2.108"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
