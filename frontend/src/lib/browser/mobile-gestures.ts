@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 
 export const MOBILE_BACK_EDGE_WIDTH = 28;
-export const MOBILE_FORWARD_EDGE_WIDTH = MOBILE_BACK_EDGE_WIDTH;
+export const MOBILE_FORWARD_EDGE_WIDTH = 28;
 export const MOBILE_PULL_THRESHOLD = 72;
 export const MOBILE_BACK_THRESHOLD = 80;
-export const MOBILE_FORWARD_THRESHOLD = MOBILE_BACK_THRESHOLD;
+export const MOBILE_FORWARD_THRESHOLD = 80;
 export const MOBILE_GESTURE_MAX_VERTICAL_DRIFT = 56;
 export const MOBILE_PULL_MAX_OFFSET = 120;
 export const MOBILE_BACK_MAX_OFFSET = 120;
-export const MOBILE_FORWARD_MAX_OFFSET = MOBILE_BACK_MAX_OFFSET;
+export const MOBILE_FORWARD_MAX_OFFSET = 120;
 
 export type MobileGestureProgress = {
   pullOffset: number;
