@@ -236,3 +236,8 @@ func (h *serverApp) destroy() {\
 }' "${server_app}"
   fi
 fi
+
+app_dev="${vendor}/pkg/application/application_dev.go"
+if [ -f "${app_dev}" ] && grep -q 'for i := 0; i < 10; i++' "${app_dev}"; then
+  sed -i 's/for i := 0; i < 10; i++/for i := 0; i < 60; i++/' "${app_dev}"
+fi
