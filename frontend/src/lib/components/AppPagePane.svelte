@@ -84,7 +84,9 @@
       micronPreserveLayout={app.micronPreserveLayout}
       mobileGestures={app.mobileUI && app.activePanel === "browser" && !app.mobileTabsOpen}
       canGoBack={app.canGoBack}
+      canGoForward={app.canGoForward}
       onBack={app.goBack}
+      onForward={app.goForward}
       onFindClose={() => (app.findOpen = false)}
       onNavigate={app.openPage}
       onRetry={() => app.openPage(app.url)}
@@ -116,6 +118,10 @@
         findOpen={false}
         micronEngine={app.effectiveMicronEngine}
         micronPreserveLayout={app.micronPreserveLayout}
+        canGoBack={app.canGoBack}
+        canGoForward={app.canGoForward}
+        onBack={app.goBack}
+        onForward={app.goForward}
         onFindClose={() => {}}
         onNavigate={(target) => void app.openPage(target, true, { tabId: app.splitTab!.id })}
         onRetry={() => void app.openPage(app.splitTab!.url, false, { tabId: app.splitTab!.id })}

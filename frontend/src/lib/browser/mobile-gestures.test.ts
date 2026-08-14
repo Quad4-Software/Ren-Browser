@@ -2,11 +2,14 @@
 import { describe, expect, it } from "vitest";
 import {
   clampBackOffset,
+  clampForwardOffset,
   clampPullOffset,
   getEffectiveScrollTop,
   isBackEdgeStart,
+  isForwardEdgeStart,
   isGestureSuppressedTarget,
   shouldTriggerBack,
+  shouldTriggerForward,
   shouldTriggerPull,
 } from "./mobile-gestures";
 
@@ -17,6 +20,13 @@ describe("mobile gestures", () => {
     expect(isBackEdgeStart(29)).toBe(false);
   });
 
+  it("detects forward-edge starts", () => {
+    expect(isForwardEdgeStart(390, 390)).toBe(true);
+    expect(isForwardEdgeStart(362, 390)).toBe(true);
+    expect(isForwardEdgeStart(361, 390)).toBe(false);
+    expect(isForwardEdgeStart(28, 0)).toBe(false);
+  });
+
   it("clamps pull and back offsets", () => {
     expect(clampPullOffset(0)).toBe(0);
     expect(clampPullOffset(40)).toBe(20);
@@ -24,6 +34,10 @@ describe("mobile gestures", () => {
     expect(clampBackOffset(0)).toBe(0);
     expect(clampBackOffset(100)).toBe(35);
     expect(clampBackOffset(400)).toBe(120);
+    expect(clampForwardOffset(0)).toBe(0);
+    expect(clampForwardOffset(-100)).toBe(35);
+    expect(clampForwardOffset(-400)).toBe(120);
+    expect(clampForwardOffset(40)).toBe(0);
   });
 
   it("requires pull distance before refresh", () => {
@@ -35,6 +49,13 @@ describe("mobile gestures", () => {
     expect(shouldTriggerBack(90, 10)).toBe(true);
     expect(shouldTriggerBack(90, 80)).toBe(false);
     expect(shouldTriggerBack(40, 0)).toBe(false);
+  });
+
+  it("requires mostly horizontal forward swipes", () => {
+    expect(shouldTriggerForward(-90, 10)).toBe(true);
+    expect(shouldTriggerForward(-90, 80)).toBe(false);
+    expect(shouldTriggerForward(-40, 0)).toBe(false);
+    expect(shouldTriggerForward(90, 0)).toBe(false);
   });
 
   it("ignores interactive targets for gesture capture", () => {

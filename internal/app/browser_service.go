@@ -1076,6 +1076,14 @@ func (s *BrowserService) fetchWithRetry(ctx context.Context, nodeHash, path stri
 		return nomadnet.FetchResult{Error: "reticulum not ready"}
 	}
 	const maxAttempts = 3
+	waitedForPath := false
+	hooks := &nomadnet.FetchHooks{
+		OnStage: func(stage, detail string) {
+			if stage == "path" && strings.Contains(detail, "waiting for path") {
+				waitedForPath = true
+			}
+		},
+	}
 	var last nomadnet.FetchResult
 	for attempt := range maxAttempts {
 		if attempt > 0 {
@@ -1090,9 +1098,12 @@ func (s *BrowserService) fetchWithRetry(ctx context.Context, nodeHash, path stri
 				stack.Browser().RefreshPathForRetry(nodeHash)
 			}
 		}
-		last = stack.Browser().Fetch(ctx, nodeHash, path, req)
+		last = stack.Browser().FetchWithHooks(ctx, nodeHash, path, req, hooks)
 		if last.Error == "" {
 			last.Body = s.runAfterFetchHooks(nodeHash, path, req, last.Body)
+			if waitedForPath {
+				application.Mobile.Haptic("success")
+			}
 			return last
 		}
 		if ctx.Err() != nil {

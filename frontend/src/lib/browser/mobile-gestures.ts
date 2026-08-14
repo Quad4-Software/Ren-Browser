@@ -1,25 +1,32 @@
 // SPDX-License-Identifier: MIT
 
 export const MOBILE_BACK_EDGE_WIDTH = 28;
+export const MOBILE_FORWARD_EDGE_WIDTH = MOBILE_BACK_EDGE_WIDTH;
 export const MOBILE_PULL_THRESHOLD = 72;
 export const MOBILE_BACK_THRESHOLD = 80;
+export const MOBILE_FORWARD_THRESHOLD = MOBILE_BACK_THRESHOLD;
 export const MOBILE_GESTURE_MAX_VERTICAL_DRIFT = 56;
 export const MOBILE_PULL_MAX_OFFSET = 120;
 export const MOBILE_BACK_MAX_OFFSET = 120;
+export const MOBILE_FORWARD_MAX_OFFSET = MOBILE_BACK_MAX_OFFSET;
 
 export type MobileGestureProgress = {
   pullOffset: number;
   pullTriggered: boolean;
   backOffset: number;
   backTriggered: boolean;
+  forwardOffset: number;
+  forwardTriggered: boolean;
 };
 
 export type MobileGestureOptions = {
   getCanGoBack: () => boolean;
+  getCanGoForward: () => boolean;
   getScrollTop: () => number;
   isActive: () => boolean;
   onRefresh: () => void;
   onBack: () => void;
+  onForward: () => void;
   onProgress?: (progress: MobileGestureProgress) => void;
 };
 
@@ -37,6 +44,14 @@ export function isBackEdgeStart(clientX: number, edgeWidth = MOBILE_BACK_EDGE_WI
   return clientX <= edgeWidth;
 }
 
+export function isForwardEdgeStart(
+  clientX: number,
+  viewportWidth: number,
+  edgeWidth = MOBILE_FORWARD_EDGE_WIDTH,
+): boolean {
+  return viewportWidth > 0 && clientX >= viewportWidth - edgeWidth;
+}
+
 export function shouldTriggerPull(deltaY: number, threshold = MOBILE_PULL_THRESHOLD): boolean {
   return deltaY >= threshold;
 }
@@ -47,6 +62,14 @@ export function shouldTriggerBack(
   threshold = MOBILE_BACK_THRESHOLD,
 ): boolean {
   return deltaX >= threshold && Math.abs(deltaY) <= MOBILE_GESTURE_MAX_VERTICAL_DRIFT;
+}
+
+export function shouldTriggerForward(
+  deltaX: number,
+  deltaY: number,
+  threshold = MOBILE_FORWARD_THRESHOLD,
+): boolean {
+  return deltaX <= -threshold && Math.abs(deltaY) <= MOBILE_GESTURE_MAX_VERTICAL_DRIFT;
 }
 
 export function clampPullOffset(deltaY: number): number {
@@ -63,12 +86,21 @@ export function clampBackOffset(deltaX: number): number {
   return Math.min(deltaX * 0.35, MOBILE_BACK_MAX_OFFSET);
 }
 
+export function clampForwardOffset(deltaX: number): number {
+  if (deltaX >= 0) {
+    return 0;
+  }
+  return Math.min(-deltaX * 0.35, MOBILE_FORWARD_MAX_OFFSET);
+}
+
 function emptyProgress(): MobileGestureProgress {
   return {
     pullOffset: 0,
     pullTriggered: false,
     backOffset: 0,
     backTriggered: false,
+    forwardOffset: 0,
+    forwardTriggered: false,
   };
 }
 
@@ -99,7 +131,7 @@ export function attachMobileGestures(
   options: MobileGestureOptions,
 ): { teardown: () => void } {
   let activePointerId: number | null = null;
-  let mode: "none" | "pull" | "back" = "none";
+  let mode: "none" | "pull" | "back" | "forward" = "none";
   let startX = 0;
   let startY = 0;
 
@@ -120,6 +152,8 @@ export function attachMobileGestures(
     resetProgress();
   };
 
+  const surfaceRight = () => surface.getBoundingClientRect().right;
+
   const onPointerDown = (event: PointerEvent) => {
     if (!options.isActive() || activePointerId !== null) {
       return;
@@ -134,6 +168,15 @@ export function attachMobileGestures(
     const scrollTop = options.getScrollTop();
     if (options.getCanGoBack() && isBackEdgeStart(event.clientX)) {
       mode = "back";
+      activePointerId = event.pointerId;
+      startX = event.clientX;
+      startY = event.clientY;
+      surface.setPointerCapture(event.pointerId);
+      return;
+    }
+
+    if (options.getCanGoForward() && isForwardEdgeStart(event.clientX, surfaceRight())) {
+      mode = "forward";
       activePointerId = event.pointerId;
       startX = event.clientX;
       startY = event.clientY;
@@ -168,10 +211,27 @@ export function attachMobileGestures(
         return;
       }
       report({
-        pullOffset: 0,
-        pullTriggered: false,
+        ...emptyProgress(),
         backOffset: clampBackOffset(deltaX),
         backTriggered: shouldTriggerBack(deltaX, deltaY),
+      });
+      event.preventDefault();
+      return;
+    }
+
+    if (mode === "forward") {
+      if (deltaX > 0) {
+        finish(event);
+        return;
+      }
+      if (Math.abs(deltaY) > MOBILE_GESTURE_MAX_VERTICAL_DRIFT && deltaX > -20) {
+        finish(event);
+        return;
+      }
+      report({
+        ...emptyProgress(),
+        forwardOffset: clampForwardOffset(deltaX),
+        forwardTriggered: shouldTriggerForward(deltaX, deltaY),
       });
       event.preventDefault();
       return;
@@ -183,10 +243,9 @@ export function attachMobileGestures(
         return;
       }
       report({
+        ...emptyProgress(),
         pullOffset: clampPullOffset(deltaY),
         pullTriggered: shouldTriggerPull(deltaY),
-        backOffset: 0,
-        backTriggered: false,
       });
       event.preventDefault();
     }
@@ -202,6 +261,12 @@ export function attachMobileGestures(
 
     if (mode === "back" && options.getCanGoBack() && shouldTriggerBack(deltaX, deltaY)) {
       options.onBack();
+    } else if (
+      mode === "forward" &&
+      options.getCanGoForward() &&
+      shouldTriggerForward(deltaX, deltaY)
+    ) {
+      options.onForward();
     } else if (mode === "pull" && shouldTriggerPull(deltaY)) {
       options.onRefresh();
     }
@@ -215,7 +280,7 @@ export function attachMobileGestures(
   surface.addEventListener("pointercancel", onPointerUp);
 
   // Android WebView often delivers touchmove as passive for the document.
-  // Mirror pull/back capture with non-passive touch listeners so preventDefault works.
+  // Mirror pull/back/forward capture with non-passive touch listeners so preventDefault works.
   const onTouchMove = (event: TouchEvent) => {
     if (activePointerId === null || mode === "none" || event.touches.length !== 1) {
       return;
@@ -232,10 +297,22 @@ export function attachMobileGestures(
         return;
       }
       report({
-        pullOffset: 0,
-        pullTriggered: false,
+        ...emptyProgress(),
         backOffset: clampBackOffset(deltaX),
         backTriggered: shouldTriggerBack(deltaX, deltaY),
+      });
+      event.preventDefault();
+      return;
+    }
+
+    if (mode === "forward") {
+      if (deltaX > 0) {
+        return;
+      }
+      report({
+        ...emptyProgress(),
+        forwardOffset: clampForwardOffset(deltaX),
+        forwardTriggered: shouldTriggerForward(deltaX, deltaY),
       });
       event.preventDefault();
       return;
@@ -246,10 +323,9 @@ export function attachMobileGestures(
         return;
       }
       report({
+        ...emptyProgress(),
         pullOffset: clampPullOffset(deltaY),
         pullTriggered: shouldTriggerPull(deltaY),
-        backOffset: 0,
-        backTriggered: false,
       });
       event.preventDefault();
     }

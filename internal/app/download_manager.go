@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/wailsapp/wails/v3/pkg/application"
+
 	"renbrowser/internal/nomadnet"
 )
 
@@ -142,6 +144,7 @@ func (m *downloadManager) complete(id, path string, size int64) {
 		return
 	}
 	m.notify()
+	application.Mobile.Haptic("success")
 	time.AfterFunc(completedRetention, func() { m.remove(id) })
 }
 

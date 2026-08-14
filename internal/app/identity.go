@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/wailsapp/wails/v3/pkg/application"
+
 	"renbrowser/internal/rns"
 )
 
@@ -95,6 +97,7 @@ func (s *BrowserService) SetActiveIdentity(id string) (rns.IdentityRecord, error
 	if s.app != nil {
 		s.app.Event.Emit("identity:changed", record)
 	}
+	application.Mobile.Haptic("success")
 	return record, nil
 }
 

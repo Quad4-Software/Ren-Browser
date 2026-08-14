@@ -70,7 +70,9 @@
     onDownloadResult?: (result: DownloadResult) => void;
     mobileGestures?: boolean;
     canGoBack?: boolean;
+    canGoForward?: boolean;
     onBack?: () => void;
+    onForward?: () => void;
   };
 
   let {
@@ -100,7 +102,9 @@
     onDownloadResult = () => {},
     mobileGestures = false,
     canGoBack = false,
+    canGoForward = false,
     onBack = () => {},
+    onForward = () => {},
   }: Props = $props();
 
   let viewerEl: HTMLElement | undefined = $state();
@@ -113,6 +117,8 @@
     pullTriggered: false,
     backOffset: 0,
     backTriggered: false,
+    forwardOffset: 0,
+    forwardTriggered: false,
   });
 
   const cacheBannerKey = $derived(`${fromCache}:${cachedAt}`);
@@ -189,6 +195,9 @@
   const gestureTransform = $derived.by(() => {
     if (gesture.backOffset > 0) {
       return `translateX(${gesture.backOffset}px)`;
+    }
+    if (gesture.forwardOffset > 0) {
+      return `translateX(-${gesture.forwardOffset}px)`;
     }
     if (gesture.pullOffset > 0) {
       return `translateY(${gesture.pullOffset}px)`;
@@ -308,16 +317,20 @@
         pullTriggered: false,
         backOffset: 0,
         backTriggered: false,
+        forwardOffset: 0,
+        forwardTriggered: false,
       };
       return;
     }
 
     const attachment = attachMobileGestures(surface, {
       getCanGoBack: () => canGoBack,
+      getCanGoForward: () => canGoForward,
       getScrollTop: () => getEffectiveScrollTop(contentEl, surface),
       isActive: () => !loading && !showSource && !isDocument,
       onRefresh: onReloadFresh,
       onBack,
+      onForward,
       onProgress: (progress) => {
         gesture = progress;
       },
@@ -363,6 +376,14 @@
     <div
       class="gesture-back-indicator"
       class:triggered={gesture.backTriggered}
+      aria-hidden="true"
+    ></div>
+  {/if}
+
+  {#if mobileGestures && gesture.forwardOffset > 0}
+    <div
+      class="gesture-forward-indicator"
+      class:triggered={gesture.forwardTriggered}
       aria-hidden="true"
     ></div>
   {/if}
@@ -498,7 +519,8 @@
   }
 
   .gesture-pull-indicator,
-  .gesture-back-indicator {
+  .gesture-back-indicator,
+  .gesture-forward-indicator {
     position: absolute;
     z-index: 2;
     pointer-events: none;
@@ -536,6 +558,24 @@
   }
 
   .gesture-back-indicator.triggered {
+    width: 6px;
+    opacity: 1;
+  }
+
+  .gesture-forward-indicator {
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 4px;
+    background: linear-gradient(
+      270deg,
+      color-mix(in srgb, var(--ren-accent) 70%, transparent),
+      transparent
+    );
+    opacity: 0.55;
+  }
+
+  .gesture-forward-indicator.triggered {
     width: 6px;
     opacity: 1;
   }
