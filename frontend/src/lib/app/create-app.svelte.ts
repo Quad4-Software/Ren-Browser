@@ -309,7 +309,6 @@ export function createApp() {
   let communityLoading = $state(false);
   let communityImporting = $state(false);
   let communityError = $state("");
-  let communityFromBundle = $state(false);
   let communityFilter = $state("");
   const communitySelected = new SvelteSet<number>();
   let initialSetupOpen = $state(false);
@@ -1327,9 +1326,7 @@ export function createApp() {
     try {
       const result = (await FetchCommunityInterfaces()) as CommunityFetchResult;
       communityItems = Array.isArray(result?.items) ? result.items : [];
-      communityFromBundle = !!result?.fromBundle;
     } catch (err) {
-      communityFromBundle = false;
       communityError = formatBindingError(err, "Request failed");
     } finally {
       communityLoading = false;
@@ -2916,9 +2913,6 @@ export function createApp() {
     },
     get communityError() {
       return communityError;
-    },
-    get communityFromBundle() {
-      return communityFromBundle;
     },
     get communityFilter() {
       return communityFilter;

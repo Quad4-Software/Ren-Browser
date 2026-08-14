@@ -204,7 +204,6 @@ export type AppState = {
   communityLoading: boolean;
   communityImporting: boolean;
   communityError: string;
-  communityFromBundle: boolean;
   communityFilter: string;
   initialSetupOpen: boolean;
   initialSetupStep: InitialSetupStep;

@@ -5,7 +5,6 @@
     FolderOpen,
     Network,
     Package,
-    RefreshCw,
     ShieldCheck,
     ShieldOff,
     Smartphone,
@@ -104,7 +103,6 @@
     communityLoading: boolean;
     communityImporting: boolean;
     communityError: string;
-    communityFromBundle: boolean;
     communityFilter: string;
     communitySelected: Set<number>;
     pageCacheRAMEntries: number;
@@ -140,7 +138,6 @@
     onConfigSave: () => void;
     onConfigReload: () => void;
     onOpenConfigDir?: () => void;
-    onCommunityRefresh: () => void;
     onCommunityFilter: (value: string) => void;
     onCommunityToggle: (id: number) => void;
     onCommunityImport: () => void;
@@ -182,7 +179,6 @@
     communityLoading,
     communityImporting,
     communityError,
-    communityFromBundle,
     communityFilter = $bindable(),
     communitySelected,
     onChange,
@@ -213,7 +209,6 @@
     onConfigSave,
     onConfigReload,
     onOpenConfigDir,
-    onCommunityRefresh,
     onCommunityFilter,
     onCommunityToggle,
     onCommunityImport,
@@ -726,35 +721,15 @@
     collapsed={sectionCollapsed("community")}
     onToggle={toggleSettingsSection}
   >
-    {#snippet actions()}
-      <button
-        type="button"
-        class="ren-icon-btn"
-        aria-label={t("community.refresh")}
-        title={desktopChrome ? t("community.refresh") : undefined}
-        disabled={communityLoading}
-        onclick={(event) => {
-          event.stopPropagation();
-          onCommunityRefresh();
-        }}
-      >
-        <span class:spin={communityLoading}>
-          <RefreshCw size={16} />
-        </span>
-      </button>
-    {/snippet}
     <CommunityInterfaces
       showTitle={false}
-      {desktopChrome}
       items={communityItems}
       loading={communityLoading}
       importing={communityImporting}
       error={communityError}
-      fromBundle={communityFromBundle}
       bind:filter={communityFilter}
       selected={communitySelected}
       onFilter={onCommunityFilter}
-      onRefresh={onCommunityRefresh}
       onToggle={onCommunityToggle}
       onImport={onCommunityImport}
     />

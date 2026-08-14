@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 /**
- * Downloads the community interface directory snapshot for offline fallback.
+ * Downloads the community interface directory snapshot embedded at build time.
  * Safe to run offline: exits 0 when the network request fails and a snapshot already exists.
  */
 import fs from "fs";

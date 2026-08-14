@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: MIT
 package rns
 
-import (
-	"net/http"
-	"net/http/httptest"
-	"testing"
-)
+import "testing"
 
 func TestIsTCPClientInterface(t *testing.T) {
 	cases := []struct {
@@ -76,24 +72,12 @@ func TestLoadBundledCommunityInterfaces(t *testing.T) {
 	}
 }
 
-func TestFetchCommunityInterfacesBundledFallback(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, "unavailable", http.StatusServiceUnavailable)
-	}))
-	defer server.Close()
-
-	original := communityDirectoryURL
-	communityDirectoryURL = server.URL
-	t.Cleanup(func() { communityDirectoryURL = original })
-
-	result, err := FetchCommunityInterfaces(map[string]bool{})
+func TestFetchCommunityInterfacesFromBundle(t *testing.T) {
+	items, err := FetchCommunityInterfaces(map[string]bool{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !result.FromBundle {
-		t.Fatal("expected bundled fallback")
-	}
-	if len(result.Items) == 0 {
+	if len(items) == 0 {
 		t.Fatal("expected bundled items")
 	}
 }

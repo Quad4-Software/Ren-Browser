@@ -27,7 +27,6 @@ describe("InitialSetupModal component", () => {
       communityItems: [] as CommunityInterface[],
       communityLoading: false,
       communityError: "",
-      communityFromBundle: false,
       communityFilter: "",
       communitySelected: selected,
       configText: "[[Auto Discovery]]\n  enabled = yes\n",

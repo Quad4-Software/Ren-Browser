@@ -561,10 +561,8 @@
   },
   "community": {
     "title": "コミュニティインターフェース",
-    "hint": "directory.rns.recipes のオンラインエントリ",
-    "bundledHint": "ライブディレクトリが利用できないため、同梱のコミュニティインターフェースを表示しています。",
+    "hint": "同梱のコミュニティディレクトリのエントリ",
     "searchPlaceholder": "名前、ネットワーク、ホストを検索...",
-    "refresh": "コミュニティインターフェースを更新",
     "loading": "ディレクトリを読み込み中...",
     "noInterfaces": "インターフェースが見つかりません",
     "noInterfacesDescription": "別の検索を試すか、ディレクトリを更新してください。",

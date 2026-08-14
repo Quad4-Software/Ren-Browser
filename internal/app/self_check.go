@@ -354,12 +354,12 @@ func (s *BrowserService) ensureSelfCheckCommunityInterfaces(stack *rns.Stack) ([
 		return nil, nil
 	}
 
-	result, err := rns.FetchCommunityInterfaces(nil)
+	items, err := rns.FetchCommunityInterfaces(nil)
 	if err != nil {
 		return nil, err
 	}
 	count := selfCheckMeshCount()
-	picked := rns.PickSeedableCommunityInterfaces(result.Items, count)
+	picked := rns.PickSeedableCommunityInterfaces(items, count)
 	if len(picked) == 0 {
 		return nil, fmt.Errorf("no seedable community TCP interfaces available")
 	}

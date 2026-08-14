@@ -5,8 +5,6 @@
 package constants
 
 const (
-	CommunityDirectoryURL = "https://directory.rns.recipes/api/directory/submitted?search=&type=&status=online"
-
 	MicronParserGoReleaseDownloadBase = "https://github.com/Quad4-Software/Micron-Parser-Go/releases/download"
 	MicronParserGoReleaseTag          = "v1.0.6"
 	MicronParserGoWasmFilename        = "micron-parser-go.wasm"

@@ -92,7 +92,6 @@ export interface CheckStatus {
 
 export interface CommunityFetchResult {
     "items": rns$0.CommunityInterface[] | null;
-    "fromBundle": boolean;
 }
 
 export interface DevLogEntry {

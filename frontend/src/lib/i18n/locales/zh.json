@@ -561,10 +561,8 @@
   },
   "community": {
     "title": "社区接口",
-    "hint": "来自 directory.rns.recipes 的在线条目",
-    "bundledHint": "实时目录不可用，正在显示捆绑的社区接口。",
+    "hint": "来自捆绑社区目录的条目",
     "searchPlaceholder": "搜索名称、网络、主机…",
-    "refresh": "刷新社区接口",
     "loading": "正在加载目录…",
     "noInterfaces": "未找到接口",
     "noInterfacesDescription": "尝试其他搜索或刷新目录。",

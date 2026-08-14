@@ -84,11 +84,11 @@ func ensureInteropCommunityInterfaces(t *testing.T, stack *rns.Stack) []string {
 		t.Fatal("config not loaded")
 	}
 
-	result, err := rns.FetchCommunityInterfaces(nil)
+	items, err := rns.FetchCommunityInterfaces(nil)
 	if err != nil {
 		t.Fatalf("fetch community interfaces: %v", err)
 	}
-	added := rns.SeedCommunityInterfaces(cfg, result.Items, rns.DefaultCommunityInterfaceCount)
+	added := rns.SeedCommunityInterfaces(cfg, items, rns.DefaultCommunityInterfaceCount)
 	if iface := cfg.Interfaces["RNS Testnet TCP"]; iface != nil {
 		iface.Enabled = true
 		if !containsString(added, iface.Name) && iface.Name != "" {
@@ -106,7 +106,7 @@ func ensureInteropCommunityInterfaces(t *testing.T, stack *rns.Stack) []string {
 	if err := stack.ApplyConfig(cfg); err != nil {
 		t.Fatalf("apply seeded config: %v", err)
 	}
-	t.Logf("seeded outbound interfaces (%d, fromBundle=%v): %v", len(added), result.FromBundle, added)
+	t.Logf("seeded outbound interfaces (%d): %v", len(added), added)
 	return added
 }
 
@@ -345,19 +345,19 @@ func TestLiveWakePathReload(t *testing.T) {
 	}
 }
 
-func TestPickRandomCommunityInterfacesLiveQuality(t *testing.T) {
+func TestPickRandomCommunityInterfacesBundleQuality(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipped with -short")
 	}
-	result, err := rns.FetchCommunityInterfaces(nil)
+	items, err := rns.FetchCommunityInterfaces(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	picked := rns.PickSeedableCommunityInterfaces(result.Items, rns.DefaultCommunityInterfaceCount)
+	picked := rns.PickSeedableCommunityInterfaces(items, rns.DefaultCommunityInterfaceCount)
 	if len(picked) == 0 {
 		t.Fatal("no seedable community interfaces")
 	}
-	t.Logf("picked %d/%d (fromBundle=%v)", len(picked), rns.DefaultCommunityInterfaceCount, result.FromBundle)
+	t.Logf("picked %d/%d from bundled directory", len(picked), rns.DefaultCommunityInterfaceCount)
 	seen := map[string]bool{}
 	for _, item := range picked {
 		t.Logf("  %s type=%s network=%s host=%s status=%s", item.Name, item.Type, item.Network, item.Host, item.Status)

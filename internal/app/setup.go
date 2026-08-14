@@ -38,11 +38,11 @@ func (s *BrowserService) GetInitialSetupState() InitialSetupState {
 }
 
 func (s *BrowserService) PreviewSuggestedCommunityInterfaces() ([]rns.CommunityInterface, error) {
-	result, err := rns.FetchCommunityInterfaces(nil)
+	items, err := rns.FetchCommunityInterfaces(nil)
 	if err != nil {
 		return nil, err
 	}
-	return rns.PickSeedableCommunityInterfaces(result.Items, rns.DefaultCommunityInterfaceCount), nil
+	return rns.PickSeedableCommunityInterfaces(items, rns.DefaultCommunityInterfaceCount), nil
 }
 
 func (s *BrowserService) ApplySuggestedCommunityInterfaces() ([]string, error) {
@@ -57,11 +57,11 @@ func (s *BrowserService) ApplySuggestedCommunityInterfaces() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	result, err := rns.FetchCommunityInterfaces(nil)
+	items, err := rns.FetchCommunityInterfaces(nil)
 	if err != nil {
 		return nil, err
 	}
-	added := rns.SeedCommunityInterfaces(cfg, result.Items, rns.DefaultCommunityInterfaceCount)
+	added := rns.SeedCommunityInterfaces(cfg, items, rns.DefaultCommunityInterfaceCount)
 	if len(added) == 0 {
 		return added, nil
 	}

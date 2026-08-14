@@ -139,13 +139,11 @@
           loading={app.communityLoading}
           importing={app.initialSetupBusy}
           error={app.communityError}
-          fromBundle={app.communityFromBundle}
           bind:filter={app.communityFilter}
           selected={app.communitySelected}
           onFilter={(value) => {
             app.communityFilter = value;
           }}
-          onRefresh={() => void app.loadCommunityInterfaces()}
           onToggle={app.toggleCommunitySelection}
           onImport={() => void app.importInitialSetupSelection()}
           showTitle={false}

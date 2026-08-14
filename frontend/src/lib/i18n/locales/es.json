@@ -561,10 +561,8 @@
   },
   "community": {
     "title": "Interfaces de la comunidad",
-    "hint": "Entradas en línea de directory.rns.recipes",
-    "bundledHint": "Mostrando interfaces comunitarias incluidas porque el directorio en vivo no está disponible.",
+    "hint": "Entradas del directorio comunitario incluido",
     "searchPlaceholder": "Buscar nombre, red, host...",
-    "refresh": "Actualizar interfaces de la comunidad",
     "loading": "Cargando directorio...",
     "noInterfaces": "No se encontraron interfaces",
     "noInterfacesDescription": "Prueba otra búsqueda o actualiza el directorio.",

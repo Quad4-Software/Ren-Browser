@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 // Shared values used by the frontend (and build scripts).
-// Keep in sync with internal/constants/constants.go.
 
 export const communityDirectoryUrl =
   "https://directory.rns.recipes/api/directory/submitted?search=&type=&status=online";

@@ -54,7 +54,7 @@ export function browserserviceDefaults(): Record<string, unknown> {
     ExportIdentity: undefined,
     ExportProfile: undefined,
     ExportTheme: "",
-    FetchCommunityInterfaces: { items: [], fromBundle: false, error: "" },
+    FetchCommunityInterfaces: { items: [], error: "" },
     FetchMicronParserGoRelease: undefined,
     GetAboutInfo: { version: "0.0.0", commit: "test" },
     GetApkShareInfo: undefined,

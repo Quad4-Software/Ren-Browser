@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Check, Globe, RefreshCw } from "@lucide/svelte";
+  import { Check, Globe } from "@lucide/svelte";
   import type { CommunityInterface } from "../../../bindings/renbrowser/internal/rns/models.js";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
@@ -10,15 +10,12 @@
     loading: boolean;
     importing: boolean;
     error: string;
-    fromBundle?: boolean;
     filter: string;
     selected: Set<number>;
     onFilter: (value: string) => void;
-    onRefresh: () => void;
     onToggle: (id: number) => void;
     onImport: () => void;
     showTitle?: boolean;
-    desktopChrome?: boolean;
   };
 
   let {
@@ -26,15 +23,12 @@
     loading,
     importing,
     error,
-    fromBundle = false,
     filter = $bindable(),
     selected,
     onFilter,
-    onRefresh,
     onToggle,
     onImport,
     showTitle = true,
-    desktopChrome = false,
   }: Props = $props();
 
   const filtered = $derived.by(() => {
@@ -70,23 +64,7 @@
       bind:value={filter}
       oninput={() => onFilter(filter)}
     />
-    <button
-      type="button"
-      class="ren-icon-btn refresh-btn"
-      aria-label={t("community.refresh")}
-      title={desktopChrome ? t("community.refresh") : undefined}
-      onclick={onRefresh}
-      disabled={loading}
-    >
-      <span class:spin={loading}>
-        <RefreshCw size={16} />
-      </span>
-    </button>
   </div>
-
-  {#if fromBundle && !error}
-    <p class="notice">{t("community.bundledHint")}</p>
-  {/if}
 
   {#if error}
     <p class="error">{error}</p>
@@ -175,7 +153,7 @@
 
   .toolbar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.45rem;
     min-width: 0;
   }
@@ -190,16 +168,6 @@
     width: 100%;
     min-width: 0;
     max-width: 100%;
-  }
-
-  .refresh-btn {
-    flex-shrink: 0;
-  }
-
-  .notice {
-    margin: 0;
-    color: var(--ren-muted);
-    font-size: 0.85rem;
   }
 
   .error {

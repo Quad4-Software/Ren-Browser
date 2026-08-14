@@ -40,7 +40,6 @@
   communityLoading={app.communityLoading}
   communityImporting={app.communityImporting}
   communityError={app.communityError}
-  communityFromBundle={app.communityFromBundle}
   bind:communityFilter={app.communityFilter}
   communitySelected={app.communitySelected}
   sectionsCollapsed={app.settingsSectionsCollapsed}
@@ -83,7 +82,6 @@
   pageCacheDiskEntries={app.pageCacheDiskEntries}
   pageCacheClearing={app.pageCacheClearing}
   pageCacheEnabled={app.pageCacheEnabled}
-  onCommunityRefresh={() => void app.loadCommunityInterfaces()}
   onCommunityFilter={(value) => {
     app.communityFilter = value;
   }}
