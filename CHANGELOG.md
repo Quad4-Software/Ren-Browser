@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.2] - 2026-08-14
 
+### Added
+
+- Right-edge swipe goes forward in mesh history on mobile, matching the existing left-edge back gesture
+- Haptic feedback on Android and iOS when a route is discovered, a download finishes, or the active identity is switched
+
 ### Security
 
 - Improve HTML sanitization in page rendering
