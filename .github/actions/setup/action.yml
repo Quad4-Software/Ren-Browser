@@ -31,7 +31,7 @@ inputs:
   wails-version:
     description: wails3 module version tag
     required: false
-    default: "v3.0.0-alpha2.111"
+    default: "v3.0.0-beta.8"
   cache-node:
     description: Enable pnpm cache in setup-node (only when the job runs pnpm install)
     required: false

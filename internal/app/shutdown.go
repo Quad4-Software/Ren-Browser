@@ -1,17 +1,11 @@
 // SPDX-License-Identifier: MIT
 package app
 
-import (
-	"context"
-
-	"github.com/wailsapp/wails/v3/pkg/application"
-)
-
 func (s *BrowserService) Shutdown() {
 	s.shutdown(true)
 }
 
-func (s *BrowserService) ServiceShutdown(ctx context.Context, options application.ServiceOptions) error {
+func (s *BrowserService) ServiceShutdown() error {
 	s.shutdown(false)
 	return nil
 }

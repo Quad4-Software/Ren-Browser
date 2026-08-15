@@ -89,32 +89,21 @@ func (p *Parser) parseLineInto(out *strings.Builder, line string, s *State) int 
 				return lineHTML
 			} else if line[0] == '<' {
 				s.Depth = 0
-				// Strip all leading '<' then re-enter once so a long run
-				// cannot blow the Go stack (was one recursive call per '<').
-				rest := line
-				for len(rest) > 0 && rest[0] == '<' {
-					rest = rest[1:]
-				}
-				if len(rest) == 0 {
+				if len(line) == 1 {
 					return lineOmit
 				}
-				return p.parseLineInto(out, rest, s)
+				return p.parseLineInto(out, line[1:], s)
 			} else if line[0] == '>' {
 				i := 0
 				for i < len(line) && line[i] == '>' {
 					i++
 				}
-				const maxHeadingDepth = 16
-				depth := i
-				if depth > maxHeadingDepth {
-					depth = maxHeadingDepth
-				}
-				s.Depth = depth
+				s.Depth = i
 				headingLine := trimASCIISpaces(line[i:])
 				if headingLine == "" {
 					return lineOmit
 				}
-				style := headingStyle(p, depth)
+				style := headingStyle(p, i)
 				latched := p.stateToStyle(s)
 				p.styleToState(style, s)
 				parts := p.makeOutput(s, headingLine, false)

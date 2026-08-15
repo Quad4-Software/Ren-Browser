@@ -123,7 +123,7 @@ github.com/tetratelabs/wazero/internal/wasm/binary
 github.com/tetratelabs/wazero/internal/wasmdebug
 github.com/tetratelabs/wazero/internal/wasmruntime
 github.com/tetratelabs/wazero/sys
-# github.com/wailsapp/wails/v3 v3.0.0-alpha2.111
+# github.com/wailsapp/wails/v3 v3.0.0-beta.8
 ## explicit; go 1.25.0
 github.com/wailsapp/wails/v3/internal/assetserver
 github.com/wailsapp/wails/v3/internal/assetserver/bundledassets
@@ -139,6 +139,7 @@ github.com/wailsapp/wails/v3/internal/git
 github.com/wailsapp/wails/v3/internal/go-common-file-dialog/cfd
 github.com/wailsapp/wails/v3/internal/hash
 github.com/wailsapp/wails/v3/internal/lo
+github.com/wailsapp/wails/v3/internal/mailbox
 github.com/wailsapp/wails/v3/internal/operatingsystem
 github.com/wailsapp/wails/v3/internal/optional
 github.com/wailsapp/wails/v3/internal/runtime
@@ -147,6 +148,10 @@ github.com/wailsapp/wails/v3/internal/sliceutil
 github.com/wailsapp/wails/v3/internal/tint
 github.com/wailsapp/wails/v3/internal/uuid
 github.com/wailsapp/wails/v3/internal/version
+github.com/wailsapp/wails/v3/internal/webview2/internal/w32
+github.com/wailsapp/wails/v3/internal/webview2/pkg/combridge
+github.com/wailsapp/wails/v3/internal/webview2/pkg/edge
+github.com/wailsapp/wails/v3/internal/webview2/webviewloader
 github.com/wailsapp/wails/v3/pkg/application
 github.com/wailsapp/wails/v3/pkg/errs
 github.com/wailsapp/wails/v3/pkg/events
@@ -156,10 +161,6 @@ github.com/wailsapp/wails/v3/pkg/updater
 github.com/wailsapp/wails/v3/pkg/w32
 # github.com/wailsapp/wails/webview2 v1.0.28
 ## explicit; go 1.25.0
-github.com/wailsapp/wails/webview2/internal/w32
-github.com/wailsapp/wails/webview2/pkg/combridge
-github.com/wailsapp/wails/webview2/pkg/edge
-github.com/wailsapp/wails/webview2/webviewloader
 # go.bug.st/serial v1.6.2
 ## explicit; go 1.17
 go.bug.st/serial

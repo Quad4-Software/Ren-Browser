@@ -17,7 +17,7 @@ export const localStoragePrefix = "renbrowser";
 export const indexedDbName = "renbrowser_micron_wasm_parsers";
 export const proxyHeader = "X-RenBrowser-Base-Path";
 export const tempFilePrefix = "renbrowser-rns-";
-export const wailsVersion = "v3.0.0-alpha2";
+export const wailsVersion = "v3.0.0-beta.8";
 export const wasmExecDomId = "renbrowser-micron-wasm-exec";
 export const wasmGlobalFlag = "__renbrowserMicronWasmWrapped";
 

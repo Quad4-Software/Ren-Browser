@@ -40,7 +40,7 @@ app_dir="${vendor}/pkg/application"
 if [ -d "${app_dir}" ]; then
   for f in clipboard_windows.go dialogs_windows.go events_common_windows.go \
     mainthread_windows.go single_instance_windows.go systemtray_windows.go \
-    webview_window_windows.go screen_windows.go; do
+    webview_window_windows.go webview_window_windows_nonclient.go screen_windows.go; do
     target="${app_dir}/${f}"
     if [ -f "${target}" ]; then
       sed -i '1s/^\/\/go:build windows$/\/\/go:build windows \&\& !server/' "${target}"
@@ -143,17 +143,15 @@ void window_apply_frameless(GtkWindow *window, gboolean frameless, const char *t
     sed -i '/void window_apply_pending_always_on_top/a void window_apply_frameless(GtkWindow *window, gboolean frameless, const char *title);' "${linux_cgo_h}"
   fi
   if [ -f "${linux_cgo_go}" ] && ! grep -q 'window_apply_frameless' "${linux_cgo_go}"; then
-    sed -i '/func (w \*linuxWebviewWindow) setFrameless(frameless bool) {/,/^}$/c\
-func (w *linuxWebviewWindow) setFrameless(frameless bool) {\
+    sed -i '/func (w \*linuxWebviewWindow) setFrameless(frameless bool) {/a\
 \ttitle := w.parent.options.Title\
 \tif title == "" {\
 \t\ttitle = w.parent.options.Name\
 \t}\
 \tcTitle := C.CString(title)\
 \tdefer C.free(unsafe.Pointer(cTitle))\
-\tC.window_apply_frameless(w.gtkWindow(), gtkBool(frameless), cTitle)\
-\tw.execJS(fmt.Sprintf("if(window._wails&&window._wails.flags)window._wails.flags.frameless=%v;", frameless))\
-}' "${linux_cgo_go}"
+\tC.window_apply_frameless(w.gtkWindow(), gtkBool(frameless), cTitle)
+' "${linux_cgo_go}"
   fi
   if [ -f "${linux_cgo_gtk3}" ] && ! grep -q 'gtk_window_set_titlebar(w.gtkWindow(), nil)' "${linux_cgo_gtk3}"; then
     sed -i '/func (w \*linuxWebviewWindow) setFrameless(frameless bool) {/,/^}$/c\

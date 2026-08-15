@@ -26,7 +26,7 @@ const (
 	IndexedDBName      = "renbrowser_micron_wasm_parsers"
 	ProxyHeader        = "X-RenBrowser-Base-Path"
 	TempFilePrefix     = "renbrowser-rns-"
-	WailsVersion       = "v3.0.0-alpha2"
+	WailsVersion       = "v3.0.0-beta.8"
 	WasmExecDomID      = "renbrowser-micron-wasm-exec"
 	WasmGlobalFlag     = "__renbrowserMicronWasmWrapped"
 )

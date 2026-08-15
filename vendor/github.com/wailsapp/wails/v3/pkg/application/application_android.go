@@ -322,7 +322,6 @@ var (
 	// Android main function registration
 	androidMainFunc func()
 	androidMainLock sync.Mutex
-	androidMainOnce sync.Once
 
 	// App ready signal
 	appReady     = make(chan struct{})
@@ -693,11 +692,7 @@ func Java_com_wails_app_WailsBridge_nativeInit(env *C.JNIEnv, obj C.jobject, bri
 	androidMainLock.Unlock()
 
 	if mainFunc != nil {
-		// Activity recreation keeps the Go runtime alive in-process. Rebind the
-		// JNI bridge above, but only start main once per process.
-		androidMainOnce.Do(func() {
-			go mainFunc()
-		})
+		go mainFunc()
 	} else {
 		androidLogf("error", "No main function registered! Call application.RegisterAndroidMain(main) in init()")
 	}

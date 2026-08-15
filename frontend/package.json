@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@lucide/svelte": "^1.23.0",
-    "@wailsio/runtime": "latest",
+    "@wailsio/runtime": "3.0.0-beta.8",
     "dompurify": "^3.4.13",
     "jszip": "^3.10.1",
     "marked": "^18.0.5",
