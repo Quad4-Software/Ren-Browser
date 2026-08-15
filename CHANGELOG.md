@@ -5,7 +5,7 @@ All notable changes to Ren Browser are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.3] [unreleased]
+## [0.3.0] [unreleased]
 
 ### Fixed
 
@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Upgrade Wails from v3.0.0-alpha2.111 to v3.0.0-beta.8
 - Desktop side panels can be resized by dragging the divider
 - Speed up navigation by skipping unused panel refreshes and avoiding deep reactivity on tab page bodies
 - Community interfaces load only from the build-time bundled snapshot
