@@ -5,7 +5,9 @@ import type { Tab, TabPage } from "$lib/browser/url";
 
 export const TAB_PREVIEW_HTML_MAX = 4096;
 
-export function isEditorTab(tab: Pick<Tab, "url"> & { page?: Pick<TabPage, "contentType"> }): boolean {
+export function isEditorTab(
+  tab: Pick<Tab, "url"> & { page?: Pick<TabPage, "contentType"> },
+): boolean {
   const url = tab.url.trim().toLowerCase();
   return url === "editor" || url === "editor:" || tab.page?.contentType === "editor";
 }
@@ -65,7 +67,10 @@ export function tabPageNeedsReload(tab: Tab): boolean {
     return false;
   }
   const page = tab.page;
-  if (page?.error?.trim() && !(page.html?.trim() || page.lastRaw?.trim() || page.binaryB64?.trim())) {
+  if (
+    page?.error?.trim() &&
+    !(page.html?.trim() || page.lastRaw?.trim() || page.binaryB64?.trim())
+  ) {
     return false;
   }
   if (isEditorTab(tab) && (page?.lastRaw?.trim() ?? "").length > 0) {

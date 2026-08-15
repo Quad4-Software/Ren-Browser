@@ -29,8 +29,15 @@ function tab(partial: Partial<Tab> & Pick<Tab, "id">): Tab {
 describe("tab page memory", () => {
   it("keeps full bodies only for hot tabs", () => {
     const tabs = [
-      tab({ id: "a", active: true, page: { ...emptyPage(), html: "A".repeat(8000), lastRaw: "raw-a" } }),
-      tab({ id: "b", page: { ...emptyPage(), html: "B".repeat(8000), lastRaw: "raw-b", binaryB64: "qq" } }),
+      tab({
+        id: "a",
+        active: true,
+        page: { ...emptyPage(), html: "A".repeat(8000), lastRaw: "raw-a" },
+      }),
+      tab({
+        id: "b",
+        page: { ...emptyPage(), html: "B".repeat(8000), lastRaw: "raw-b", binaryB64: "qq" },
+      }),
     ];
     const compacted = compactInactiveTabPages(tabs, null);
     expect(compacted[0].page?.lastRaw).toBe("raw-a");
@@ -44,7 +51,11 @@ describe("tab page memory", () => {
     const tabs = [
       tab({ id: "a", active: true }),
       tab({ id: "split" }),
-      tab({ id: "ed", url: "editor:", page: { ...emptyPage(), lastRaw: "draft", contentType: "editor" } }),
+      tab({
+        id: "ed",
+        url: "editor:",
+        page: { ...emptyPage(), lastRaw: "draft", contentType: "editor" },
+      }),
     ];
     const hot = hotTabIds(tabs, "split");
     expect([...hot].sort()).toEqual(["a", "ed", "split"]);
@@ -59,10 +70,11 @@ describe("tab page memory", () => {
   });
 
   it("reloads compacted mesh tabs and skips error-only tabs", () => {
-    const compacted = compactTabPage({ ...emptyPage(), html: "H".repeat(8000), lastRaw: "raw" }, false);
-    expect(
-      tabPageNeedsReload(tab({ id: "b", page: compacted })),
-    ).toBe(true);
+    const compacted = compactTabPage(
+      { ...emptyPage(), html: "H".repeat(8000), lastRaw: "raw" },
+      false,
+    );
+    expect(tabPageNeedsReload(tab({ id: "b", page: compacted }))).toBe(true);
     expect(
       tabPageNeedsReload(
         tab({
