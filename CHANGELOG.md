@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Restore split tab view on desktop. It was closed immediately by a mobile-layout effect
 - Fix Android crash when minimizing and reopening the app caused by Go flag re-registration on activity recreation
 - Run BrowserService cleanup on Wails shutdown by matching the ServiceShutdown interface
+- Cap micron heading indent depth at 16 so nested section markers cannot emit unbounded CSS margins
 
 ### Changed
 

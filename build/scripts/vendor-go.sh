@@ -36,4 +36,5 @@ fi
 
 go mod vendor
 bash "${root}/build/scripts/patch-wails-vendor.sh"
+bash "${root}/build/scripts/patch-micron-vendor.sh"
 bash "${root}/build/scripts/verify-wails-vendor-patches.sh"
