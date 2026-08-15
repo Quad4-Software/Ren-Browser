@@ -32,6 +32,7 @@ if [ ! -x "${toolchain_dir}/bin/go" ]; then
 fi
 
 bash build/scripts/patch-wails-vendor.sh
+bash build/scripts/patch-micron-vendor.sh
 bash build/scripts/ci-prep-go.sh
 
 export GOROOT="${toolchain_dir}"

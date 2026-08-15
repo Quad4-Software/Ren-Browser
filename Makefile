@@ -84,11 +84,13 @@ build-frontend: frontend-install
 
 build: build-frontend
 	bash build/scripts/patch-wails-vendor.sh
+	bash build/scripts/patch-micron-vendor.sh
 	CGO_ENABLED=1 go build -tags production -trimpath -buildvcs=false \
 		-ldflags="$(LDFLAGS)" -o "$(BIN_DIR)/$(APP_NAME)"
 
 build-server: build-frontend
 	bash build/scripts/patch-wails-vendor.sh
+	bash build/scripts/patch-micron-vendor.sh
 	CGO_ENABLED=0 go build -tags server,production -trimpath -buildvcs=false \
 		-ldflags="$(LDFLAGS)" -o "$(SERVER_BIN)"
 

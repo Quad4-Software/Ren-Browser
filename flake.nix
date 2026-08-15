@@ -118,6 +118,7 @@
               # nixpkgs Go may lag the go.mod patch (e.g. 1.26.5 vs 1.26.6).
               sed -i 's/^go .*/go ${pkgs.go.version}/' go.mod
               bash build/scripts/patch-wails-vendor.sh
+              bash build/scripts/patch-micron-vendor.sh
             '';
 
             env = {
