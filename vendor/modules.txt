@@ -159,8 +159,6 @@ github.com/wailsapp/wails/v3/pkg/icons
 github.com/wailsapp/wails/v3/pkg/mac
 github.com/wailsapp/wails/v3/pkg/updater
 github.com/wailsapp/wails/v3/pkg/w32
-# github.com/wailsapp/wails/webview2 v1.0.28
-## explicit; go 1.25.0
 # go.bug.st/serial v1.6.2
 ## explicit; go 1.17
 go.bug.st/serial

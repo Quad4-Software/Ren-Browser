@@ -5,7 +5,7 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "${root}"
 
 # Ignore a stale vendor/ while resolving modules so go mod tidy bumps
-# (e.g. webview2) can be synced without chicken-and-egg failures.
+# (e.g. inlined WebView2 loader DLLs) can be synced without chicken-and-egg failures.
 export GOFLAGS="${GOFLAGS:--mod=mod}"
 
 bash "${root}/build/scripts/fetch-reticulum-go.sh"
