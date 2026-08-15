@@ -112,6 +112,9 @@
   );
   const tabsStripWidth = $derived(tabsAreaWidth(tabsRowMaxWidth, newTabWidth));
   const atTabLimit = $derived(tabs.length >= MAX_TABS);
+  const tabLayoutKey = $derived(
+    `${tabs.length}:${tabs.filter((tab) => tab.pinned).length}:${tabs.find((tab) => tab.active)?.id ?? ""}`,
+  );
 
   function widthForTab(tab: Tab): number {
     return tabWidthForTab(tabsStripWidth, tabs, tab);
@@ -174,8 +177,7 @@
   });
 
   $effect(() => {
-    void tabs.length;
-    void tabs.map((tab) => `${tab.id}:${tab.pinned}:${tab.active}`).join("|");
+    void tabLayoutKey;
     const slot = tabsSlotEl;
     const newBtn = newTabEl;
     const controls = controlsSlotEl;

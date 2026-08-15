@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mount } from "svelte";
+import { mount, tick } from "svelte";
 import {
   createBrowserserviceMocks,
   createPluginhostMocks,
@@ -270,6 +270,42 @@ describe("createApp controller", () => {
       });
       expect(order.indexOf("wake")).toBeLessThan(order.indexOf("nodes"));
       cleanup();
+    });
+  });
+
+  it("keeps split view open on desktop", async () => {
+    await withApp(async (app) => {
+      expect(app.mobileUI).toBe(false);
+      app.newTab();
+      const primaryId = app.tabs.find((tab) => tab.active)?.id ?? "";
+      const otherId = app.tabs.find((tab) => !tab.active)?.id ?? "";
+      expect(primaryId).toBeTruthy();
+      expect(otherId).toBeTruthy();
+      app.splitTabView(primaryId);
+      await tick();
+      expect(app.splitViewOpen).toBe(true);
+      expect(app.splitTabId).toBe(otherId);
+      app.closeSplitView();
+      await tick();
+      expect(app.splitViewOpen).toBe(false);
+    });
+  });
+
+  it("selects a split tab without closing the split", async () => {
+    await withApp(async (app) => {
+      app.newTab();
+      app.newTab();
+      const activeId = app.activeTabId;
+      const other = app.tabs.find((tab) => tab.id !== activeId);
+      expect(other).toBeDefined();
+      app.splitTabView(activeId);
+      await tick();
+      expect(app.splitViewOpen).toBe(true);
+      expect(app.splitTabId).toBeNull();
+      app.selectSplitTab(other!.id);
+      await tick();
+      expect(app.splitViewOpen).toBe(true);
+      expect(app.splitTabId).toBe(other!.id);
     });
   });
 });

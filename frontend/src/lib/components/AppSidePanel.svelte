@@ -79,6 +79,9 @@
   .side-pane {
     min-height: 0;
     min-width: 0;
+    height: 100%;
+    overflow: auto;
+    contain: layout;
     border-top: 1px solid var(--ren-border);
     border-left: 1px solid var(--ren-border);
     background: var(--ren-chrome-bg);

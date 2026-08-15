@@ -26,9 +26,20 @@
   let query = $state("");
   let favoritesOnly = $state(false);
 
+  const favoriteKeys = $derived.by(() => {
+    const keys: Record<string, true> = {};
+    for (const fav of favorites) {
+      keys[fav] = true;
+      const hash = fav.split(":")[0];
+      if (hash) {
+        keys[hash] = true;
+      }
+    }
+    return keys;
+  });
+
   function isFavorite(hash: string): boolean {
-    const url = `${hash}:/page/index.mu`;
-    return favorites.some((f) => f.startsWith(hash) || f === url);
+    return !!favoriteKeys[hash] || !!favoriteKeys[`${hash}:/page/index.mu`];
   }
 
   const pool = $derived.by(() =>

@@ -187,7 +187,7 @@ export type AppController = ReturnType<typeof createApp>;
 
 export function createApp() {
   let activePanel = $state<ActivePanel>("browser");
-  let pluginContributions = $state<ContributionsSnapshot>({
+  let pluginContributions = $state.raw<ContributionsSnapshot>({
     panels: [],
     commands: [],
     devtools: [],
@@ -208,12 +208,12 @@ export function createApp() {
   let hops = $state(-1);
   let pageFg = $state("");
   let pageBg = $state("");
-  let nodes = $state<Node[]>([]);
-  let logs = $state<DevLogEntry[]>([]);
-  let network = $state<NetworkEntry[]>([]);
-  let favorites = $state<string[]>([]);
-  let history = $state<HistoryEntry[]>([]);
-  let interfaces = $state<InterfaceRow[]>([]);
+  let nodes = $state.raw<Node[]>([]);
+  let logs = $state.raw<DevLogEntry[]>([]);
+  let network = $state.raw<NetworkEntry[]>([]);
+  let favorites = $state.raw<string[]>([]);
+  let history = $state.raw<HistoryEntry[]>([]);
+  let interfaces = $state.raw<InterfaceRow[]>([]);
   let reticulumStatus = $state<ReticulumStatusRow>({
     enableTransport: false,
     shareInstance: false,
@@ -223,12 +223,12 @@ export function createApp() {
   });
   let configPath = $state("");
   let logLevel = $state(3);
-  let systemFonts = $state<string[]>(["system-ui", "sans-serif", "monospace"]);
+  let systemFonts = $state.raw<string[]>(["system-ui", "sans-serif", "monospace"]);
   let theme = $state<ThemeSettings>(defaultTheme());
   let keybinds = $state<KeybindSettings>(defaultKeybinds());
   let downloadDir = $state("");
-  let downloads = $state<DownloadRow[]>([]);
-  let activeDownloads = $state<ActiveDownloadRow[]>([]);
+  let downloads = $state.raw<DownloadRow[]>([]);
+  let activeDownloads = $state.raw<ActiveDownloadRow[]>([]);
   const retryingDownloadIds = new SvelteSet<string>();
   let clearingDownloadHistory = $state(false);
   const activeDownloadViews = $derived(withProgress(activeDownloads));
@@ -305,7 +305,7 @@ export function createApp() {
   let pageCacheDiskEntries = $state(0);
   let pageCacheClearing = $state(false);
   let pageCacheEnabled = $state(true);
-  let communityItems = $state<CommunityInterface[]>([]);
+  let communityItems = $state.raw<CommunityInterface[]>([]);
   let communityLoading = $state(false);
   let communityImporting = $state(false);
   let communityError = $state("");
@@ -313,7 +313,7 @@ export function createApp() {
   const communitySelected = new SvelteSet<number>();
   let initialSetupOpen = $state(false);
   let initialSetupStep = $state<InitialSetupStep>("welcome");
-  let suggestedItems = $state<CommunityInterface[]>([]);
+  let suggestedItems = $state.raw<CommunityInterface[]>([]);
   let suggestedLoading = $state(false);
   let initialSetupBusy = $state(false);
   let initialSetupError = $state("");
@@ -332,7 +332,8 @@ export function createApp() {
   let nodeDiscoverTimer: ReturnType<typeof setTimeout> | undefined;
   let appForeground = $state(true);
 
-  let tabs = $state<Tab[]>([{ id: randomId(), title: "", url: "", active: true }]);
+  // Tab page bodies are large and only reassigned. Raw avoids proxying HTML.
+  let tabs = $state.raw<Tab[]>([{ id: randomId(), title: "", url: "", active: true }]);
 
   const effectiveMicronEngine = $derived(
     resolveEffectiveMicronEngine(micronRenderer, {
@@ -378,6 +379,12 @@ export function createApp() {
     mobileTabsOpen = false;
     if (next === "settings") {
       void loadPageCacheStats();
+    }
+    if (next === "history" || next === "search") {
+      void loadHistory();
+    }
+    if (next === "devtools") {
+      void refreshNetwork();
     }
   }
 
@@ -481,6 +488,21 @@ export function createApp() {
     };
   }
 
+  function patchTab(tabId: string, patch: Partial<Tab> | ((tab: Tab) => Tab)): void {
+    const index = tabs.findIndex((tab) => tab.id === tabId);
+    if (index < 0) {
+      return;
+    }
+    const current = tabs[index];
+    const nextTab = typeof patch === "function" ? patch(current) : { ...current, ...patch };
+    if (nextTab === current) {
+      return;
+    }
+    const next = tabs.slice();
+    next[index] = nextTab;
+    tabs = next;
+  }
+
   function applyPageState(page: TabPage) {
     html = page.html ?? "";
     contentType = page.contentType ?? "";
@@ -503,17 +525,15 @@ export function createApp() {
   }
 
   function syncActiveTabPage() {
-    const page = currentPageState();
-    tabs = tabs.map((tab) =>
-      tab.active
-        ? {
-            ...tab,
-            url,
-            title: tabTitleFromURL(url, nodes),
-            page,
-          }
-        : tab,
-    );
+    const active = tabs.find((tab) => tab.active);
+    if (!active) {
+      return;
+    }
+    patchTab(active.id, {
+      url,
+      title: tabTitleFromURL(url, nodes),
+      page: currentPageState(),
+    });
   }
 
   function schedulePersistTabs() {
@@ -599,7 +619,18 @@ export function createApp() {
 
   function setActiveTab(id: string) {
     syncActiveTabPage();
-    tabs = tabs.map((tab) => ({ ...tab, active: tab.id === id }));
+    let changed = false;
+    const next = tabs.map((tab) => {
+      const active = tab.id === id;
+      if (tab.active === active) {
+        return tab;
+      }
+      changed = true;
+      return { ...tab, active };
+    });
+    if (changed) {
+      tabs = next;
+    }
     const selected = tabs.find((tab) => tab.id === id);
     url = selected?.url ?? "";
     if (selected?.url && isDocumentURL(selected.url) && !selected.page?.binaryB64?.trim()) {
@@ -802,17 +833,13 @@ export function createApp() {
   }
 
   function setSplitTabShowSource(tabId: string, value: boolean) {
-    tabs = tabs.map((tab) =>
-      tab.id === tabId
-        ? {
-            ...tab,
-            page: {
-              ...(tab.page ?? emptyPage()),
-              showSource: value,
-            },
-          }
-        : tab,
-    );
+    patchTab(tabId, (tab) => ({
+      ...tab,
+      page: {
+        ...(tab.page ?? emptyPage()),
+        showSource: value,
+      },
+    }));
     schedulePersistTabs();
   }
 
@@ -904,17 +931,12 @@ export function createApp() {
   }
 
   function applyPageToTab(tabId: string, page: TabPage, pageUrl: string) {
-    tabs = tabs.map((tab) =>
-      tab.id === tabId
-        ? {
-            ...tab,
-            url: pageUrl,
-            title: tabTitleFromURL(pageUrl, nodes),
-            page,
-            loading: false,
-          }
-        : tab,
-    );
+    patchTab(tabId, {
+      url: pageUrl,
+      title: tabTitleFromURL(pageUrl, nodes),
+      page,
+      loading: false,
+    });
     const selected = tabs.find((tab) => tab.id === tabId);
     if (selected?.active) {
       applyPageState(page);
@@ -993,17 +1015,12 @@ export function createApp() {
     const generation = (existingTab?.navGeneration ?? 0) + 1;
     const isActiveView = tabs.find((tab) => tab.active)?.id === tabId;
 
-    tabs = tabs.map((tab) =>
-      tab.id === tabId
-        ? {
-            ...tab,
-            url: pageUrl,
-            title: tabTitleFromURL(pageUrl, nodes),
-            navGeneration: generation,
-            loading: true,
-          }
-        : tab,
-    );
+    patchTab(tabId, {
+      url: pageUrl,
+      title: tabTitleFromURL(pageUrl, nodes),
+      navGeneration: generation,
+      loading: true,
+    });
 
     if (isActiveView) {
       url = pageUrl;
@@ -1065,13 +1082,15 @@ export function createApp() {
       applyPageToTab(tabId, failed, normalized);
       schedulePersistTabs();
     } finally {
-      tabs = tabs.map((tab) => (tab.id === tabId ? { ...tab, loading: false } : tab));
+      patchTab(tabId, (tab) => (tab.loading ? { ...tab, loading: false } : tab));
       if (tabs.find((tab) => tab.id === tabId)?.active) {
         loading = false;
       }
       await refreshHistoryState();
-      await refreshNetwork();
-      if (pushHistory) {
+      if (activePanel === "devtools") {
+        await refreshNetwork();
+      }
+      if (pushHistory && (activePanel === "history" || activePanel === "search")) {
         await loadHistory();
       }
     }
@@ -1252,9 +1271,10 @@ export function createApp() {
   $effect(() => {
     if (!mobileUI) {
       mobileTabsOpen = false;
-      if (splitViewOpen) {
-        closeSplitView();
-      }
+      return;
+    }
+    if (splitViewOpen) {
+      closeSplitView();
     }
   });
 
