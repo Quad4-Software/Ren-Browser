@@ -103,7 +103,7 @@ func dangerousHTMLTagAt(s string, i int) bool {
 
 func mayContainScript(s string) bool {
 	n := len(s)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if s[i] != '<' {
 			continue
 		}

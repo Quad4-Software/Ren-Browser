@@ -111,10 +111,7 @@ func linkEstablishWindow(tr *transport.Transport, destHash []byte) time.Duration
 		extra := 1
 		hops := tr.HopsTo(destHash)
 		if hops > 0 && hops < transport.PathfinderM {
-			extra = int(hops) - 1
-			if extra < 1 {
-				extra = 1
-			}
+			extra = max(int(hops)-1, 1)
 		}
 		reported = firstHop + time.Duration(extra)*time.Duration(rlink.EstablishmentTimeoutPerHop)*time.Second
 	}
