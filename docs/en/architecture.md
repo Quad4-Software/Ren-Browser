@@ -71,7 +71,11 @@ Fetches remote `.mu` and related content over LXMF and Reticulum. Discovery labe
 
 ### Store (`internal/store` + `internal/db`)
 
-SQLite persistence with migration from legacy `state.json`.
+SQLite persistence with migration from legacy `state.json`. Tab page bodies are stored as files under `tab-pages/` beside the profile database. `GetTabs` only hydrates the active tab (and editor drafts) into memory.
+
+### Page cache (`internal/cache`)
+
+Two-tier cache for NomadNet pages: small recently used bodies stay in RAM, larger and colder pages spill to `page-cache/` on disk.
 
 ### Plugins (`internal/plugins`)
 
@@ -87,7 +91,7 @@ SQLite persistence with migration from legacy `state.json`.
 | `internal/content` | Static pages (about, license) |
 | `internal/micron` | Micron to HTML |
 | `internal/micronwasm` | WASM parser checksum helpers |
-| `internal/cache` | Page cache helpers |
+| `internal/cache` | Two-tier RAM and disk page cache |
 
 ## Server middleware
 
