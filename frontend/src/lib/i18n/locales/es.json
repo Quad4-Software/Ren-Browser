@@ -54,7 +54,8 @@
     "devtools": "Herramientas de desarrollo",
     "settings": "Ajustes",
     "toggleTheme": "Cambiar tema",
-    "closePanel": "Cerrar panel"
+    "closePanel": "Cerrar panel",
+    "resizeSidebar": "Redimensionar barra lateral"
   },
   "mobileNav": {
     "label": "Navegación móvil",
@@ -544,8 +545,8 @@
     "title": "Bienvenido a Ren Browser",
     "subtitle": "Elige cómo conectarte a la malla Reticulum. Puedes cambiar las interfaces más tarde en Ajustes.",
     "suggestedTitle": "Usar interfaces sugeridas",
-    "suggestedHint": "Elegimos {count} hubs comunitarios del directorio público.",
-    "pickTitle": "Explorar el directorio",
+    "suggestedHint": "Elegimos {count} hubs comunitarios del directorio incluido.",
+    "pickTitle": "Explorar interfaces incluidas",
     "pickHint": "Elige interfaces comunitarias para añadir a tu configuración.",
     "configTitle": "Editar configuración",
     "configHint": "Edita reticulum.conf directamente. AutoInterface permanece activo a menos que lo elimines.",
@@ -557,28 +558,26 @@
     "saveAndContinue": "Guardar y continuar",
     "addSelectedContinue": "Añadir {count} seleccionadas y continuar",
     "busy": "Aplicando configuración...",
-    "suggestedEmpty": "No se encontraron interfaces utilizables. Explora el directorio o edita la configuración."
+    "suggestedEmpty": "No se encontraron interfaces utilizables. Explora la lista o edita la configuración."
   },
   "community": {
     "title": "Interfaces de la comunidad",
-    "hint": "Entradas del directorio comunitario incluido",
+    "hint": "Hubs comunitarios incluidos con esta compilacion",
     "searchPlaceholder": "Buscar nombre, red, host...",
-    "loading": "Cargando directorio...",
+    "loading": "Cargando interfaces...",
     "noInterfaces": "No se encontraron interfaces",
-    "noInterfacesDescription": "Prueba otra búsqueda o actualiza el directorio.",
+    "noInterfacesDescription": "Prueba otra busqueda.",
     "adding": "Añadiendo interfaces...",
     "addSelected": "Añadir {count} seleccionadas y reiniciar",
     "addSelectedEmpty": "Añadir seleccionadas y reiniciar"
   },
   "wasm": {
     "noSupport": "Esta webview no admite WebAssembly. Las páginas Micron usan el analizador JavaScript en su lugar.",
-    "noBundled": "No hay micron-parser-go.wasm incluido en esta compilación. Obtén una versión abajo, sube un archivo .wasm o ejecuta el script de obtención del proveedor para instalar el analizador predeterminado y wasm_exec.js.",
+    "noBundled": "No hay micron-parser-go.wasm incluido en esta compilacion. Sube un archivo .wasm o ejecuta el script de obtencion del proveedor en tiempo de compilacion para instalar el analizador predeterminado y wasm_exec.js.",
     "removeParser": "Quitar analizador",
-    "fetchRelease": "Obtener versión",
     "uploadWasm": "Subir .wasm",
     "storageHint": "Los módulos WASM personalizados se almacenan localmente. Solo instala analizadores en los que confíes. Las cargas WASM fallidas vuelven a micron-parser-js automáticamente.",
     "loadFailed": "No se pudo cargar el analizador. Las páginas Micron volverán a JavaScript.",
-    "tagRequired": "Introduce una etiqueta de versión (por ejemplo v1.0.6).",
     "removeConfirm": "¿Quitar este analizador WASM del almacenamiento local?"
   },
   "window": {

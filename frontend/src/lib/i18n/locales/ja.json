@@ -54,7 +54,8 @@
     "devtools": "開発者ツール",
     "settings": "設定",
     "toggleTheme": "テーマ切替",
-    "closePanel": "パネルを閉じる"
+    "closePanel": "パネルを閉じる",
+    "resizeSidebar": "サイドバーの幅を変更"
   },
   "mobileNav": {
     "label": "モバイルナビゲーション",
@@ -544,8 +545,8 @@
     "title": "Ren Browser へようこそ",
     "subtitle": "より広い Reticulum メッシュへの接続方法を選んでください。インターフェースは後から設定で変更できます。",
     "suggestedTitle": "推奨インターフェースを使う",
-    "suggestedHint": "公開ディレクトリからコミュニティハブを {count} 件選びました。",
-    "pickTitle": "ディレクトリを閲覧",
+    "suggestedHint": "同梱ディレクトリからコミュニティハブを {count} 件選びました。",
+    "pickTitle": "同梱インターフェースを閲覧",
     "pickHint": "設定に追加するコミュニティインターフェースを選びます。",
     "configTitle": "設定を編集",
     "configHint": "reticulum.conf を直接編集します。削除しない限り AutoInterface は有効のままです。",
@@ -557,28 +558,26 @@
     "saveAndContinue": "保存して続行",
     "addSelectedContinue": "選択した {count} 件を追加して続行",
     "busy": "設定を適用中...",
-    "suggestedEmpty": "シード可能なインターフェースが見つかりませんでした。ディレクトリを閲覧するか設定を編集してください。"
+    "suggestedEmpty": "シード可能なインターフェースが見つかりませんでした。リストを閲覧するか設定を編集してください。"
   },
   "community": {
     "title": "コミュニティインターフェース",
-    "hint": "同梱のコミュニティディレクトリのエントリ",
+    "hint": "このビルドに同梱されたコミュニティハブ",
     "searchPlaceholder": "名前、ネットワーク、ホストを検索...",
-    "loading": "ディレクトリを読み込み中...",
+    "loading": "インターフェースを読み込み中...",
     "noInterfaces": "インターフェースが見つかりません",
-    "noInterfacesDescription": "別の検索を試すか、ディレクトリを更新してください。",
+    "noInterfacesDescription": "別の検索を試してください。",
     "adding": "インターフェースを追加中...",
     "addSelected": "選択した {count} 件を追加して再起動",
     "addSelectedEmpty": "選択したものを追加して再起動"
   },
   "wasm": {
     "noSupport": "この WebView は WebAssembly をサポートしていません。Micron ページは代わりに JavaScript パーサーを使います。",
-    "noBundled": "このビルドには同梱の micron-parser-go.wasm がありません。下からリリースを取得するか、.wasm ファイルをアップロードするか、ベンダー取得スクリプトを実行してデフォルトパーサーと wasm_exec.js をインストールしてください。",
+    "noBundled": "このビルドには同梱の micron-parser-go.wasm がありません。.wasm ファイルをアップロードするか、ビルド時にベンダー取得スクリプトを実行してデフォルトパーサーと wasm_exec.js をインストールしてください。",
     "removeParser": "パーサーを削除",
-    "fetchRelease": "リリースを取得",
     "uploadWasm": ".wasm をアップロード",
     "storageHint": "カスタム WASM モジュールはローカルに保存されます。信頼できるパーサーのみインストールしてください。WASM の読み込みに失敗すると、自動的に micron-parser-js にフォールバックします。",
     "loadFailed": "パーサーの読み込みに失敗しました。Micron ページは JavaScript にフォールバックします。",
-    "tagRequired": "リリースタグを入力してください（例: v1.0.6）。",
     "removeConfirm": "この WASM パーサーをローカルストレージから削除しますか？"
   },
   "window": {

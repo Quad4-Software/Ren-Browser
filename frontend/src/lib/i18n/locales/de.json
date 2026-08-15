@@ -54,7 +54,8 @@
     "devtools": "Entwicklertools",
     "settings": "Einstellungen",
     "toggleTheme": "Design umschalten",
-    "closePanel": "Panel schließen"
+    "closePanel": "Panel schließen",
+    "resizeSidebar": "Seitenleiste skalieren"
   },
   "mobileNav": {
     "label": "Mobile Navigation",
@@ -544,8 +545,8 @@
     "title": "Willkommen bei Ren Browser",
     "subtitle": "Wählen Sie, wie Sie sich mit dem Reticulum-Mesh verbinden. Interfaces können später in den Einstellungen geändert werden.",
     "suggestedTitle": "Vorgeschlagene Interfaces verwenden",
-    "suggestedHint": "Wir haben {count} Community-Hubs aus dem öffentlichen Verzeichnis ausgewählt.",
-    "pickTitle": "Verzeichnis durchsuchen",
+    "suggestedHint": "Wir haben {count} Community-Hubs aus dem gebündelten Verzeichnis ausgewählt.",
+    "pickTitle": "Gebündelte Interfaces durchsuchen",
     "pickHint": "Wählen Sie Community-Interfaces für Ihre Konfiguration.",
     "configTitle": "Konfiguration bearbeiten",
     "configHint": "Bearbeiten Sie reticulum.conf direkt. AutoInterface bleibt aktiv, bis Sie es entfernen.",
@@ -557,28 +558,26 @@
     "saveAndContinue": "Speichern und fortfahren",
     "addSelectedContinue": "{count} ausgewählte hinzufügen und fortfahren",
     "busy": "Konfiguration wird angewendet...",
-    "suggestedEmpty": "Keine verwendbaren Interfaces gefunden. Durchsuchen Sie das Verzeichnis oder bearbeiten Sie die Konfiguration."
+    "suggestedEmpty": "Keine verwendbaren Interfaces gefunden. Durchsuchen Sie die Liste oder bearbeiten Sie die Konfiguration."
   },
   "community": {
     "title": "Community-Schnittstellen",
-    "hint": "Einträge aus dem gebündelten Community-Verzeichnis",
+    "hint": "Mit diesem Build gebündelte Community-Hubs",
     "searchPlaceholder": "Name, Netzwerk, Host suchen...",
-    "loading": "Verzeichnis wird geladen...",
+    "loading": "Schnittstellen werden geladen...",
     "noInterfaces": "Keine Schnittstellen gefunden",
-    "noInterfacesDescription": "Versuchen Sie eine andere Suche oder aktualisieren Sie das Verzeichnis.",
+    "noInterfacesDescription": "Versuchen Sie eine andere Suche.",
     "adding": "Schnittstellen werden hinzugefügt...",
     "addSelected": "{count} ausgewählte hinzufügen und neu starten",
     "addSelectedEmpty": "Ausgewählte hinzufügen und neu starten"
   },
   "wasm": {
     "noSupport": "Diese Webview unterstützt kein WebAssembly. Micron-Seiten verwenden stattdessen den JavaScript-Parser.",
-    "noBundled": "Kein gebündeltes micron-parser-go.wasm in diesem Build. Laden Sie unten eine Version herunter, laden Sie eine .wasm-Datei hoch oder führen Sie das Vendor-Fetch-Skript aus, um den Standardparser und wasm_exec.js zu installieren.",
+    "noBundled": "Kein gebündeltes micron-parser-go.wasm in diesem Build. Laden Sie eine .wasm-Datei hoch oder führen Sie das Vendor-Fetch-Skript zur Build-Zeit aus, um den Standardparser und wasm_exec.js zu installieren.",
     "removeParser": "Parser entfernen",
-    "fetchRelease": "Version abrufen",
     "uploadWasm": ".wasm hochladen",
     "storageHint": "Benutzerdefinierte WASM-Module werden lokal gespeichert. Installieren Sie nur Parser, denen Sie vertrauen. Fehlgeschlagene WASM-Ladevorgänge fallen automatisch auf micron-parser-js zurück.",
     "loadFailed": "Parser konnte nicht geladen werden. Micron-Seiten fallen auf JavaScript zurück.",
-    "tagRequired": "Geben Sie ein Release-Tag ein (zum Beispiel v1.0.6).",
     "removeConfirm": "Diesen WASM-Parser aus dem lokalen Speicher entfernen?"
   },
   "window": {

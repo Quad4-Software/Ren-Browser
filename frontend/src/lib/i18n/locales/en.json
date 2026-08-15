@@ -54,7 +54,8 @@
     "devtools": "Developer tools",
     "settings": "Settings",
     "toggleTheme": "Toggle theme",
-    "closePanel": "Close panel"
+    "closePanel": "Close panel",
+    "resizeSidebar": "Resize sidebar"
   },
   "mobileNav": {
     "label": "Mobile navigation",
@@ -544,8 +545,8 @@
     "title": "Welcome to Ren Browser",
     "subtitle": "Choose how to connect to the wider Reticulum mesh. You can change interfaces later in Settings.",
     "suggestedTitle": "Use suggested interfaces",
-    "suggestedHint": "We picked {count} community hubs from the public directory.",
-    "pickTitle": "Browse the directory",
+    "suggestedHint": "We picked {count} community hubs from the bundled directory.",
+    "pickTitle": "Browse bundled interfaces",
     "pickHint": "Choose community interfaces to add to your configuration.",
     "configTitle": "Edit configuration",
     "configHint": "Edit reticulum.conf directly. AutoInterface stays enabled unless you remove it.",
@@ -557,28 +558,26 @@
     "saveAndContinue": "Save and continue",
     "addSelectedContinue": "Add {count} selected and continue",
     "busy": "Applying configuration...",
-    "suggestedEmpty": "No seedable interfaces were found. Try browsing the directory or editing the config."
+    "suggestedEmpty": "No seedable interfaces were found. Try browsing the list or editing the config."
   },
   "community": {
     "title": "Community interfaces",
-    "hint": "Bundled entries from directory.rns.recipes",
+    "hint": "Bundled community hubs included with this build",
     "searchPlaceholder": "Search name, network, host...",
-    "loading": "Loading directory...",
+    "loading": "Loading interfaces...",
     "noInterfaces": "No interfaces found",
-    "noInterfacesDescription": "Try another search or refresh the directory.",
+    "noInterfacesDescription": "Try another search.",
     "adding": "Adding interfaces...",
     "addSelected": "Add {count} selected and restart",
     "addSelectedEmpty": "Add selected and restart"
   },
   "wasm": {
     "noSupport": "This webview does not support WebAssembly. Micron pages use the JavaScript parser instead.",
-    "noBundled": "No bundled micron-parser-go.wasm in this build. Fetch a release below, upload a .wasm file, or run the vendor fetch script to install the default parser and wasm_exec.js.",
+    "noBundled": "No bundled micron-parser-go.wasm in this build. Upload a .wasm file, or run the vendor fetch script at build time to install the default parser and wasm_exec.js.",
     "removeParser": "Remove parser",
-    "fetchRelease": "Fetch release",
     "uploadWasm": "Upload .wasm",
     "storageHint": "Custom WASM modules are stored locally. Only install parsers you trust. Failed WASM loads fall back to micron-parser-js automatically.",
     "loadFailed": "Parser failed to load. Micron pages will fall back to JavaScript.",
-    "tagRequired": "Enter a release tag (for example v1.0.6).",
     "removeConfirm": "Remove this WASM parser from local storage?"
   },
   "window": {

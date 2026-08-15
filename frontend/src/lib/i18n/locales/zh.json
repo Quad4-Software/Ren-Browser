@@ -54,7 +54,8 @@
     "devtools": "开发者工具",
     "settings": "设置",
     "toggleTheme": "切换主题",
-    "closePanel": "关闭面板"
+    "closePanel": "关闭面板",
+    "resizeSidebar": "调整侧边栏宽度"
   },
   "mobileNav": {
     "label": "移动导航",
@@ -544,8 +545,8 @@
     "title": "欢迎使用 Ren Browser",
     "subtitle": "选择如何连接到更广泛的 Reticulum 网格。稍后可在设置中更改接口。",
     "suggestedTitle": "使用建议的接口",
-    "suggestedHint": "我们从公共目录中挑选了 {count} 个社区枢纽。",
-    "pickTitle": "浏览目录",
+    "suggestedHint": "我们从捆绑目录中挑选了 {count} 个社区枢纽。",
+    "pickTitle": "浏览捆绑接口",
     "pickHint": "选择要添加到配置的社区接口。",
     "configTitle": "编辑配置",
     "configHint": "直接编辑 reticulum.conf。除非你移除，否则 AutoInterface 保持启用。",
@@ -557,28 +558,26 @@
     "saveAndContinue": "保存并继续",
     "addSelectedContinue": "添加所选 {count} 项并继续",
     "busy": "正在应用配置…",
-    "suggestedEmpty": "未找到可播种的接口。请尝试浏览目录或编辑配置。"
+    "suggestedEmpty": "未找到可播种的接口。请尝试浏览列表或编辑配置。"
   },
   "community": {
     "title": "社区接口",
-    "hint": "来自捆绑社区目录的条目",
+    "hint": "此构建捆绑的社区枢纽",
     "searchPlaceholder": "搜索名称、网络、主机…",
-    "loading": "正在加载目录…",
+    "loading": "正在加载接口…",
     "noInterfaces": "未找到接口",
-    "noInterfacesDescription": "尝试其他搜索或刷新目录。",
+    "noInterfacesDescription": "尝试其他搜索。",
     "adding": "正在添加接口…",
     "addSelected": "添加所选 {count} 项并重启",
     "addSelectedEmpty": "添加所选并重启"
   },
   "wasm": {
     "noSupport": "此 WebView 不支持 WebAssembly。Micron 页面改用 JavaScript 解析器。",
-    "noBundled": "此构建未捆绑 micron-parser-go.wasm。请在下方获取发布版、上传 .wasm 文件，或运行供应商获取脚本以安装默认解析器和 wasm_exec.js。",
+    "noBundled": "此构建未捆绑 micron-parser-go.wasm。请上传 .wasm 文件，或在构建时运行供应商获取脚本以安装默认解析器和 wasm_exec.js。",
     "removeParser": "移除解析器",
-    "fetchRelease": "获取发布版",
     "uploadWasm": "上传 .wasm",
     "storageHint": "自定义 WASM 模块存储在本地。仅安装你信任的解析器。WASM 加载失败时会自动回退到 micron-parser-js。",
     "loadFailed": "解析器加载失败。Micron 页面将回退到 JavaScript。",
-    "tagRequired": "输入发布标签（例如 v1.0.6）。",
     "removeConfirm": "从本地存储移除此 WASM 解析器？"
   },
   "window": {

@@ -99,7 +99,7 @@ describe("InitialSetupModal component", () => {
     instance = await mountInBody(InitialSetupModal, { app });
 
     const stepHint = document.querySelector(".step-hint");
-    expect(stepHint?.textContent).toContain("hubs from the public directory");
+    expect(stepHint?.textContent).toContain("hubs from the bundled directory");
 
     const name = document.querySelector(".suggested-list .name");
     expect(name?.textContent).toBe("Test Community Hub");

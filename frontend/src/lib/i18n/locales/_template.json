@@ -54,7 +54,8 @@
     "devtools": "",
     "settings": "",
     "toggleTheme": "",
-    "closePanel": ""
+    "closePanel": "",
+    "resizeSidebar": ""
   },
   "mobileNav": {
     "label": "",
@@ -574,11 +575,9 @@
     "noSupport": "",
     "noBundled": "",
     "removeParser": "",
-    "fetchRelease": "",
     "uploadWasm": "",
     "storageHint": "",
     "loadFailed": "",
-    "tagRequired": "",
     "removeConfirm": ""
   },
   "window": {
