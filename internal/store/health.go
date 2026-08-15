@@ -68,6 +68,7 @@ func (s *Store) Reset() error {
 	if err := db.RemoveFiles(s.path); err != nil {
 		return err
 	}
+	s.clearTabBodies()
 	database, err := db.Open(s.path)
 	if err != nil {
 		s.corrupt = true

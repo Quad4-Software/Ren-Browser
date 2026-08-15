@@ -12,6 +12,8 @@ const (
 	DefaultMaxFileBytes     = 0
 	DefaultMaxAssetBytes    = 32 * 1024 * 1024
 	DefaultMaxTabFieldBytes = 256 * 1024
+	DefaultMaxStoredNodes   = 4096
+	DefaultMaxHistoryRows   = 2000
 )
 
 func MaxPageBytes() int {
@@ -39,6 +41,14 @@ func MaxFetchBytes(path string) int {
 
 func MaxDocumentViewBytes() int {
 	return MaxPageBytes()
+}
+
+func MaxStoredNodes() int {
+	return envBytes("REN_BROWSER_MAX_STORED_NODES", DefaultMaxStoredNodes)
+}
+
+func MaxHistoryRows() int {
+	return envBytes("REN_BROWSER_MAX_HISTORY_ROWS", DefaultMaxHistoryRows)
 }
 
 func envBytes(key string, fallback int) int {

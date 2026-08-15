@@ -4,7 +4,7 @@ package store
 import "renbrowser/internal/limits"
 
 func clampTabSnapshots(tabs []TabSnapshot) []TabSnapshot {
-	max := limits.MaxTabFieldBytes()
+	max := limits.MaxPageBytes()
 	if max <= 0 {
 		return tabs
 	}

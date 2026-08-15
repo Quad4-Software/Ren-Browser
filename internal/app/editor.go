@@ -18,6 +18,11 @@ func isEditorURL(raw string) bool {
 
 func (s *BrowserService) editorPage(pushHistory bool) PageResponse {
 	raw := content.DefaultEditorTemplate()
+	if s.store != nil {
+		if draft := s.store.EditorDraft(); strings.TrimSpace(draft) != "" {
+			raw = draft
+		}
+	}
 	resp := PageResponse{
 		URL:         "editor:",
 		Path:        "/page/editor.mu",

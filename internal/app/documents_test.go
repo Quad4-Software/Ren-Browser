@@ -45,6 +45,10 @@ func TestDocumentPage(t *testing.T) {
 	if page.HTML != "" {
 		t.Fatalf("html should be empty, got %q", page.HTML)
 	}
+	last := svc.GetLastPage()
+	if last.BinaryB64 != "" {
+		t.Fatal("lastPage should not retain document bytes")
+	}
 }
 
 func TestDocumentPageRejectsOutsideDownloadDir(t *testing.T) {

@@ -35,6 +35,7 @@ const (
 	DefaultPageCacheMaxAge = 24 * time.Hour
 	DefaultRAMMaxEntries   = 64
 	DefaultRAMMaxBytes     = 16 << 20
+	DefaultRAMKeepBytes    = 256 << 10
 	DefaultDiskMaxEntries  = 512
 	DefaultDiskMaxBytes    = 256 << 20
 )
@@ -59,6 +60,7 @@ func (e Entry) IsStale(maxAge time.Duration) bool {
 type PageCacheOptions struct {
 	RAMMaxEntries  int
 	RAMMaxBytes    int
+	RAMKeepBytes   int
 	DiskMaxEntries int
 	DiskMaxBytes   int
 }
@@ -89,11 +91,12 @@ type diskMeta struct {
 type PageCache struct {
 	mu sync.Mutex
 
-	ramMax      int
-	ramMaxBytes int
-	ramBytes    int
-	entries     map[pageKey]Entry
-	order       []pageKey
+	ramMax       int
+	ramMaxBytes  int
+	ramKeepBytes int
+	ramBytes     int
+	entries      map[pageKey]Entry
+	order        []pageKey
 
 	dir            string
 	diskMax        int
@@ -143,6 +146,7 @@ func OpenPageCache(dir string, opts PageCacheOptions) (*PageCache, error) {
 	c := &PageCache{
 		ramMax:         opts.RAMMaxEntries,
 		ramMaxBytes:    opts.RAMMaxBytes,
+		ramKeepBytes:   opts.RAMKeepBytes,
 		entries:        make(map[pageKey]Entry, opts.RAMMaxEntries),
 		order:          make([]pageKey, 0, opts.RAMMaxEntries),
 		dir:            dir,
@@ -170,6 +174,9 @@ func normalizePageCacheOptions(opts PageCacheOptions) PageCacheOptions {
 	}
 	if opts.RAMMaxBytes <= 0 {
 		opts.RAMMaxBytes = DefaultRAMMaxBytes
+	}
+	if opts.RAMKeepBytes <= 0 {
+		opts.RAMKeepBytes = DefaultRAMKeepBytes
 	}
 	if opts.DiskMaxEntries <= 0 {
 		opts.DiskMaxEntries = DefaultDiskMaxEntries
@@ -264,7 +271,9 @@ func (c *PageCache) Get(nodeHash, path string, req nomadnet.RequestData) (Entry,
 		StoredAt:    time.UnixMilli(meta.StoredAtUnixMilli),
 	}
 	c.touchDiskLocked(hash)
-	c.putRAMLocked(key, entry)
+	if !c.skipRAMLocked(len(body)) {
+		c.putRAMLocked(key, entry)
+	}
 	return entry, true
 }
 
@@ -301,7 +310,37 @@ func (c *PageCache) Put(nodeHash, path string, req nomadnet.RequestData, body []
 	c.putRAMLocked(key, entry)
 }
 
+func (c *PageCache) skipRAMLocked(n int) bool {
+	if !c.diskEnabled() {
+		return false
+	}
+	keep := c.ramKeepBytes
+	if keep <= 0 {
+		keep = DefaultRAMKeepBytes
+	}
+	return n > keep
+}
+
+func (c *PageCache) dropRAMLocked(key pageKey) {
+	if existing, ok := c.entries[key]; ok {
+		c.ramBytes -= len(existing.Body)
+		delete(c.entries, key)
+	}
+	for i, k := range c.order {
+		if k != key {
+			continue
+		}
+		copy(c.order[i:], c.order[i+1:])
+		c.order = c.order[:len(c.order)-1]
+		break
+	}
+}
+
 func (c *PageCache) putRAMLocked(key pageKey, entry Entry) {
+	if c.skipRAMLocked(len(entry.Body)) {
+		c.dropRAMLocked(key)
+		return
+	}
 	if existing, ok := c.entries[key]; ok {
 		c.ramBytes -= len(existing.Body)
 		stored := cloneBody(existing.Body, entry.Body)

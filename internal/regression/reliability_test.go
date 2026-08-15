@@ -71,16 +71,29 @@ func TestReliabilityPipelineStoreTruncation(t *testing.T) {
 
 	large := strings.Repeat("z", 300*1024)
 	saved := st.SaveTabs([]store.TabSnapshot{{
-		ID:    "tab-1",
-		Title: "Keep",
-		URL:   "deadbeef:/page/index.mu",
-		HTML:  large,
+		ID:     "tab-1",
+		Title:  "Keep",
+		URL:    "deadbeef:/page/index.mu",
+		Active: true,
+		HTML:   large,
 	}})
 	if saved[0].Title != "Keep" {
 		t.Fatalf("title=%q", saved[0].Title)
 	}
-	if len(saved[0].HTML) >= len(large) {
-		t.Fatal("html should be truncated")
+	if len(saved[0].HTML) != len(large) {
+		t.Fatalf("file-backed html should keep 300KiB bodies, got %d", len(saved[0].HTML))
+	}
+
+	t.Setenv("REN_BROWSER_MAX_PAGE_BYTES", "1024")
+	capped := st.SaveTabs([]store.TabSnapshot{{
+		ID:     "tab-1",
+		Title:  "Keep",
+		URL:    "deadbeef:/page/index.mu",
+		Active: true,
+		HTML:   large,
+	}})
+	if len(capped[0].HTML) != 1024 {
+		t.Fatalf("html should be truncated to page cap, got %d", len(capped[0].HTML))
 	}
 }
 

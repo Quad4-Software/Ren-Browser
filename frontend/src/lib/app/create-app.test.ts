@@ -180,13 +180,38 @@ describe("createApp controller", () => {
     });
   });
 
-  it("persists tabs after debounce", async () => {
+  it("persists inactive tab metadata without page bodies", async () => {
     vi.useFakeTimers();
+    const html = "H".repeat(8000);
+    browserMocks.Navigate.mockResolvedValue({
+      url: "about:",
+      html,
+      contentType: "text/html",
+      raw: html,
+      binaryB64: "",
+      path: "",
+      error: "",
+      errorKind: "",
+      durationMs: 2,
+      pageFg: "",
+      pageBg: "",
+      fromCache: false,
+      cachedAt: 0,
+      hops: -1,
+    });
     await withApp(async (app) => {
+      await app.openPage("about:");
       app.newTab();
-      expect(browserMocks.SaveTabs).not.toHaveBeenCalled();
       await vi.advanceTimersByTimeAsync(300);
       expect(browserMocks.SaveTabs).toHaveBeenCalled();
+      const payload = browserMocks.SaveTabs.mock.calls.at(-1)?.[0] as Array<{
+        active: boolean;
+        html?: string;
+        lastRaw?: string;
+      }>;
+      const inactive = payload.find((tab) => !tab.active);
+      expect(inactive?.html).toBe("");
+      expect(inactive?.lastRaw).toBe("");
     });
   });
 

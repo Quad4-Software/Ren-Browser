@@ -953,6 +953,7 @@ func (s *BrowserService) pushHistory(url string) {
 }
 
 func (s *BrowserService) setLastPage(page PageResponse) {
+	page.BinaryB64 = ""
 	s.mu.Lock()
 	s.lastPage = page
 	s.mu.Unlock()

@@ -12,6 +12,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"renbrowser/internal/brand"
+	"renbrowser/internal/limits"
 )
 
 type DB struct {
@@ -155,7 +156,30 @@ func (d *DB) UpsertNode(n NodeRow) error {
 		   last_seen=excluded.last_seen`,
 		n.Hash, n.Name, n.Hops, boolInt(n.Enabled), n.Timestamp, n.MaxSizeKB, n.LastSeen,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	d.pruneNodes()
+	return nil
+}
+
+func (d *DB) pruneNodes() {
+	max := limits.MaxStoredNodes()
+	if max <= 0 {
+		return
+	}
+	var n int
+	if err := d.sql.QueryRow(`SELECT COUNT(*) FROM nodes`).Scan(&n); err != nil || n <= max {
+		return
+	}
+	_, _ = d.sql.Exec(
+		`DELETE FROM nodes WHERE hash IN (
+			SELECT hash FROM (
+				SELECT hash FROM nodes ORDER BY last_seen ASC, hash DESC LIMIT ?
+			)
+		)`,
+		n-max,
+	)
 }
 
 func (d *DB) ListNodes() ([]NodeRow, error) {
@@ -197,7 +221,30 @@ func (d *DB) AddHistory(url, title, nodeHash string, visitedAt int64) error {
 		`INSERT INTO history (url, title, node_hash, visited_at) VALUES (?, ?, ?, ?)`,
 		url, title, nodeHash, visitedAt,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	d.pruneHistory()
+	return nil
+}
+
+func (d *DB) pruneHistory() {
+	max := limits.MaxHistoryRows()
+	if max <= 0 {
+		return
+	}
+	var n int
+	if err := d.sql.QueryRow(`SELECT COUNT(*) FROM history`).Scan(&n); err != nil || n <= max {
+		return
+	}
+	_, _ = d.sql.Exec(
+		`DELETE FROM history WHERE id IN (
+			SELECT id FROM (
+				SELECT id FROM history ORDER BY visited_at ASC, id ASC LIMIT ?
+			)
+		)`,
+		n-max,
+	)
 }
 
 func (d *DB) ListHistory(limit int) ([]HistoryRow, error) {

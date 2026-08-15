@@ -62,7 +62,12 @@ export function readLocalBrowserData(profile: string): LocalBrowserData | null {
 }
 
 export function writeLocalBrowserData(profile: string, data: LocalBrowserData): void {
-  localStorage.setItem(storageKey(profile), JSON.stringify(data));
+  const tabs = data.tabs.map((tab) => ({
+    ...tab,
+    html: undefined,
+    lastRaw: undefined,
+  }));
+  localStorage.setItem(storageKey(profile), JSON.stringify({ ...data, tabs }));
 }
 
 export function clearLocalBrowserData(profile: string): void {

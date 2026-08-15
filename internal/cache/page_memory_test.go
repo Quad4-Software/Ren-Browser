@@ -137,3 +137,62 @@ func TestPageCacheClearReleasesTrackedBytes(t *testing.T) {
 	runtime.ReadMemStats(&ms)
 	t.Logf("after clear heap_inuse=%dMiB heap_alloc=%dMiB", ms.HeapInuse>>20, ms.HeapAlloc>>20)
 }
+
+func TestPageCacheSkipsRAMForLargeDiskBodies(t *testing.T) {
+	const (
+		keepBytes = 64 << 10
+		pageSize  = 256 << 10
+		puts      = 40
+	)
+	dir := t.TempDir()
+	c, err := OpenPageCache(dir, PageCacheOptions{
+		RAMMaxEntries:  256,
+		RAMMaxBytes:    8 << 20,
+		RAMKeepBytes:   keepBytes,
+		DiskMaxEntries: 512,
+		DiskMaxBytes:   64 << 20,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := nomadnet.RequestData{}
+	body := make([]byte, pageSize)
+	for i := range body {
+		body[i] = byte(i)
+	}
+
+	runtime.GC()
+	var before runtime.MemStats
+	runtime.ReadMemStats(&before)
+
+	for i := range puts {
+		c.Put("node", fmt.Sprintf("/page/%d.mu", i), req, body, "micron")
+	}
+
+	runtime.GC()
+	var after runtime.MemStats
+	runtime.ReadMemStats(&after)
+
+	stats := c.Stats()
+	t.Logf("puts=%d page=%dKiB keep=%dKiB", puts, pageSize>>10, keepBytes>>10)
+	t.Logf("RAM entries=%d bytes=%d disk entries=%d bytes=%d", stats.RAMEntries, stats.RAMBytes, stats.DiskEntries, stats.DiskBytes)
+	t.Logf("heap_inuse before=%dMiB after=%dMiB delta=%dMiB",
+		before.HeapInuse>>20, after.HeapInuse>>20, int64(after.HeapInuse-before.HeapInuse)>>20)
+
+	if stats.RAMEntries != 0 || stats.RAMBytes != 0 {
+		t.Fatalf("expected large bodies to stay on disk, RAM=%+v", stats)
+	}
+	if stats.DiskEntries != puts {
+		t.Fatalf("disk entries=%d want %d", stats.DiskEntries, puts)
+	}
+	got, ok := c.Get("node", "/page/0.mu", req)
+	if !ok || len(got.Body) != pageSize {
+		t.Fatalf("disk get failed ok=%v len=%d", ok, len(got.Body))
+	}
+	if stats := c.Stats(); stats.RAMEntries != 0 {
+		t.Fatalf("Get should not promote oversized bodies, RAM entries=%d", stats.RAMEntries)
+	}
+	if after.HeapInuse > before.HeapInuse+uint64(keepBytes)*4+8<<20 {
+		t.Fatalf("heap grew too much: before=%d after=%d", before.HeapInuse, after.HeapInuse)
+	}
+}

@@ -4,6 +4,7 @@ package store
 import (
 	"encoding/json"
 	"os"
+	"strings"
 	"sync"
 
 	"renbrowser/internal/brand"
@@ -63,6 +64,10 @@ func Open(path string) (*Store, error) {
 		return s, nil
 	}
 	if err := s.migrateLegacyJSON(); err != nil {
+		_ = database.Close()
+		return nil, err
+	}
+	if err := s.migrateTabBodiesFromSQLite(); err != nil {
 		_ = database.Close()
 		return nil, err
 	}
@@ -312,11 +317,36 @@ func (s *Store) Recent() []string {
 func (s *Store) Tabs() []TabSnapshot {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	return s.tabsLocked(false)
+}
+
+func (s *Store) TabsWithBodies() []TabSnapshot {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.tabsLocked(true)
+}
+
+func (s *Store) EditorDraft() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	tabs := s.tabsLocked(true)
+	for _, tab := range tabs {
+		if isEditorTabURL(tab.URL) && strings.TrimSpace(tab.LastRaw) != "" {
+			return tab.LastRaw
+		}
+	}
+	return ""
+}
+
+func (s *Store) tabsLocked(includeAllBodies bool) []TabSnapshot {
+	if s.db == nil {
+		return []TabSnapshot{}
+	}
 	rows, err := s.db.Tabs()
 	if err != nil {
 		return []TabSnapshot{}
 	}
-	return tabRowsToSnapshots(rows)
+	return s.hydrateTabBodies(tabRowsToSnapshots(rows), includeAllBodies)
 }
 
 func (s *Store) SaveTabs(tabs []TabSnapshot) []TabSnapshot {
@@ -326,7 +356,19 @@ func (s *Store) SaveTabs(tabs []TabSnapshot) []TabSnapshot {
 		return tabs
 	}
 	tabs = clampTabSnapshots(tabs)
-	rows := snapshotsToTabRows(tabs)
+	keep := make(map[string]struct{}, len(tabs))
+	for _, tab := range tabs {
+		keep[tab.ID] = struct{}{}
+		if tab.HTML != "" || tab.LastRaw != "" {
+			if err := s.writeTabBody(tab.ID, tab.HTML, tab.LastRaw); err != nil {
+				s.noteWriteError(err)
+			}
+		} else if strings.TrimSpace(tab.URL) == "" {
+			_ = s.removeTabBody(tab.ID)
+		}
+	}
+	s.pruneTabBodies(keep)
+	rows := snapshotsToTabRows(stripTabBodies(tabs))
 	if err := s.db.SaveTabs(rows); err != nil {
 		s.noteWriteError(err)
 		return tabs

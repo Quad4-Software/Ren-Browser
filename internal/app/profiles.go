@@ -66,7 +66,7 @@ func (s *BrowserService) collectProfileData() (ProfileData, error) {
 	return ProfileData{
 		Version:        profileDataVersion,
 		Profile:        s.ProfileName(),
-		Tabs:           s.store.Tabs(),
+		Tabs:           s.store.TabsWithBodies(),
 		Favorites:      s.store.Favorites(),
 		History:        history,
 		Keybinds:       s.GetKeybinds(),

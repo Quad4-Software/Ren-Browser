@@ -21,7 +21,7 @@ func TestStoreCloseIdempotent(t *testing.T) {
 	}
 }
 
-func TestSaveTabsPreservesMetadataWhenTruncating(t *testing.T) {
+func TestSaveTabsPreservesMetadataWhenStoringBodies(t *testing.T) {
 	st, err := store.Open(t.TempDir() + "/profile.db")
 	if err != nil {
 		t.Fatal(err)

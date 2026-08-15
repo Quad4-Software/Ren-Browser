@@ -150,6 +150,12 @@ import {
   type TabPage,
 } from "$lib/browser/url";
 import {
+  compactInactiveTabPages,
+  hotTabIds,
+  tabPageNeedsReload,
+  tabSnapshotForPersist,
+} from "$lib/browser/tab-page-memory";
+import {
   documentURL,
   canonicalDocumentURL,
   isDocumentURL,
@@ -536,6 +542,13 @@ export function createApp() {
     });
   }
 
+  function compactInactiveTabBodies() {
+    const next = compactInactiveTabPages(tabs, splitTabId);
+    if (next !== tabs) {
+      tabs = next;
+    }
+  }
+
   function schedulePersistTabs() {
     if (persistTimer) {
       clearTimeout(persistTimer);
@@ -547,22 +560,10 @@ export function createApp() {
 
   async function persistTabs() {
     syncActiveTabPage();
-    const payload: TabSnapshot[] = tabs.map((tab) => ({
-      id: tab.id,
-      title: tab.title,
-      url: tab.url,
-      active: tab.active,
-      pinned: tab.pinned,
-      html: tab.page?.html,
-      contentType: tab.page?.contentType,
-      error: tab.page?.error,
-      errorKind: tab.page?.errorKind,
-      durationMs: tab.page?.durationMs,
-      lastRaw: tab.page?.lastRaw,
-      pageFg: tab.page?.pageFg,
-      pageBg: tab.page?.pageBg,
-    }));
+    const hot = hotTabIds(tabs, splitTabId);
+    const payload: TabSnapshot[] = tabs.map((tab) => tabSnapshotForPersist(tab, hot.has(tab.id)));
     await SaveTabs(payload);
+    compactInactiveTabBodies();
   }
 
   function restoreTabs(saved: TabSnapshot[]) {
@@ -597,6 +598,10 @@ export function createApp() {
       applyPageState(selected.page);
     } else {
       clearPageState();
+    }
+    compactInactiveTabBodies();
+    if (selected.url && tabPageNeedsReload(selected)) {
+      void openPage(selected.url, false, { tabId: selected.id });
     }
   }
 
@@ -633,7 +638,7 @@ export function createApp() {
     }
     const selected = tabs.find((tab) => tab.id === id);
     url = selected?.url ?? "";
-    if (selected?.url && isDocumentURL(selected.url) && !selected.page?.binaryB64?.trim()) {
+    if (changed && selected && tabPageNeedsReload(selected)) {
       loading = true;
       void openPage(selected.url, false, { tabId: id });
       schedulePersistTabs();
@@ -648,6 +653,7 @@ export function createApp() {
     if (splitViewOpen && splitTabId === id) {
       splitTabId = null;
     }
+    compactInactiveTabBodies();
     schedulePersistTabs();
   }
 
@@ -814,10 +820,21 @@ export function createApp() {
     activePanel = "browser";
     if (tabId !== activeTabId) {
       splitTabId = tabId;
+      if (tab.url && tabPageNeedsReload(tab)) {
+        void openPage(tab.url, false, { tabId });
+      }
+      compactInactiveTabBodies();
       return;
     }
     const others = tabs.filter((item) => item.id !== activeTabId);
     splitTabId = others.length === 1 ? others[0].id : null;
+    if (splitTabId) {
+      const split = tabs.find((item) => item.id === splitTabId);
+      if (split?.url && tabPageNeedsReload(split)) {
+        void openPage(split.url, false, { tabId: splitTabId });
+      }
+    }
+    compactInactiveTabBodies();
   }
 
   function selectSplitTab(tabId: string) {
@@ -825,11 +842,17 @@ export function createApp() {
       return;
     }
     splitTabId = tabId;
+    const tab = tabs.find((item) => item.id === tabId);
+    if (tab?.url && tabPageNeedsReload(tab)) {
+      void openPage(tab.url, false, { tabId });
+    }
+    compactInactiveTabBodies();
   }
 
   function closeSplitView() {
     splitViewOpen = false;
     splitTabId = null;
+    compactInactiveTabBodies();
   }
 
   function setSplitTabShowSource(tabId: string, value: boolean) {
@@ -849,8 +872,16 @@ export function createApp() {
       return;
     }
     const page = tab.active ? currentPageState() : (tab.page ?? emptyPage());
-    const payload = page.lastRaw || page.html;
-    await downloadPageContent(tab.url, page.contentType, payload);
+    let payload = page.lastRaw || page.html;
+    let contentType = page.contentType;
+    if ((!tab.active && tabPageNeedsReload(tab)) || !payload) {
+      await openPage(tab.url, false, { tabId: id });
+      const refreshed = tabs.find((item) => item.id === id);
+      const nextPage = refreshed?.active ? currentPageState() : (refreshed?.page ?? emptyPage());
+      payload = nextPage.lastRaw || nextPage.html;
+      contentType = nextPage.contentType || contentType;
+    }
+    await downloadPageContent(tab.url, contentType, payload);
     await loadDownloads();
   }
 
@@ -942,6 +973,7 @@ export function createApp() {
       applyPageState(page);
       loading = false;
     }
+    compactInactiveTabBodies();
   }
 
   function updateEditorSource(source: string) {
@@ -2382,11 +2414,6 @@ export function createApp() {
       if (!screenshotScene) {
         const saved = (await GetTabs()) as TabSnapshot[];
         restoreTabs(saved);
-        for (const tab of tabs) {
-          if (tab.url && isDocumentURL(tab.url) && !tab.page?.binaryB64?.trim()) {
-            void openPage(tab.url, false, { tabId: tab.id });
-          }
-        }
       }
     });
     void loadLogs();
