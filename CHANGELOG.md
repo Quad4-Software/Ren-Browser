@@ -9,7 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Restore split tab view on desktop. It was closed immediately by a mobile-layout effect
 - Fix Android crash when minimizing and reopening the app caused by Go flag re-registration on activity recreation
+
+### Changed
+
+- Desktop side panels can be resized by dragging the divider
+- Speed up navigation by skipping unused panel refreshes and avoiding deep reactivity on tab page bodies
+- Community interfaces load only from the build-time bundled snapshot
+- Micron parser WASM is bundled at build time with no runtime GitHub download
 
 ## [0.2.2] [released] - 2026-08-14
 
