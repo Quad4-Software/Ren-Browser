@@ -160,12 +160,6 @@ export interface KeybindSettings {
     "bindings": { [_ in string]?: string } | null;
 }
 
-export interface MicronWasmFetchResult {
-    "releaseTag": string;
-    "wasmBase64": string;
-    "sha256Hex": string;
-}
-
 export interface NetworkEntry {
     "time": number;
     "url": string;

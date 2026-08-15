@@ -86,7 +86,7 @@ SQLite persistence with migration from legacy `state.json`.
 |---------|------|
 | `internal/content` | Static pages (about, license) |
 | `internal/micron` | Micron to HTML |
-| `internal/micronwasm` | WASM parser integration |
+| `internal/micronwasm` | WASM parser checksum helpers |
 | `internal/cache` | Page cache helpers |
 
 ## Server middleware

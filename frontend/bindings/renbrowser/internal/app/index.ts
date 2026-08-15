@@ -28,7 +28,6 @@ export type {
     HistoryState,
     InitialSetupState,
     KeybindSettings,
-    MicronWasmFetchResult,
     NetworkEntry,
     PageCacheStats,
     PageResponse,

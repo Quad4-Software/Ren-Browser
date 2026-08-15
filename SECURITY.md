@@ -118,9 +118,8 @@ The table below lists every **intentional** outbound connection path in applicat
 | When | Destination | Purpose | Code |
 |------|-------------|---------|------|
 | First Reticulum config creation | None (transport and sharing disabled by default) | Initialize empty Reticulum configuration. | `internal/rns/config.go` |
-| Settings → Micron WASM Manager (user adds a GitHub release) | `https://github.com/Quad4-Software/Micron-Parser-Go/releases/download/{tag}/micron-parser-go.wasm` and `.../SHASUMS256.txt` | Download and SHA-256–verify an optional Micron parser WASM binary. | `internal/micronwasm/fetch.go` |
 
-The community directory is fetched at **build time** to refresh the embedded snapshot (`build/scripts/fetch-community-directory.mjs`). Override for builds only: `REN_BROWSER_COMMUNITY_DIRECTORY_URL`.
+The community directory is fetched at **build time** to refresh the embedded snapshot (`build/scripts/fetch-community-directory.mjs`). Override for builds only: `REN_BROWSER_COMMUNITY_DIRECTORY_URL`. Micron parser WASM is fetched at **build time** (`build/scripts/fetch-micron-wasm.mjs`) and bundled into the app. There is no runtime GitHub download of either.
 
 #### Runtime - user-initiated or permission-gated
 

@@ -4,9 +4,7 @@
   import { Plus, Trash2 } from "@lucide/svelte";
   import {
     BUNDLED_MICRON_WASM_PARSER_ID,
-    addMicronWasmParserFromGitHub,
     addMicronWasmParserFromUpload,
-    bundledMicronWasmReleaseTag,
     listMicronWasmParsers,
     removeMicronWasmParser,
     type MicronWasmParserListEntry,
@@ -30,14 +28,12 @@
   let { selectedParserId, wasmEnabled, onSelectParser, onWasmReadyChange }: Props = $props();
 
   let parsers = $state<MicronWasmParserListEntry[]>([]);
-  let releaseTag = $state("");
   let busy = $state(false);
   let error = $state("");
   let uploadInput: HTMLInputElement | undefined = $state();
 
   const wasmSupported = isWebAssemblySupported();
   const wasmBundled = isMicronWasmBundled();
-  const defaultTag = bundledMicronWasmReleaseTag();
 
   async function refreshList() {
     const bundledBytes = wasmBundled ? await probeBundledMicronWasmByteLength() : 0;
@@ -62,25 +58,6 @@
     }
   }
 
-  async function fetchFromGitHub() {
-    const tag = releaseTag.trim();
-    if (!tag) {
-      error = t("wasm.tagRequired");
-      return;
-    }
-    busy = true;
-    error = "";
-    try {
-      const id = await addMicronWasmParserFromGitHub(tag);
-      await refreshList();
-      await activateParser(id);
-    } catch (err) {
-      error = formatBindingError(err, t("micronWasm.loadFailed"));
-    } finally {
-      busy = false;
-    }
-  }
-
   async function onUploadSelected(event: Event) {
     const input = event.currentTarget as HTMLInputElement;
     const file = input.files?.[0];
@@ -94,7 +71,7 @@
       await refreshList();
       await activateParser(id);
     } catch (err) {
-      error = formatBindingError(err, t("micronWasm.loadFailed"));
+      error = formatBindingError(err, t("wasm.loadFailed"));
     } finally {
       busy = false;
       input.value = "";
@@ -117,7 +94,7 @@
       const next = selectedParserId === parserId ? fallback : selectedParserId;
       await activateParser(next);
     } catch (err) {
-      error = formatBindingError(err, t("micronWasm.loadFailed"));
+      error = formatBindingError(err, t("wasm.loadFailed"));
     } finally {
       busy = false;
     }
@@ -137,7 +114,6 @@
   }
 
   onMount(() => {
-    releaseTag = defaultTag;
     void refreshList();
   });
 </script>
@@ -194,20 +170,6 @@
       {/each}
     </ul>
   {/if}
-
-  <div class="add-row">
-    <input
-      type="text"
-      placeholder={defaultTag}
-      bind:value={releaseTag}
-      disabled={busy || !wasmSupported}
-      spellcheck="false"
-      autocomplete="off"
-    />
-    <button type="button" disabled={busy || !wasmSupported} onclick={() => void fetchFromGitHub()}>
-      {t("wasm.fetchRelease")}
-    </button>
-  </div>
 
   <div class="upload-row">
     <input
@@ -312,10 +274,10 @@
     cursor: not-allowed;
   }
 
-  .add-row,
   .upload-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: auto;
+    justify-content: start;
     gap: 0.45rem;
   }
 
@@ -363,11 +325,6 @@
   }
 
   @media (max-width: 768px) {
-    .add-row,
-    .upload-row {
-      grid-template-columns: 1fr;
-    }
-
     button {
       white-space: normal;
     }

@@ -26,7 +26,6 @@ import (
 	"renbrowser/internal/fonts"
 	"renbrowser/internal/limits"
 	"renbrowser/internal/micron"
-	"renbrowser/internal/micronwasm"
 	"renbrowser/internal/nomadnet"
 	"renbrowser/internal/plugins"
 	"renbrowser/internal/rns"
@@ -1205,22 +1204,4 @@ func announceHops(handler *nomadnet.AnnounceHandler, nodeHash string) int {
 		return int(node.Hops)
 	}
 	return -1
-}
-
-type MicronWasmFetchResult struct {
-	ReleaseTag string `json:"releaseTag"`
-	WasmBase64 string `json:"wasmBase64"`
-	Sha256Hex  string `json:"sha256Hex"`
-}
-
-func (s *BrowserService) FetchMicronParserGoRelease(tag string) (MicronWasmFetchResult, error) {
-	result, err := micronwasm.FetchVerifiedRelease(tag)
-	if err != nil {
-		return MicronWasmFetchResult{}, err
-	}
-	return MicronWasmFetchResult{
-		ReleaseTag: result.ReleaseTag,
-		WasmBase64: result.WasmBase64,
-		Sha256Hex:  result.Sha256Hex,
-	}, nil
 }

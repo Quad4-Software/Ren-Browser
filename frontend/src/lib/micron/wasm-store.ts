@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 /**
- * IndexedDB store for multiple micron-parser-go WASM modules (uploads and verified GitHub releases).
+ * IndexedDB store for additional micron-parser-go WASM modules from local uploads.
  */
 
-import { FetchMicronParserGoRelease } from "../../../bindings/renbrowser/internal/app/browserservice.js";
 import { randomId } from "$lib/browser/id";
 import { indexedDbName } from "$lib/brand";
 import { micronParserGoWasmFilename, micronParserGoMaxWasmBytes } from "$lib/constants";
@@ -17,7 +16,7 @@ const DB_VERSION = 1;
 const META_STORE = "meta";
 const WASM_STORE = "wasm";
 
-export type MicronWasmParserSource = "bundled" | "github" | "upload";
+export type MicronWasmParserSource = "bundled" | "upload" | "github";
 
 export type MicronWasmParserMeta = {
   id: string;
@@ -122,15 +121,6 @@ function assertSri(wasmSri: string): void {
   if (!/^sha384-[A-Za-z0-9+/=]+$/.test(wasmSri)) {
     throw new Error("Micron WASM: invalid SRI format");
   }
-}
-
-function decodeBase64Wasm(base64: string): ArrayBuffer {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes.buffer;
 }
 
 async function readMeta(id: string): Promise<MicronWasmParserMeta | null> {
@@ -289,7 +279,7 @@ export async function removeMicronWasmParser(parserId: string): Promise<void> {
 }
 
 async function storeWasmParser(
-  source: "github" | "upload",
+  source: "upload",
   label: string,
   releaseTag: string,
   wasmBytes: ArrayBuffer,
@@ -324,17 +314,6 @@ export async function addMicronWasmParserFromUpload(file: File): Promise<string>
   const wasmBytes = await file.arrayBuffer();
   const label = file.name;
   return storeWasmParser("upload", label, file.name, wasmBytes, null);
-}
-
-export async function addMicronWasmParserFromGitHub(tag: string): Promise<string> {
-  const trimmed = tag.trim();
-  if (!trimmed) {
-    throw new Error("Release tag is required");
-  }
-  const result = await FetchMicronParserGoRelease(trimmed);
-  const wasmBytes = decodeBase64Wasm(result.wasmBase64);
-  const label = `micron-parser-go ${result.releaseTag}`;
-  return storeWasmParser("github", label, result.releaseTag, wasmBytes, result.sha256Hex);
 }
 
 export function normalizeMicronWasmParserId(

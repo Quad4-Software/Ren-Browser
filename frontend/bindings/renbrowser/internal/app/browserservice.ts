@@ -132,10 +132,6 @@ export function FetchCommunityInterfaces(): $CancellablePromise<$models.Communit
     return $Call.ByID(44455642);
 }
 
-export function FetchMicronParserGoRelease(tag: string): $CancellablePromise<$models.MicronWasmFetchResult> {
-    return $Call.ByID(1537521279, tag);
-}
-
 export function GetAboutInfo(): $CancellablePromise<$models.AboutInfo> {
     return $Call.ByID(1103929366);
 }
