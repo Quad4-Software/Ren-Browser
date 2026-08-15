@@ -2,6 +2,13 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { t } from "$lib/i18n/i18n.svelte";
+  import {
+    capturePointer,
+    clampSplitRatio,
+    createDragScheduler,
+    releasePointer,
+    splitRatioFromPointer,
+  } from "$lib/browser/pane-resize";
 
   type Props = {
     ratio: number;
@@ -16,33 +23,67 @@
   let rootEl = $state<HTMLDivElement | null>(null);
   let dividerEl = $state<HTMLButtonElement | null>(null);
 
+  const drag = createDragScheduler((event) => {
+    if (!rootEl) {
+      return;
+    }
+    const next = splitRatioFromPointer(event, rootEl.getBoundingClientRect());
+    rootEl.style.setProperty("--split-ratio", `${next}%`);
+  });
+
+  function commitRatio() {
+    if (!rootEl) {
+      return;
+    }
+    const raw = Number.parseFloat(rootEl.style.getPropertyValue("--split-ratio"));
+    if (Number.isFinite(raw)) {
+      onRatioChange(raw);
+    }
+  }
+
   function onPointerDown(event: PointerEvent) {
     if (!rootEl || !dividerEl) {
       return;
     }
     dragging = true;
-    dividerEl.setPointerCapture(event.pointerId);
+    capturePointer(dividerEl, event);
+    rootEl.style.setProperty("--split-ratio", `${ratio}%`);
   }
 
   function onPointerMove(event: PointerEvent) {
-    if (!dragging || !rootEl) {
+    if (!dragging) {
       return;
     }
-    const rect = rootEl.getBoundingClientRect();
-    const next = ((event.clientX - rect.left) / rect.width) * 100;
-    onRatioChange(Math.min(75, Math.max(25, next)));
+    drag.move(event);
   }
 
   function onPointerUp(event: PointerEvent) {
-    if (dividerEl?.hasPointerCapture(event.pointerId)) {
-      dividerEl.releasePointerCapture(event.pointerId);
+    drag.cancel();
+    releasePointer(dividerEl, event);
+    if (dragging) {
+      commitRatio();
     }
     dragging = false;
   }
+
+  function onKeydown(event: KeyboardEvent) {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+      return;
+    }
+    event.preventDefault();
+    const delta = event.key === "ArrowLeft" ? -2 : 2;
+    onRatioChange(clampSplitRatio(ratio + delta));
+  }
 </script>
 
-<div class="split-root" class:dragging bind:this={rootEl}>
-  <div class="pane primary" style:flex-basis="{ratio}%">
+<svelte:window
+  onpointermove={dragging ? onPointerMove : undefined}
+  onpointerup={dragging ? onPointerUp : undefined}
+  onpointercancel={dragging ? onPointerUp : undefined}
+/>
+
+<div class="split-root" class:dragging bind:this={rootEl} style:--split-ratio="{ratio}%">
+  <div class="pane primary">
     {@render primary()}
   </div>
   <button
@@ -54,6 +95,7 @@
     onpointermove={onPointerMove}
     onpointerup={onPointerUp}
     onpointercancel={onPointerUp}
+    onkeydown={onKeydown}
   ></button>
   <div class="pane secondary">
     {@render secondary()}
@@ -66,6 +108,7 @@
     min-height: 0;
     height: 100%;
     width: 100%;
+    contain: layout;
   }
 
   .split-root.dragging {
@@ -73,14 +116,19 @@
     user-select: none;
   }
 
+  .split-root.dragging :global(iframe) {
+    pointer-events: none;
+  }
+
   .pane {
     min-width: 0;
     min-height: 0;
     overflow: hidden;
+    contain: layout;
   }
 
   .pane.primary {
-    flex-shrink: 0;
+    flex: 0 0 var(--split-ratio, 52%);
   }
 
   .pane.secondary {
@@ -96,6 +144,13 @@
     position: relative;
     border: none;
     padding: 0;
+    touch-action: none;
+  }
+
+  .divider::before {
+    content: "";
+    position: absolute;
+    inset: 0 -4px;
   }
 
   .divider::after {
