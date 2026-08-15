@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Speed up navigation by skipping unused panel refreshes and avoiding deep reactivity on tab page bodies
 - Community interfaces load only from the build-time bundled snapshot
 - Micron parser WASM is bundled at build time with no runtime GitHub download
+- Keep tab page bodies on disk instead of SQLite, and drop inactive tab HTML from RAM
+- Spill large page-cache entries to disk instead of keeping them in RAM
+- Cap stored discovery nodes and browsing history so those tables cannot grow without bound
 
 ## [0.2.2] [released] - 2026-08-14
 
