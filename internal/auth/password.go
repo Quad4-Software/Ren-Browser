@@ -19,6 +19,10 @@ const (
 	argonThreads = 4
 	argonKeyLen  = 32
 	argonSaltLen = 16
+
+	maxArgonTime    = 4
+	maxArgonMemory  = 256 * 1024
+	maxArgonThreads = 16
 )
 
 var ErrInvalidPassword = errors.New("invalid password")
@@ -72,12 +76,17 @@ func decodeArgon2ID(encoded string) (salt, hash []byte, params argonParams, err 
 	if version != argon2.Version {
 		return nil, nil, params, errors.New("unsupported argon2 version")
 	}
-	var memory, time uint32
-	var threads int
-	if _, err = fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &memory, &time, &threads); err != nil {
+	var memory, timeCost, threads int64
+	if _, err = fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &memory, &timeCost, &threads); err != nil {
 		return nil, nil, params, err
 	}
-	if threads < 1 || threads > 255 {
+	if timeCost < 1 || timeCost > maxArgonTime {
+		return nil, nil, params, errors.New("invalid time cost")
+	}
+	if memory < 1 || memory > maxArgonMemory {
+		return nil, nil, params, errors.New("invalid memory cost")
+	}
+	if threads < 1 || threads > maxArgonThreads {
 		return nil, nil, params, errors.New("invalid thread count")
 	}
 	salt, err = base64.RawStdEncoding.DecodeString(parts[4])
@@ -88,7 +97,7 @@ func decodeArgon2ID(encoded string) (salt, hash []byte, params argonParams, err 
 	if err != nil {
 		return nil, nil, params, err
 	}
-	params = argonParams{memory: memory, time: time, threads: uint8(threads)}
+	params = argonParams{memory: uint32(memory), time: uint32(timeCost), threads: uint8(threads)}
 	return salt, hash, params, nil
 }
 

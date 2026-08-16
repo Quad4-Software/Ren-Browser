@@ -69,6 +69,9 @@ func TestVerifyPasswordRejectsGarbage(t *testing.T) {
 		"bcrypt-like",
 		"$argon2id$v=99$m=1,t=1,p=1$abc$def",
 		"$argon2id$v=19$m=65536,t=3,p=2$!!!$!!!",
+		"$argon2id$v=19$m=65536,t=0,p=4$c2FsdHNhbHRzYWx0$dGVzdGhhc2h0ZXN0aGFzaA",
+		"$argon2id$v=19$m=65536,t=999999,p=4$c2FsdHNhbHRzYWx0$dGVzdGhhc2h0ZXN0aGFzaA",
+		"$argon2id$v=19$m=0,t=1,p=4$c2FsdHNhbHRzYWx0$dGVzdGhhc2h0ZXN0aGFzaA",
 	}
 	for _, c := range cases {
 		if err := auth.VerifyPassword(c, "pw"); err == nil {

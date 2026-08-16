@@ -16,6 +16,7 @@ func FuzzVerifyPassword(f *testing.F) {
 	f.Add(hash, "seed-password")
 	f.Add("not-a-valid-hash", "anything")
 	f.Add("$argon2id$v=19$m=65536,t=3,p=2$c2FsdHNhbHRzYWx0$hashhashhash", "pw")
+	f.Add("$argon2id$v=19$m=65536,t=0,p=4$c2FsdHNhbHRzYWx0$dGVzdGhhc2h0ZXN0aGFzaA", "pw")
 	f.Add("", "")
 	f.Add(strings.Repeat("A", 4096), "pw")
 
