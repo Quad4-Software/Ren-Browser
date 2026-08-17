@@ -461,6 +461,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       REN_BROWSER_FRONTEND_PREBUILT: "1"
+      ANDROID_VERSION_NAME: ${{ needs.version.outputs.version }}
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
