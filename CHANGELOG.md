@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Stamp Android APK versionName and versionCode from the release version so Obtainium updates replace the installed app
 - Restore split tab view on desktop. It was closed immediately by a mobile-layout effect
 - Fix Android crash when minimizing and reopening the app caused by Go flag re-registration on activity recreation
 - Run BrowserService cleanup on Wails shutdown by matching the ServiceShutdown interface
