@@ -50,6 +50,7 @@ jobs:
         with:
           install-wails: "false"
           install-linux-deps: ${{ matrix.os == 'ubuntu-latest' && 'true' || 'false' }}
+          cache-node: ${{ matrix.os == 'ubuntu-latest' && 'true' || 'false' }}
 
       - name: Verify vendored modules
         run: go list -mod=vendor ./...
@@ -61,6 +62,10 @@ jobs:
 
       - name: Go tests
         run: task test:go
+
+      - name: Install frontend dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: task common:install:frontend:deps
 
       - name: Go hard tests
         if: matrix.os == 'ubuntu-latest'
