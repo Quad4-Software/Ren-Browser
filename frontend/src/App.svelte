@@ -49,7 +49,7 @@
     });
   }
 
-  $effect(() => {
+  onMount(() => {
     const viewport = window.visualViewport;
     const onViewport = () => syncKeyboardChrome();
     viewport?.addEventListener("resize", onViewport);

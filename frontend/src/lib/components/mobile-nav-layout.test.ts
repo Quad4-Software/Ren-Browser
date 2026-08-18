@@ -44,4 +44,29 @@ describe("MobileNav layout regressions", () => {
     expect(label).not.toBeNull();
     expect(getComputedStyle(label!).textOverflow).toBe("ellipsis");
   });
+
+  it("hides while the mobile shell has the keyboard open", async () => {
+    const shell = document.createElement("div");
+    shell.className = "app-shell mobile-ui keyboard-open";
+    document.body.appendChild(shell);
+
+    flushSync(() => {
+      instance = mount(MobileNav, {
+        target: shell,
+        props: {
+          activePanel: "browser",
+          mobileDevTools: false,
+          downloadsOpen: false,
+          activeDownloadCount: 0,
+          onPanel: noop,
+          onToggleDownloads: noop,
+        },
+      });
+    });
+    await tick();
+
+    const nav = shell.querySelector(".mobile-nav") as HTMLElement | null;
+    expect(nav).not.toBeNull();
+    expect(getComputedStyle(nav!).display).toBe("none");
+  });
 });
