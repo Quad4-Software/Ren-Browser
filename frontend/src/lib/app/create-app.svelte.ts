@@ -554,8 +554,16 @@ export function createApp() {
       clearTimeout(persistTimer);
     }
     persistTimer = setTimeout(() => {
-      void persistTabs();
+      persistTimer = undefined;
+      return persistTabs();
     }, 250);
+  }
+
+  function dispose() {
+    if (persistTimer) {
+      clearTimeout(persistTimer);
+      persistTimer = undefined;
+    }
   }
 
   async function persistTabs() {
@@ -3132,5 +3140,6 @@ export function createApp() {
     retryActiveDownload,
     toggleTheme,
     mount,
+    dispose,
   };
 }

@@ -12,5 +12,8 @@
 
   $effect(() => {
     onReady(app);
+    return () => {
+      app.dispose();
+    };
   });
 </script>

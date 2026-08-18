@@ -102,7 +102,7 @@ export function tabSnapshotForPersist(tab: Tab, keepFull: boolean): TabSnapshot 
     durationMs: tab.page?.durationMs,
     pageFg: tab.page?.pageFg,
     pageBg: tab.page?.pageBg,
-    html: keepFull ? tab.page?.html : "",
-    lastRaw: keepFull ? tab.page?.lastRaw : "",
+    html: keepFull ? (tab.page?.html ?? "") : "",
+    lastRaw: keepFull ? (tab.page?.lastRaw ?? "") : "",
   };
 }

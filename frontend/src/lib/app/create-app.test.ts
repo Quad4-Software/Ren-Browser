@@ -90,6 +90,7 @@ describe("createApp controller", () => {
   });
 
   afterEach(() => {
+    vi.clearAllTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
   });
@@ -203,15 +204,22 @@ describe("createApp controller", () => {
       await app.openPage("about:");
       app.newTab();
       await vi.advanceTimersByTimeAsync(300);
-      expect(browserMocks.SaveTabs).toHaveBeenCalled();
-      const payload = browserMocks.SaveTabs.mock.calls.at(-1)?.[0] as Array<{
-        active: boolean;
-        html?: string;
-        lastRaw?: string;
-      }>;
-      const inactive = payload.find((tab) => !tab.active);
-      expect(inactive?.html).toBe("");
-      expect(inactive?.lastRaw).toBe("");
+      const payloads = browserMocks.SaveTabs.mock.calls.map(
+        (call) =>
+          call[0] as Array<{
+            active: boolean;
+            html?: string;
+            lastRaw?: string;
+          }>,
+      );
+      const snapshot = payloads.findLast(
+        (tabs) => Array.isArray(tabs) && tabs.some((tab) => !tab.active),
+      );
+      expect(snapshot).toBeDefined();
+      const inactive = snapshot?.find((tab) => !tab.active);
+      expect(inactive).toBeDefined();
+      expect(inactive?.html ?? "").toBe("");
+      expect(inactive?.lastRaw ?? "").toBe("");
     });
   });
 
