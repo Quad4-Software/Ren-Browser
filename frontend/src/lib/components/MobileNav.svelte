@@ -79,6 +79,7 @@
     padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom));
     background: var(--ren-chrome-bg);
     border-top: 1px solid var(--ren-border);
+    touch-action: manipulation;
   }
 
   button {
@@ -143,5 +144,9 @@
 
   :global(.app-shell.mobile-ui) .mobile-nav {
     display: grid;
+  }
+
+  :global(.app-shell.mobile-ui.keyboard-open) .mobile-nav {
+    display: none;
   }
 </style>

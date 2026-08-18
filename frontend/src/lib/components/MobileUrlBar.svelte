@@ -97,6 +97,7 @@
     padding-top: calc(0.5rem + env(safe-area-inset-top));
     background: var(--ren-chrome-bg);
     border-bottom: 1px solid var(--ren-border);
+    touch-action: manipulation;
   }
 
   .url-form {
@@ -110,7 +111,7 @@
     border-radius: 999px;
     background: var(--ren-surface-muted);
     border-color: var(--ren-border);
-    font-size: 0.88rem;
+    font-size: 16px;
     padding: 0.45rem 0.75rem;
   }
 

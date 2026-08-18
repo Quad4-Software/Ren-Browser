@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 package app
 
+import "github.com/wailsapp/wails/v3/pkg/application"
+
 func (s *BrowserService) Shutdown() {
 	s.shutdown(true)
 }
@@ -22,6 +24,7 @@ func (s *BrowserService) shutdown(quitApp bool) {
 		s.mu.Unlock()
 
 		_, _ = s.capturePrimaryWindowState()
+		application.Mobile.SetKeyboardWatch(false)
 
 		if downloads != nil {
 			downloads.shutdownInFlight(downloadInterruptedText)

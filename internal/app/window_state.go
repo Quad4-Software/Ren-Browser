@@ -224,6 +224,7 @@ func (s *BrowserService) ensureWindowPersistence() {
 
 func (s *BrowserService) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
 	s.ensureWindowPersistence()
+	application.Mobile.SetKeyboardWatch(true)
 	return nil
 }
 

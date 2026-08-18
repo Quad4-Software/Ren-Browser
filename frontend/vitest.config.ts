@@ -11,6 +11,7 @@ const domTests = [
   "src/lib/app/create-app.test.ts",
   "src/lib/browser/find-in-page.test.ts",
   "src/lib/browser/mobile-gestures.test.ts",
+  "src/lib/browser/mobile-keyboard.test.ts",
   "src/lib/browser/docs-render.test.ts",
   "src/lib/browser/docs-render.snapshot.test.ts",
   "src/lib/documents/epub.test.ts",
