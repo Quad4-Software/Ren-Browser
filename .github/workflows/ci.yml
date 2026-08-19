@@ -266,7 +266,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           install-wails: "false"
-          install-linux-deps: "true"
+          install-linux-deps: "false"
           cache-node: "true"
 
       - name: Install frontend dependencies

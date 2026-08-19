@@ -61,8 +61,8 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup
         with:
-          install-linux-deps: "true"
-          install-wails: "true"
+          install-linux-deps: "false"
+          install-wails: "false"
           cache-node: "true"
 
       - name: Build production frontend

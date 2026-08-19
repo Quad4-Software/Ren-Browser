@@ -10,15 +10,6 @@ vi.mock("./wasm-store", () => ({
 describe("preloadNomadMicronWasm concurrency", () => {
   beforeEach(() => {
     vi.resetModules();
-    vi.stubGlobal("WebAssembly", {
-      ...globalThis.WebAssembly,
-      instantiate: vi.fn(async () => {
-        throw new Error("not used");
-      }),
-      instantiateStreaming: vi.fn(async () => {
-        throw new Error("not used");
-      }),
-    });
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => new Response(null, { status: 404 })),
