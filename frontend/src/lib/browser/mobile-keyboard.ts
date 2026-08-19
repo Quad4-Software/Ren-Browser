@@ -86,8 +86,6 @@ export function keyboardChromeState(input: {
   focusedEditable: boolean;
 }): KeyboardChromeState {
   const keyboardOpen =
-    input.focusedEditable ||
-    input.native.visible ||
-    input.visualInset >= KEYBOARD_OPEN_INSET_MIN;
+    input.focusedEditable || input.native.visible || input.visualInset >= KEYBOARD_OPEN_INSET_MIN;
   return { imeInset: Math.max(0, input.visualInset), keyboardOpen };
 }

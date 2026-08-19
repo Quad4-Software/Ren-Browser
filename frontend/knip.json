@@ -11,7 +11,7 @@
   ],
   "project": ["src/**/*.{ts,svelte}", "e2e/**/*.ts", "scripts/**/*.{js,mjs}"],
   "ignore": ["bindings/**", "dist/**", "playwright-report/**", "test-results/**"],
-  "ignoreDependencies": ["@types/dompurify", "tailwindcss", "tslib"],
+  "ignoreDependencies": ["tailwindcss", "tslib"],
   "ignoreIssues": {
     "src/lib/**": ["exports", "types"]
   }

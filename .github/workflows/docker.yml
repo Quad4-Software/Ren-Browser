@@ -1,6 +1,6 @@
 # Pinned third-party actions (bump tag and SHA together when upgrading):
-#   actions/checkout@v7.0.0                 9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-#   docker/login-action@v4.4.0              af1e73f918a031802d376d3c8bbc3fe56130a9b0
+#   actions/checkout@v7.0.1                 3d3c42e5aac5ba805825da76410c181273ba90b1
+#   docker/login-action@v4.6.0              dbcb813823bdd20940b903addbd779551569679f
 #   docker/setup-buildx-action@v4.2.0       bb05f3f5519dd87d3ba754cc423b652a5edd6d2c
 #   docker/build-push-action@v7.3.0         53b7df96c91f9c12dcc8a07bcb9ccacbed38856a
 
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
@@ -89,7 +89,7 @@ jobs:
         run: bash build/scripts/docker-image-meta.sh
 
       - name: Login to GHCR
-        uses: docker/login-action@af1e73f918a031802d376d3c8bbc3fe56130a9b0
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}

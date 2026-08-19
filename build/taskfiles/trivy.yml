@@ -12,7 +12,7 @@ tasks:
     cmds:
       - |
         if ! command -v trivy &> /dev/null; then
-          sh build/scripts/ci/setup-trivy.sh 0.69.3
+          sh build/scripts/ci/setup-trivy.sh 0.74.0
         else
           echo "Trivy is already installed: $(trivy --version)"
         fi

@@ -289,8 +289,7 @@
         spellcheck="false"
         bind:this={sourceInput}
         oninput={onInput}
-        oncontextmenu={openMenu}
-      ></textarea>
+        oncontextmenu={openMenu}></textarea>
     </div>
 
     <button

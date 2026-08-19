@@ -5,6 +5,13 @@ All notable changes to Ren Browser are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Upgrade Wails from v3.0.0-beta.8 to v3.0.0-beta.9
+- Bump frontend, Go, GitHub Actions, pnpm, Task, and Trivy dependencies to current releases
+
 ## [0.3.0] [released] - 2026-08-18
 
 ### Fixed

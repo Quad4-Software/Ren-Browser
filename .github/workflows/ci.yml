@@ -1,8 +1,8 @@
 # Pinned third-party actions (bump tag and SHA together when upgrading):
-#   actions/checkout@v7.0.0                    9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+#   actions/checkout@v7.0.1                    3d3c42e5aac5ba805825da76410c181273ba90b1
 #   actions/upload-artifact@v7.0.1             043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-#   actions/cache@v4.2.3                       5a3ec84eff668545956fd18022155c47e93e2684
-#   aquasecurity/trivy-action@0.35.0           57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+#   actions/cache@v6.1.0                       55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+#   aquasecurity/trivy-action@v0.36.0           ed142fd0673e97e23eac54620cfb913e5ce36c25
 
 name: CI
 
@@ -43,7 +43,7 @@ jobs:
           - macos-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
@@ -89,7 +89,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
@@ -117,7 +117,7 @@ jobs:
           install-linux-deps: "true"
 
       - name: Restore benchmark baseline
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: bench/baseline
           key: go-bench-${{ runner.os }}-${{ github.sha }}
@@ -157,7 +157,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
@@ -189,7 +189,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
@@ -221,7 +221,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
@@ -236,7 +236,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
@@ -260,7 +260,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup dependencies
         uses: ./.github/actions/setup
@@ -282,7 +282,7 @@ jobs:
         run: task gosec
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: fs
           scan-ref: .
@@ -291,7 +291,7 @@ jobs:
           skip-dirs: frontend/node_modules,bin,build/android/.gradle,build/android/build,vendor,third_party
 
       - name: Trivy Dockerfile scan
-        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
         with:
           scan-type: config
           scan-ref: .
@@ -316,7 +316,7 @@ jobs:
             runner: ubuntu-24.04-arm
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Fetch frontend artifact
         uses: ./.github/actions/fetch-frontend-artifact
@@ -376,7 +376,7 @@ jobs:
       REN_BROWSER_FRONTEND_PREBUILT: "1"
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Fetch frontend artifact
         uses: ./.github/actions/fetch-frontend-artifact
@@ -394,7 +394,7 @@ jobs:
         uses: ./.github/actions/setup-android
 
       - name: Cache mobile MTE Go toolchain
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: build/tools/go-mte
           key: go-mte-${{ runner.os }}-${{ hashFiles('build/patches/go/mte-ios.patch', 'build/scripts/ensure-go-mte.sh') }}
@@ -501,7 +501,7 @@ jobs:
             install_wails: "true"
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Fetch frontend artifact
         uses: ./.github/actions/fetch-frontend-artifact
@@ -544,7 +544,7 @@ jobs:
       REN_BROWSER_FRONTEND_PREBUILT: "1"
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Fetch frontend artifact
         uses: ./.github/actions/fetch-frontend-artifact
@@ -559,7 +559,7 @@ jobs:
           cache-node: "false"
 
       - name: Cache mobile MTE Go toolchain
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: build/tools/go-mte
           key: go-mte-${{ runner.os }}-${{ hashFiles('build/patches/go/mte-ios.patch', 'build/scripts/ensure-go-mte.sh') }}
@@ -611,7 +611,7 @@ jobs:
             artifact_name: renbrowser-server-windows-amd64.exe
     steps:
       - name: Checkout Ren Browser
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup dependencies
         uses: ./.github/actions/setup

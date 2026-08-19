@@ -1,7 +1,7 @@
 # Pinned third-party actions (bump tag and SHA together when upgrading):
-#   actions/checkout@v7.0.0                    9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-#   github/codeql-action/init@v4.31.6          fe4161a26a8629af62121b670040955b330f9af2
-#   github/codeql-action/analyze@v4.31.6       fe4161a26a8629af62121b670040955b330f9af2
+#   actions/checkout@v7.0.1                    3d3c42e5aac5ba805825da76410c181273ba90b1
+#   github/codeql-action/init@v4.37.7          ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd
+#   github/codeql-action/analyze@v4.37.7       ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd
 
 name: CodeQL Advanced
 
@@ -42,7 +42,7 @@ jobs:
             build-mode: none
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Setup dependencies
         if: matrix.language == 'go'
@@ -52,12 +52,12 @@ jobs:
           install-linux-deps: "true"
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@fe4161a26a8629af62121b670040955b330f9af2
+        uses: github/codeql-action/init@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@fe4161a26a8629af62121b670040955b330f9af2
+        uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd
         with:
           category: "/language:${{matrix.language}}"

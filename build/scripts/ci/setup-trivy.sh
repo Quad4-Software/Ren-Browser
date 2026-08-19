@@ -2,7 +2,7 @@
 # Install Trivy from the official Aqua Security GitHub release with a pinned SHA256.
 #
 # Usage: setup-trivy.sh <version>
-#   version: e.g. 0.69.3
+#   version: e.g. 0.74.0
 #
 # Optional overrides:
 #   TRIVY_DEB_URL     direct .deb URL (default: official GitHub release asset)
@@ -16,7 +16,7 @@ if [ -z "$VER" ] && [ -n "${TRIVY_DEB_URL:-}" ]; then
     VER="custom"
 fi
 if [ -z "$VER" ]; then
-    echo "setup-trivy.sh: usage: setup-trivy.sh <version> (e.g. 0.69.3)" >&2
+    echo "setup-trivy.sh: usage: setup-trivy.sh <version> (e.g. 0.74.0)" >&2
     exit 1
 fi
 
@@ -36,7 +36,7 @@ DEB="trivy_${VER}_Linux-64bit.deb"
 URL="${TRIVY_DEB_URL:-https://github.com/aquasecurity/trivy/releases/download/v${VER}/${DEB}}"
 
 case "$VER" in
-    0.69.3) EXPECTED="${TRIVY_DEB_SHA256:-a484057aafde31089cf2558ca0f79a4bc835125a5ee6834183a5bcf0735af358}" ;;
+    0.74.0) EXPECTED="${TRIVY_DEB_SHA256:-cf1e32ec8d4d8823e023096a28cadb14f5b5123ce03f201fb633c5b76aa712dd}" ;;
     custom) EXPECTED="${TRIVY_DEB_SHA256:-}" ;;
     *)
         EXPECTED="${TRIVY_DEB_SHA256:-}"

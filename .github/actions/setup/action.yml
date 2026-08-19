@@ -1,7 +1,7 @@
 # Pinned third-party actions (bump tag and SHA together when upgrading):
-#   pnpm/action-setup@v6.0.9           0ebf47130e4866e96fce0953f49152a61190b271
-#   actions/setup-go@v6.5.0            924ae3a1cded613372ab5595356fb5720e22ba16
-#   actions/setup-node@v6.4.0          48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+#   pnpm/action-setup@v6.0.10          0977fd99725f1db4007ccb2928dbb4e90d06cc86
+#   actions/setup-go@v7.0.0            b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+#   actions/setup-node@v7.0.0          820762786026740c76f36085b0efc47a31fe5020
 #   arduino/setup-task@v3.0.0          c0bc642852239c2689f73f4ea6459c29405f3c52
 
 name: Setup Ren Browser
@@ -23,15 +23,15 @@ inputs:
   pnpm-version:
     description: pnpm version
     required: false
-    default: "11.3.0"
+    default: "11.22.0"
   task-version:
     description: Task version
     required: false
-    default: "3.49.1"
+    default: "3.53.1"
   wails-version:
     description: wails3 module version tag
     required: false
-    default: "v3.0.0-beta.8"
+    default: "v3.0.0-beta.9"
   cache-node:
     description: Enable pnpm cache in setup-node (only when the job runs pnpm install)
     required: false
@@ -87,24 +87,22 @@ runs:
       run: sh build/scripts/verify-tree-rsm.sh
 
     - name: Setup pnpm
-      uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271
+      uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
       with:
         version: ${{ inputs.pnpm-version }}
 
     - name: Setup Go
-      uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
       with:
         go-version: ${{ inputs.go-version }}
         cache-dependency-path: go.sum
 
     - name: Setup Node.js
-      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
       with:
         node-version: "22"
         cache: ${{ inputs.cache-node == 'true' && 'pnpm' || '' }}
-        cache-dependency-path: |
-          pnpm-lock.yaml
-          frontend/pnpm-lock.yaml
+        cache-dependency-path: pnpm-lock.yaml
 
     - name: Setup Task
       uses: arduino/setup-task@c0bc642852239c2689f73f4ea6459c29405f3c52

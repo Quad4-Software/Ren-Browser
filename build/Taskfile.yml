@@ -95,12 +95,11 @@ tasks:
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
       - frontend/package.json
-      - frontend/pnpm-lock.yaml
     generates:
       - frontend/node_modules
     preconditions:
       - sh: pnpm --version | awk -F. '{ exit ($1 < 11) }'
-        msg: "pnpm 11+ is required. Install with: corepack enable && corepack prepare pnpm@11.3.0 --activate"
+        msg: "pnpm 11+ is required. Install with: corepack enable && corepack prepare pnpm@11.22.0 --activate"
     cmds:
       - pnpm install --frozen-lockfile=false
 

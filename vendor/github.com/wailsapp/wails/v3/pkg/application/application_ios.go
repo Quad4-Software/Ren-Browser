@@ -363,6 +363,11 @@ func ServeAssetRequest(windowID C.uint, urlSchemeTask unsafe.Pointer) {
 	}
 }
 
+//export cancelURLRequest
+func cancelURLRequest(urlSchemeTask unsafe.Pointer) {
+	webview.CancelRequest(urlSchemeTask)
+}
+
 // HandleJSMessage handles messages from JavaScript
 //
 //export HandleJSMessage

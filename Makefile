@@ -56,7 +56,7 @@ gosec:
 	bash build/scripts/gosec.sh ./...
 
 sbom:
-	@command -v trivy >/dev/null 2>&1 || { echo "Trivy not found. Install with: sh build/scripts/ci/setup-trivy.sh 0.69.3" >&2; exit 1; }
+	@command -v trivy >/dev/null 2>&1 || { echo "Trivy not found. Install with: sh build/scripts/ci/setup-trivy.sh 0.74.0" >&2; exit 1; }
 	mkdir -p sbom
 	trivy fs --skip-dirs vendor --skip-dirs frontend/node_modules --skip-dirs bin --skip-dirs .cache --skip-dirs third_party --skip-dirs build/android/.gradle --skip-dirs build/android/build --format spdx-json --include-dev-deps --output sbom/sbom.spdx.json .
 	trivy fs --skip-dirs vendor --skip-dirs frontend/node_modules --skip-dirs bin --skip-dirs .cache --skip-dirs third_party --skip-dirs build/android/.gradle --skip-dirs build/android/build --format cyclonedx --include-dev-deps --output sbom/sbom.cyclonedx.json .

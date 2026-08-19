@@ -87,8 +87,7 @@
     bind:value={configText}
     spellcheck="false"
     oninput={() => onChange(configText)}
-    aria-label={t("config.ariaLabel")}
-  ></textarea>
+    aria-label={t("config.ariaLabel")}></textarea>
 
   {#if error}
     <p class="error">{error}</p>
