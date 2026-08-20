@@ -119,6 +119,8 @@ runs:
       shell: bash
       env:
         GOFLAGS: -mod=mod
+        # CLI install must not pull Linux webview CGO (gtk4/webkitgtk).
+        CGO_ENABLED: "0"
       run: |
         go install github.com/wailsapp/wails/v3/cmd/wails3@${{ inputs.wails-version }}
         echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"

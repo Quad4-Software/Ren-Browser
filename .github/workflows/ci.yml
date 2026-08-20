@@ -116,15 +116,16 @@ jobs:
         uses: ./.github/actions/setup
         with:
           install-wails: "false"
-          install-linux-deps: "true"
+          install-linux-deps: "false"
 
       - name: Restore benchmark baseline
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: bench/baseline
-          key: go-bench-${{ runner.os }}-${{ github.sha }}
+          # v2: reset after CI apt hangs left an unrepresentative baseline.
+          key: go-bench-v2-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
-            go-bench-${{ runner.os }}-
+            go-bench-v2-${{ runner.os }}-
 
       - name: Run benchmarks
         run: task bench:go
@@ -166,7 +167,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           install-wails: "false"
-          install-linux-deps: "true"
+          install-linux-deps: "false"
           cache-node: "true"
 
       - name: Go coverage
