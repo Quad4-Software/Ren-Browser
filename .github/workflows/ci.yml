@@ -116,7 +116,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           install-wails: "false"
-          install-linux-deps: "false"
+          install-linux-deps: "true"
 
       - name: Restore benchmark baseline
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
@@ -167,7 +167,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           install-wails: "false"
-          install-linux-deps: "false"
+          install-linux-deps: "true"
           cache-node: "true"
 
       - name: Go coverage
