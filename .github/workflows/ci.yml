@@ -34,6 +34,7 @@ jobs:
   go:
     name: Go (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -106,6 +107,7 @@ jobs:
   benchmark:
     name: Go benchmarks
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -155,6 +157,7 @@ jobs:
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -187,6 +190,7 @@ jobs:
   e2e:
     name: E2E
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -195,7 +199,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           install-wails: "false"
-          install-linux-deps: "true"
+          install-linux-deps: "false"
           cache-node: "true"
 
       - name: Playwright E2E
@@ -234,6 +238,7 @@ jobs:
   frontend:
     name: Frontend
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -242,7 +247,7 @@ jobs:
         uses: ./.github/actions/setup
         with:
           install-wails: "false"
-          install-linux-deps: "true"
+          install-linux-deps: "false"
           cache-node: "true"
 
       - name: Frontend quality gates
@@ -258,6 +263,7 @@ jobs:
   security:
     name: Security
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout Ren Browser
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -304,6 +310,7 @@ jobs:
     name: Linux (${{ matrix.arch }})
     needs: frontend-artifact
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
     env:
       REN_BROWSER_FRONTEND_PREBUILT: "1"
     strategy:
@@ -340,7 +347,7 @@ jobs:
         run: |
           if [ "${{ matrix.arch }}" = "amd64" ]; then
             # Run self-check using xvfb-run on Linux to provide a virtual display for WebKitGTK
-            sudo apt-get update && sudo apt-get install -y xvfb
+            sudo timeout 3m apt-get update && sudo timeout 5m apt-get install -y xvfb
             xvfb-run --auto-servernum ./bin/renbrowser --self-check
           else
             echo "Skipping self-check on non-amd64 runner"
@@ -372,6 +379,7 @@ jobs:
     name: Android (debug apk)
     needs: frontend-artifact
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     env:
       REN_BROWSER_FRONTEND_PREBUILT: "1"
     steps:
@@ -386,7 +394,7 @@ jobs:
       - name: Setup dependencies
         uses: ./.github/actions/setup
         with:
-          install-linux-deps: "true"
+          install-linux-deps: "false"
           install-wails: "true"
           cache-node: "false"
 
@@ -479,6 +487,7 @@ jobs:
     name: Build (${{ matrix.target }})
     needs: frontend-artifact
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     env:
       REN_BROWSER_FRONTEND_PREBUILT: "1"
     strategy:
@@ -539,6 +548,7 @@ jobs:
     name: iOS (experimental)
     needs: frontend-artifact
     runs-on: macos-latest
+    timeout-minutes: 30
     continue-on-error: true
     env:
       REN_BROWSER_FRONTEND_PREBUILT: "1"

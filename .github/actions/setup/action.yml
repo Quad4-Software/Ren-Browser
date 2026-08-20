@@ -111,18 +111,9 @@ runs:
 
     - name: Install Linux desktop dependencies
       if: inputs.install-linux-deps == 'true'
+      timeout-minutes: 20
       shell: bash
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends \
-          pkg-config gcc libc6-dev \
-          libglib2.0-dev \
-          libgtk-4-dev libwebkitgtk-6.0-dev \
-          libgtk-3-dev libwebkit2gtk-4.1-dev \
-          bubblewrap xdg-dbus-proxy \
-          curl librsvg2-bin patchelf
-        pkg-config --modversion gtk4
-        pkg-config --modversion webkitgtk-6.0
+      run: bash "${GITHUB_WORKSPACE}/build/scripts/ci-install-linux-deps.sh"
 
     - name: Install wails3
       if: inputs.install-wails == 'true'
@@ -130,10 +121,6 @@ runs:
       env:
         GOFLAGS: -mod=mod
       run: |
-        if [ "${{ inputs.install-linux-deps }}" != "true" ] && [ "$(uname -s)" = "Linux" ]; then
-          echo "install-wails requires install-linux-deps on Linux (gtk4/webkitgtk dev packages)." >&2
-          exit 1
-        fi
         go install github.com/wailsapp/wails/v3/cmd/wails3@${{ inputs.wails-version }}
         echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
