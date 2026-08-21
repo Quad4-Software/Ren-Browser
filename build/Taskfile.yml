@@ -48,10 +48,7 @@ tasks:
     run: once
     timeout: 3m
     cmds:
-      - bash "{{.ROOT_DIR}}/build/scripts/fetch-reticulum-go.sh"
-      - go mod tidy -e
-      - bash "{{.ROOT_DIR}}/build/scripts/ensure-go-mod-vendor-deps.sh"
-      - bash "{{.ROOT_DIR}}/build/scripts/sync-vendor-golang-x.sh"
+      - bash "{{.ROOT_DIR}}/build/scripts/go-mod-tidy-ci.sh"
     env:
       GOFLAGS: "-mod=mod"
 
