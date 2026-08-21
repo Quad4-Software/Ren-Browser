@@ -22,8 +22,10 @@ trap cleanup EXIT
 
 build_once() {
   local out="$1"
+  # Wipe dist so each binary rebuilds frontend assets. --force avoids Task
+  # treating a stale or stub dist/index.html as an up-to-date generate.
   rm -rf frontend/dist
-  task build:server \
+  task --force build:server \
     OUTPUT="${out}" \
     GIT_COMMIT="${repro_commit}" \
     BUILD_TIME="${repro_time}" \

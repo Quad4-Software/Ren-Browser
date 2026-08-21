@@ -8,19 +8,30 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "${root}"
 
 snap_dir="$(mktemp -d "${TMPDIR:-/tmp}/go-mod-tidy.XXXXXX")"
-cleanup() { rm -rf "${snap_dir}"; }
+created_stub=0
+dist="${root}/frontend/dist"
+
+cleanup() {
+  # Do not leave a stub dist behind: Task treats dist/index.html as a generate
+  # and would skip vite on the next build:frontend (breaks reproducible checks).
+  if [[ "${created_stub}" -eq 1 ]]; then
+    rm -f "${dist}/index.html"
+    rmdir "${dist}" 2>/dev/null || true
+  fi
+  rm -rf "${snap_dir}"
+}
 trap cleanup EXIT
 
 cp go.mod "${snap_dir}/go.mod"
 cp go.sum "${snap_dir}/go.sum"
 cp vendor/modules.txt "${snap_dir}/modules.txt"
 
-# go list loads packages with //go:embed (main_desktop.go needs frontend/dist).
-# Reproducible builds delete dist before rebuild, so stub it for the vendor check.
-dist="${root}/frontend/dist"
+# go list loads //go:embed all:frontend/dist from main_*.go. Create a temporary
+# stub only for the vendor consistency check, then remove it in cleanup.
 mkdir -p "${dist}"
 if [[ ! -f "${dist}/index.html" ]]; then
   printf '%s\n' '<!DOCTYPE html><html><head></head><body></body></html>' > "${dist}/index.html"
+  created_stub=1
 fi
 
 bash "${root}/build/scripts/fetch-reticulum-go.sh"
