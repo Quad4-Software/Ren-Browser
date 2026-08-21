@@ -15,16 +15,28 @@ cp go.mod "${snap_dir}/go.mod"
 cp go.sum "${snap_dir}/go.sum"
 cp vendor/modules.txt "${snap_dir}/modules.txt"
 
+# go list loads packages with //go:embed (main_desktop.go needs frontend/dist).
+# Reproducible builds delete dist before rebuild, so stub it for the vendor check.
+dist="${root}/frontend/dist"
+mkdir -p "${dist}"
+if [[ ! -f "${dist}/index.html" ]]; then
+  printf '%s\n' '<!DOCTYPE html><html><head></head><body></body></html>' > "${dist}/index.html"
+fi
+
 bash "${root}/build/scripts/fetch-reticulum-go.sh"
 GOFLAGS=-mod=mod go mod tidy -e
 bash "${root}/build/scripts/ensure-go-mod-vendor-deps.sh"
 bash "${root}/build/scripts/sync-vendor-golang-x.sh"
 
-if ! GOFLAGS=-mod=vendor go list ./... >/dev/null 2>"${snap_dir}/vendor-check.err"; then
-  echo "go-mod-tidy-ci: tidy left -mod=vendor inconsistent; restoring go.mod/go.sum/modules.txt" >&2
-  if [[ -s "${snap_dir}/vendor-check.err" ]]; then
-    cat "${snap_dir}/vendor-check.err" >&2 || true
+vendor_check_err="${snap_dir}/vendor-check.err"
+if ! GOFLAGS=-mod=vendor go list ./... >/dev/null 2>"${vendor_check_err}"; then
+  if ! grep -Eqi 'inconsistent vendoring|vendor/modules\.txt|explicitly required|marked as explicit' "${vendor_check_err}"; then
+    echo "go-mod-tidy-ci: go list failed (not treating as vendor inconsistency):" >&2
+    cat "${vendor_check_err}" >&2 || true
+    exit 1
   fi
+  echo "go-mod-tidy-ci: tidy left -mod=vendor inconsistent; restoring go.mod/go.sum/modules.txt" >&2
+  cat "${vendor_check_err}" >&2 || true
   cp "${snap_dir}/go.mod" go.mod
   cp "${snap_dir}/go.sum" go.sum
   cp "${snap_dir}/modules.txt" vendor/modules.txt
