@@ -23,7 +23,7 @@ inputs:
   pnpm-version:
     description: pnpm version
     required: false
-    default: "11.22.0"
+    default: "11.24.0"
   task-version:
     description: Task version
     required: false
@@ -31,7 +31,7 @@ inputs:
   wails-version:
     description: wails3 module version tag
     required: false
-    default: "v3.0.0-beta.9"
+    default: "v3.0.0-beta.16"
   cache-node:
     description: Enable pnpm cache in setup-node (only when the job runs pnpm install)
     required: false

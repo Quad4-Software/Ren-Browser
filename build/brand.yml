@@ -25,4 +25,4 @@ localStoragePrefix: renbrowser
 indexedDbName: renbrowser_micron_wasm_parsers
 proxyHeader: X-RenBrowser-Base-Path
 tempFilePrefix: renbrowser-rns-
-wailsVersion: v3.0.0-beta.9
+wailsVersion: v3.0.0-beta.16
