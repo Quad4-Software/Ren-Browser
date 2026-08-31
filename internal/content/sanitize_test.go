@@ -36,6 +36,14 @@ func TestSanitizeHTMLRemovesOnClick(t *testing.T) {
 	}
 }
 
+func TestSanitizeHTMLRemovesNestedJavascriptScheme(t *testing.T) {
+	in := "jAvAsjAvAsCript:Cript:"
+	out := content.SanitizeHTML(in)
+	if strings.Contains(strings.ToLower(out), "javascript:") {
+		t.Fatalf("nested javascript: scheme survived: %q", out)
+	}
+}
+
 func TestSanitizeHTMLCleanFastPath(t *testing.T) {
 	in := "<html><body><p>hello</p></body></html>"
 	out := content.SanitizeHTML(in)

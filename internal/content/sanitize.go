@@ -41,7 +41,13 @@ func SanitizeHTML(input string) string {
 	out = metaRefreshRe.ReplaceAllString(out, "")
 	out = baseHrefRe.ReplaceAllString(out, "")
 	out = onAttrRe.ReplaceAllString(out, "")
-	out = jsSchemeRe.ReplaceAllString(out, "")
+	for range 3 {
+		prev := out
+		out = jsSchemeRe.ReplaceAllString(out, "")
+		if out == prev {
+			break
+		}
+	}
 	return out
 }
 
