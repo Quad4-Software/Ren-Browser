@@ -269,13 +269,13 @@ func existingDir(path string) string {
 		return ""
 	}
 	resolved := filepath.Clean(path)
-	if info, err := os.Stat(resolved); err == nil {
+	if info, err := os.Stat(resolved); err == nil { // #nosec G703 -- landlock allowlist resolution of cleaned absolute paths only
 		if info.IsDir() {
 			return resolved
 		}
 		parent := filepath.Dir(resolved)
 		if parent != "" && parent != resolved {
-			if parentInfo, parentErr := os.Stat(parent); parentErr == nil && parentInfo.IsDir() {
+			if parentInfo, parentErr := os.Stat(parent); parentErr == nil && parentInfo.IsDir() { // #nosec G703 -- parent of cleaned path for O_PATH allowlist
 				return parent
 			}
 		}
@@ -283,7 +283,7 @@ func existingDir(path string) string {
 	}
 	parent := filepath.Dir(resolved)
 	if parent != "" && parent != resolved {
-		if parentInfo, err := os.Stat(parent); err == nil && parentInfo.IsDir() {
+		if parentInfo, err := os.Stat(parent); err == nil && parentInfo.IsDir() { // #nosec G703 -- missing path falls back to existing parent dir
 			return parent
 		}
 	}

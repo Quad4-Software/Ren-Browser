@@ -122,10 +122,10 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: bench/baseline
-          # v2: reset after CI apt hangs left an unrepresentative baseline.
-          key: go-bench-v2-${{ runner.os }}-${{ github.sha }}
+          # v3: reset after Wails/dep bump left SanitizeHTMLDirty median noise vs old cache.
+          key: go-bench-v3-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
-            go-bench-v2-${{ runner.os }}-
+            go-bench-v3-${{ runner.os }}-
 
       - name: Run benchmarks
         run: task bench:go

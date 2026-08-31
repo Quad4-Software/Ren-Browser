@@ -99,6 +99,9 @@ func (p *Parser) parseLineInto(out *strings.Builder, line string, s *State) int 
 					i++
 				}
 				s.Depth = i
+				if s.Depth > 16 {
+					s.Depth = 16
+				}
 				headingLine := trimASCIISpaces(line[i:])
 				if headingLine == "" {
 					return lineOmit
@@ -288,7 +291,11 @@ func cachedStateStyleAttr(s *State) string {
 }
 
 func sectionIndentStyleEm(s *State) float64 {
-	ind := max((s.Depth-1)*2, 0)
+	depth := s.Depth
+	if depth > 16 {
+		depth = 16
+	}
+	ind := max((depth-1)*2, 0)
 	if ind <= 0 {
 		return 0
 	}
