@@ -47,7 +47,7 @@ require (
 )
 
 replace (
-	micron-parser-go => github.com/Quad4-Software/Micron-Parser-Go v1.0.6
+	micron-parser-go => github.com/Quad4-Software/Micron-Parser-Go v1.0.7
 	quad4/bzip2 => github.com/Quad4-Software/bzip2 v0.0.0-20260704225916-ca8b2bb66059
 	quad4/msgpack/v5 => github.com/Quad4-Software/msgpack/v5 v5.8.2
 	quad4/pbt => github.com/Quad4-Software/pbt v0.0.0-20260614183135-abe0cfc4e604

@@ -23,6 +23,8 @@ import android.provider.OpenableColumns;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -60,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String WAILS_SCHEME = "https";
     private static final String WAILS_HOST = "wails.localhost";
     private static final int FILE_PICKER_REQUEST = 7001;
+    private static final int HTML_FILE_CHOOSER_REQUEST = 7004;
 
     private WebView webView;
     private WailsBridge bridge;
@@ -72,6 +75,8 @@ public class MainActivity extends AppCompatActivity {
 
     // The Go-side dialog ID of the in-flight file picker (-1 when idle)
     private int pendingFilePickerCallbackID = -1;
+    // HTML <input type="file"> chooser callback (null when idle)
+    private ValueCallback<Uri[]> htmlFilePathCallback;
     private static final int PHOTO_CAPTURE_REQUEST = 7002;
     private static final int VIDEO_CAPTURE_REQUEST = 7003;
     private static final int CAMERA_PERMISSION_REQUEST = 7010;
@@ -140,7 +145,9 @@ public class MainActivity extends AppCompatActivity {
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
         settings.setAllowFileAccess(false);
-        settings.setAllowContentAccess(false);
+        // Needed so <input type="file"> results (content:// URIs) can be read into
+        // File/Blob objects used by Micron WASM upload and theme import.
+        settings.setAllowContentAccess(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         webView.setBackgroundColor(0xFF18181B);
@@ -173,6 +180,40 @@ public class MainActivity extends AppCompatActivity {
                 .setDomain(WAILS_HOST)
                 .addPathHandler("/", new WailsPathHandler(bridge))
                 .build();
+
+        // HTML <input type="file"> needs onShowFileChooser; without it the picker
+        // never opens (Micron WASM upload, theme import, etc.).
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(
+                    WebView view,
+                    ValueCallback<Uri[]> filePathCallback,
+                    FileChooserParams fileChooserParams) {
+                if (htmlFilePathCallback != null) {
+                    htmlFilePathCallback.onReceiveValue(null);
+                    htmlFilePathCallback = null;
+                }
+                htmlFilePathCallback = filePathCallback;
+                Intent intent;
+                try {
+                    intent = fileChooserParams.createIntent();
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to create HTML file chooser intent", e);
+                    htmlFilePathCallback = null;
+                    filePathCallback.onReceiveValue(null);
+                    return false;
+                }
+                try {
+                    startActivityForResult(intent, HTML_FILE_CHOOSER_REQUEST);
+                    return true;
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to launch HTML file chooser", e);
+                    htmlFilePathCallback = null;
+                    filePathCallback.onReceiveValue(null);
+                    return false;
+                }
+            }
+        });
 
         // Set up WebView client to intercept requests
         webView.setWebViewClient(new WebViewClient() {
@@ -586,6 +627,19 @@ public class MainActivity extends AppCompatActivity {
             handleCaptureResult(resultCode, data);
             return;
         }
+        if (requestCode == HTML_FILE_CHOOSER_REQUEST) {
+            ValueCallback<Uri[]> callback = htmlFilePathCallback;
+            htmlFilePathCallback = null;
+            if (callback == null) {
+                return;
+            }
+            Uri[] results = null;
+            if (resultCode == RESULT_OK) {
+                results = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
+            }
+            callback.onReceiveValue(results);
+            return;
+        }
         if (requestCode != FILE_PICKER_REQUEST) {
             return;
         }
@@ -956,6 +1010,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        if (htmlFilePathCallback != null) {
+            htmlFilePathCallback.onReceiveValue(null);
+            htmlFilePathCallback = null;
+        }
         super.onDestroy();
         unregisterBackHandler();
         unregisterSystemEventReceivers();

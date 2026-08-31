@@ -44,7 +44,7 @@ type StoredParserRecord = MicronWasmParserMeta & {
 
 function bundledReleaseTag(): string {
   const tag = import.meta.env.VITE_MICRON_PARSER_GO_RELEASE;
-  return typeof tag === "string" && tag.trim() ? tag.trim() : "v1.0.6";
+  return typeof tag === "string" && tag.trim() ? tag.trim() : "v1.0.7";
 }
 
 export function bundledMicronWasmReleaseTag(): string {

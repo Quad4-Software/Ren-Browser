@@ -10,9 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Keep go mod tidy / task build from polluting vendor/golang.org/x/* with dependency tests and wiping LICENSE/PATENTS
+- Open the system file picker for HTML file inputs on Android so Micron WASM upload and theme import work
 
 ### Changed
 
+- Bump micron-parser-go to v1.0.7
 - Bump reticulum-go to v1.1.0
 - Refresh Go and frontend dependencies
 - Stop tracking Android libwails.so and other build junk to shrink clones

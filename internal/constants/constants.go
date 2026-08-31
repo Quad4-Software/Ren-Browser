@@ -6,7 +6,7 @@ package constants
 
 const (
 	MicronParserGoReleaseDownloadBase = "https://github.com/Quad4-Software/Micron-Parser-Go/releases/download"
-	MicronParserGoReleaseTag          = "v1.0.6"
+	MicronParserGoReleaseTag          = "v1.0.7"
 	MicronParserGoWasmFilename        = "micron-parser-go.wasm"
 	MicronParserGoShasumsFilename     = "SHASUMS256.txt"
 	MicronParserGoMaxWasmBytes        = 14 * 1024 * 1024

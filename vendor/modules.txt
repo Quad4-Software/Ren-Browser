@@ -205,7 +205,7 @@ golang.org/x/text/unicode/norm
 # kernel.org/pub/linux/libs/security/libcap/psx v1.2.78
 ## explicit; go 1.11
 kernel.org/pub/linux/libs/security/libcap/psx
-# micron-parser-go v0.0.0 => github.com/Quad4-Software/Micron-Parser-Go v1.0.6
+# micron-parser-go v0.0.0 => github.com/Quad4-Software/Micron-Parser-Go v1.0.7
 ## explicit; go 1.26.4
 micron-parser-go/micron
 # modernc.org/libc v1.75.6
@@ -291,7 +291,7 @@ quad4/reticulum-go/pkg/transport
 quad4/tagparser/internal
 quad4/tagparser/internal/parser
 quad4/tagparser/pkg/tagparser
-# micron-parser-go => github.com/Quad4-Software/Micron-Parser-Go v1.0.6
+# micron-parser-go => github.com/Quad4-Software/Micron-Parser-Go v1.0.7
 # quad4/bzip2 => github.com/Quad4-Software/bzip2 v0.0.0-20260704225916-ca8b2bb66059
 # quad4/msgpack/v5 => github.com/Quad4-Software/msgpack/v5 v5.8.2
 # quad4/pbt => github.com/Quad4-Software/pbt v0.0.0-20260614183135-abe0cfc4e604

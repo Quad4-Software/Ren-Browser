@@ -1,5 +1,5 @@
-github.com/Quad4-Software/Micron-Parser-Go v1.0.6 h1:w69NQx4JdXRhjGdCsgrLAqoEvkQ0FZPtxkcRZMMrDFE=
-github.com/Quad4-Software/Micron-Parser-Go v1.0.6/go.mod h1:1JT5Q5thpX+LgdvUPjkUy++KrMP4oVs5DTddxU26P3M=
+github.com/Quad4-Software/Micron-Parser-Go v1.0.7 h1:TQzRGiPcNvU0TbW0AY/duHDwmPPdxKNANHiHuBilDxA=
+github.com/Quad4-Software/Micron-Parser-Go v1.0.7/go.mod h1:1JT5Q5thpX+LgdvUPjkUy++KrMP4oVs5DTddxU26P3M=
 github.com/Quad4-Software/bzip2 v0.0.0-20260704225916-ca8b2bb66059 h1:LBXo31itNQQWbao8nAW8cpbnA7ldbiV3PBYlh8F86+E=
 github.com/Quad4-Software/bzip2 v0.0.0-20260704225916-ca8b2bb66059/go.mod h1:NU4rVhG0eoBuy3G0XlOCWk2UM6yalqQnUhdBtTjTbr8=
 github.com/Quad4-Software/msgpack/v5 v5.8.2 h1:CcCL0Qy057NUvZqTLKvHJReeEeZcCZK51ecndEZredw=

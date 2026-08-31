@@ -12,6 +12,17 @@ import "strings"
 // Treat the result as safe HTML only together with a sensible CSP and link handling policy on the host.
 func (p *Parser) ConvertMicronToHTML(markup string) string {
 	pc := ParseHeaderTags(markup)
+	return p.convertMicronToHTML(markup, pc)
+}
+
+// ConvertMicronToHTMLWithColors renders markup and returns page colors from leading directives.
+func (p *Parser) ConvertMicronToHTMLWithColors(markup string) (html, fg, bg string) {
+	pc := ParseHeaderTags(markup)
+	html = p.convertMicronToHTML(markup, pc)
+	return html, pc.FG, pc.BG
+}
+
+func (p *Parser) convertMicronToHTML(markup string, pc PageColors) string {
 	plain := plainStyle(p)
 	defaultFG := pc.FG
 	if defaultFG == "" {
@@ -26,8 +37,8 @@ func (p *Parser) ConvertMicronToHTML(markup string) string {
 		Depth:        0,
 		FGColor:      defaultFG,
 		BGColor:      defaultBGVal,
-		DefaultAlign: "left",
-		Align:        "left",
+		DefaultAlign: "start",
+		Align:        "start",
 		DefaultFG:    defaultFG,
 		DefaultBG:    defaultBGVal,
 	}
@@ -55,7 +66,9 @@ func (p *Parser) ConvertMicronToHTML(markup string) string {
 	}
 	var out strings.Builder
 	out.Grow(b.Len() + 128)
-	out.WriteString(`<div style="line-height:1.5;`)
+	// dir=auto picks LTR or RTL from the first strong character so Arabic Persian
+	// Hebrew and similar pages lay out correctly without a host-side hint.
+	out.WriteString(`<div dir="auto" style="line-height:1.5;`)
 	if defaultFG != "" && defaultFG != "default" && tryAppendColorProperty(&out, "color:", defaultFG) {
 		out.WriteByte(';')
 	}

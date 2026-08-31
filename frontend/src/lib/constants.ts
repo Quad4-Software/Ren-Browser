@@ -7,7 +7,7 @@ export const communityDirectoryUrl =
 
 export const micronParserGoReleaseDownloadBase =
   "https://github.com/Quad4-Software/Micron-Parser-Go/releases/download";
-export const micronParserGoReleaseTag = "v1.0.6";
+export const micronParserGoReleaseTag = "v1.0.7";
 export const micronParserGoWasmFilename = "micron-parser-go.wasm";
 export const micronParserGoShasumsFilename = "SHASUMS256.txt";
 export const micronParserGoMaxWasmBytes = 14 * 1024 * 1024;

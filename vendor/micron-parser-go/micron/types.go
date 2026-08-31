@@ -9,8 +9,8 @@ package micron
 type Parser struct {
 	// DarkTheme selects default palette when the document does not set #!fg / #!bg.
 	DarkTheme bool
-	// ForceMonospace wraps segments in monospace span markup and affects how
-	// link labels are escaped.
+	// ForceMonospace wraps Latin and other simple glyphs in monospace cell spans.
+	// Arabic Persian Hebrew and related scripts stay as continuous runs so letters join.
 	ForceMonospace bool
 }
 

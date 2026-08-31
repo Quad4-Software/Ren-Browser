@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
 # Re-apply Ren Browser micron-parser-go patches after `go mod vendor`.
+# Micron-Parser-Go v1.0.7+ already caps section depth upstream (maxSectionDepth);
+# this script remains for older replace pins.
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 line_go="${root}/vendor/micron-parser-go/micron/line.go"
 
 if [ ! -f "${line_go}" ]; then
+  exit 0
+fi
+
+# Already capped in upstream (v1.0.7+).
+if grep -q 'maxSectionDepth\|capSectionDepth' "${line_go}"; then
   exit 0
 fi
 
