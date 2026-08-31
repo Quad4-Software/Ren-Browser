@@ -33,13 +33,26 @@
           else
             "dev";
 
-        commonNative = with pkgs; [
-          pkg-config
-          nodejs_22
+        # Match package.json packageManager (nixpkgs pnpm_11 may lag).
+        pnpm = pkgs.callPackage "${pkgs.path}/pkgs/development/tools/pnpm/generic.nix" {
+          version = "11.24.0";
+          hash = "sha256-0eqyQzFyZhzDahjshfzpP3cdsZYnFzKcwB7JwoJMok8=";
+          nodejs = null;
+        };
+
+        pnpmConfigHook = pkgs.pnpmConfigHook.overrideAttrs (prev: {
+          propagatedBuildInputs =
+            lib.filter (p: (p.pname or "") != "pnpm") (prev.propagatedBuildInputs or [ ])
+            ++ [ pnpm ];
+        });
+
+        commonNative = [
+          pkgs.pkg-config
+          pkgs.nodejs_22
           pnpm
-          go-task
-          git
-          makeWrapper
+          pkgs.go-task
+          pkgs.git
+          pkgs.makeWrapper
         ];
 
         guiLibs = with pkgs; [
@@ -52,9 +65,9 @@
           pname = "renbrowser";
           inherit version;
           src = ./.;
-          fetcherVersion = 3;
-          hash = "sha256-DJOCvPpah/A7mKN1XWUTZIZ+B0/WrfTh9cf0+/quivE=";
-          pnpm = pkgs.pnpm;
+          fetcherVersion = 4;
+          hash = "";
+          inherit pnpm;
           pnpmWorkspaces = [ "renbrowser-frontend" ];
         };
 
@@ -63,8 +76,8 @@
           inherit version;
           src = ./.;
 
-          nativeBuildInputs = with pkgs; [
-            nodejs_22
+          nativeBuildInputs = [
+            pkgs.nodejs_22
             pnpm
             pnpmConfigHook
           ];
@@ -215,14 +228,14 @@
           shellHook = ''
             export CGO_ENABLED=1
             export GOFLAGS="-mod=vendor"
-            echo "Ren Browser nix shell"
+            echo "Ren Browser nix shell (go $(go version | awk '{print $3}') pnpm $(pnpm --version))"
             echo "  task build"
             echo "  task package:linux:arch"
             echo "  nix build"
           '';
         };
 
-        formatter = pkgs.nixfmt-rfc-style;
+        formatter = pkgs.nixfmt;
       }
     );
 }

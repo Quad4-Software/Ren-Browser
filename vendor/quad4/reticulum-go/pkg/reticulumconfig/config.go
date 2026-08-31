@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"quad4/reticulum-go/pkg/common"
 	"quad4/reticulum-go/pkg/ifac"
@@ -62,7 +63,7 @@ func DefaultConfig() *common.ReticulumConfig {
 		AllowLinkPathRebalance: true,
 		ControlAPIHost:         DefaultControlAPIHost,
 		ControlAPIPort:         DefaultControlAPIPort,
-		DoSProtection:          "auto",
+		DoSProtection:          "off",
 	}
 }
 
@@ -348,6 +349,25 @@ func applyGlobalOption(cfg *common.ReticulumConfig, key, value string) {
 		if setBool(&cfg.AutoconnectAnnouncesToInternal, value) {
 			cfg.AutoconnectAnnouncesToInternalSet = true
 		}
+	case "autoconnect_discovered_interfaces":
+		var n int
+		setInt(value, &n)
+		if n > 0 {
+			cfg.AutoconnectDiscoveredInterfaces = n
+		}
+	case "publish_blackhole":
+		setBool(&cfg.PublishBlackhole, value)
+	case "blackhole_sources":
+		cfg.BlackholeSources = parseIdentityHashes(value)
+	case "blackhole_update_interval":
+		var minutes float64
+		setFloat(value, &minutes)
+		if minutes > 0 {
+			if minutes < 2 {
+				minutes = 2
+			}
+			cfg.BlackholeUpdateInterval = time.Duration(minutes * float64(time.Minute))
+		}
 	case "allow_link_path_rebalance":
 		if setBool(&cfg.AllowLinkPathRebalance, value) {
 			cfg.AllowLinkPathRebalanceSet = true
@@ -439,6 +459,14 @@ func applyGlobalOption(cfg *common.ReticulumConfig, key, value string) {
 		cfg.BackboneIOSet = true
 	case "static_transport_identity":
 		setBool(&cfg.StaticTransportIdentity, value)
+	case "qlen_in_data":
+		setInt(value, &cfg.QLenInboundData)
+	case "qlen_in_announce":
+		setInt(value, &cfg.QLenInboundAnnounce)
+	case "qlen_in_pr":
+		setInt(value, &cfg.QLenInboundPR)
+	case "qlen_in_il":
+		setInt(value, &cfg.QLenInboundIL)
 	case "local_hops_delta":
 		setBool(&cfg.LocalHopsDelta, value)
 	case "respond_to_probes", "allow_probes":
@@ -652,6 +680,11 @@ func applyInterfaceOption(iface *common.InterfaceConfig, key, value string) {
 		setInt(value, &iface.DiscoveryStampValue)
 	case "discovery_encrypt":
 		setBool(&iface.DiscoveryEncrypt, value)
+	case "discovery_lxmf_address":
+		b, err := hex.DecodeString(strings.TrimSpace(value))
+		if err == nil && len(b) == 16 {
+			iface.DiscoveryLXMFAddress = b
+		}
 	case "location_cmd":
 		iface.DiscoveryLocationCmd = value
 	case "block_fast_flapping":
@@ -844,6 +877,22 @@ func SaveConfig(cfg *common.ReticulumConfig) error {
 	}
 	if cfg.AutoconnectAnnouncesToInternalSet {
 		fmt.Fprintf(&b, "  autoconnect_announces_to_internal = %s\n", boolStr(cfg.AutoconnectAnnouncesToInternal))
+	}
+	if cfg.AutoconnectDiscoveredInterfaces > 0 {
+		fmt.Fprintf(&b, "  autoconnect_discovered_interfaces = %d\n", cfg.AutoconnectDiscoveredInterfaces)
+	}
+	if cfg.PublishBlackhole {
+		fmt.Fprintf(&b, "  publish_blackhole = yes\n")
+	}
+	if len(cfg.BlackholeSources) > 0 {
+		parts := make([]string, 0, len(cfg.BlackholeSources))
+		for _, h := range cfg.BlackholeSources {
+			parts = append(parts, hex.EncodeToString(h))
+		}
+		fmt.Fprintf(&b, "  blackhole_sources = %s\n", strings.Join(parts, ", "))
+	}
+	if cfg.BlackholeUpdateInterval > 0 {
+		fmt.Fprintf(&b, "  blackhole_update_interval = %g\n", cfg.BlackholeUpdateInterval.Minutes())
 	}
 	if cfg.AllowLinkPathRebalanceSet {
 		fmt.Fprintf(&b, "  allow_link_path_rebalance = %s\n", boolStr(cfg.AllowLinkPathRebalance))

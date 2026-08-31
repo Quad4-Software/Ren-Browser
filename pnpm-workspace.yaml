@@ -15,14 +15,13 @@ overrides:
   typescript: 6.0.3
   "@types/node": 22.20.1
   marked: 18.0.11
-  "@napi-rs/canvas": 1.0.6
+  "@napi-rs/canvas": 1.0.8
 
-pnpm:
-  minimumReleaseAge: 1440
-  trustPolicy: no-downgrade
-  trustPolicyIgnoreAfter: 525600
-  blockExoticSubdeps: true
-  strictDepBuilds: false
-  engineStrict: true
-  autoInstallPeers: true
-  pmOnFail: error
+minimumReleaseAge: 1440
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 525600
+blockExoticSubdeps: true
+strictDepBuilds: false
+engineStrict: true
+autoInstallPeers: true
+pmOnFail: error

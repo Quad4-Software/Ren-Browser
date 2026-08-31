@@ -5,6 +5,13 @@ All notable changes to Ren Browser are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] [unreleased] - 2026-09-TBD
+
+### Changed
+
+- Bump reticulum-go to v1.1.0
+- Refresh Go and frontend dependencies
+
 ## [0.3.0] [released] - 2026-08-21
 
 ### Fixed

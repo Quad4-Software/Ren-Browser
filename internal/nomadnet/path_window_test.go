@@ -93,11 +93,15 @@ func TestLinkEstablishWindowAddsMargin(t *testing.T) {
 	tr := testPathTransport(t)
 	dest := bytes.Repeat([]byte{0x14}, 16)
 	got := linkEstablishWindow(tr, dest)
-	if got <= time.Duration(rlink.EstablishmentTimeoutPerHop)*time.Second {
+	perHop := time.Duration(rlink.EstablishmentTimeoutPerHop) * time.Second
+	if got <= perHop {
 		t.Fatalf("link window %v should exceed per-hop timeout", got)
 	}
-	if got < pathRequestTimeout+linkEstablishMargin {
-		t.Fatalf("link window %v too small", got)
+	// Cold path: firstHop + one extra hop + margin (RNS 1.5.x uses 6s per hop).
+	firstHop := time.Duration(tr.GetFirstHopTimeoutRPC(dest) * float64(time.Second))
+	want := firstHop + perHop + linkEstablishMargin
+	if got != want {
+		t.Fatalf("link window %v want %v", got, want)
 	}
 }
 
