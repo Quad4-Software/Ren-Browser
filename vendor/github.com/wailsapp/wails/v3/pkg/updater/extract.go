@@ -249,7 +249,7 @@ func extractTarGz(src, dst string) error {
 			}
 			written += n
 			if written > maxArchiveTotalSize {
-				return fmt.Errorf("updater: tar uncompressed size exceeds %d bytes", maxArchiveTotalSize)
+				return fmt.Errorf("updater: tar uncompressed size exceeds %d bytes", int64(maxArchiveTotalSize))
 			}
 		default:
 			// Block-special, char-special, FIFO, etc. — skip silently. App
@@ -290,7 +290,7 @@ func writeArchiveFile(f *zip.File, target string, mode os.FileMode, written *int
 	}
 	total := *written + n
 	if total > maxArchiveTotalSize {
-		return total, fmt.Errorf("updater: zip uncompressed size exceeds %d bytes", maxArchiveTotalSize)
+		return total, fmt.Errorf("updater: zip uncompressed size exceeds %d bytes", int64(maxArchiveTotalSize))
 	}
 	return total, nil
 }

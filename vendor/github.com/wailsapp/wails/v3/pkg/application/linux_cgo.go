@@ -1378,6 +1378,13 @@ func (w *linuxWebviewWindow) setBorderless(borderless bool) {
 }
 
 func (w *linuxWebviewWindow) setFrameless(frameless bool) {
+	title := w.parent.options.Title
+	if title == "" {
+		title = w.parent.options.Name
+	}
+	cTitle := C.CString(title)
+	defer C.free(unsafe.Pointer(cTitle))
+	C.window_apply_frameless(w.gtkWindow(), gtkBool(frameless), cTitle)
 	C.gtk_window_set_decorated(w.gtkWindow(), gtkBool(!frameless))
 
 	className := C.CString(framelessWindowClass)

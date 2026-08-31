@@ -121,7 +121,7 @@ func (b *WebSocketBroadcaster) register(conn *websocket.Conn, window *BrowserWin
 	b.clients[conn] = client
 	clientCount := len(b.clients)
 	b.mu.Unlock()
-	b.app.info("WebSocket client connected", "id", window.Name(), "clients", clientCount)
+	b.app.debug("WebSocket client connected", "id", window.Name(), "clients", clientCount)
 }
 
 // unregister removes a client connection and its BrowserWindow.
@@ -129,7 +129,7 @@ func (b *WebSocketBroadcaster) unregister(conn *websocket.Conn, runtimeClientID 
 	client, clientCount := b.removeClient(conn, runtimeClientID)
 	conn.Close(websocket.StatusNormalClosure, "")
 	if client != nil {
-		b.app.info("WebSocket client disconnected", "id", client.window.Name(), "clients", clientCount)
+		b.app.debug("WebSocket client disconnected", "id", client.window.Name(), "clients", clientCount)
 	}
 }
 
@@ -144,6 +144,22 @@ func (b *WebSocketBroadcaster) removeClient(conn *websocket.Conn, runtimeClientI
 	}
 
 	return client, len(b.clients)
+}
+
+// closeAll closes every active WebSocket so HTTP server shutdown is not blocked.
+func (b *WebSocketBroadcaster) closeAll() {
+	b.mu.Lock()
+	conns := make([]*websocket.Conn, 0, len(b.clients))
+	for conn := range b.clients {
+		conns = append(conns, conn)
+	}
+	b.clients = make(map[*websocket.Conn]*clientInfo)
+	b.windows = make(map[string]*BrowserWindow)
+	b.mu.Unlock()
+
+	for _, conn := range conns {
+		conn.Close(websocket.StatusGoingAway, "server shutting down")
+	}
 }
 
 // DispatchWailsEvent implements WailsEventListener interface.
