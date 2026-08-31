@@ -22,7 +22,7 @@ func (a *App) preRun() error {
 		// This is to allow the frontend server to start up before the backend server.
 		client := http.Client{}
 		a.Logger.Info("Waiting for frontend dev server to start...", "url", frontendURL)
-		for i := 0; i < 60; i++ {
+		for i := 0; i < 10; i++ {
 			_, err := client.Get(frontendURL)
 			if err == nil {
 				a.Logger.Info("Connected to frontend dev server!")

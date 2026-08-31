@@ -36,7 +36,7 @@ github.com/jchv/go-winloader/internal/memloader
 github.com/jchv/go-winloader/internal/pe
 github.com/jchv/go-winloader/internal/vmem
 github.com/jchv/go-winloader/internal/winloader
-# github.com/landlock-lsm/go-landlock v0.9.0
+# github.com/landlock-lsm/go-landlock v0.10.0
 ## explicit; go 1.24.0
 github.com/landlock-lsm/go-landlock/landlock
 github.com/landlock-lsm/go-landlock/landlock/internal
@@ -119,7 +119,7 @@ github.com/tetratelabs/wazero/internal/wasm/binary
 github.com/tetratelabs/wazero/internal/wasmdebug
 github.com/tetratelabs/wazero/internal/wasmruntime
 github.com/tetratelabs/wazero/sys
-# github.com/wailsapp/wails/v3 v3.0.0-beta.9
+# github.com/wailsapp/wails/v3 v3.0.0-beta.16
 ## explicit; go 1.25.0
 github.com/wailsapp/wails/v3/internal/assetserver
 github.com/wailsapp/wails/v3/internal/assetserver/bundledassets
@@ -208,7 +208,7 @@ kernel.org/pub/linux/libs/security/libcap/psx
 # micron-parser-go v0.0.0 => github.com/Quad4-Software/Micron-Parser-Go v1.0.6
 ## explicit; go 1.26.4
 micron-parser-go/micron
-# modernc.org/libc v1.75.3
+# modernc.org/libc v1.75.6
 ## explicit; go 1.25.0
 modernc.org/libc
 modernc.org/libc/errno
@@ -239,10 +239,10 @@ modernc.org/libc/wctype
 # modernc.org/mathutil v1.7.1
 ## explicit; go 1.21
 modernc.org/mathutil
-# modernc.org/memory v1.12.0
+# modernc.org/memory v1.12.1
 ## explicit; go 1.23.0
 modernc.org/memory
-# modernc.org/sqlite v1.56.0
+# modernc.org/sqlite v1.57.0
 ## explicit; go 1.25.0
 modernc.org/sqlite
 modernc.org/sqlite/lib

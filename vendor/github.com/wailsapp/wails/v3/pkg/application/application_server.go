@@ -137,9 +137,8 @@ func (h *serverApp) run() error {
 	}()
 
 	// Wait for shutdown signal or error
-	quit := make(chan os.Signal, 2)
+	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(quit)
 
 	select {
 	case err := <-errCh:
@@ -152,30 +151,12 @@ func (h *serverApp) run() error {
 		h.app.info("Application context cancelled")
 	}
 
-	if h.broadcaster != nil {
-		h.broadcaster.closeAll()
-	}
-	if h.listener != nil {
-		_ = h.listener.Close()
-	}
-
+	// Graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
-	shutdownDone := make(chan error, 1)
-	go func() {
-		shutdownDone <- h.server.Shutdown(ctx)
-	}()
-
-	select {
-	case err := <-shutdownDone:
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			return fmt.Errorf("server shutdown error: %w", err)
-		}
-	case <-quit:
-		h.app.info("Force shutdown")
-		_ = h.server.Close()
-		<-shutdownDone
+	if err := h.server.Shutdown(ctx); err != nil {
+		return fmt.Errorf("server shutdown error: %w", err)
 	}
 
 	h.app.info("Server stopped")
@@ -246,22 +227,15 @@ func (h *serverApp) createHandler() http.Handler {
 	// Serve all other requests through the asset server
 	mux.Handle("/", h.app.assets)
 
-	handler := http.Handler(mux)
-	if wrap := h.app.options.Server.OuterMiddleware; wrap != nil {
-		handler = wrap(handler)
-	}
-	return handler
+	return mux
 }
 
 // destroy stops the server and cleans up.
 func (h *serverApp) destroy() {
-	if h.broadcaster != nil {
-		h.broadcaster.closeAll()
-	}
 	if h.server != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		_ = h.server.Shutdown(ctx)
+		h.server.Shutdown(ctx)
 	}
 	h.app.cleanup()
 }

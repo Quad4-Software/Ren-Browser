@@ -225,10 +225,7 @@ func (a *iosApp) run() error {
 }
 
 func (a *iosApp) destroy() {
-	if globalApplication != nil && globalApplication.shouldQuit() {
-		globalApplication.cleanup()
-	}
-	a.parent.platformQuit()
+	// Cleanup iOS resources
 }
 
 func (a *iosApp) setIcon(_ []byte) {

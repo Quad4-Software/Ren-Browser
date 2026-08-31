@@ -522,10 +522,6 @@ func (a *androidApp) run() error {
 }
 
 func (a *androidApp) destroy() {
-	if globalApplication != nil && globalApplication.shouldQuit() {
-		globalApplication.cleanup()
-	}
-	androidBridgeVoid("quitApp")
 }
 
 func (a *androidApp) setIcon(_ []byte) {
