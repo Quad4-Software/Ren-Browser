@@ -76,7 +76,9 @@
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
     gap: 0.1rem;
-    padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom));
+    /* Use safe-area as the bottom pad (not added on top of it) so icons sit
+       closer to the home indicator / nav bar instead of floating above a gap. */
+    padding: 0.28rem 0.25rem max(0.12rem, env(safe-area-inset-bottom, 0px));
     background: var(--ren-chrome-bg);
     border-top: 1px solid var(--ren-border);
     touch-action: manipulation;
@@ -92,7 +94,7 @@
     color: var(--ren-muted);
     font: inherit;
     font-size: 0.62rem;
-    padding: 0.35rem 0.2rem;
+    padding: 0.28rem 0.2rem;
     border-radius: 10px;
     overflow: visible;
     transition:

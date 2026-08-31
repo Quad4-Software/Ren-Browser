@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Keep go mod tidy / task build from polluting vendor/golang.org/x/* with dependency tests and wiping LICENSE/PATENTS
 - Open the system file picker for HTML file inputs on Android so Micron WASM upload and theme import work
+- Tighten mobile bottom nav padding so icons sit closer to the home indicator instead of floating above a large gap
 
 ### Changed
 

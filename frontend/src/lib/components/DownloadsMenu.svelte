@@ -288,7 +288,7 @@
     top: auto;
     left: 0.75rem;
     right: 0.75rem;
-    bottom: calc(3.6rem + env(safe-area-inset-bottom));
+    bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
     width: auto;
     max-height: min(55vh, 28rem);
     z-index: 130;
