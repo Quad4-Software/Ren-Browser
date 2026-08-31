@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] [unreleased] - 2026-09-TBD
 
+### Fixed
+
+- Keep go mod tidy / task build from polluting vendor/golang.org/x/* with dependency tests and wiping LICENSE/PATENTS
+
 ### Changed
 
 - Bump reticulum-go to v1.1.0
