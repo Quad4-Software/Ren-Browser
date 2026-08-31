@@ -389,6 +389,34 @@ export enum MacLiquidGlassStyle {
 };
 
 /**
+ * MacPanelPreferences contains options that apply only to MacWindowClassPanel.
+ */
+export interface MacPanelPreferences {
+    /**
+     * FloatingPanel gives the NSPanel AppKit's floating-panel behaviour. An
+     * explicit MacWindow.WindowLevel still takes precedence over its level.
+     */
+    "FloatingPanel": boolean;
+
+    /**
+     * BecomesKeyOnlyIfNeeded makes a non-activating panel take key status only
+     * when the clicked view needs keyboard input.
+     */
+    "BecomesKeyOnlyIfNeeded": boolean;
+
+    /**
+     * NonActivating applies NSWindowStyleMaskNonactivatingPanel. Showing or
+     * focusing the panel then leaves the currently active application active.
+     */
+    "NonActivating": boolean;
+
+    /**
+     * UtilityWindow applies NSWindowStyleMaskUtilityWindow.
+     */
+    "UtilityWindow": boolean;
+}
+
+/**
  * MacTitleBar contains options for the Mac titlebar
  */
 export interface MacTitleBar {
@@ -540,6 +568,19 @@ export interface MacWindow {
     "DisableShadow": boolean;
 
     /**
+     * CornerType controls the corner shape of a frameless window.
+     * Default: MacWindowCornerTypeRounded.
+     */
+    "CornerType": MacWindowCornerType;
+
+    /**
+     * CornerRadius controls the custom corner radius, in points, of a rounded
+     * frameless window. A value of 0 (the default) preserves AppKit's standard
+     * rounded corners. Ignored when CornerType is MacWindowCornerTypeSquare.
+     */
+    "CornerRadius": number;
+
+    /**
      * TitleBar contains options for the Mac titlebar
      */
     "TitleBar": MacTitleBar;
@@ -597,7 +638,39 @@ export interface MacWindow {
      * Default false preserves standard macOS behaviour where Esc exits fullscreen.
      */
     "DisableEscapeExitsFullscreen": boolean;
+
+    /**
+     * WindowClass selects the native AppKit window class.
+     * The zero value creates the standard NSWindow-backed Wails window.
+     */
+    "WindowClass": MacWindowClass;
+
+    /**
+     * PanelPreferences configures NSPanel-specific behaviour when WindowClass is
+     * MacWindowClassPanel. It is ignored for standard windows.
+     */
+    "PanelPreferences": MacPanelPreferences;
 }
+
+/**
+ * MacWindowClass selects the native AppKit class used for a webview window.
+ */
+export enum MacWindowClass {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = 0,
+
+    /**
+     * MacWindowClassWindow creates the standard NSWindow-backed Wails window.
+     */
+    MacWindowClassWindow = 0,
+
+    /**
+     * MacWindowClassPanel creates an NSPanel-backed auxiliary window.
+     */
+    MacWindowClassPanel = 1,
+};
 
 /**
  * MacWindowCollectionBehavior controls window behavior across macOS Spaces and fullscreen.
@@ -686,6 +759,28 @@ export enum MacWindowCollectionBehavior {
      * 4096
      */
     MacWindowCollectionBehaviorFullScreenDisallowsTiling = 4096,
+};
+
+/**
+ * MacWindowCornerType controls the corner shape of a frameless macOS window.
+ */
+export enum MacWindowCornerType {
+    /**
+     * The Go zero value for the underlying type of the enum.
+     */
+    $zero = 0,
+
+    /**
+     * MacWindowCornerTypeRounded preserves the standard AppKit window corners by
+     * default. Set CornerRadius to use a custom rounded radius.
+     */
+    MacWindowCornerTypeRounded = 0,
+
+    /**
+     * MacWindowCornerTypeSquare creates a true borderless window with square
+     * corners. CornerRadius is ignored.
+     */
+    MacWindowCornerTypeSquare = 1,
 };
 
 export enum MacWindowLevel {
@@ -1379,6 +1474,25 @@ export interface WindowsWindow {
      * Default: false
      */
     "WindowMaskDraggable": boolean;
+
+    /**
+     * NonClientRegionSupport enables WebView2's native non-client region support
+     * for this window when the installed WebView2 Runtime supports it. This is
+     * primarily intended to make app-region: drag style custom titlebars work
+     * with native non-client hit testing.
+     * Default: false
+     */
+    "NonClientRegionSupport": boolean;
+
+    /**
+     * WebView2CompositionHosting creates WebView2 with visual hosting using
+     * ICoreWebView2CompositionController and DirectComposition instead of the
+     * HWND-hosted controller. This is intended for custom host-owned non-client
+     * hit-testing, for example manual caption-button regions rendered in web
+     * content and resolved through GetNonClientRegionAtPoint / SendMouseInput.
+     * Default: false
+     */
+    "WebView2CompositionHosting": boolean;
 
     /**
      * WindowDidMoveDebounceMS is the amount of time to debounce the WindowDidMove event
