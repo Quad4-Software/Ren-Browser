@@ -81,7 +81,7 @@ Para colaboradores o plataformas sin paquete precompilado.
 ### Compilación básica
 
 ```sh
-git clone https://github.com/Quad4-Software/Ren-Browser.git
+git clone --depth 1 https://github.com/Quad4-Software/Ren-Browser.git
 cd Ren-Browser
 task build
 ./bin/renbrowser

@@ -92,13 +92,15 @@ For contributors or platforms without a pre-built package.
 **Steps:**
 
 ```sh
-git clone https://github.com/Quad4-Software/Ren-Browser.git
+git clone --depth 1 https://github.com/Quad4-Software/Ren-Browser.git
 # or via rngit: git clone rns://06a54b505bb67b25ef3f8097e8001edc/public/ren-browser
 cd Ren-Browser
 task build
 # or make build
 ./bin/renbrowser
 ```
+
+Use a full clone (omit `--depth 1`) if you need history. Android builds produce `libwails.so` under `jniLibs` locally; it is not stored in git.
 
 Go modules pull Quad4 dependencies from GitHub automatically; no extra repos to clone.
 

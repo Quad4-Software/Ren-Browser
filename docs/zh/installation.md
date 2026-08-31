@@ -85,7 +85,7 @@ task run:docker
 ### 基本构建
 
 ```sh
-git clone https://github.com/Quad4-Software/Ren-Browser.git
+git clone --depth 1 https://github.com/Quad4-Software/Ren-Browser.git
 cd Ren-Browser
 task build
 ./bin/renbrowser

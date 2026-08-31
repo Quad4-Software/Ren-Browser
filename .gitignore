@@ -65,6 +65,12 @@ build/android/overlay.json
 build/android/gen/
 build/android/.gradle
 build/android/app/build
+build/android/build/
+build/android/app/src/main/jniLibs/*/libwails.so
+
+# Python bytecode
+__pycache__/
+*.pyc
 
 # Go
 coverage.out

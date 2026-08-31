@@ -81,7 +81,7 @@ Für Mitwirkende oder Plattformen ohne vorgefertigtes Paket.
 ### Einfacher Build
 
 ```sh
-git clone https://github.com/Quad4-Software/Ren-Browser.git
+git clone --depth 1 https://github.com/Quad4-Software/Ren-Browser.git
 cd Ren-Browser
 task build
 ./bin/renbrowser

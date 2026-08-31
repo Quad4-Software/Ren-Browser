@@ -87,13 +87,13 @@ For contributors or platforms without a pre-built package.
 ### Basic build
 
 ```sh
-git clone https://github.com/Quad4-Software/Ren-Browser.git
+git clone --depth 1 https://github.com/Quad4-Software/Ren-Browser.git
 cd Ren-Browser
 task build
 ./bin/renbrowser
 ```
 
-Go modules pull Quad4 dependencies from GitHub automatically.
+Omit `--depth 1` if you need full history. Go modules pull Quad4 dependencies from GitHub automatically. Android `libwails.so` is built by `task build:android` and is not committed.
 
 ### Platform-specific builds
 
