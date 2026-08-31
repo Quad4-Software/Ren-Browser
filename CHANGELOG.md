@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bump micron-parser-go to v1.0.7
-- Bump reticulum-go to v1.1.0
+- Bump reticulum-go to v1.1.1
 - Refresh Go and frontend dependencies
 - Stop tracking Android libwails.so and other build junk to shrink clones
 
