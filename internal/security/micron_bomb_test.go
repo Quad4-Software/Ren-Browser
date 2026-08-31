@@ -87,14 +87,18 @@ func TestMicronHeadingDepthUnbounded(t *testing.T) {
 	if !strings.Contains(html, `>T</span>`) || !strings.Contains(html, `>e</span>`) {
 		t.Fatalf("missing heading glyphs in html (%d bytes): %s", len(html), truncate(html, 400))
 	}
-	// Depth is capped at 16: margin-left = (16-1)*2*0.6 = 18.0em
-	if !strings.Contains(html, "margin-left:18.0em") {
-		t.Fatalf("expected capped margin-left:18.0em, got: %s", truncate(html, 400))
+	// Depth is capped at 16: indent = (16-1)*2*0.6 = 18.0em.
+	// micron-parser-go v1.0.7+ emits margin-inline-start (older builds used margin-left).
+	capped := strings.Contains(html, "margin-inline-start:18.0em") ||
+		strings.Contains(html, "margin-left:18.0em")
+	if !capped {
+		t.Fatalf("expected capped margin-inline-start/margin-left:18.0em, got: %s", truncate(html, 400))
 	}
-	if strings.Contains(html, "margin-left:5998.8em") {
+	if strings.Contains(html, "margin-inline-start:5998.8em") ||
+		strings.Contains(html, "margin-left:5998.8em") {
 		t.Fatal("uncapped heading depth still present")
 	}
-	t.Logf("heading depth 5000 capped -> html %d bytes with margin-left:18.0em", len(html))
+	t.Logf("heading depth 5000 capped -> html %d bytes with 18.0em indent", len(html))
 }
 
 func TestMicronPageCapStillAllowsHugeHTML(t *testing.T) {
