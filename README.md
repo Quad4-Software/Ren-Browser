@@ -2,7 +2,8 @@
 
 A modern browser for Reticulum Network using Reticulum-Go and Micron-Parser-Go.
 
-This project is under heavy active development and may be unstable on some platformas until v1.0
+> [!WARNING]
+> This project is still alpha level software and being actively developed.
 
 ## Features
 
