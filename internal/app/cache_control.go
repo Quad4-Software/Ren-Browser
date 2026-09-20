@@ -40,6 +40,9 @@ func (s *BrowserService) ClearPageCache() int {
 		return 0
 	}
 	cleared := s.pageCache.Clear()
+	if s.imageCache != nil {
+		s.imageCache.Clear()
+	}
 	s.log("info", "page cache cleared", "")
 	return cleared
 }

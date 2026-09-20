@@ -20,13 +20,13 @@ func TestFetchNodeImageRejectsBadInput(t *testing.T) {
 		"/media/x.exe`img=1",
 		"/media/x.exe",
 	} {
-		_, err := svc.FetchNodeImage(node + ":" + tc)
+		_, err := svc.FetchNodeImage(node+":"+tc, "", "", false)
 		if err == nil || strings.Contains(err.Error(), "reticulum not ready") {
 			t.Fatalf("%q: expected path rejection, got %v", tc, err)
 		}
 	}
 
-	if _, err := svc.FetchNodeImage("nothex:/media/x.png"); err == nil {
+	if _, err := svc.FetchNodeImage("nothex:/media/x.png", "", "", false); err == nil {
 		t.Fatal("expected invalid node hash rejection")
 	}
 }

@@ -135,10 +135,12 @@ export function FetchCommunityInterfaces(): $CancellablePromise<$models.Communit
 /**
  * FetchNodeImage downloads a /media/ or /file/*.webp image from a mesh node
  * for opt-in inline display. The response is capped at limits.MaxAssetBytes
- * during receipt and must sniff as a raster image.
+ * during receipt and must sniff as a raster image. imageKey and profile are
+ * the page-declared hints forwarded to the node's /media handler. Reload
+ * bypasses the local image cache and refreshes the stored entry.
  */
-export function FetchNodeImage(rawURL: string): $CancellablePromise<$models.NodeImageResult> {
-    return $Call.ByID(4062595242, rawURL);
+export function FetchNodeImage(rawURL: string, imageKey: string, profile: string, reload: boolean): $CancellablePromise<$models.NodeImageResult> {
+    return $Call.ByID(4062595242, rawURL, imageKey, profile, reload);
 }
 
 export function GetAboutInfo(): $CancellablePromise<$models.AboutInfo> {

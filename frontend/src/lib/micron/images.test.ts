@@ -149,10 +149,101 @@ describe("attachMicronImages", () => {
     await vi.waitFor(() => {
       expect(root?.querySelector(".mu-image")?.getAttribute("data-mu-image-state")).toBe("loaded");
     });
-    expect(fetchImage).toHaveBeenCalledWith(`${NODE}:/media/x.png`);
+    expect(fetchImage).toHaveBeenCalledWith(`${NODE}:/media/x.png`, {
+      key: "",
+      profile: "",
+      reload: false,
+    });
     const img = root.querySelector<HTMLImageElement>(".mu-image-output");
     expect(img?.hidden).toBe(false);
     expect(img?.src.startsWith("blob:")).toBe(true);
+  });
+
+  it("forwards the page-declared key and profile to the fetch", async () => {
+    const fetchImage = fetchOK();
+    root = makeRoot(holder(":/media/x.png", 'data-mu-image-k="abc123" data-mu-image-profile="low"'));
+    attachMicronImages(root, {
+      pageNodeHash: NODE,
+      mode: "always",
+      nodePolicies: {},
+      fetchImage,
+    });
+    await vi.waitFor(() => {
+      expect(fetchImage).toHaveBeenCalledTimes(1);
+    });
+    expect(fetchImage).toHaveBeenCalledWith(`${NODE}:/media/x.png`, {
+      key: "abc123",
+      profile: "low",
+      reload: false,
+    });
+  });
+
+  it("shows reload and save actions after a successful load", async () => {
+    const fetchImage = fetchOK();
+    const onSave = vi.fn();
+    root = makeRoot(holder());
+    attachMicronImages(root, {
+      pageNodeHash: NODE,
+      mode: "always",
+      nodePolicies: {},
+      fetchImage,
+      onSave,
+    });
+    await vi.waitFor(() => {
+      expect(root?.querySelector(".mu-image")?.getAttribute("data-mu-image-state")).toBe("loaded");
+    });
+    expect(root.querySelector("[data-mu-image-action='reload']")).not.toBeNull();
+    const save = root.querySelector<HTMLElement>("[data-mu-image-action='save']");
+    expect(save).not.toBeNull();
+    save?.click();
+    expect(onSave).toHaveBeenCalledWith(`${NODE}:/media/x.png`);
+  });
+
+  it("refetches with the reload flag when the reload action is clicked", async () => {
+    const fetchImage = fetchOK();
+    root = makeRoot(holder());
+    attachMicronImages(root, {
+      pageNodeHash: NODE,
+      mode: "always",
+      nodePolicies: {},
+      fetchImage,
+    });
+    await vi.waitFor(() => {
+      expect(fetchImage).toHaveBeenCalledTimes(1);
+    });
+    root.querySelector<HTMLElement>("[data-mu-image-action='reload']")?.click();
+    await vi.waitFor(() => {
+      expect(fetchImage).toHaveBeenCalledTimes(2);
+    });
+    expect(fetchImage).toHaveBeenLastCalledWith(`${NODE}:/media/x.png`, {
+      key: "",
+      profile: "",
+      reload: true,
+    });
+  });
+
+  it("renders fetch progress on the loading action", async () => {
+    let release: () => void = () => {};
+    const fetchImage = vi.fn(
+      () =>
+        new Promise<{ data: string; mime: string; bytes: number }>((resolve) => {
+          release = () => resolve({ data: PNG_B64, mime: "image/png", bytes: 12 });
+        }),
+    );
+    root = makeRoot(holder());
+    const handle = attachMicronImages(root, {
+      pageNodeHash: NODE,
+      mode: "always",
+      nodePolicies: {},
+      fetchImage,
+    });
+    await vi.waitFor(() => {
+      expect(fetchImage).toHaveBeenCalledTimes(1);
+    });
+    handle.onProgress(`${NODE}:/media/x.png`, 50, 100);
+    const action = root.querySelector<HTMLElement>("[data-mu-image-action='load']");
+    expect(action?.textContent).toContain("50%");
+    release();
   });
 
   it("activates with Enter and Space for keyboard users", async () => {

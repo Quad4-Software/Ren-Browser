@@ -106,6 +106,7 @@ type BrowserService struct {
 	publicMode             bool
 	resetWindow            bool
 	pageCache              *cache.PageCache
+	imageCache             *cache.PageCache
 	devLogs                []DevLogEntry
 	networkLog             []NetworkEntry
 	theme                  ThemeSettings
@@ -157,6 +158,19 @@ func NewBrowserServiceWithOptions(stack *rns.Stack, app *application.App, opts S
 		_ = st.Close()
 		return nil, err
 	}
+	// Images are larger than pages, so the RAM tier stays small and most
+	// entries live on disk only.
+	imageCacheDir := filepath.Join(filepath.Dir(dbPath), "image-cache")
+	imageCache, err := cache.OpenPageCache(imageCacheDir, cache.PageCacheOptions{
+		RAMMaxEntries:  8,
+		RAMMaxBytes:    8 << 20,
+		DiskMaxEntries: 256,
+		DiskMaxBytes:   512 << 20,
+	})
+	if err != nil {
+		_ = st.Close()
+		return nil, err
+	}
 	svc := &BrowserService{
 		stack:         stack,
 		app:           app,
@@ -166,6 +180,7 @@ func NewBrowserServiceWithOptions(stack *rns.Stack, app *application.App, opts S
 		publicMode:    opts.PublicMode,
 		resetWindow:   opts.ResetWindow,
 		pageCache:     pageCache,
+		imageCache:    imageCache,
 		downloads:     newDownloadManager(),
 		downloadSlots: make(chan struct{}, maxConcurrentDownloads),
 	}
@@ -747,7 +762,12 @@ func (s *BrowserService) fetchFileTracked(rawURL string, tracker *downloadTracke
 	if tracker != nil {
 		hooks = mergeFetchHooks(hooks, tracker.fetchHooks())
 	}
-	fetch := stack.Browser().FetchWithHooks(ctx, parsed.NodeHash, parsed.Path, parsed.Request, hooks)
+	var fetch nomadnet.FetchResult
+	if strings.HasPrefix(parsed.Path, "/media/") {
+		fetch = stack.Browser().FetchMedia(ctx, parsed.NodeHash, parsed.Path, "", "", 0, hooks)
+	} else {
+		fetch = stack.Browser().FetchWithHooks(ctx, parsed.NodeHash, parsed.Path, parsed.Request, hooks)
+	}
 	if fetch.Error != "" {
 		s.log("error", "file fetch failed", fmt.Sprintf("%s: %s", rawURL, fetch.Error))
 		return nomadnet.FetchResult{}, errors.New(fetch.Error)

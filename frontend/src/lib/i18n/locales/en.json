@@ -432,7 +432,9 @@
     "imageBlocked": "Images from this node are blocked",
     "imageTooLarge": "Image exceeds the size limit",
     "imageLoading": "Loading image...",
-    "imageFailed": "Image failed to load"
+    "imageFailed": "Image failed to load",
+    "imageReload": "Reload",
+    "imageSave": "Save image"
   },
   "find": {
     "placeholder": "Find in page",

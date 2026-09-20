@@ -432,7 +432,9 @@
     "imageBlocked": "",
     "imageTooLarge": "",
     "imageLoading": "",
-    "imageFailed": ""
+    "imageFailed": "",
+    "imageReload": "",
+    "imageSave": ""
   },
   "find": {
     "placeholder": "",

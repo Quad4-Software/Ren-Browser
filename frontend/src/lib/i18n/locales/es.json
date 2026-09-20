@@ -432,7 +432,9 @@
     "imageBlocked": "Las imágenes de este nodo están bloqueadas",
     "imageTooLarge": "La imagen supera el límite de tamaño",
     "imageLoading": "Cargando imagen...",
-    "imageFailed": "No se pudo cargar la imagen"
+    "imageFailed": "No se pudo cargar la imagen",
+    "imageReload": "Recargar",
+    "imageSave": "Guardar imagen"
   },
   "find": {
     "placeholder": "Buscar en la página",

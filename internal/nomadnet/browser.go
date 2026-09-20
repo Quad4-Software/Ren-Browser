@@ -118,6 +118,27 @@ func (b *Browser) FetchWithHooks(ctx context.Context, nodeHash string, path stri
 // FetchLimited is FetchWithHooks with an explicit response byte cap. When
 // maxBytes <= 0 the path-based cap from limits.MaxFetchBytes applies.
 func (b *Browser) FetchLimited(ctx context.Context, nodeHash string, path string, req RequestData, maxBytes int, hooks *FetchHooks) FetchResult {
+	return b.fetchLimited(ctx, nodeHash, path, path, buildRequestData(req), maxBytes, hooks)
+}
+
+// FetchMedia fetches a /media/ resource using the Nomad Network media-request
+// convention: the wire request path is "/media" and the payload is a dict
+// carrying the media path plus an optional page-declared key and profile hint.
+// Nodes register a single "/media" request handler, so addressing the request
+// by the full media path would never reach it. key may be empty and is sent
+// as nil, matching upstream clients; profile is omitted when empty.
+func (b *Browser) FetchMedia(ctx context.Context, nodeHash string, path string, key string, profile string, maxBytes int, hooks *FetchHooks) FetchResult {
+	data := map[string]any{"path": path, "key": nil}
+	if key != "" {
+		data["key"] = key
+	}
+	if profile != "" {
+		data["profile"] = profile
+	}
+	return b.fetchLimited(ctx, nodeHash, path, "/media", data, maxBytes, hooks)
+}
+
+func (b *Browser) fetchLimited(ctx context.Context, nodeHash string, path string, reqPath string, data any, maxBytes int, hooks *FetchHooks) FetchResult {
 	start := time.Now()
 	res := FetchResult{
 		NodeHash: normalizeHash(nodeHash),
@@ -175,11 +196,11 @@ func (b *Browser) FetchLimited(ctx context.Context, nodeHash string, path string
 	}
 
 	requestTimeout, receiptTimeout := requestTimeouts(res.Path)
-	hooks.stage("request", fmt.Sprintf("sending request path=%s requestTimeout=%s", res.Path, requestTimeout))
+	hooks.stage("request", fmt.Sprintf("sending request path=%s requestTimeout=%s", reqPath, requestTimeout))
 	if maxBytes <= 0 {
 		maxBytes = limits.MaxFetchBytes(res.Path)
 	}
-	receipt, err := lnk.RequestLimited(res.Path, buildRequestData(req), requestTimeout, maxBytes)
+	receipt, err := lnk.RequestLimited(reqPath, data, requestTimeout, maxBytes)
 	if err != nil {
 		res.Error = err.Error()
 		res.DurationMs = time.Since(start).Milliseconds()

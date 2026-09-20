@@ -85,10 +85,28 @@ func sniffNodeImageMime(body []byte) (string, error) {
 	return "", fmt.Errorf("response is not a raster image (content-type %q)", mime)
 }
 
+// nodeImageCacheReq keys cached images by the page-declared key and profile
+// so nodes that vary output per key get distinct entries.
+func nodeImageCacheReq(imageKey, profile string) nomadnet.RequestData {
+	if imageKey == "" && profile == "" {
+		return nomadnet.RequestData{}
+	}
+	vars := make(map[string]string, 2)
+	if imageKey != "" {
+		vars["k"] = imageKey
+	}
+	if profile != "" {
+		vars["profile"] = profile
+	}
+	return nomadnet.RequestData{Vars: vars}
+}
+
 // FetchNodeImage downloads a /media/ or /file/*.webp image from a mesh node
 // for opt-in inline display. The response is capped at limits.MaxAssetBytes
-// during receipt and must sniff as a raster image.
-func (s *BrowserService) FetchNodeImage(rawURL string) (NodeImageResult, error) {
+// during receipt and must sniff as a raster image. imageKey and profile are
+// the page-declared hints forwarded to the node's /media handler. Reload
+// bypasses the local image cache and refreshes the stored entry.
+func (s *BrowserService) FetchNodeImage(rawURL string, imageKey string, profile string, reload bool) (NodeImageResult, error) {
 	parsed, err := nomadnet.ParseURL(rawURL)
 	if err != nil {
 		return NodeImageResult{}, err
@@ -99,6 +117,19 @@ func (s *BrowserService) FetchNodeImage(rawURL string) (NodeImageResult, error) 
 	if err := validateNodeImagePath(parsed.Path); err != nil {
 		return NodeImageResult{}, err
 	}
+
+	cacheReq := nodeImageCacheReq(imageKey, profile)
+	cacheEnabled := s.imageCache != nil && s.GetBrowserPrefs().PageCacheEnabled
+	if cacheEnabled && !reload {
+		if entry, ok := s.imageCache.Get(parsed.NodeHash, parsed.Path, cacheReq); ok && len(entry.Body) > 0 {
+			return NodeImageResult{
+				Data:  base64.StdEncoding.EncodeToString(entry.Body),
+				Mime:  entry.ContentType,
+				Bytes: len(entry.Body),
+			}, nil
+		}
+	}
+
 	s.mu.RLock()
 	stack := s.stack
 	s.mu.RUnlock()
@@ -110,9 +141,27 @@ func (s *BrowserService) FetchNodeImage(rawURL string) (NodeImageResult, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), s.fetchBudget(parsed.NodeHash, parsed.Path))
 	defer cancel()
 
-	fetch := stack.Browser().FetchLimited(
-		ctx, parsed.NodeHash, parsed.Path, nomadnet.RequestData{}, maxBytes, s.fileFetchHooks(rawURL),
-	)
+	hooks := s.fileFetchHooks(rawURL)
+	if s.app != nil {
+		hooks = mergeFetchHooks(hooks, &nomadnet.FetchHooks{
+			OnProgress: func(p nomadnet.FetchProgress) {
+				s.app.Event.Emit("micron:image-progress", map[string]any{
+					"url":      rawURL,
+					"received": p.Received,
+					"total":    p.Total,
+				})
+			},
+		})
+	}
+
+	var fetch nomadnet.FetchResult
+	if strings.HasPrefix(parsed.Path, "/media/") {
+		fetch = stack.Browser().FetchMedia(ctx, parsed.NodeHash, parsed.Path, imageKey, profile, maxBytes, hooks)
+	} else {
+		fetch = stack.Browser().FetchLimited(
+			ctx, parsed.NodeHash, parsed.Path, nomadnet.RequestData{}, maxBytes, hooks,
+		)
+	}
 	if fetch.Error != "" {
 		s.log("error", "image fetch failed", fmt.Sprintf("%s: %s", rawURL, fetch.Error))
 		return NodeImageResult{}, errors.New(fetch.Error)
@@ -126,6 +175,9 @@ func (s *BrowserService) FetchNodeImage(rawURL string) (NodeImageResult, error) 
 	mime, err := sniffNodeImageMime(fetch.Body)
 	if err != nil {
 		return NodeImageResult{}, err
+	}
+	if cacheEnabled {
+		s.imageCache.Put(parsed.NodeHash, parsed.Path, cacheReq, fetch.Body, mime)
 	}
 	return NodeImageResult{
 		Data:  base64.StdEncoding.EncodeToString(fetch.Body),

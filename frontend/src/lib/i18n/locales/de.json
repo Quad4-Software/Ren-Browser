@@ -432,7 +432,9 @@
     "imageBlocked": "Bilder von diesem Knoten sind blockiert",
     "imageTooLarge": "Bild überschreitet das Größenlimit",
     "imageLoading": "Bild wird geladen...",
-    "imageFailed": "Bild konnte nicht geladen werden"
+    "imageFailed": "Bild konnte nicht geladen werden",
+    "imageReload": "Neu laden",
+    "imageSave": "Bild speichern"
   },
   "find": {
     "placeholder": "Auf Seite suchen",

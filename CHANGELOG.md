@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Micron inline images: node image fetch with raster sniffing and byte caps, frontend placeholder hydration, per-node policy plumbing, and localized strings (#24, in progress)
+- Micron inline images: node image fetch using the Nomad Network /media request convention ({path, key, profile} dict payloads), raster sniffing and byte caps, disk-backed image cache with reload bypass, live fetch progress in placeholders, reload and save actions, per-node policy plumbing, and localized strings (#24)
 
 ### Fixed
 

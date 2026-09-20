@@ -432,7 +432,9 @@
     "imageBlocked": "已屏蔽此节点的图片",
     "imageTooLarge": "图片超出大小限制",
     "imageLoading": "正在加载图片...",
-    "imageFailed": "图片加载失败"
+    "imageFailed": "图片加载失败",
+    "imageReload": "重新加载",
+    "imageSave": "保存图片"
   },
   "find": {
     "placeholder": "页内查找",

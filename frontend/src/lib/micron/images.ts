@@ -26,6 +26,12 @@ export type MicronImageFetchResult = {
   bytes: number;
 };
 
+export type MicronImageFetchOptions = {
+  key?: string;
+  profile?: string;
+  reload?: boolean;
+};
+
 export type MicronImageLabels = {
   load: string;
   allowNode: string;
@@ -34,19 +40,23 @@ export type MicronImageLabels = {
   tooLarge: string;
   loading: string;
   failed: string;
+  reload: string;
+  save: string;
 };
 
 export type MicronImageOptions = {
   pageNodeHash: string;
   mode: MicronImagesMode;
   nodePolicies: Readonly<Record<string, string>>;
-  fetchImage: (url: string) => Promise<MicronImageFetchResult>;
+  fetchImage: (url: string, opts: MicronImageFetchOptions) => Promise<MicronImageFetchResult>;
   onNodePolicy?: (nodeHash: string, policy: MicronImageNodePolicy | null) => void;
+  onSave?: (url: string) => void;
   labels?: Partial<MicronImageLabels>;
 };
 
 export type MicronImageHandle = {
   teardown: () => void;
+  onProgress: (url: string, received: number, total: number) => void;
 };
 
 export const MICRON_IMAGE_MAX_BYTES = 32 * 1024 * 1024;
@@ -64,6 +74,8 @@ export function micronImageLabels(): MicronImageLabels {
     tooLarge: translate("content.imageTooLarge"),
     loading: translate("content.imageLoading"),
     failed: translate("content.imageFailed"),
+    reload: translate("content.imageReload"),
+    save: translate("content.imageSave"),
   };
 }
 
@@ -138,6 +150,16 @@ function base64ToBlob(data: string, mime: string): Blob {
   return new Blob([bytes], { type: mime });
 }
 
+function formatProgressBytes(n: number): string {
+  if (n < 1024) {
+    return `${n} B`;
+  }
+  if (n < 1024 * 1024) {
+    return `${(n / 1024).toFixed(1)} KB`;
+  }
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function attachMicronImages(
   root: HTMLElement,
   options: MicronImageOptions,
@@ -145,6 +167,7 @@ export function attachMicronImages(
   const labels = { ...micronImageLabels(), ...options.labels };
   const objectURLs = new Map<string, HTMLImageElement>();
   const loading = new Set<HTMLElement>();
+  const loadingURLs = new Map<string, HTMLElement>();
   let disposed = false;
   let autoLoaded = 0;
   let inFlight = 0;
@@ -155,9 +178,37 @@ export function attachMicronImages(
   }
 
   function setActionText(holder: HTMLElement, text: string) {
-    const action = holder.querySelector<HTMLElement>("[data-mu-image-action='load']");
+    const action = holder.querySelector<HTMLElement>(
+      "[data-mu-image-action='load'], [data-mu-image-action='reload']",
+    );
     if (action) {
       action.textContent = text;
+    }
+  }
+
+  function makeAction(action: string, text: string): HTMLElement {
+    const el = document.createElement("a");
+    el.className = "mu-image-action";
+    el.setAttribute("data-mu-image-action", action);
+    el.setAttribute("role", "button");
+    el.setAttribute("tabindex", "0");
+    el.textContent = text;
+    return el;
+  }
+
+  /**
+   * After a successful load the placeholder collapses to the image plus a
+   * slim action row with reload and (when supported) save links.
+   */
+  function showLoadedActions(holder: HTMLElement) {
+    const actions = holder.querySelector<HTMLElement>(".mu-image-actions");
+    if (!actions) {
+      return;
+    }
+    actions.textContent = "";
+    actions.appendChild(makeAction("reload", labels.reload));
+    if (options.onSave) {
+      actions.appendChild(makeAction("save", labels.save));
     }
   }
 
@@ -178,11 +229,11 @@ export function attachMicronImages(
     pumpQueue();
   }
 
-  async function loadImage(holder: HTMLElement) {
+  async function loadImage(holder: HTMLElement, reload = false) {
     if (
       disposed ||
       loading.has(holder) ||
-      holder.getAttribute("data-mu-image-state") === "loaded"
+      (!reload && holder.getAttribute("data-mu-image-state") === "loaded")
     ) {
       return;
     }
@@ -214,11 +265,16 @@ export function attachMicronImages(
       return;
     }
     loading.add(holder);
+    loadingURLs.set(resolved.url, holder);
     inFlight++;
     setState(holder, "loading");
     setActionText(holder, labels.loading);
     try {
-      const result = await options.fetchImage(resolved.url);
+      const result = await options.fetchImage(resolved.url, {
+        key: holder.getAttribute("data-mu-image-k") ?? "",
+        profile: holder.getAttribute("data-mu-image-profile") ?? "",
+        reload,
+      });
       if (!result || !result.data || result.bytes > MICRON_IMAGE_MAX_BYTES) {
         throw new Error("invalid image response");
       }
@@ -232,6 +288,7 @@ export function attachMicronImages(
       img.alt = holder.getAttribute("data-mu-image-alt") ?? "";
       img.decoding = "async";
       img.hidden = false;
+      showLoadedActions(holder);
       setState(holder, "loaded");
     } catch {
       if (!disposed) {
@@ -240,8 +297,19 @@ export function attachMicronImages(
       }
     } finally {
       loading.delete(holder);
+      loadingURLs.delete(resolved.url);
       inFlight--;
       pumpQueue();
+    }
+  }
+
+  function saveImage(holder: HTMLElement) {
+    const resolved = resolveMicronImageURL(
+      holder.getAttribute("data-mu-image-path") ?? "",
+      options.pageNodeHash,
+    );
+    if (resolved) {
+      options.onSave?.(resolved.url);
     }
   }
 
@@ -277,11 +345,16 @@ export function attachMicronImages(
     if (!holder || loading.has(holder)) {
       return;
     }
-    if (holder.getAttribute("data-mu-image-state") === "loaded") {
+    const loaded = holder.getAttribute("data-mu-image-state") === "loaded";
+    if (loaded && (action === "load" || action === "node-allow")) {
       return;
     }
     if (action === "load") {
       void loadImage(holder);
+    } else if (action === "reload") {
+      void loadImage(holder, true);
+    } else if (action === "save") {
+      saveImage(holder);
     } else if (action === "node-allow") {
       allowNode(holder);
     }
@@ -377,9 +450,22 @@ export function attachMicronImages(
   }
 
   return {
+    onProgress: (url: string, received: number, total: number) => {
+      const holder = loadingURLs.get(url);
+      if (!holder) {
+        return;
+      }
+      if (total > 0) {
+        const pct = Math.min(100, Math.floor((received / total) * 100));
+        setActionText(holder, `${labels.loading} ${pct}%`);
+      } else if (received > 0) {
+        setActionText(holder, `${labels.loading} ${formatProgressBytes(received)}`);
+      }
+    },
     teardown: () => {
       disposed = true;
       queue.length = 0;
+      loadingURLs.clear();
       root.removeEventListener("click", onClick);
       root.removeEventListener("keydown", onKeydown);
       // Only revoke blob URLs whose img is gone. Re-attach teardown (policy or

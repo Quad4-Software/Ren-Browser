@@ -2,6 +2,7 @@
 <script lang="ts">
   /* eslint-disable svelte/no-at-html-tags -- renders trusted mesh page content */
   import { ArrowLeft, FileCode, Globe, X } from "@lucide/svelte";
+  import { Events } from "@wailsio/runtime";
   import { Progress } from "bits-ui";
   import { useDebounce } from "runed";
   import { handlePageLinkClick } from "$lib/browser/page-links";
@@ -322,9 +323,31 @@
       pageNodeHash: nodeHashFromMeshURL(currentURL),
       mode: normalizeMicronImagesMode(micronImagesMode),
       nodePolicies: micronImageNodes,
-      fetchImage: (url) => FetchNodeImage(url),
+      fetchImage: (url, opts) =>
+        FetchNodeImage(url, opts.key ?? "", opts.profile ?? "", opts.reload ?? false),
       onNodePolicy: onMicronImageNodePolicy,
+      onSave: (url) => {
+        void runDownload(url, "file", "");
+      },
     });
+
+    const offImageProgress = Events.On(
+      "micron:image-progress",
+      (event: { data?: unknown }) => {
+        try {
+          const data = JSON.parse(String(event.data ?? "")) as {
+            url?: string;
+            received?: number;
+            total?: number;
+          };
+          if (data.url) {
+            imageHandle.onProgress(data.url, data.received ?? 0, data.total ?? 0);
+          }
+        } catch {
+          // Ignore malformed progress payloads.
+        }
+      },
+    );
 
     const expansion = attachMicronMultilineExpansion(root, {
       onArmed: () => {
@@ -339,6 +362,7 @@
     });
 
     return () => {
+      offImageProgress();
       imageHandle.teardown();
       expansion.teardown();
     };
@@ -922,9 +946,14 @@
     overflow: hidden;
   }
 
-  .content.micron :global(.mu-image[data-mu-image-state="loaded"] .mu-image-meta),
-  .content.micron :global(.mu-image[data-mu-image-state="loaded"] .mu-image-actions) {
+  .content.micron :global(.mu-image[data-mu-image-state="loaded"] .mu-image-meta) {
     display: none;
+  }
+
+  .content.micron :global(.mu-image[data-mu-image-state="loaded"] .mu-image-actions) {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    opacity: 0.75;
   }
 
   .content.micron :global(.mu-image-output) {

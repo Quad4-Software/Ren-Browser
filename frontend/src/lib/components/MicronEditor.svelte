@@ -249,7 +249,8 @@
       pageNodeHash: nodeHashFromMeshURL(previewURL()),
       mode: normalizeMicronImagesMode(micronImagesMode),
       nodePolicies: micronImageNodes,
-      fetchImage: (url) => FetchNodeImage(url),
+      fetchImage: (url, opts) =>
+        FetchNodeImage(url, opts.key ?? "", opts.profile ?? "", opts.reload ?? false),
       onNodePolicy: onMicronImageNodePolicy,
     });
     return () => handle.teardown();
