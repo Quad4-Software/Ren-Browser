@@ -2,7 +2,7 @@
 # Verify renbrowser.rsm signature and byte-level file hashes.
 #
 # Env:
-#   RNS_REQUIRED_SIGNER  identity hash (default: e46112d44649266d71fe2193e00a4710)
+#   RNS_REQUIRED_SIGNER  identity hash (default: e318cbc04468bd574db2b4523dddd710)
 #   RNS_RSM_PATH         path to .rsm (default: renbrowser.rsm)
 #   RNS_INVENTORY_OUT    if set, write extracted inventory here (for end-of-job recheck)
 #
@@ -13,7 +13,7 @@ set -eu
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 
-SIGNER="${RNS_REQUIRED_SIGNER:-e46112d44649266d71fe2193e00a4710}"
+SIGNER="${RNS_REQUIRED_SIGNER:-e318cbc04468bd574db2b4523dddd710}"
 RSM_PATH="${RNS_RSM_PATH:-$ROOT/renbrowser.rsm}"
 HEADER="# renbrowser tree manifest v1"
 
