@@ -262,9 +262,13 @@ func unwrapOpenQuery(values url.Values) (string, bool) {
 func normalizeInternal(raw string) (string, bool) {
 	raw = strings.TrimSpace(raw)
 	lower := strings.ToLower(raw)
-	if strings.HasPrefix(lower, "http:") || strings.HasPrefix(lower, "https:") ||
-		strings.HasPrefix(lower, "javascript:") || strings.HasPrefix(lower, "data:") ||
-		strings.HasPrefix(lower, "file:") || strings.HasPrefix(lower, "blob:") {
+	// Browsers ignore tab, CR, and LF inside scheme names, so strip them
+	// before comparing against the blocked scheme list.
+	probe := strings.NewReplacer("\t", "", "\r", "", "\n", "").Replace(lower)
+	if strings.HasPrefix(probe, "http:") || strings.HasPrefix(probe, "https:") ||
+		strings.HasPrefix(probe, "javascript:") || strings.HasPrefix(probe, "vbscript:") ||
+		strings.HasPrefix(probe, "data:") ||
+		strings.HasPrefix(probe, "file:") || strings.HasPrefix(probe, "blob:") {
 		return "", false
 	}
 	if strings.HasPrefix(lower, "rns://") {

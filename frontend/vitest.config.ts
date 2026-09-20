@@ -14,6 +14,8 @@ const domTests = [
   "src/lib/browser/mobile-keyboard.test.ts",
   "src/lib/browser/docs-render.test.ts",
   "src/lib/browser/docs-render.snapshot.test.ts",
+  "src/lib/browser/exploratory-oracles.test.ts",
+  "src/lib/browser/preview-srcdoc.test.ts",
   "src/lib/documents/epub.test.ts",
   "src/lib/documents/sanitize-html.exploratory.test.ts",
   "src/lib/browser/page-links.test.ts",

@@ -18,12 +18,35 @@ function safePreviewColor(value: string | undefined, fallback: string): string {
 }
 
 function stripPreviewExecutableMarkup(html: string): string {
-  return html
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<script\b[^>]*\/>/gi, "")
-    .replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, "")
-    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
-    .replace(/javascript\s*:/gi, "blocked:");
+  if (typeof document === "undefined") {
+    // No parser available; fail closed rather than pass executable markup through.
+    return "";
+  }
+  const template = document.createElement("template");
+  // Preview thumbnails render inside a fully sandboxed iframe; this pass only
+  // removes executable markup so captures stay inert even without a sandbox.
+  // eslint-disable-next-line no-unsanitized/property -- elements are removed, never injected
+  template.innerHTML = html;
+  let changed = false;
+  template.content.querySelectorAll("script").forEach((el) => {
+    el.remove();
+    changed = true;
+  });
+  template.content.querySelectorAll("*").forEach((el) => {
+    for (const attr of [...el.attributes]) {
+      const name = attr.name.toLowerCase();
+      const value = attr.value.replace(/[\t\n\r]/g, "");
+      if (name.startsWith("on") || /^\s*(javascript|vbscript)\s*:/i.test(value)) {
+        el.removeAttribute(attr.name);
+        changed = true;
+      }
+    }
+  });
+  if (!changed) {
+    return html;
+  }
+  const prefix = /^<!DOCTYPE/i.test(html.trim()) ? "<!DOCTYPE html>" : "";
+  return prefix + template.innerHTML;
 }
 
 export function wrapPreviewSrcdoc(html: string, colors?: { fg?: string; bg?: string }): string {

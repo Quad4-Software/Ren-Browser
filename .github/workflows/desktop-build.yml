@@ -44,7 +44,7 @@ on:
         required: false
 
 permissions:
-  contents: write
+  contents: read
   actions: read
 
 env:
@@ -759,6 +759,8 @@ jobs:
 
   publish:
     name: Publish
+    permissions:
+      contents: write
     needs:
       - version
       - build-linux

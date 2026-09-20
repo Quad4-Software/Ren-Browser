@@ -1,0 +1,13 @@
+name: "RenBrowser CodeQL config"
+
+# Do not scan vendored or generated trees. Findings there belong to the
+# upstream projects and cannot be fixed in this repository.
+paths-ignore:
+  - vendor
+  - third_party
+  - "**/node_modules"
+  - frontend/bindings
+  - "**/dist"
+  - build/android/.gradle
+  - .flatpak-builder
+  - coverage

@@ -17,15 +17,19 @@ export function unwrapDeepLink(raw: string): string {
   }
 
   const lower = trimmed.toLowerCase();
+  // Browsers ignore tab, CR, and LF inside scheme names, so strip them before
+  // comparing against the blocked scheme list.
+  const probe = lower.replace(/[\t\r\n]/g, "");
   if (
-    lower.startsWith("http:") ||
-    lower.startsWith("https:") ||
-    lower.startsWith("javascript:") ||
-    lower.startsWith("data:") ||
-    lower.startsWith("file:") ||
-    lower.startsWith("blob:") ||
-    lower.startsWith("ftp:") ||
-    lower.startsWith("mailto:")
+    probe.startsWith("http:") ||
+    probe.startsWith("https:") ||
+    probe.startsWith("javascript:") ||
+    probe.startsWith("vbscript:") ||
+    probe.startsWith("data:") ||
+    probe.startsWith("file:") ||
+    probe.startsWith("blob:") ||
+    probe.startsWith("ftp:") ||
+    probe.startsWith("mailto:")
   ) {
     return "";
   }
