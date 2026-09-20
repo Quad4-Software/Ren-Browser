@@ -154,33 +154,26 @@
     <ul>
       {#each filtered as node (node.hash)}
         <li>
-          <button onclick={() => openNode(node)}>
-            <span class="row">
-              <span class="name">{node.name || t("discovery.unnamedSite")}</span>
-              {#if node.hops >= 0}
-                <span class="hops-badge">{formatHops(node.hops)}</span>
-              {/if}
-              <span
-                class="fav"
-                role="button"
-                tabindex="0"
-                aria-label={t("discovery.favoriteSite")}
-                onclick={(event) => {
-                  event.stopPropagation();
-                  onFavorite(`${node.hash}:/page/index.mu`);
-                }}
-                onkeydown={(event) => {
-                  if (event.key === "Enter") {
-                    event.stopPropagation();
-                    onFavorite(`${node.hash}:/page/index.mu`);
-                  }
-                }}
-              >
-                <Star size={14} fill={isFavorite(node.hash) ? "currentColor" : "none"} />
+          <div class="node-entry">
+            <button type="button" class="node-open" onclick={() => openNode(node)}>
+              <span class="row">
+                <span class="name">{node.name || t("discovery.unnamedSite")}</span>
+                {#if node.hops >= 0}
+                  <span class="hops-badge">{formatHops(node.hops)}</span>
+                {/if}
               </span>
-            </span>
-            <span class="meta">{formatMeta(node)}</span>
-          </button>
+              <span class="meta">{formatMeta(node)}</span>
+            </button>
+            <button
+              type="button"
+              class="fav"
+              aria-label={t("discovery.favoriteSite")}
+              aria-pressed={isFavorite(node.hash)}
+              onclick={() => onFavorite(`${node.hash}:/page/index.mu`)}
+            >
+              <Star size={14} fill={isFavorite(node.hash) ? "currentColor" : "none"} />
+            </button>
+          </div>
         </li>
       {/each}
     </ul>
@@ -241,7 +234,14 @@
     gap: 0.45rem;
   }
 
-  ul button {
+  .node-entry {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: 0.3rem;
+  }
+
+  .node-open {
     width: 100%;
     text-align: left;
     border: 1px solid var(--ren-border);
@@ -257,7 +257,7 @@
       background 0.15s ease;
   }
 
-  ul button:hover {
+  .node-open:hover {
     border-color: var(--ren-border-strong);
     background: var(--ren-tab-hover);
   }
@@ -282,6 +282,27 @@
   .fav {
     color: var(--ren-accent);
     flex-shrink: 0;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: 8px;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .fav:hover {
+    background: var(--ren-tab-hover);
+  }
+
+  .fav:focus-visible,
+  .node-open:focus-visible {
+    outline: 2px solid var(--ren-accent);
+    outline-offset: 2px;
   }
 
   .hops-badge {

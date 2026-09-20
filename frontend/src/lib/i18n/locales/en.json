@@ -75,6 +75,7 @@
   "tab": {
     "new": "New Tab",
     "close": "Close tab",
+    "list": "Browser tabs",
     "newTab": "New tab",
     "limitReached": "Tab limit ({max}) reached",
     "reload": "Reload",
@@ -249,7 +250,17 @@
     "shareApkShareFailed": "Could not open the share sheet",
     "shareApkStartFailed": "Could not start Wi-Fi sharing",
     "shareApkStopFailed": "Could not stop sharing",
-    "shareApkCopyFailed": "Could not copy the download URL"
+    "shareApkCopyFailed": "Could not copy the download URL",
+    "micronImages": "Inline images on micron pages",
+    "micronImagesAsk": "Ask each time (recommended)",
+    "micronImagesAlways": "Load automatically",
+    "micronImagesOff": "Never load",
+    "micronImagesHint": "Images stay on the mesh and are fetched over Reticulum. They are never loaded without your approval unless you allow the node or choose automatic loading.",
+    "micronImageNodes": "Per-node image rules",
+    "micronImageNodePolicy": "Image policy for node",
+    "micronImageNodeRemove": "Remove",
+    "micronImagePolicyAlways": "Allow",
+    "micronImagePolicyNever": "Block"
   },
   "keybinds": {
     "focusUrl": "Focus address bar",
@@ -414,7 +425,14 @@
     "multilineHint": "Press Enter again to expand to multi-line",
     "pullToRefresh": "Pull to refresh",
     "releaseToRefresh": "Release to refresh",
-    "swipeBack": "Go back"
+    "swipeBack": "Go back",
+    "imageLoad": "Load image",
+    "imageAllowNode": "Always allow images on this node",
+    "imageDisabled": "Images are disabled in settings",
+    "imageBlocked": "Images from this node are blocked",
+    "imageTooLarge": "Image exceeds the size limit",
+    "imageLoading": "Loading image...",
+    "imageFailed": "Image failed to load"
   },
   "find": {
     "placeholder": "Find in page",

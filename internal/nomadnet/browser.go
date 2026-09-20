@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"quad4/reticulum-go/pkg/destination"
-	"quad4/reticulum-go/pkg/identity"
-	rlink "quad4/reticulum-go/pkg/link"
-	"quad4/reticulum-go/pkg/transport"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/destination"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/identity"
+	rlink "github.com/Quad4-Software/Reticulum-Go/pkg/link"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/transport"
 
 	"renbrowser/internal/limits"
 )
@@ -112,6 +112,12 @@ func (b *Browser) Fetch(ctx context.Context, nodeHash string, path string, req R
 // FetchWithHooks is Fetch with optional stage/progress observability. See
 // FetchHooks for details; pass nil for the same behavior as Fetch.
 func (b *Browser) FetchWithHooks(ctx context.Context, nodeHash string, path string, req RequestData, hooks *FetchHooks) FetchResult {
+	return b.FetchLimited(ctx, nodeHash, path, req, 0, hooks)
+}
+
+// FetchLimited is FetchWithHooks with an explicit response byte cap. When
+// maxBytes <= 0 the path-based cap from limits.MaxFetchBytes applies.
+func (b *Browser) FetchLimited(ctx context.Context, nodeHash string, path string, req RequestData, maxBytes int, hooks *FetchHooks) FetchResult {
 	start := time.Now()
 	res := FetchResult{
 		NodeHash: normalizeHash(nodeHash),
@@ -170,7 +176,9 @@ func (b *Browser) FetchWithHooks(ctx context.Context, nodeHash string, path stri
 
 	requestTimeout, receiptTimeout := requestTimeouts(res.Path)
 	hooks.stage("request", fmt.Sprintf("sending request path=%s requestTimeout=%s", res.Path, requestTimeout))
-	maxBytes := limits.MaxFetchBytes(res.Path)
+	if maxBytes <= 0 {
+		maxBytes = limits.MaxFetchBytes(res.Path)
+	}
 	receipt, err := lnk.RequestLimited(res.Path, buildRequestData(req), requestTimeout, maxBytes)
 	if err != nil {
 		res.Error = err.Error()

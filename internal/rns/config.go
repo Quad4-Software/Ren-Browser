@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"quad4/reticulum-go/pkg/common"
-	"quad4/reticulum-go/pkg/reticulumconfig"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/common"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/reticulumconfig"
 
 	"renbrowser/internal/brand"
 )

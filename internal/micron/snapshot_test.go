@@ -31,8 +31,8 @@ func TestMicronToHTMLDarkSnapshot(t *testing.T) {
 	if !strings.Contains(html, "/page/index.mu") {
 		t.Fatalf("snapshot missing link href in:\n%s", html)
 	}
-	if !strings.Contains(html, `class="Mu-mnt"`) {
-		t.Fatalf("expected Mu-mnt cells in:\n%s", html)
+	if !strings.Contains(html, "Mu-mnt") {
+		t.Fatalf("expected monospace markup (Mu-mnt or Mu-mnt-group) in:\n%s", html)
 	}
 	if strings.Contains(strings.ToLower(html), "<script") {
 		t.Fatalf("unexpected script in micron html: %s", html)

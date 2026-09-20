@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"quad4/reticulum-go/pkg/common"
-	rlink "quad4/reticulum-go/pkg/link"
-	"quad4/reticulum-go/pkg/transport"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/common"
+	rlink "github.com/Quad4-Software/Reticulum-Go/pkg/link"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/transport"
 )
 
 const (

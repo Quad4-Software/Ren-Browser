@@ -75,6 +75,7 @@
   "tab": {
     "new": "新标签页",
     "close": "关闭标签页",
+    "list": "浏览器标签页",
     "newTab": "新标签页",
     "limitReached": "已达到标签页上限 ({max})",
     "reload": "重新加载",
@@ -249,7 +250,17 @@
     "shareApkShareFailed": "无法打开分享面板",
     "shareApkStartFailed": "无法开始 Wi-Fi 分享",
     "shareApkStopFailed": "无法停止分享",
-    "shareApkCopyFailed": "无法复制下载 URL"
+    "shareApkCopyFailed": "无法复制下载 URL",
+    "micronImages": "micron 页面内嵌图片",
+    "micronImagesAsk": "每次询问（推荐）",
+    "micronImagesAlways": "自动加载",
+    "micronImagesOff": "从不加载",
+    "micronImagesHint": "图片保留在网格中并通过 Reticulum 获取。除非您允许该节点或选择自动加载，否则不会在未经批准的情况下加载。",
+    "micronImageNodes": "按节点的图片规则",
+    "micronImageNodePolicy": "节点的图片策略",
+    "micronImageNodeRemove": "移除",
+    "micronImagePolicyAlways": "允许",
+    "micronImagePolicyNever": "阻止"
   },
   "keybinds": {
     "focusUrl": "聚焦地址栏",
@@ -414,7 +425,14 @@
     "multilineHint": "再次按 Enter 展开为多行",
     "pullToRefresh": "下拉刷新",
     "releaseToRefresh": "松开刷新",
-    "swipeBack": "返回"
+    "swipeBack": "返回",
+    "imageLoad": "加载图片",
+    "imageAllowNode": "始终允许此节点的图片",
+    "imageDisabled": "已在设置中禁用图片",
+    "imageBlocked": "已屏蔽此节点的图片",
+    "imageTooLarge": "图片超出大小限制",
+    "imageLoading": "正在加载图片...",
+    "imageFailed": "图片加载失败"
   },
   "find": {
     "placeholder": "页内查找",

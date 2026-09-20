@@ -59,7 +59,7 @@ Zentrale API für die UI:
 
 ### Reticulum-Stack (`internal/rns`)
 
-Umschließt `quad4/reticulum-go`:
+Umschließt `github.com/Quad4-Software/Reticulum-Go`:
 
 - Transport starten und stoppen
 - Interface-Statistiken melden

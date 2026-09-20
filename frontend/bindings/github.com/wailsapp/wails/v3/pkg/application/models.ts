@@ -293,7 +293,8 @@ export enum MacAppearanceType {
 };
 
 /**
- * MacBackdrop is the backdrop type for macOS
+ * MacBackdrop is the backdrop type for macOS. Making the webview transparent
+ * requires -tags private_mac_apis; otherwise it remains opaque above the backdrop.
  */
 export enum MacBackdrop {
     /**
@@ -348,18 +349,24 @@ export interface MacLiquidGlass {
     "TintColor": RGBA | null;
 
     /**
-     * Group identifier for merging multiple glass windows
+     * Group identifier for merging multiple glass windows.
+     * This uses a private AppKit API and is ignored unless built with
+     * -tags private_mac_apis.
      */
     "GroupID": string;
 
     /**
-     * Spacing between grouped glass elements (in points)
+     * Spacing between grouped glass elements (in points).
+     * This uses a private AppKit API and is ignored unless built with
+     * -tags private_mac_apis.
      */
     "GroupSpacing": number;
 }
 
 /**
- * MacLiquidGlassStyle defines the style of the Liquid Glass effect
+ * MacLiquidGlassStyle defines the style of the Liquid Glass effect.
+ * Without -tags private_mac_apis, styles use public regular/clear values and
+ * light/dark appearances instead of undocumented native style values.
  */
 export enum MacLiquidGlassStyle {
     /**
@@ -1302,6 +1309,9 @@ export interface WebviewWindowOptions {
 
     /**
      * OpenInspectorOnStartup will open the inspector when the window is first shown.
+     * On macOS this uses a private WebKit API and is ignored unless built with
+     * -tags private_mac_apis. Safari inspection remains available on macOS 13.3+
+     * in development builds or with -tags devtools.
      */
     "OpenInspectorOnStartup": boolean;
 

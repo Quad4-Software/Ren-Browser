@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { LoaderCircle, Plus } from "@lucide/svelte";
+  import { ElementSize } from "runed";
   import { expandHexColor, micronPageColors, type Tab } from "$lib/browser/url";
   import { normalizePageErrorKind, pageErrorContent } from "$lib/browser/errors";
   import {
@@ -27,7 +28,7 @@
   let { tab, label = "", class: className = "", micronEngine = "js" }: Props = $props();
 
   let thumbEl = $state<HTMLDivElement | null>(null);
-  let boxWidth = $state(0);
+  const thumbSize = new ElementSize(() => thumbEl, { box: "content-box" });
 
   function previewLabel(): string {
     const title = tab.title.trim();
@@ -109,27 +110,11 @@
       : "",
   );
 
-  const previewScale = $derived(previewScaleForBox(boxWidth));
+  const previewScale = $derived(previewScaleForBox(thumbSize.width));
 
   const displayLabel = $derived(label || previewLabel());
 
   const isEmptyTab = $derived(!tab.url.trim() && !tab.page?.error);
-
-  $effect(() => {
-    const el = thumbEl;
-    if (!el) {
-      return;
-    }
-    const sync = () => {
-      boxWidth = el.clientWidth;
-    };
-    sync();
-    const observer = new ResizeObserver(() => {
-      sync();
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  });
 </script>
 
 <div

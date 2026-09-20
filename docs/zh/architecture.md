@@ -59,7 +59,7 @@ UI 的核心 API：
 
 ### Reticulum 栈（`internal/rns`）
 
-封装 `quad4/reticulum-go`：
+封装 `github.com/Quad4-Software/Reticulum-Go`：
 
 - 启动和停止传输
 - 报告接口统计数据

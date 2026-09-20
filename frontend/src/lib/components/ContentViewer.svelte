@@ -2,8 +2,17 @@
 <script lang="ts">
   /* eslint-disable svelte/no-at-html-tags -- renders trusted mesh page content */
   import { ArrowLeft, FileCode, Globe, X } from "@lucide/svelte";
+  import { Progress } from "bits-ui";
+  import { useDebounce } from "runed";
   import { handlePageLinkClick } from "$lib/browser/page-links";
-  import { micronShellStyle } from "$lib/browser/url";
+  import { micronShellStyle, nodeHashFromMeshURL } from "$lib/browser/url";
+  import {
+    attachMicronImages,
+    normalizeMicronImagesMode,
+    type MicronImageNodePolicy,
+    type MicronImagesMode,
+  } from "$lib/micron/images";
+  import { FetchNodeImage } from "../../../bindings/renbrowser/internal/app/browserservice.js";
   import { renderDocsPage } from "$lib/browser/docs-render";
   import {
     LARGE_MICRON_RAW_BYTES,
@@ -62,6 +71,9 @@
     onPageHighlightDone?: () => void;
     micronEngine?: MicronEffectiveEngine;
     micronPreserveLayout?: boolean;
+    micronImagesMode?: MicronImagesMode;
+    micronImageNodes?: Record<string, string>;
+    onMicronImageNodePolicy?: (nodeHash: string, policy: MicronImageNodePolicy | null) => void;
     onNavigate: (url: string) => void;
     onRetry: () => void;
     onReloadFresh: () => void;
@@ -94,6 +106,9 @@
     onPageHighlightDone = () => {},
     micronEngine = "js",
     micronPreserveLayout = false,
+    micronImagesMode = "ask",
+    micronImageNodes = {},
+    onMicronImageNodePolicy,
     onNavigate,
     onRetry,
     onReloadFresh,
@@ -120,6 +135,8 @@
     forwardOffset: 0,
     forwardTriggered: false,
   });
+
+  const finishPageHighlight = useDebounce(() => onPageHighlightDone(), TEMPORARY_HIGHLIGHT_MS);
 
   const cacheBannerKey = $derived(`${fromCache}:${cachedAt}`);
   const isDocument = $derived(isDocumentContentType(contentType));
@@ -210,6 +227,14 @@
     menu = { x: event.clientX, y: event.clientY };
   }
 
+  function handleContentKeydown(event: KeyboardEvent) {
+    if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+      event.preventDefault();
+      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      menu = { x: rect.left + 16, y: rect.top + 16 };
+    }
+  }
+
   function closeMenu() {
     menu = null;
   }
@@ -293,6 +318,14 @@
       return;
     }
 
+    const imageHandle = attachMicronImages(root, {
+      pageNodeHash: nodeHashFromMeshURL(currentURL),
+      mode: normalizeMicronImagesMode(micronImagesMode),
+      nodePolicies: micronImageNodes,
+      fetchImage: (url) => FetchNodeImage(url),
+      onNodePolicy: onMicronImageNodePolicy,
+    });
+
     const expansion = attachMicronMultilineExpansion(root, {
       onArmed: () => {
         multilineHintVisible = true;
@@ -305,7 +338,10 @@
       },
     });
 
-    return () => expansion.teardown();
+    return () => {
+      imageHandle.teardown();
+      expansion.teardown();
+    };
   });
 
   $effect(() => {
@@ -354,12 +390,10 @@
       return;
     }
 
-    const clearStateTimer = setTimeout(() => {
-      onPageHighlightDone();
-    }, TEMPORARY_HIGHLIGHT_MS);
+    void finishPageHighlight().catch(() => {});
 
     return () => {
-      clearTimeout(clearStateTimer);
+      void finishPageHighlight.cancel();
       session.cancel();
     };
   });
@@ -433,18 +467,20 @@
       </div>
       <pre class="source-view" oncontextmenu={openMenu}>{raw}</pre>
     {:else if loading}
-      <div class="progress" aria-hidden="true"></div>
-      <div class="state">{t("content.loadingPage")}</div>
+      <Progress.Root value={null} class="content-progress" aria-hidden="true">
+        <div class="content-progress-fill"></div>
+      </Progress.Root>
+      <div class="state" role="status" aria-live="polite">{t("content.loadingPage")}</div>
     {:else if isDocument}
       {#if DocumentViewerComponent}
         <DocumentViewerComponent {contentType} {binaryB64} pageError={error} {onRetry} />
       {:else}
-        <div class="state">{t("documents.loading")}</div>
+        <div class="state" role="status" aria-live="polite">{t("documents.loading")}</div>
       {/if}
     {:else if error}
       <PageErrorState {error} {errorKind} {currentURL} {onRetry} />
     {:else if displayHtml}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- role=document with tabindex enables keyboard scrolling and the ContextMenu key -->
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <div
         class="content"
@@ -455,7 +491,9 @@
         bind:this={contentEl}
         onclick={handleClick}
         oncontextmenu={openMenu}
+        onkeydown={handleContentKeydown}
         role="document"
+        tabindex="0"
       >
         {@html displayHtml}
       </div>
@@ -494,7 +532,7 @@
     flex-direction: column;
     min-height: 0;
     min-width: 0;
-    overflow-x: hidden;
+    overflow-x: clip;
     background: var(--ren-content-bg);
     position: relative;
   }
@@ -707,12 +745,17 @@
     color: var(--ren-fg);
   }
 
-  .progress {
+  :global(.content-progress) {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 2px;
+    overflow: hidden;
+  }
+
+  .content-progress-fill {
+    height: 100%;
     background: linear-gradient(90deg, transparent, var(--ren-accent), transparent);
     animation: pulse 1.1s ease-in-out infinite;
   }
@@ -730,10 +773,16 @@
     flex: 1;
     min-width: 0;
     overflow: auto;
-    overflow-x: hidden;
+    overflow-x: clip;
     padding: 1rem 1.25rem 2rem;
     line-height: 1.55;
     overflow-wrap: anywhere;
+  }
+
+  .content :global(input),
+  .content :global(textarea),
+  .content :global(select) {
+    max-width: 100%;
   }
 
   .content :global(img),
@@ -785,6 +834,124 @@
     max-width: none !important;
   }
 
+  .content.micron :global(.mu-image) {
+    display: block;
+    box-sizing: border-box;
+    max-width: 100%;
+    margin: 0.5rem 0;
+    padding: 0.6rem 0.75rem;
+    border: 1px dashed color-mix(in srgb, var(--ren-border, #555) 80%, transparent);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--ren-chrome-bg, #18181b) 60%, transparent);
+  }
+
+  .content.micron :global(.mu-image[data-mu-image-a="center"]) {
+    margin-inline: auto;
+  }
+
+  .content.micron :global(.mu-image[data-mu-image-a="right"]) {
+    margin-left: auto;
+    margin-right: 0;
+  }
+
+  .content.micron :global(.mu-image-meta) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    font-size: 0.85em;
+    color: var(--ren-muted, #a1a1aa);
+  }
+
+  .content.micron :global(.mu-image-alt) {
+    overflow-wrap: anywhere;
+  }
+
+  .content.micron :global(.mu-image-size) {
+    color: var(--ren-muted, #a1a1aa);
+    opacity: 0.8;
+  }
+
+  .content.micron :global(.mu-image-actions) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.35rem;
+  }
+
+  .content.micron :global(.mu-image-action) {
+    color: var(--ren-accent, #60a5fa);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    font-size: 0.85em;
+  }
+
+  .content.micron :global(.mu-image-action:hover) {
+    text-decoration-thickness: 2px;
+  }
+
+  .content.micron :global(.mu-image-action:focus-visible) {
+    outline: 2px solid var(--ren-accent, #60a5fa);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  .content.micron :global(.mu-image-action[aria-disabled="true"]) {
+    color: var(--ren-muted, #a1a1aa);
+    cursor: not-allowed;
+    text-decoration: none;
+  }
+
+  .content.micron :global(.mu-image[data-mu-image-state="loading"] .mu-image-action) {
+    color: var(--ren-muted, #a1a1aa);
+    pointer-events: none;
+  }
+
+  .content.micron :global(.mu-image[data-mu-image-state="error"]) {
+    border-color: color-mix(in srgb, var(--ren-error, #f87171) 60%, transparent);
+  }
+
+  .content.micron :global(.mu-image[data-mu-image-state="blocked"] .mu-image-actions),
+  .content.micron :global(.mu-image[data-mu-image-state="disabled"] .mu-image-actions) {
+    pointer-events: none;
+  }
+
+  .content.micron :global(.mu-image[data-mu-image-state="loaded"]) {
+    border-style: solid;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .content.micron :global(.mu-image[data-mu-image-state="loaded"] .mu-image-meta),
+  .content.micron :global(.mu-image[data-mu-image-state="loaded"] .mu-image-actions) {
+    display: none;
+  }
+
+  .content.micron :global(.mu-image-output) {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .content.micron :global(.mu-image-output[hidden]) {
+    display: none;
+  }
+
+  .content.micron :global(.Mu-fold-summary) {
+    border-radius: 4px;
+  }
+
+  .content.micron :global(.Mu-fold-summary:focus-visible) {
+    outline: 2px solid var(--ren-accent, #60a5fa);
+    outline-offset: 1px;
+  }
+
+  .content.micron :global(.Mu-fold-glyph) {
+    display: inline-block;
+    margin-right: 0.35ch;
+    user-select: none;
+  }
+
   .content.micron :global(input[type="text"]),
   .content.micron :global(input[type="password"]),
   .content.micron :global(textarea) {
@@ -811,6 +978,11 @@
     outline: 1px solid #34d399;
     outline-offset: 1px;
     resize: vertical;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .multiline-hint {

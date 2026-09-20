@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { AlertDialog } from "bits-ui";
   import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
@@ -22,44 +23,57 @@
     onCancel,
   }: Props = $props();
 
-  function handleKeyDown(event: KeyboardEvent) {
-    if (event.key === "Escape") {
-      onCancel();
-    }
-  }
+  let confirmed = false;
 </script>
 
-<svelte:window onkeydown={open ? handleKeyDown : undefined} />
-
-{#if open}
-  <button type="button" class="backdrop" aria-label={t("dialog.close")} onclick={onCancel}></button>
-  <div
-    class="dialog"
-    role="alertdialog"
-    aria-modal="true"
-    aria-labelledby="confirm-dialog-title"
-    aria-describedby="confirm-dialog-message"
-  >
-    <h2 id="confirm-dialog-title">{title}</h2>
-    <p id="confirm-dialog-message">{message}</p>
-    <div class="actions">
-      <button type="button" class="cancel-btn" onclick={onCancel}>{cancelLabel}</button>
-      <button type="button" class="confirm-btn" onclick={onConfirm}>{confirmLabel}</button>
-    </div>
-  </div>
-{/if}
+<AlertDialog.Root
+  {open}
+  onOpenChange={(next) => {
+    if (!next) {
+      if (!confirmed) {
+        onCancel();
+      }
+      confirmed = false;
+    }
+  }}
+>
+  <AlertDialog.Portal>
+    <AlertDialog.Overlay class="confirm-backdrop" />
+    <AlertDialog.Content class="confirm-dialog" interactOutsideBehavior="close">
+      <AlertDialog.Title id="confirm-dialog-title" class="confirm-title">
+        {title}
+      </AlertDialog.Title>
+      <AlertDialog.Description id="confirm-dialog-message" class="confirm-message">
+        {message}
+      </AlertDialog.Description>
+      <div class="confirm-actions">
+        <AlertDialog.Cancel type="button" class="confirm-cancel-btn"
+          >{cancelLabel}</AlertDialog.Cancel
+        >
+        <AlertDialog.Action
+          type="button"
+          class="confirm-confirm-btn"
+          onclick={() => {
+            confirmed = true;
+            onConfirm();
+          }}
+        >
+          {confirmLabel}
+        </AlertDialog.Action>
+      </div>
+    </AlertDialog.Content>
+  </AlertDialog.Portal>
+</AlertDialog.Root>
 
 <style>
-  .backdrop {
+  :global(.confirm-backdrop) {
     position: fixed;
     inset: 0;
     z-index: 1200;
-    border: none;
     background: rgb(0 0 0 / 0.45);
-    cursor: default;
   }
 
-  .dialog {
+  :global(.confirm-dialog) {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -75,29 +89,29 @@
     gap: 0.85rem;
   }
 
-  h2 {
+  :global(.confirm-title) {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
     color: var(--ren-fg);
   }
 
-  p {
+  :global(.confirm-message) {
     margin: 0;
     font-size: 0.92rem;
     line-height: 1.45;
     color: var(--ren-fg-secondary);
   }
 
-  .actions {
+  :global(.confirm-actions) {
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
     padding-top: 0.15rem;
   }
 
-  .cancel-btn,
-  .confirm-btn {
+  :global(.confirm-cancel-btn),
+  :global(.confirm-confirm-btn) {
     border: 1px solid var(--ren-border);
     border-radius: 10px;
     padding: 0.5rem 0.85rem;
@@ -110,22 +124,22 @@
       color 0.15s ease;
   }
 
-  .cancel-btn {
+  :global(.confirm-cancel-btn) {
     background: transparent;
     color: var(--ren-fg);
   }
 
-  .cancel-btn:hover {
+  :global(.confirm-cancel-btn:hover) {
     background: var(--ren-tab-hover);
   }
 
-  .confirm-btn {
+  :global(.confirm-confirm-btn) {
     background: var(--ren-accent);
     border-color: var(--ren-accent);
     color: #fff;
   }
 
-  .confirm-btn:hover {
+  :global(.confirm-confirm-btn:hover) {
     background: var(--ren-accent-hover);
     border-color: var(--ren-accent-hover);
   }

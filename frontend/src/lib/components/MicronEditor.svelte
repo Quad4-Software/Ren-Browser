@@ -2,11 +2,20 @@
 <script lang="ts">
   /* eslint-disable svelte/no-at-html-tags -- live micron preview */
   import { onMount } from "svelte";
+  import { Select } from "bits-ui";
+  import { useResizeObserver } from "runed";
   import { Download } from "@lucide/svelte";
   import { handlePageLinkClick } from "$lib/browser/page-links";
   import { downloadPageContent, downloadText } from "$lib/browser/download";
   import { formatBindingError } from "$lib/browser/binding-errors.js";
-  import { micronShellStyle } from "$lib/browser/url";
+  import { micronShellStyle, nodeHashFromMeshURL } from "$lib/browser/url";
+  import {
+    attachMicronImages,
+    normalizeMicronImagesMode,
+    type MicronImageNodePolicy,
+    type MicronImagesMode,
+  } from "$lib/micron/images";
+  import { FetchNodeImage } from "../../../bindings/renbrowser/internal/app/browserservice.js";
   import {
     ensureMicronWasmReady,
     listAvailableMicronWasmParsers,
@@ -29,6 +38,9 @@
     micronWasmEnabled: boolean;
     micronWasmParserId: string;
     micronWasmReady: boolean;
+    micronImagesMode?: MicronImagesMode;
+    micronImageNodes?: Record<string, string>;
+    onMicronImageNodePolicy?: (nodeHash: string, policy: MicronImageNodePolicy | null) => void;
     onSourceChange: (source: string) => void;
     onNavigate: (url: string) => void;
   };
@@ -39,6 +51,9 @@
     micronWasmEnabled,
     micronWasmParserId,
     micronWasmReady,
+    micronImagesMode = "ask",
+    micronImageNodes = {},
+    onMicronImageNodePolicy,
     onSourceChange,
     onNavigate,
   }: Props = $props();
@@ -166,8 +181,8 @@
     });
   }
 
-  async function onParserChange(event: Event) {
-    parserChoice = (event.currentTarget as HTMLSelectElement).value;
+  async function onParserChange(value: string) {
+    parserChoice = value;
     localWasmReady = false;
     await renderPreviewNow();
   }
@@ -223,14 +238,27 @@
   });
 
   $effect(() => {
-    if (!splitEl || typeof ResizeObserver === "undefined") {
+    const root = previewEl;
+    void previewHtml;
+    void micronImagesMode;
+    void micronImageNodes;
+    if (!root || !previewHtml.trim()) {
       return;
     }
-    updateLayoutMode();
-    const observer = new ResizeObserver(() => updateLayoutMode());
-    observer.observe(splitEl);
-    return () => observer.disconnect();
+    const handle = attachMicronImages(root, {
+      pageNodeHash: nodeHashFromMeshURL(previewURL()),
+      mode: normalizeMicronImagesMode(micronImagesMode),
+      nodePolicies: micronImageNodes,
+      fetchImage: (url) => FetchNodeImage(url),
+      onNodePolicy: onMicronImageNodePolicy,
+    });
+    return () => handle.teardown();
   });
+
+  useResizeObserver(
+    () => splitEl,
+    () => updateLayoutMode(),
+  );
 
   onMount(() => {
     void listAvailableMicronWasmParsers().then((entries) => {
@@ -241,6 +269,14 @@
   function openMenu(event: MouseEvent) {
     event.preventDefault();
     menu = { x: event.clientX, y: event.clientY };
+  }
+
+  function handlePreviewKeydown(event: KeyboardEvent) {
+    if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+      event.preventDefault();
+      const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+      menu = { x: rect.left + 16, y: rect.top + 16 };
+    }
   }
 
   function closeMenu() {
@@ -310,11 +346,27 @@
         <div class="preview-controls">
           <label class="parser-select">
             <span class="parser-label">{t("editor.parser")}</span>
-            <select class="ren-select" value={parserChoice} onchange={onParserChange}>
-              {#each parserOptions as option (option.value)}
-                <option value={option.value}>{option.label}</option>
-              {/each}
-            </select>
+            <Select.Root
+              type="single"
+              value={parserChoice}
+              items={parserOptions}
+              onValueChange={onParserChange}
+            >
+              <Select.Trigger class="ren-select" aria-label={t("editor.parser")}>
+                <Select.Value />
+              </Select.Trigger>
+              <Select.Portal>
+                <Select.Content class="ren-select-content" sideOffset={4}>
+                  <Select.Viewport>
+                    {#each parserOptions as option (option.value)}
+                      <Select.Item value={option.value} label={option.label}
+                        >{option.label}</Select.Item
+                      >
+                    {/each}
+                  </Select.Viewport>
+                </Select.Content>
+              </Select.Portal>
+            </Select.Root>
           </label>
           <button
             type="button"
@@ -331,7 +383,7 @@
       {#if previewError}
         <div class="preview-error">{previewError}</div>
       {/if}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- role=document with tabindex enables keyboard scrolling and the ContextMenu key -->
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
       <div
         class="preview"
@@ -339,7 +391,9 @@
         bind:this={previewEl}
         onclick={handlePreviewClick}
         oncontextmenu={openMenu}
+        onkeydown={handlePreviewKeydown}
         role="document"
+        tabindex="0"
       >
         {@html previewHtml}
       </div>
@@ -500,7 +554,7 @@
     white-space: nowrap;
   }
 
-  .parser-select select {
+  .parser-select :global(.ren-select) {
     max-width: 14rem;
     min-width: 0;
     width: auto;
@@ -508,6 +562,53 @@
     padding-top: 0.2rem;
     padding-bottom: 0.2rem;
     padding-left: 0.35rem;
+    text-align: left;
+  }
+
+  .parser-select :global(.ren-select [data-select-value]) {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :global(.ren-select-content) {
+    z-index: 1100;
+    min-width: var(--bits-select-anchor-width);
+    max-width: calc(100vw - 1rem);
+    border: 1px solid var(--ren-border);
+    border-radius: var(--ren-radius);
+    background: var(--ren-chrome-bg);
+    box-shadow: var(--ren-shadow);
+    overflow: hidden;
+  }
+
+  :global(.ren-select-content [data-select-viewport]) {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.35rem;
+    max-height: min(18rem, var(--bits-select-content-available-height));
+    overflow-y: auto;
+  }
+
+  :global(.ren-select-content [data-select-item]) {
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.88rem;
+    color: var(--ren-fg);
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+  }
+
+  :global(.ren-select-content [data-select-item][data-highlighted]) {
+    background: var(--ren-tab-hover);
+  }
+
+  :global(.ren-select-content [data-select-item][data-selected]) {
+    color: var(--ren-accent);
   }
 
   .export-btn {
@@ -537,6 +638,15 @@
     font-size: 0.88rem;
     line-height: 1.45;
     outline: none;
+  }
+
+  .source-input:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--ren-focus);
+  }
+
+  .preview:focus-visible {
+    outline: 2px solid var(--ren-focus);
+    outline-offset: -2px;
   }
 
   .preview {

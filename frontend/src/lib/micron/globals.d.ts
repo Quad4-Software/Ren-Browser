@@ -8,6 +8,8 @@ declare global {
 
   var micronConvert:
     ((markup: string, darkTheme: boolean, forceMonospace: boolean) => string) | undefined;
+
+  var DOMPurify: typeof import("dompurify").default | undefined;
 }
 
 export {};

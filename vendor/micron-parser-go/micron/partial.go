@@ -8,9 +8,9 @@ import (
 	"strings"
 )
 
-// parsePartialFromInner parses the interior after a line-leading "`{" up to the
+// parsePartialFromInner parses the interior after a line-leading backtick-{ up to the
 // first '}', matching MicronParser.parse_partial in NomadNet and parsePartial in
-// micron-parser-js (url[`refresh[`fields]]).
+// micron-parser-js (url[refresh[fields]] form).
 func (p *Parser) parsePartialFromInner(rest string, s *State) *Partial {
 	before, _, ok := strings.Cut(rest, "}")
 	if !ok {

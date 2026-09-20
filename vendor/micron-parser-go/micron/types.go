@@ -3,14 +3,16 @@
 
 package micron
 
+import "strings"
+
 // Parser configures Micron-to-HTML conversion. A zero Parser is usable.
 // Set DarkTheme and ForceMonospace for light/dark defaults and monospace layout.
 // Parser values are safe for concurrent use by multiple goroutines.
 type Parser struct {
 	// DarkTheme selects default palette when the document does not set #!fg / #!bg.
 	DarkTheme bool
-	// ForceMonospace wraps Latin and other simple glyphs in monospace cell spans.
-	// Arabic Persian Hebrew and related scripts stay as continuous runs so letters join.
+	// ForceMonospace applies micron-parser-js monospace wrapping: plain ASCII
+	// stays bare, while complex scripts and HTML-special bytes use Mu-mws / Mu-mnt.
 	ForceMonospace bool
 }
 
@@ -32,20 +34,27 @@ type Style struct {
 
 // State holds parser state across lines.
 type State struct {
-	Literal        bool
-	TableMode      bool
-	TableLines     []string
-	TableOptsAlign string
-	TableOptsMaxW  int
-	Depth          int
-	FGColor        string
-	BGColor        string
-	Formatting     Formatting
-	DefaultAlign   string
-	Align          string
-	DefaultFG      string
-	DefaultBG      string
-	styleAttrMap   map[stateStyleKey]string
+	Literal            bool
+	TableMode          bool
+	TableLines         []string
+	TableOptsAlign     string
+	TableOptsMaxW      int
+	Depth              int
+	FGColor            string
+	BGColor            string
+	Formatting         Formatting
+	DefaultAlign       string
+	Align              string
+	DefaultFG          string
+	DefaultBG          string
+	FoldOpen           string
+	FoldClosed         string
+	FoldStack          []int
+	PendingCollapsible bool
+	PendingCollapsed   bool
+	styleAttrMap       map[stateStyleKey]string
+	partsBuf           []linePart
+	partBuf            strings.Builder
 }
 
 type stateStyleKey struct {
@@ -83,6 +92,9 @@ type Link struct {
 	Label  string
 	Fields []string
 	Style  Style
+	// Image is non-nil when the link renders as a deferred image placeholder
+	// instead of an anchor, matching MeshChatX MicronParser image links.
+	Image *LinkImage `json:"image,omitempty"`
 }
 
 // Partial is an asynchronously loaded micron block (placeholder ⧖) with optional

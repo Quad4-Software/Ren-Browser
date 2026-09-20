@@ -29,6 +29,8 @@
   micronWasmEnabled={app.micronWasmEnabled}
   micronWasmParserId={app.micronWasmParserId}
   micronPreserveLayout={app.micronPreserveLayout}
+  micronImagesMode={app.micronImagesMode}
+  micronImageNodes={app.micronImageNodes}
   desktopChrome={app.desktopChrome}
   mobileUI={app.mobileUI}
   mobileDevTools={app.mobileDevTools}
@@ -56,6 +58,8 @@
   onChangeMicronRenderer={app.saveMicronRenderer}
   onChangeMicronWasmEnabled={app.saveMicronWasmEnabled}
   onChangeMicronPreserveLayout={app.saveMicronPreserveLayout}
+  onChangeMicronImagesMode={app.saveMicronImagesMode}
+  onMicronImageNodePolicy={app.setMicronImageNodePolicy}
   onChangeMicronWasmParser={app.saveMicronWasmParser}
   onMicronWasmReadyChange={app.setMicronWasmReady}
   onResetDefaults={app.resetDefaults}

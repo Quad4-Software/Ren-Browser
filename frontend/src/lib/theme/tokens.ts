@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: MIT
+import { MediaQuery } from "svelte/reactivity";
+
 export type ThemeMode = "dark" | "light" | "system";
 
 export type ThemeSettings = {
@@ -21,14 +23,16 @@ export const defaultTheme = (): ThemeSettings => ({
   overlaySidebars: false,
 });
 
+let systemDarkQuery: MediaQuery | undefined;
+
+function systemPrefersDark(): boolean {
+  systemDarkQuery ??= new MediaQuery("(prefers-color-scheme: dark)");
+  return systemDarkQuery.current;
+}
+
 export function applyTheme(theme: ThemeSettings): void {
   const root = document.documentElement;
-  const resolved =
-    theme.mode === "system"
-      ? window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-      : theme.mode;
+  const resolved = theme.mode === "system" ? (systemPrefersDark() ? "dark" : "light") : theme.mode;
 
   root.dataset.theme = resolved;
   root.dataset.compactToolbar = theme.compactToolbar ? "true" : "false";
@@ -50,21 +54,11 @@ export function applyTheme(theme: ThemeSettings): void {
 }
 
 export function mobileChromeBg(theme: ThemeSettings): string {
-  const resolved =
-    theme.mode === "system"
-      ? window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-      : theme.mode;
+  const resolved = theme.mode === "system" ? (systemPrefersDark() ? "dark" : "light") : theme.mode;
   return resolved === "light" ? "#ffffff" : "#18181b";
 }
 
 export function mobileChromeUsesLightIcons(theme: ThemeSettings): boolean {
-  const resolved =
-    theme.mode === "system"
-      ? window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-      : theme.mode;
+  const resolved = theme.mode === "system" ? (systemPrefersDark() ? "dark" : "light") : theme.mode;
   return resolved === "dark";
 }

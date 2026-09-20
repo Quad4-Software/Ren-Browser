@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { ArrowLeft, Globe, Network, Settings2, Shuffle, Sparkles } from "@lucide/svelte";
+  import { Dialog } from "bits-ui";
   import type { AppController } from "$lib/app/create-app.svelte";
   import CommunityInterfaces from "$lib/components/CommunityInterfaces.svelte";
   import ReticulumConfigEditor from "$lib/components/ReticulumConfigEditor.svelte";
@@ -15,193 +16,207 @@
   const suggestedCount = $derived(app.suggestedItems.length);
 </script>
 
-{#if app.initialSetupOpen}
-  <div class="backdrop" aria-hidden="true"></div>
-  <div
-    class="dialog"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="initial-setup-title"
-    aria-describedby="initial-setup-description"
-  >
-    <header class="header">
-      <h2 id="initial-setup-title">{t("setup.title")}</h2>
-      <p id="initial-setup-description" class="subtitle">{t("setup.subtitle")}</p>
-    </header>
+<Dialog.Root open={app.initialSetupOpen}>
+  <Dialog.Portal>
+    <Dialog.Overlay class="setup-modal-overlay" />
+    <Dialog.Content
+      class="dialog setup-modal-content"
+      interactOutsideBehavior="ignore"
+      onEscapeKeydown={(e) => {
+        e.preventDefault();
+        if (app.initialSetupBusy) {
+          return;
+        }
+        if (app.initialSetupStep === "welcome") {
+          void app.skipInitialSetupAutoOnly();
+        } else {
+          app.setInitialSetupStep("welcome");
+        }
+      }}
+    >
+      <header class="header">
+        <Dialog.Title id="initial-setup-title" class="setup-modal-title">
+          {t("setup.title")}
+        </Dialog.Title>
+        <Dialog.Description id="initial-setup-description" class="setup-modal-subtitle">
+          {t("setup.subtitle")}
+        </Dialog.Description>
+      </header>
 
-    {#if app.initialSetupError}
-      <p class="error">{app.initialSetupError}</p>
-    {/if}
+      {#if app.initialSetupError}
+        <p class="error">{app.initialSetupError}</p>
+      {/if}
 
-    {#if app.initialSetupStep === "welcome"}
-      <div class="choices">
-        <button
-          type="button"
-          class="choice"
-          disabled={app.initialSetupBusy}
-          onclick={() => app.setInitialSetupStep("suggested")}
-        >
-          <span class="choice-icon suggested"><Shuffle size={18} /></span>
-          <span class="choice-body">
-            <span class="choice-title">{t("setup.suggestedTitle")}</span>
-            <span class="choice-hint">{t("setup.suggestedHint", { count: 4 })}</span>
-          </span>
-        </button>
-        <button
-          type="button"
-          class="choice"
-          disabled={app.initialSetupBusy}
-          onclick={() => app.setInitialSetupStep("pick")}
-        >
-          <span class="choice-icon pick"><Globe size={18} /></span>
-          <span class="choice-body">
-            <span class="choice-title">{t("setup.pickTitle")}</span>
-            <span class="choice-hint">{t("setup.pickHint")}</span>
-          </span>
-        </button>
-        <button
-          type="button"
-          class="choice"
-          disabled={app.initialSetupBusy}
-          onclick={() => app.setInitialSetupStep("config")}
-        >
-          <span class="choice-icon config"><Settings2 size={18} /></span>
-          <span class="choice-body">
-            <span class="choice-title">{t("setup.configTitle")}</span>
-            <span class="choice-hint">{t("setup.configHint")}</span>
-          </span>
-        </button>
-        <button
-          type="button"
-          class="choice subtle"
-          disabled={app.initialSetupBusy}
-          onclick={() => void app.skipInitialSetupAutoOnly()}
-        >
-          <span class="choice-icon auto"><Network size={18} /></span>
-          <span class="choice-body">
-            <span class="choice-title">{t("setup.autoOnlyTitle")}</span>
-            <span class="choice-hint">{t("setup.autoOnlyHint")}</span>
-          </span>
-        </button>
-      </div>
-    {:else if app.initialSetupStep === "suggested"}
-      <div class="step">
-        <p class="step-hint">{t("setup.suggestedHint", { count: suggestedCount || 4 })}</p>
-        <ul class="suggested-list">
-          {#if app.suggestedLoading}
-            <li class="empty">{t("community.loading")}</li>
-          {:else if suggestedCount === 0}
-            <li class="empty">{t("setup.suggestedEmpty")}</li>
-          {:else}
-            {#each app.suggestedItems as item (item.id)}
-              <li>
-                <span class="name">{item.name}</span>
-                <span class="meta">{item.typeName} · {item.network}</span>
-              </li>
-            {/each}
-          {/if}
-        </ul>
-        <div class="actions">
+      {#if app.initialSetupStep === "welcome"}
+        <div class="choices">
           <button
             type="button"
-            class="ghost"
+            class="choice"
             disabled={app.initialSetupBusy}
-            onclick={() => app.setInitialSetupStep("welcome")}
+            onclick={() => app.setInitialSetupStep("suggested")}
           >
-            <ArrowLeft size={16} />
-            {t("setup.back")}
+            <span class="choice-icon suggested"><Shuffle size={18} /></span>
+            <span class="choice-body">
+              <span class="choice-title">{t("setup.suggestedTitle")}</span>
+              <span class="choice-hint">{t("setup.suggestedHint", { count: 4 })}</span>
+            </span>
           </button>
           <button
             type="button"
-            class="ghost"
-            disabled={app.initialSetupBusy || app.suggestedLoading}
-            onclick={() => void app.loadSuggestedPreview()}
+            class="choice"
+            disabled={app.initialSetupBusy}
+            onclick={() => app.setInitialSetupStep("pick")}
           >
-            <Shuffle size={16} />
-            {t("setup.refreshSuggested")}
+            <span class="choice-icon pick"><Globe size={18} /></span>
+            <span class="choice-body">
+              <span class="choice-title">{t("setup.pickTitle")}</span>
+              <span class="choice-hint">{t("setup.pickHint")}</span>
+            </span>
           </button>
           <button
             type="button"
-            class="primary"
-            disabled={app.initialSetupBusy || app.suggestedLoading || suggestedCount === 0}
-            onclick={() => void app.applySuggestedSetup()}
+            class="choice"
+            disabled={app.initialSetupBusy}
+            onclick={() => app.setInitialSetupStep("config")}
           >
-            <Sparkles size={16} />
-            {app.initialSetupBusy ? t("setup.busy") : t("setup.applySuggested")}
+            <span class="choice-icon config"><Settings2 size={18} /></span>
+            <span class="choice-body">
+              <span class="choice-title">{t("setup.configTitle")}</span>
+              <span class="choice-hint">{t("setup.configHint")}</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            class="choice subtle"
+            disabled={app.initialSetupBusy}
+            onclick={() => void app.skipInitialSetupAutoOnly()}
+          >
+            <span class="choice-icon auto"><Network size={18} /></span>
+            <span class="choice-body">
+              <span class="choice-title">{t("setup.autoOnlyTitle")}</span>
+              <span class="choice-hint">{t("setup.autoOnlyHint")}</span>
+            </span>
           </button>
         </div>
-      </div>
-    {:else if app.initialSetupStep === "pick"}
-      <div class="step pick-step">
-        <p class="step-hint">{t("setup.pickHint")}</p>
-        <CommunityInterfaces
-          items={app.communityItems}
-          loading={app.communityLoading}
-          importing={app.initialSetupBusy}
-          error={app.communityError}
-          bind:filter={app.communityFilter}
-          selected={app.communitySelected}
-          onFilter={(value) => {
-            app.communityFilter = value;
-          }}
-          onToggle={app.toggleCommunitySelection}
-          onImport={() => void app.importInitialSetupSelection()}
-          showTitle={false}
-        />
-        <div class="actions">
-          <button
-            type="button"
-            class="ghost"
-            disabled={app.initialSetupBusy}
-            onclick={() => app.setInitialSetupStep("welcome")}
-          >
-            <ArrowLeft size={16} />
-            {t("setup.back")}
-          </button>
+      {:else if app.initialSetupStep === "suggested"}
+        <div class="step">
+          <p class="step-hint">{t("setup.suggestedHint", { count: suggestedCount || 4 })}</p>
+          <ul class="suggested-list">
+            {#if app.suggestedLoading}
+              <li class="empty">{t("community.loading")}</li>
+            {:else if suggestedCount === 0}
+              <li class="empty">{t("setup.suggestedEmpty")}</li>
+            {:else}
+              {#each app.suggestedItems as item (item.id)}
+                <li>
+                  <span class="name">{item.name}</span>
+                  <span class="meta">{item.typeName} · {item.network}</span>
+                </li>
+              {/each}
+            {/if}
+          </ul>
+          <div class="actions">
+            <button
+              type="button"
+              class="ghost"
+              disabled={app.initialSetupBusy}
+              onclick={() => app.setInitialSetupStep("welcome")}
+            >
+              <ArrowLeft size={16} />
+              {t("setup.back")}
+            </button>
+            <button
+              type="button"
+              class="ghost"
+              disabled={app.initialSetupBusy || app.suggestedLoading}
+              onclick={() => void app.loadSuggestedPreview()}
+            >
+              <Shuffle size={16} />
+              {t("setup.refreshSuggested")}
+            </button>
+            <button
+              type="button"
+              class="primary"
+              disabled={app.initialSetupBusy || app.suggestedLoading || suggestedCount === 0}
+              onclick={() => void app.applySuggestedSetup()}
+            >
+              <Sparkles size={16} />
+              {app.initialSetupBusy ? t("setup.busy") : t("setup.applySuggested")}
+            </button>
+          </div>
         </div>
-      </div>
-    {:else}
-      <div class="step config-step">
-        <p class="step-hint">{t("setup.configHint")}</p>
-        <ReticulumConfigEditor
-          bind:configText={app.configText}
-          configPath={app.configPath}
-          saving={app.configSaving || app.initialSetupBusy}
-          error={app.configError}
-          showTitle={false}
-          onChange={(text) => {
-            app.configText = text;
-          }}
-          onSave={() => void app.saveInitialSetupConfig()}
-          onReload={() => void app.reloadConfigFromDisk()}
-          onOpenConfigDir={() => void app.openConfigFolder()}
-        />
-        <div class="actions">
-          <button
-            type="button"
-            class="ghost"
-            disabled={app.initialSetupBusy}
-            onclick={() => app.setInitialSetupStep("welcome")}
-          >
-            <ArrowLeft size={16} />
-            {t("setup.back")}
-          </button>
-          <button
-            type="button"
-            class="primary"
-            disabled={app.initialSetupBusy || app.configSaving}
-            onclick={() => void app.saveInitialSetupConfig()}
-          >
-            {app.initialSetupBusy ? t("setup.busy") : t("setup.saveAndContinue")}
-          </button>
+      {:else if app.initialSetupStep === "pick"}
+        <div class="step pick-step">
+          <p class="step-hint">{t("setup.pickHint")}</p>
+          <CommunityInterfaces
+            items={app.communityItems}
+            loading={app.communityLoading}
+            importing={app.initialSetupBusy}
+            error={app.communityError}
+            bind:filter={app.communityFilter}
+            selected={app.communitySelected}
+            onFilter={(value) => {
+              app.communityFilter = value;
+            }}
+            onToggle={app.toggleCommunitySelection}
+            onImport={() => void app.importInitialSetupSelection()}
+            showTitle={false}
+          />
+          <div class="actions">
+            <button
+              type="button"
+              class="ghost"
+              disabled={app.initialSetupBusy}
+              onclick={() => app.setInitialSetupStep("welcome")}
+            >
+              <ArrowLeft size={16} />
+              {t("setup.back")}
+            </button>
+          </div>
         </div>
-      </div>
-    {/if}
-  </div>
-{/if}
+      {:else}
+        <div class="step config-step">
+          <p class="step-hint">{t("setup.configHint")}</p>
+          <ReticulumConfigEditor
+            bind:configText={app.configText}
+            configPath={app.configPath}
+            saving={app.configSaving || app.initialSetupBusy}
+            error={app.configError}
+            showTitle={false}
+            onChange={(text) => {
+              app.configText = text;
+            }}
+            onSave={() => void app.saveInitialSetupConfig()}
+            onReload={() => void app.reloadConfigFromDisk()}
+            onOpenConfigDir={() => void app.openConfigFolder()}
+          />
+          <div class="actions">
+            <button
+              type="button"
+              class="ghost"
+              disabled={app.initialSetupBusy}
+              onclick={() => app.setInitialSetupStep("welcome")}
+            >
+              <ArrowLeft size={16} />
+              {t("setup.back")}
+            </button>
+            <button
+              type="button"
+              class="primary"
+              disabled={app.initialSetupBusy || app.configSaving}
+              onclick={() => void app.saveInitialSetupConfig()}
+            >
+              {app.initialSetupBusy ? t("setup.busy") : t("setup.saveAndContinue")}
+            </button>
+          </div>
+        </div>
+      {/if}
+    </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
 
 <style>
-  .backdrop {
+  :global(.setup-modal-overlay) {
     position: fixed;
     inset: 0;
     z-index: 1300;
@@ -209,7 +224,7 @@
     cursor: default;
   }
 
-  .dialog {
+  :global(.setup-modal-content) {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -227,14 +242,14 @@
     overflow: auto;
   }
 
-  .header h2 {
+  :global(.setup-modal-title) {
     margin: 0;
     font-size: 1.15rem;
     font-weight: 650;
     color: var(--ren-fg);
   }
 
-  .subtitle,
+  :global(.setup-modal-subtitle),
   .step-hint {
     margin: 0.35rem 0 0;
     font-size: 0.92rem;

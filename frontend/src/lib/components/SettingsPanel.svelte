@@ -9,6 +9,8 @@
     ShieldOff,
     Smartphone,
   } from "@lucide/svelte";
+  import { Select, Slider } from "bits-ui";
+  import { useEventListener } from "runed";
   import Toggle from "$lib/components/Toggle.svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import MicronWasmManager from "$lib/components/MicronWasmManager.svelte";
@@ -21,6 +23,7 @@
   import ExtensionsPanel from "$lib/components/ExtensionsPanel.svelte";
   import SettingsSection from "$lib/components/SettingsSection.svelte";
   import type { MicronRendererPreference } from "$lib/micron/render-page";
+  import type { MicronImageNodePolicy, MicronImagesMode } from "$lib/micron/images";
   import { isWebAssemblySupported } from "$lib/micron/wasm-loader";
   import type { ThemeSettings } from "$lib/theme/tokens";
   import {
@@ -92,6 +95,8 @@
     micronWasmEnabled: boolean;
     micronWasmParserId: string;
     micronPreserveLayout: boolean;
+    micronImagesMode: MicronImagesMode;
+    micronImageNodes: Record<string, string>;
     desktopChrome: boolean;
     mobileUI: boolean;
     mobileDevTools: boolean;
@@ -123,6 +128,8 @@
     onChangeMicronRenderer: (value: MicronRendererPreference) => void;
     onChangeMicronWasmEnabled: (value: boolean) => void;
     onChangeMicronPreserveLayout: (value: boolean) => void;
+    onChangeMicronImagesMode: (value: MicronImagesMode) => void;
+    onMicronImageNodePolicy: (nodeHash: string, policy: MicronImageNodePolicy | null) => void;
     onChangeMicronWasmParser: (parserId: string) => void | Promise<void>;
     onMicronWasmReadyChange: (ready: boolean) => void;
     onResetDefaults: () => void;
@@ -168,6 +175,8 @@
     micronWasmEnabled,
     micronWasmParserId,
     micronPreserveLayout,
+    micronImagesMode,
+    micronImageNodes,
     desktopChrome,
     mobileUI,
     mobileDevTools,
@@ -194,6 +203,8 @@
     onChangeMicronRenderer,
     onChangeMicronWasmEnabled,
     onChangeMicronPreserveLayout,
+    onChangeMicronImagesMode,
+    onMicronImageNodePolicy,
     onChangeMicronWasmParser,
     onMicronWasmReadyChange,
     onResetDefaults,
@@ -325,6 +336,48 @@
     return fonts;
   });
 
+  const languageItems = $derived.by(() => [
+    {
+      value: "",
+      label: t("language.system", {
+        locale: localeNativeName(resolveLocale(detectOSLocale())),
+      }),
+    },
+    ...SUPPORTED_LOCALES.map((locale) => ({
+      value: locale.code,
+      label: localeLabel(locale.code),
+    })),
+  ]);
+
+  const themeModeItems = $derived.by(() => [
+    { value: "dark", label: t("settings.themeDark") },
+    { value: "light", label: t("settings.themeLight") },
+    { value: "system", label: t("settings.themeSystem") },
+  ]);
+
+  const fontItems = $derived(fontOptions.map((font) => ({ value: font, label: font })));
+
+  const micronRendererItems = $derived.by(() => {
+    const items = [{ value: "auto", label: t("settings.rendererAuto") }];
+    if (isWebAssemblySupported() && micronWasmEnabled) {
+      items.push({ value: "wasm", label: t("settings.rendererWasm") });
+    }
+    items.push({ value: "go", label: t("settings.rendererGo") });
+    items.push({ value: "js", label: t("settings.rendererJs") });
+    return items;
+  });
+
+  const micronImagesItems = $derived.by(() => [
+    { value: "ask", label: t("settings.micronImagesAsk") },
+    { value: "always", label: t("settings.micronImagesAlways") },
+    { value: "off", label: t("settings.micronImagesOff") },
+  ]);
+
+  const micronImagePolicyItems = $derived.by(() => [
+    { value: "always", label: t("settings.micronImagePolicyAlways") },
+    { value: "never", label: t("settings.micronImagePolicyNever") },
+  ]);
+
   function importThemeFile(event: Event) {
     const input = event.currentTarget as HTMLInputElement;
     const file = input.files?.[0];
@@ -394,9 +447,9 @@
   }
 
   const isAndroid = System.IsAndroid();
-</script>
 
-<svelte:window onkeydown={recordKeybind} />
+  useEventListener(() => window, "keydown", recordKeybind);
+</script>
 
 <section class="settings" class:mobile={mobileUI}>
   <SettingsSection
@@ -408,35 +461,53 @@
   >
     <label>
       <span>{t("language.title")}</span>
-      <select
-        class="ren-select"
+      <Select.Root
+        type="single"
         value={uiLanguage}
-        onchange={(event) => onChangeUILanguage((event.currentTarget as HTMLSelectElement).value)}
+        items={languageItems}
+        onValueChange={(value) => onChangeUILanguage(value)}
       >
-        <option value=""
-          >{t("language.system", {
-            locale: localeNativeName(resolveLocale(detectOSLocale())),
-          })}</option
-        >
-        {#each SUPPORTED_LOCALES as locale (locale.code)}
-          <option value={locale.code}>{localeLabel(locale.code)}</option>
-        {/each}
-      </select>
+        <Select.Trigger class="ren-select" aria-label={t("language.title")}>
+          <Select.Value
+            placeholder={t("language.system", {
+              locale: localeNativeName(resolveLocale(detectOSLocale())),
+            })}
+          />
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Content class="ren-select-content" sideOffset={4}>
+            <Select.Viewport>
+              {#each languageItems as item (item.value)}
+                <Select.Item value={item.value} label={item.label}>{item.label}</Select.Item>
+              {/each}
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
     </label>
     <p class="hint">{t("language.hint")}</p>
 
     <label>
       <span>{t("settings.themeMode")}</span>
-      <select
-        class="ren-select"
+      <Select.Root
+        type="single"
         value={theme.mode}
-        onchange={(event) =>
-          update("mode", (event.currentTarget as HTMLSelectElement).value as ThemeSettings["mode"])}
+        items={themeModeItems}
+        onValueChange={(value) => update("mode", value as ThemeSettings["mode"])}
       >
-        <option value="dark">{t("settings.themeDark")}</option>
-        <option value="light">{t("settings.themeLight")}</option>
-        <option value="system">{t("settings.themeSystem")}</option>
-      </select>
+        <Select.Trigger class="ren-select" aria-label={t("settings.themeMode")}>
+          <Select.Value />
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Content class="ren-select-content" sideOffset={4}>
+            <Select.Viewport>
+              {#each themeModeItems as item (item.value)}
+                <Select.Item value={item.value} label={item.label}>{item.label}</Select.Item>
+              {/each}
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
     </label>
 
     <label class="accent-picker">
@@ -451,27 +522,45 @@
 
     <label>
       <span>{t("settings.fontFamily")}</span>
-      <select
-        class="ren-select"
+      <Select.Root
+        type="single"
         value={theme.fontFamily}
-        onchange={(event) => update("fontFamily", (event.currentTarget as HTMLSelectElement).value)}
+        items={fontItems}
+        onValueChange={(value) => update("fontFamily", value)}
       >
-        {#each fontOptions as font (font)}
-          <option value={font}>{font}</option>
-        {/each}
-      </select>
+        <Select.Trigger class="ren-select" aria-label={t("settings.fontFamily")}>
+          <Select.Value />
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Content class="ren-select-content" sideOffset={4}>
+            <Select.Viewport>
+              {#each fontItems as item (item.value)}
+                <Select.Item value={item.value} label={item.label}>{item.label}</Select.Item>
+              {/each}
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
     </label>
 
     <label>
       <span>{t("settings.fontSize", { size: theme.fontSize })}</span>
-      <input
-        type="range"
-        min="12"
-        max="20"
+      <Slider.Root
+        type="single"
+        class="settings-slider"
         value={theme.fontSize}
-        oninput={(event) =>
-          update("fontSize", Number((event.currentTarget as HTMLInputElement).value))}
-      />
+        min={12}
+        max={20}
+        step={1}
+        onValueChange={(value) => update("fontSize", value)}
+      >
+        <Slider.Range class="settings-slider-range" />
+        <Slider.Thumb
+          index={0}
+          class="settings-slider-thumb"
+          aria-label={t("settings.fontSize", { size: theme.fontSize })}
+        />
+      </Slider.Root>
     </label>
 
     <Toggle
@@ -610,21 +699,25 @@
 
     <label>
       <span>{t("settings.micronRenderer")}</span>
-      <select
-        class="ren-select"
+      <Select.Root
+        type="single"
         value={micronRenderer}
-        onchange={(event) =>
-          onChangeMicronRenderer(
-            (event.currentTarget as HTMLSelectElement).value as MicronRendererPreference,
-          )}
+        items={micronRendererItems}
+        onValueChange={(value) => onChangeMicronRenderer(value as MicronRendererPreference)}
       >
-        <option value="auto">{t("settings.rendererAuto")}</option>
-        {#if isWebAssemblySupported() && micronWasmEnabled}
-          <option value="wasm">{t("settings.rendererWasm")}</option>
-        {/if}
-        <option value="go">{t("settings.rendererGo")}</option>
-        <option value="js">{t("settings.rendererJs")}</option>
-      </select>
+        <Select.Trigger class="ren-select" aria-label={t("settings.micronRenderer")}>
+          <Select.Value />
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Content class="ren-select-content" sideOffset={4}>
+            <Select.Viewport>
+              {#each micronRendererItems as item (item.value)}
+                <Select.Item value={item.value} label={item.label}>{item.label}</Select.Item>
+              {/each}
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
     </label>
 
     <Toggle
@@ -633,6 +726,75 @@
       onchange={onChangeMicronPreserveLayout}
     />
     <p class="hint">{t("settings.micronPreserveLayoutHint")}</p>
+
+    <label>
+      <span>{t("settings.micronImages")}</span>
+      <Select.Root
+        type="single"
+        value={micronImagesMode}
+        items={micronImagesItems}
+        onValueChange={(value) => onChangeMicronImagesMode(value as MicronImagesMode)}
+      >
+        <Select.Trigger class="ren-select" aria-label={t("settings.micronImages")}>
+          <Select.Value />
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Content class="ren-select-content" sideOffset={4}>
+            <Select.Viewport>
+              {#each micronImagesItems as item (item.value)}
+                <Select.Item value={item.value} label={item.label}>{item.label}</Select.Item>
+              {/each}
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
+    </label>
+    <p class="hint">{t("settings.micronImagesHint")}</p>
+
+    {#if Object.keys(micronImageNodes).length > 0}
+      <div class="micron-image-nodes" role="group" aria-label={t("settings.micronImageNodes")}>
+        <span class="micron-image-nodes-title">{t("settings.micronImageNodes")}</span>
+        <ul>
+          {#each Object.entries(micronImageNodes).sort( ([a], [b]) => a.localeCompare(b) ) as [hash, policy] (hash)}
+            <li>
+              <code class="micron-image-node-hash" title={hash}>{hash}</code>
+              <Select.Root
+                type="single"
+                value={policy}
+                items={micronImagePolicyItems}
+                onValueChange={(value) =>
+                  onMicronImageNodePolicy(hash, value as MicronImageNodePolicy)}
+              >
+                <Select.Trigger
+                  class="ren-select micron-image-node-policy"
+                  aria-label={t("settings.micronImageNodePolicy")}
+                >
+                  <Select.Value />
+                </Select.Trigger>
+                <Select.Portal>
+                  <Select.Content class="ren-select-content" sideOffset={4}>
+                    <Select.Viewport>
+                      {#each micronImagePolicyItems as item (item.value)}
+                        <Select.Item value={item.value} label={item.label}>{item.label}</Select.Item
+                        >
+                      {/each}
+                    </Select.Viewport>
+                  </Select.Content>
+                </Select.Portal>
+              </Select.Root>
+              <button
+                type="button"
+                class="micron-image-node-remove"
+                aria-label={t("settings.micronImageNodeRemove")}
+                onclick={() => onMicronImageNodePolicy(hash, null)}
+              >
+                {t("settings.micronImageNodeRemove")}
+              </button>
+            </li>
+          {/each}
+        </ul>
+      </div>
+    {/if}
 
     {#if isWebAssemblySupported() && micronWasmEnabled}
       <MicronWasmManager
@@ -692,6 +854,7 @@
               type="button"
               class="keybind-btn"
               class:recording={recordingAction === action}
+              aria-pressed={recordingAction === action}
               onclick={() => startRecording(action)}
             >
               {recordingAction === action
@@ -1247,17 +1410,102 @@
     width: 100%;
     max-width: 100%;
     min-width: 0;
+    text-align: left;
+  }
+
+  .settings :global(.ren-select [data-select-value]) {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :global(.ren-select-content) {
+    z-index: 1100;
+    min-width: var(--bits-select-anchor-width);
+    max-width: calc(100vw - 1rem);
+    border: 1px solid var(--ren-border);
+    border-radius: var(--ren-radius);
+    background: var(--ren-chrome-bg);
+    box-shadow: var(--ren-shadow);
+    overflow: hidden;
+  }
+
+  :global(.ren-select-content [data-select-viewport]) {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.35rem;
+    max-height: min(18rem, var(--bits-select-content-available-height));
+    overflow-y: auto;
+  }
+
+  :global(.ren-select-content [data-select-item]) {
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.88rem;
+    color: var(--ren-fg);
+    cursor: pointer;
+    user-select: none;
+    outline: none;
+  }
+
+  :global(.ren-select-content [data-select-item][data-highlighted]) {
+    background: var(--ren-tab-hover);
+  }
+
+  :global(.ren-select-content [data-select-item][data-selected]) {
+    color: var(--ren-accent);
   }
 
   input:focus {
-    outline: none;
     border-color: var(--ren-focus);
+  }
+
+  input:focus-visible {
+    outline: none;
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--ren-focus) 28%, transparent);
   }
 
   input[type="color"] {
     padding: 0;
     min-height: 2.25rem;
+  }
+
+  :global(.settings-slider) {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 0.5rem;
+    border: 1px solid var(--ren-border);
+    border-radius: 999px;
+    background: var(--ren-input-bg);
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+  }
+
+  :global(.settings-slider-range) {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--ren-accent);
+  }
+
+  :global(.settings-slider-thumb) {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid var(--ren-border-strong, var(--ren-border));
+    border-radius: 50%;
+    background: var(--ren-fg);
+    cursor: grab;
+  }
+
+  :global(.settings-slider-thumb:focus-visible) {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ren-focus) 28%, transparent);
   }
 
   button {
@@ -1713,5 +1961,62 @@
     padding-left: 0.5rem;
     border-left: 2px solid var(--ren-danger, #e5484d);
     margin-top: 0.15rem;
+  }
+
+  .micron-image-nodes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .micron-image-nodes-title {
+    font-size: 0.85rem;
+    color: var(--ren-muted);
+  }
+
+  .micron-image-nodes ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .micron-image-nodes li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .micron-image-node-hash {
+    flex: 1 1 12rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.78rem;
+    color: var(--ren-fg);
+  }
+
+  .micron-image-nodes :global(.micron-image-node-policy) {
+    flex-shrink: 0;
+    max-width: 8rem;
+  }
+
+  .micron-image-node-remove {
+    flex-shrink: 0;
+    border: 1px solid var(--ren-border);
+    background: var(--ren-input-bg);
+    color: var(--ren-fg);
+    border-radius: 6px;
+    padding: 0.25rem 0.55rem;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+
+  .micron-image-node-remove:hover {
+    background: var(--ren-tab-hover);
   }
 </style>

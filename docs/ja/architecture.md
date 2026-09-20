@@ -59,7 +59,7 @@ UI の中央 API：
 
 ### Reticulum スタック（`internal/rns`）
 
-`quad4/reticulum-go` をラップします：
+`github.com/Quad4-Software/Reticulum-Go` をラップします：
 
 - トランスポートの開始と停止
 - インターフェース統計の報告

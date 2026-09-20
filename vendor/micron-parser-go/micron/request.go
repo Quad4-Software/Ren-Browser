@@ -56,8 +56,8 @@ func CollectFormFields(inputs []FieldInput) map[string]string {
 	return out
 }
 
-// BuildRequestPayload splits destination on "`" into a base path and optional
-// k=v|… request variables, then selects fields from allFields using fieldsSpec.
+// BuildRequestPayload splits destination on backtick into a base path and optional
+// k=v|... request variables, then selects fields from allFields using fieldsSpec.
 // Use "*" to copy every entry from allFields. The map allFields is not modified.
 func BuildRequestPayload(allFields map[string]string, destination, fieldsSpec string) RequestPayload {
 	dest, reqVars := splitDestinationVars(destination)

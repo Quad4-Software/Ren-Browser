@@ -75,6 +75,7 @@
   "tab": {
     "new": "Neuer Tab",
     "close": "Tab schließen",
+    "list": "Browser-Tabs",
     "newTab": "Neuer Tab",
     "limitReached": "Tab-Limit ({max}) erreicht",
     "reload": "Neu laden",
@@ -249,7 +250,17 @@
     "shareApkShareFailed": "Freigabemenü konnte nicht geöffnet werden",
     "shareApkStartFailed": "WLAN-Freigabe konnte nicht gestartet werden",
     "shareApkStopFailed": "Freigabe konnte nicht beendet werden",
-    "shareApkCopyFailed": "Download-URL konnte nicht kopiert werden"
+    "shareApkCopyFailed": "Download-URL konnte nicht kopiert werden",
+    "micronImages": "Eingebettete Bilder auf Micron-Seiten",
+    "micronImagesAsk": "Jedes Mal fragen (empfohlen)",
+    "micronImagesAlways": "Automatisch laden",
+    "micronImagesOff": "Nie laden",
+    "micronImagesHint": "Bilder bleiben im Mesh und werden über Reticulum geladen. Sie werden nie ohne Ihre Zustimmung geladen, es sei denn, Sie erlauben den Knoten oder wählen automatisches Laden.",
+    "micronImageNodes": "Bildregeln pro Knoten",
+    "micronImageNodePolicy": "Bildregel für Knoten",
+    "micronImageNodeRemove": "Entfernen",
+    "micronImagePolicyAlways": "Erlauben",
+    "micronImagePolicyNever": "Blockieren"
   },
   "keybinds": {
     "focusUrl": "Adressleiste fokussieren",
@@ -414,7 +425,14 @@
     "multilineHint": "Eingabetaste erneut drücken, um auf mehrere Zeilen zu erweitern",
     "pullToRefresh": "Zum Aktualisieren ziehen",
     "releaseToRefresh": "Loslassen zum Aktualisieren",
-    "swipeBack": "Zurück"
+    "swipeBack": "Zurück",
+    "imageLoad": "Bild laden",
+    "imageAllowNode": "Bilder von diesem Knoten immer erlauben",
+    "imageDisabled": "Bilder sind in den Einstellungen deaktiviert",
+    "imageBlocked": "Bilder von diesem Knoten sind blockiert",
+    "imageTooLarge": "Bild überschreitet das Größenlimit",
+    "imageLoading": "Bild wird geladen...",
+    "imageFailed": "Bild konnte nicht geladen werden"
   },
   "find": {
     "placeholder": "Auf Seite suchen",

@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Clock, History, Trash2 } from "@lucide/svelte";
+  import { Separator } from "bits-ui";
   import { SvelteDate } from "svelte/reactivity";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
@@ -168,14 +169,14 @@
     <div class="groups">
       {#each grouped as group (group.dateLabel)}
         <div class="date-separator" role="presentation">
-          <span class="line"></span>
+          <Separator.Root orientation="horizontal" decorative class="history-date-line" />
           <span class="label">{group.dateLabel}</span>
-          <span class="line"></span>
+          <Separator.Root orientation="horizontal" decorative class="history-date-line" />
         </div>
         <ul>
           {#each group.entries as entry (entry.id)}
             <li>
-              <button onclick={() => onOpen(entry.url)}>
+              <button type="button" onclick={() => onOpen(entry.url)}>
                 <span class="name">{historyLabel(entry)}</span>
                 <span class="meta">{entry.url}</span>
                 <span class="meta">{formatTime(entry.visitedAt)}</span>
@@ -238,7 +239,7 @@
     margin: 0.25rem 0;
   }
 
-  .date-separator .line {
+  :global(.history-date-line) {
     flex: 1;
     height: 1px;
     background: var(--ren-border);

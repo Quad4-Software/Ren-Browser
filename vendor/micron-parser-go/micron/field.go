@@ -103,7 +103,7 @@ func stripByte(s string, c byte) string {
 	}
 	var b strings.Builder
 	b.Grow(len(s))
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] != c {
 			b.WriteByte(s[i])
 		}

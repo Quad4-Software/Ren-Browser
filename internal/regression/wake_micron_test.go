@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"quad4/reticulum-go/pkg/common"
-	"quad4/reticulum-go/pkg/identity"
-	"quad4/reticulum-go/pkg/interfaces"
-	"quad4/reticulum-go/pkg/transport"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/common"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/identity"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/interfaces"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/transport"
 
 	"renbrowser/internal/content"
 	"renbrowser/internal/micron"
@@ -118,8 +118,8 @@ func TestRegressionMicronForceMonospaceASCII(t *testing.T) {
 	}, "\n")
 
 	html, _, _ := micron.RenderDark(art)
-	if !strings.Contains(html, `class="Mu-mnt"`) {
-		t.Fatalf("RenderDark must emit Mu-mnt for ASCII:\n%s", html)
+	if !strings.Contains(html, "Mu-mnt") {
+		t.Fatalf("RenderDark must emit monospace markup for ASCII:\n%s", html)
 	}
 	if !strings.Contains(plainText(html), "ASCII") {
 		t.Fatalf("missing ASCII text in:\n%s", html)
@@ -129,8 +129,8 @@ func TestRegressionMicronForceMonospaceASCII(t *testing.T) {
 	if out.Kind != "micron" {
 		t.Fatalf("kind=%q", out.Kind)
 	}
-	if !strings.Contains(out.HTML, `class="Mu-mnt"`) {
-		t.Fatalf("content.Render must emit Mu-mnt:\n%s", out.HTML)
+	if !strings.Contains(out.HTML, "Mu-mnt") {
+		t.Fatalf("content.Render must emit monospace markup:\n%s", out.HTML)
 	}
 	if !strings.Contains(plainText(out.HTML), "ASCII") {
 		t.Fatalf("content.Render lost ASCII text:\n%s", out.HTML)
@@ -139,13 +139,13 @@ func TestRegressionMicronForceMonospaceASCII(t *testing.T) {
 
 func TestRegressionMicronForceMonospaceAlwaysOn(t *testing.T) {
 	// Historical bug: ForceMonospace was gated by MicronPreserveLayout (default
-	// false), so Auto→Go HTML dropped Mu-mnt cells and broke ASCII art.
+	// false), so Auto→Go HTML dropped monospace wrapping and broke ASCII art.
+	// v1.2.0 emits Mu-mnt-group for plain ASCII runs instead of per-rune cells.
 	html, _, _ := micron.RenderDark("|=|")
-	if !strings.Contains(html, `class="Mu-mnt"`) {
-		t.Fatalf("expected Mu-mnt cells:\n%s", html)
+	if !strings.Contains(html, "Mu-mnt") {
+		t.Fatalf("expected monospace markup:\n%s", html)
 	}
-	cells := strings.Count(html, `class="Mu-mnt"`)
-	if cells < 3 {
-		t.Fatalf("expected per-character cells, got %d in:\n%s", cells, html)
+	if !strings.Contains(html, `class="Mu-mnt-group">|=|<`) {
+		t.Fatalf("expected grouped monospace span around ASCII art:\n%s", html)
 	}
 }

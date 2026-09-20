@@ -25,16 +25,22 @@ func (p *Parser) makeOutput(s *State, line string, preEscape bool) []linePart {
 			line = "`="
 		}
 		st := p.stateToStyle(s)
-		return []linePart{{style: st, text: line}}
+		s.partsBuf = append(s.partsBuf[:0], linePart{style: st, text: line})
+		return s.partsBuf
 	}
 
 	if strings.IndexByte(line, '`') < 0 && !preEscape {
 		st := p.stateToStyle(s)
-		return []linePart{{style: st, text: line}}
+		s.partsBuf = append(s.partsBuf[:0], linePart{style: st, text: line})
+		return s.partsBuf
 	}
 
-	out := make([]linePart, 0, 8)
-	var part strings.Builder
+	out := s.partsBuf[:0]
+	if cap(out) < 8 {
+		out = make([]linePart, 0, 8)
+	}
+	part := &s.partBuf
+	part.Reset()
 	modeText := true
 	escape := preEscape
 	skip := 0
@@ -128,7 +134,6 @@ func (p *Parser) makeOutput(s *State, line string, preEscape bool) []linePart {
 				s.FGColor = s.DefaultFG
 				s.BGColor = s.DefaultBG
 				s.Align = s.DefaultAlign
-				modeText = true
 			case 'c':
 				s.Align = "center"
 			case 'l':
@@ -197,5 +202,6 @@ func (p *Parser) makeOutput(s *State, line string, preEscape bool) []linePart {
 		i++
 	}
 	flushPart()
+	s.partsBuf = out
 	return out
 }

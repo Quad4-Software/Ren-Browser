@@ -83,6 +83,15 @@ export interface BrowserPrefs {
     "micronPreserveLayout": boolean;
     "initialSetupComplete": boolean;
     "settingsSectionsCollapsed": { [_ in string]?: boolean } | null;
+
+    /**
+     * MicronImagesMode controls inline image loading on micron pages:
+     * "off" hides the load control, "ask" shows a per-image opt-in button,
+     * "always" auto-loads. Nodes listed in MicronImageNodes override the
+     * global mode with "always" or "never".
+     */
+    "micronImagesMode": string;
+    "micronImageNodes": { [_ in string]?: string } | null;
 }
 
 export interface CheckStatus {
@@ -175,6 +184,17 @@ export interface NetworkEntry {
     "pluginId"?: string;
     "method"?: string;
     "statusCode"?: number;
+}
+
+/**
+ * NodeImageResult carries a fetched node image back to the frontend as
+ * base64 so it can be rendered from an in-memory blob URL.
+ */
+export interface NodeImageResult {
+    "data": string;
+    "mime": string;
+    "bytes": number;
+    "name"?: string;
 }
 
 export interface PageCacheStats {

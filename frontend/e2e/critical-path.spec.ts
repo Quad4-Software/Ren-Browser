@@ -45,11 +45,7 @@ test.describe("accessibility", () => {
   test("home scene has no serious axe violations", async ({ page, server }) => {
     void server;
     await openScene(page, "home");
-    const results = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa"])
-      // Tab close controls are nested interactive by design today.
-      .disableRules(["nested-interactive"])
-      .analyze();
+    const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
     const serious = results.violations.filter(
       (v) => v.impact === "critical" || v.impact === "serious",
     );

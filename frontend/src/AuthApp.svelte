@@ -1,45 +1,47 @@
 <script lang="ts">
   import { Moon, Sun } from "@lucide/svelte";
+  import { PersistedState } from "runed";
+  import { MediaQuery } from "svelte/reactivity";
   import { displayName } from "$lib/brand";
   import { login } from "$lib/auth/api";
   import { applyTheme, defaultTheme, type ThemeSettings } from "$lib/theme/tokens";
 
   const THEME_KEY = "renbrowser:auth-theme";
+  const systemDark = new MediaQuery("(prefers-color-scheme: dark)");
+  const theme = new PersistedState<ThemeSettings>(THEME_KEY, defaultTheme(), {
+    storage: "local",
+    serializer: {
+      serialize: JSON.stringify,
+      deserialize: (raw: string) => {
+        try {
+          return { ...defaultTheme(), ...(JSON.parse(raw) as Partial<ThemeSettings>) };
+        } catch {
+          return defaultTheme();
+        }
+      },
+    },
+  });
 
   let password = $state("");
   let error = $state("");
   let blocked = $state(false);
   let retryIn = $state(0);
   let loading = $state(false);
-  let theme = $state<ThemeSettings>(loadTheme());
 
-  function loadTheme(): ThemeSettings {
-    try {
-      const raw = localStorage.getItem(THEME_KEY);
-      if (raw) {
-        return { ...defaultTheme(), ...JSON.parse(raw) };
-      }
-    } catch {
-      /* ignore */
-    }
-    return defaultTheme();
-  }
-
-  function resolvedMode(current = theme): "dark" | "light" {
+  function resolvedMode(current = theme.current): "dark" | "light" {
     if (current.mode === "system") {
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      return systemDark.current ? "dark" : "light";
     }
     return current.mode;
   }
 
   $effect(() => {
-    applyTheme(theme);
+    applyTheme(theme.current);
   });
 
   function toggleTheme() {
     const nextMode = resolvedMode() === "dark" ? "light" : "dark";
-    theme = { ...theme, mode: nextMode };
-    localStorage.setItem(THEME_KEY, JSON.stringify(theme));
+    theme.current = { ...theme.current, mode: nextMode };
   }
 
   async function submit(event: Event) {

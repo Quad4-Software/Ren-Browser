@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import { on } from "svelte/events";
 
 export const MOBILE_BACK_EDGE_WIDTH = 28;
 export const MOBILE_FORWARD_EDGE_WIDTH = 28;
@@ -274,10 +275,12 @@ export function attachMobileGestures(
     finish(event);
   };
 
-  surface.addEventListener("pointerdown", onPointerDown);
-  surface.addEventListener("pointermove", onPointerMove, { passive: false });
-  surface.addEventListener("pointerup", onPointerUp);
-  surface.addEventListener("pointercancel", onPointerUp);
+  const offPointer = [
+    on(surface, "pointerdown", onPointerDown),
+    on(surface, "pointermove", onPointerMove, { passive: false }),
+    on(surface, "pointerup", onPointerUp),
+    on(surface, "pointercancel", onPointerUp),
+  ];
 
   // Android WebView often delivers touchmove as passive for the document.
   // Mirror pull/back/forward capture with non-passive touch listeners so preventDefault works.
@@ -331,15 +334,14 @@ export function attachMobileGestures(
     }
   };
 
-  surface.addEventListener("touchmove", onTouchMove, { passive: false });
+  const offTouchMove = on(surface, "touchmove", onTouchMove, { passive: false });
 
   return {
     teardown: () => {
-      surface.removeEventListener("pointerdown", onPointerDown);
-      surface.removeEventListener("pointermove", onPointerMove);
-      surface.removeEventListener("pointerup", onPointerUp);
-      surface.removeEventListener("pointercancel", onPointerUp);
-      surface.removeEventListener("touchmove", onTouchMove);
+      for (const off of offPointer) {
+        off();
+      }
+      offTouchMove();
       resetProgress();
     },
   };

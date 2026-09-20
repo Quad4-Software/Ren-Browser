@@ -1,9 +1,10 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { onDestroy } from "svelte";
+  import { DropdownMenu, Popover } from "bits-ui";
+  import { useResizeObserver } from "runed";
   import { Pin, Plus, X } from "@lucide/svelte";
   import { handleTitlebarDoubleClick } from "$lib/browser/window-actions";
-  import { clampMenuPosition } from "$lib/browser/context-menu";
   import { MAX_TABS, TAB_GAP_PX, type Tab, tabsAreaWidth, tabWidthForTab } from "$lib/browser/url";
   import TabPreviewThumb from "$lib/components/TabPreviewThumb.svelte";
   import WindowControls from "$lib/components/WindowControls.svelte";
@@ -81,8 +82,6 @@
 
   let dragId = $state<string | null>(null);
   let menu = $state<{ x: number; y: number; tabId: string } | null>(null);
-  let menuEl = $state<HTMLDivElement | null>(null);
-  let menuPos = $state({ x: 0, y: 0 });
   const DRAG_STRIP_MIN_PX = 88;
   const CONTROLS_RESERVED_PX = 104;
 
@@ -94,9 +93,8 @@
   let controlsSlotWidth = $state(0);
   let newTabWidth = $state(0);
   let hoverTabId = $state<string | null>(null);
-  let previewPos = $state({ left: 0, top: 0 });
+  let previewAnchorEl = $state<HTMLElement | null>(null);
 
-  const PREVIEW_WIDTH = 280;
   const PREVIEW_OFFSET = 6;
   const PREVIEW_HOVER_DELAY_MS = 400;
 
@@ -140,40 +138,34 @@
   const canCloseOthers = $derived(tabs.length > 1);
   const showCloseSplit = $derived(splitViewOpen);
 
-  $effect(() => {
-    if (!menu || !menuEl) {
-      return;
+  const menuAnchor = $derived.by(() => {
+    const current = menu;
+    if (!current) {
+      return null;
     }
-    const rect = menuEl.getBoundingClientRect();
-    menuPos = clampMenuPosition(menu.x, menu.y, rect.width, rect.height);
+    return { getBoundingClientRect: () => new DOMRect(current.x, current.y, 0, 0) };
   });
 
+  function syncSizes() {
+    tabsSlotWidth = tabsSlotEl?.clientWidth ?? 0;
+    controlsSlotWidth = controlsSlotEl?.offsetWidth ?? 0;
+    newTabWidth = newTabEl?.offsetWidth ?? 0;
+  }
+
+  useResizeObserver(
+    () =>
+      ([tabbarEl, tabsSlotEl, controlsSlotEl, newTabEl] as Array<HTMLElement | null>).filter(
+        (el): el is HTMLElement => el !== null,
+      ),
+    () => syncSizes(),
+  );
+
   $effect(() => {
-    const bar = tabbarEl;
-    const slot = tabsSlotEl;
-    const controls = controlsSlotEl;
-    const newBtn = newTabEl;
-    if (!bar || !slot) {
-      return;
-    }
-    const syncSizes = () => {
-      tabsSlotWidth = slot.clientWidth;
-      controlsSlotWidth = controls?.offsetWidth ?? 0;
-      newTabWidth = newBtn?.offsetWidth ?? 0;
-    };
-    const observer = new ResizeObserver(() => {
-      syncSizes();
-    });
-    observer.observe(bar);
-    observer.observe(slot);
-    if (controls) {
-      observer.observe(controls);
-    }
-    if (newBtn) {
-      observer.observe(newBtn);
-    }
+    void tabbarEl;
+    void tabsSlotEl;
+    void controlsSlotEl;
+    void newTabEl;
     syncSizes();
-    return () => observer.disconnect();
   });
 
   $effect(() => {
@@ -235,6 +227,46 @@
     menu = { x: event.clientX, y: event.clientY, tabId };
   }
 
+  function openMenuForTab(tabEl: HTMLElement, tabId: string) {
+    const rect = tabEl.getBoundingClientRect();
+    menu = { x: rect.left + 8, y: rect.bottom, tabId };
+  }
+
+  function handleTabKeydown(event: KeyboardEvent, tabId: string) {
+    const current = event.currentTarget as HTMLElement;
+    if (
+      event.key === "ArrowLeft" ||
+      event.key === "ArrowRight" ||
+      event.key === "Home" ||
+      event.key === "End"
+    ) {
+      event.preventDefault();
+      const tabEls = Array.from(tabsSlotEl?.querySelectorAll<HTMLElement>(".tab") ?? []);
+      const index = tabEls.indexOf(current);
+      if (index < 0) {
+        return;
+      }
+      const next =
+        event.key === "ArrowLeft"
+          ? index > 0
+            ? index - 1
+            : tabEls.length - 1
+          : event.key === "ArrowRight"
+            ? index < tabEls.length - 1
+              ? index + 1
+              : 0
+            : event.key === "Home"
+              ? 0
+              : tabEls.length - 1;
+      tabEls[next]?.focus();
+      return;
+    }
+    if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+      event.preventDefault();
+      openMenuForTab(current, tabId);
+    }
+  }
+
   function closeMenu() {
     menu = null;
   }
@@ -253,18 +285,15 @@
     clearPreviewTimer();
     previewTimer = setTimeout(() => {
       previewTimer = undefined;
-      const rect = target.getBoundingClientRect();
-      let left = rect.left + rect.width / 2 - PREVIEW_WIDTH / 2;
-      const margin = 8;
-      left = Math.max(margin, Math.min(left, window.innerWidth - PREVIEW_WIDTH - margin));
+      previewAnchorEl = target;
       hoverTabId = tabId;
-      previewPos = { left, top: rect.bottom + PREVIEW_OFFSET };
     }, PREVIEW_HOVER_DELAY_MS);
   }
 
   function hideTabPreview() {
     clearPreviewTimer();
     hoverTabId = null;
+    previewAnchorEl = null;
   }
 
   onDestroy(() => {
@@ -329,8 +358,6 @@
   }
 </script>
 
-<svelte:window onclick={closeMenu} />
-
 <div
   class="tabbar"
   class:native-titlebar={nativeTitlebar}
@@ -343,28 +370,25 @@
     <div class="tabs-row" style:max-width="{tabsRowMaxWidth}px">
       <div
         class="tabs"
-        role="tablist"
-        tabindex="0"
+        role="list"
+        aria-label={t("tab.list")}
         style:--tab-gap="{TAB_GAP_PX}px"
         style:--wails-draggable="no-drag"
         ondragover={handleDragOver}
       >
         {#each tabs as tab (tab.id)}
           {@const tabItemWidth = widthForTab(tab)}
-          <button
-            class="tab"
+          <div
+            class="tab-item"
+            role="listitem"
             class:active={tab.active}
             class:pinned={tab.pinned}
             class:split={splitViewOpen && splitTabId === tab.id}
             class:split-primary={splitViewOpen && tab.active}
             class:dragging={dragId === tab.id}
-            role="tab"
-            aria-selected={tab.active}
-            title={tabHoverPreviews ? undefined : tab.title}
             draggable="true"
             style:--tab-width="{tabItemWidth}px"
             style:--wails-draggable="no-drag"
-            onclick={() => onSelect(tab.id)}
             oncontextmenu={(event) => openMenu(event, tab.id)}
             onmouseenter={(event) => showTabPreview(tab.id, event.currentTarget)}
             onmouseleave={hideTabPreview}
@@ -373,36 +397,39 @@
             ondragover={handleDragOver}
             ondrop={(event) => handleDrop(event, tab.id)}
           >
-            {#if tab.pinned}
-              <span class="pin-glyph" aria-hidden="true">
-                {#if tab.url}
-                  {pinnedGlyph(tab)}
-                {:else}
-                  <Pin size={12} />
-                {/if}
-              </span>
-            {:else}
-              <span class="title">{tab.title}</span>
-              <span
+            <button
+              type="button"
+              class="tab"
+              aria-current={tab.active ? "page" : undefined}
+              aria-label={tab.title || tab.url || t("tab.new")}
+              tabindex={tab.active ? 0 : -1}
+              title={tabHoverPreviews ? undefined : tab.title}
+              onclick={() => onSelect(tab.id)}
+              onkeydown={(event) => handleTabKeydown(event, tab.id)}
+            >
+              {#if tab.pinned}
+                <span class="pin-glyph" aria-hidden="true">
+                  {#if tab.url}
+                    {pinnedGlyph(tab)}
+                  {:else}
+                    <Pin size={12} />
+                  {/if}
+                </span>
+              {:else}
+                <span class="title">{tab.title}</span>
+              {/if}
+            </button>
+            {#if !tab.pinned}
+              <button
+                type="button"
                 class="close"
-                role="button"
-                tabindex="0"
                 aria-label={t("tab.close")}
-                onclick={(event) => {
-                  event.stopPropagation();
-                  onClose(tab.id);
-                }}
-                onkeydown={(event) => {
-                  if (event.key === "Enter") {
-                    event.stopPropagation();
-                    onClose(tab.id);
-                  }
-                }}
+                onclick={() => onClose(tab.id)}
               >
                 <X size={14} />
-              </span>
+              </button>
             {/if}
-          </button>
+          </div>
         {/each}
       </div>
 
@@ -436,74 +463,121 @@
   {/if}
 </div>
 
-{#if menu}
-  <div
-    class="context-menu"
-    bind:this={menuEl}
-    style:left="{menuPos.x}px"
-    style:top="{menuPos.y}px"
-    role="menu"
-    tabindex="0"
-    onclick={(event) => event.stopPropagation()}
-    onkeydown={(event) => {
-      if (event.key === "Escape") {
-        closeMenu();
-      }
-    }}
-  >
-    <button role="menuitem" onclick={() => runAction("reload")}>{t("tab.reload")}</button>
-    <button role="menuitem" onclick={() => runAction("duplicate")}>{t("tab.duplicate")}</button>
-    <button role="menuitem" onclick={() => runAction("favorite")}>{t("tab.favorite")}</button>
-    {#if menuTab?.pinned}
-      <button role="menuitem" onclick={() => runAction("unpin")}>{t("tab.unpin")}</button>
-    {:else}
-      <button role="menuitem" onclick={() => runAction("pin")}>{t("tab.pin")}</button>
-    {/if}
-    <button role="menuitem" onclick={() => runAction("viewSource")}>{t("tab.viewSource")}</button>
-    <button role="menuitem" onclick={() => runAction("download")}>{t("tab.downloadPage")}</button>
-    <button role="menuitem" onclick={() => runAction("split")}>{t("tab.split")}</button>
-    {#if showCloseSplit}
-      <button role="menuitem" onclick={() => runAction("closeSplit")}>{t("tab.closeSplit")}</button>
-    {/if}
-    <hr />
-    {#if !menuTab?.pinned}
-      <button role="menuitem" onclick={() => runAction("close")}>{t("tab.closeTab")}</button>
-    {/if}
-    {#if canCloseOthers}
-      <button role="menuitem" onclick={() => runAction("closeOthers")}
-        >{t("tab.closeOthers")}</button
-      >
-    {/if}
-    {#if canCloseRight}
-      <button role="menuitem" onclick={() => runAction("closeRight")}>{t("tab.closeRight")}</button>
-    {/if}
-    <button role="menuitem" class="danger" onclick={() => runAction("closeAll")}
-      >{t("tab.closeAll")}</button
+<DropdownMenu.Root
+  open={menu !== null}
+  onOpenChange={(next) => {
+    if (!next) {
+      closeMenu();
+    }
+  }}
+>
+  <DropdownMenu.Portal>
+    <DropdownMenu.Content
+      class="tab-context-menu"
+      customAnchor={menuAnchor}
+      align="start"
+      collisionPadding={8}
     >
-  </div>
-{/if}
-
-{#if hoverTab && !mobileUI}
-  <div
-    class="tab-preview-popover"
-    style:left="{previewPos.left}px"
-    style:top="{previewPos.top}px"
-    role="tooltip"
-  >
-    <TabPreviewThumb
-      tab={hoverTab}
-      label={hoverTab.title}
-      class="tab-preview-thumb"
-      {micronEngine}
-    />
-    <div class="tab-preview-footer">
-      <span class="tab-preview-title">{hoverTab.title || hoverTab.url || t("tab.new")}</span>
-      {#if hoverTab.url && hoverTab.url !== hoverTab.title}
-        <span class="tab-preview-url">{hoverTab.url}</span>
+      <DropdownMenu.Item textValue={t("tab.reload")} onSelect={() => runAction("reload")}>
+        {t("tab.reload")}
+      </DropdownMenu.Item>
+      <DropdownMenu.Item textValue={t("tab.duplicate")} onSelect={() => runAction("duplicate")}>
+        {t("tab.duplicate")}
+      </DropdownMenu.Item>
+      <DropdownMenu.Item textValue={t("tab.favorite")} onSelect={() => runAction("favorite")}>
+        {t("tab.favorite")}
+      </DropdownMenu.Item>
+      {#if menuTab?.pinned}
+        <DropdownMenu.Item textValue={t("tab.unpin")} onSelect={() => runAction("unpin")}>
+          {t("tab.unpin")}
+        </DropdownMenu.Item>
+      {:else}
+        <DropdownMenu.Item textValue={t("tab.pin")} onSelect={() => runAction("pin")}>
+          {t("tab.pin")}
+        </DropdownMenu.Item>
       {/if}
-    </div>
-  </div>
-{/if}
+      <DropdownMenu.Item textValue={t("tab.viewSource")} onSelect={() => runAction("viewSource")}>
+        {t("tab.viewSource")}
+      </DropdownMenu.Item>
+      <DropdownMenu.Item textValue={t("tab.downloadPage")} onSelect={() => runAction("download")}>
+        {t("tab.downloadPage")}
+      </DropdownMenu.Item>
+      <DropdownMenu.Item textValue={t("tab.split")} onSelect={() => runAction("split")}>
+        {t("tab.split")}
+      </DropdownMenu.Item>
+      {#if showCloseSplit}
+        <DropdownMenu.Item textValue={t("tab.closeSplit")} onSelect={() => runAction("closeSplit")}>
+          {t("tab.closeSplit")}
+        </DropdownMenu.Item>
+      {/if}
+      <DropdownMenu.Separator class="tab-context-separator" />
+      {#if !menuTab?.pinned}
+        <DropdownMenu.Item textValue={t("tab.closeTab")} onSelect={() => runAction("close")}>
+          {t("tab.closeTab")}
+        </DropdownMenu.Item>
+      {/if}
+      {#if canCloseOthers}
+        <DropdownMenu.Item
+          textValue={t("tab.closeOthers")}
+          onSelect={() => runAction("closeOthers")}
+        >
+          {t("tab.closeOthers")}
+        </DropdownMenu.Item>
+      {/if}
+      {#if canCloseRight}
+        <DropdownMenu.Item textValue={t("tab.closeRight")} onSelect={() => runAction("closeRight")}>
+          {t("tab.closeRight")}
+        </DropdownMenu.Item>
+      {/if}
+      <DropdownMenu.Item
+        class="tab-context-danger"
+        textValue={t("tab.closeAll")}
+        onSelect={() => runAction("closeAll")}
+      >
+        {t("tab.closeAll")}
+      </DropdownMenu.Item>
+    </DropdownMenu.Content>
+  </DropdownMenu.Portal>
+</DropdownMenu.Root>
+
+<Popover.Root
+  open={hoverTab !== null && !mobileUI}
+  onOpenChange={(next) => {
+    if (!next) {
+      hideTabPreview();
+    }
+  }}
+>
+  <Popover.Portal>
+    <Popover.Content
+      class="tab-preview-popover"
+      customAnchor={previewAnchorEl}
+      side="bottom"
+      align="center"
+      sideOffset={PREVIEW_OFFSET}
+      collisionPadding={8}
+      trapFocus={false}
+      role="tooltip"
+      onOpenAutoFocus={(event) => event.preventDefault()}
+      onCloseAutoFocus={(event) => event.preventDefault()}
+    >
+      {#if hoverTab}
+        <TabPreviewThumb
+          tab={hoverTab}
+          label={hoverTab.title}
+          class="tab-preview-thumb"
+          {micronEngine}
+        />
+        <div class="tab-preview-footer">
+          <span class="tab-preview-title">{hoverTab.title || hoverTab.url || t("tab.new")}</span>
+          {#if hoverTab.url && hoverTab.url !== hoverTab.title}
+            <span class="tab-preview-url">{hoverTab.url}</span>
+          {/if}
+        </div>
+      {/if}
+    </Popover.Content>
+  </Popover.Portal>
+</Popover.Root>
 
 <style>
   .tabbar {
@@ -580,11 +654,10 @@
     overflow: hidden;
   }
 
-  .tab {
+  .tab-item {
     box-sizing: border-box;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
     width: var(--tab-width);
     min-width: 0;
     max-width: var(--tab-width);
@@ -593,8 +666,6 @@
     border-radius: 10px 10px 0 0;
     background: transparent;
     color: var(--ren-muted);
-    padding: 0.5rem 0.55rem 0.5rem 0.7rem;
-    cursor: grab;
     font: inherit;
     font-size: 0.86rem;
     transition:
@@ -604,16 +675,32 @@
       width 0.12s ease;
   }
 
-  .tab:hover:not(.active) {
+  .tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 0;
+    border: none;
+    border-radius: 10px 10px 0 0;
+    padding: 0.5rem 0.15rem 0.5rem 0.7rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: grab;
+  }
+
+  .tab-item:hover:not(.active) {
     background: var(--ren-tab-hover);
     color: var(--ren-fg-secondary);
   }
 
-  .tab.dragging {
+  .tab-item.dragging {
     opacity: 0.55;
   }
 
-  .tab.active {
+  .tab-item.active {
     background: var(--ren-tab-active);
     color: var(--ren-fg);
     border-color: var(--ren-border);
@@ -621,24 +708,27 @@
     font-weight: 500;
   }
 
-  .tab.split-primary,
-  .tab.active.split-primary {
+  .tab-item.split-primary,
+  .tab-item.active.split-primary {
     box-shadow: inset 0 -2px 0 var(--ren-accent);
   }
 
-  .tab.split:not(.active) {
+  .tab-item.split:not(.active) {
     box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--ren-accent) 55%, var(--ren-muted));
   }
 
-  .tab.pinned {
-    justify-content: center;
-    padding-inline: 0.35rem;
-    cursor: pointer;
+  .tab-item.pinned {
     flex: 0 0 var(--tab-width);
     min-width: var(--tab-width);
   }
 
-  .tab.pinned.active {
+  .tab-item.pinned .tab {
+    justify-content: center;
+    padding-inline: 0.35rem;
+    cursor: pointer;
+  }
+
+  .tab-item.pinned.active {
     box-shadow: inset 0 -2px 0 var(--ren-accent);
   }
 
@@ -653,7 +743,7 @@
     color: var(--ren-muted);
   }
 
-  .tab.active .pin-glyph {
+  .tab-item.active .pin-glyph {
     color: var(--ren-fg);
   }
 
@@ -674,7 +764,10 @@
     width: 1.35rem;
     height: 1.35rem;
     margin-inline-end: -0.15rem;
+    border: none;
     border-radius: 6px;
+    padding: 0;
+    background: transparent;
     opacity: 0;
     cursor: pointer;
     color: var(--ren-muted);
@@ -684,9 +777,9 @@
       color 0.12s ease;
   }
 
-  .tab:hover .close,
-  .tab:focus-within .close,
-  .tab.active .close {
+  .tab-item:hover .close,
+  .tab-item:focus-within .close,
+  .tab-item.active .close {
     opacity: 0.8;
   }
 
@@ -694,6 +787,17 @@
     opacity: 1;
     background: var(--ren-tab-hover);
     color: var(--ren-fg);
+  }
+
+  .close:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--ren-accent);
+    outline-offset: -1px;
+  }
+
+  .tab:focus-visible {
+    outline: 2px solid var(--ren-accent);
+    outline-offset: -2px;
   }
 
   .new-tab {
@@ -713,8 +817,7 @@
     margin-bottom: 0.15rem;
   }
 
-  .context-menu {
-    position: fixed;
+  :global(.tab-context-menu) {
     z-index: 1100;
     min-width: 11.5rem;
     max-width: calc(100vw - 1rem);
@@ -727,7 +830,7 @@
     gap: 0.15rem;
   }
 
-  .context-menu button {
+  :global(.tab-context-menu [role="menuitem"]) {
     text-align: left;
     border: none;
     background: transparent;
@@ -739,22 +842,21 @@
     cursor: pointer;
   }
 
-  .context-menu button:hover {
+  :global(.tab-context-menu [data-highlighted]) {
     background: var(--ren-tab-hover);
   }
 
-  .context-menu button.danger {
+  :global(.tab-context-menu .tab-context-danger) {
     color: var(--ren-danger);
   }
 
-  .context-menu hr {
+  :global(.tab-context-separator) {
     border: none;
     border-top: 1px solid var(--ren-border);
     margin: 0.15rem 0;
   }
 
-  .tab-preview-popover {
-    position: fixed;
+  :global(.tab-preview-popover) {
     z-index: 1100;
     width: 280px;
     border: 1px solid var(--ren-border);

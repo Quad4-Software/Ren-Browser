@@ -16,9 +16,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Quad4-Software/Reticulum-Go/pkg/debug"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/transport"
 	"github.com/wailsapp/wails/v3/pkg/application"
-	"quad4/reticulum-go/pkg/debug"
-	"quad4/reticulum-go/pkg/transport"
 
 	"renbrowser/internal/apperrors"
 	"renbrowser/internal/cache"
@@ -728,7 +728,7 @@ func (s *BrowserService) fetchFileTracked(rawURL string, tracker *downloadTracke
 	if err != nil {
 		return nomadnet.FetchResult{}, err
 	}
-	if !strings.HasPrefix(parsed.Path, "/file/") {
+	if !strings.HasPrefix(parsed.Path, "/file/") && !strings.HasPrefix(parsed.Path, "/media/") {
 		parsed.Path = "/file/" + strings.TrimPrefix(parsed.Path, "/")
 	}
 

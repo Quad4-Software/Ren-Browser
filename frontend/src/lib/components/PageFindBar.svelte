@@ -74,25 +74,36 @@
     <input
       class="find-input"
       type="search"
+      aria-label={t("find.placeholder")}
       placeholder={t("find.placeholder")}
       value={query}
       oninput={onInput}
       onkeydown={onKeyDown}
     />
-    <span class="count">
+    <span class="count" aria-live="polite">
       {#if query}
         {matchCount > 0
           ? t("common.matchCount", { current: activeIndex + 1, total: matchCount })
           : t("common.noMatches")}
       {/if}
     </span>
-    <button class="ren-icon-btn" aria-label={t("find.previous")} onclick={() => nextMatch(false)}>
+    <button
+      type="button"
+      class="ren-icon-btn"
+      aria-label={t("find.previous")}
+      onclick={() => nextMatch(false)}
+    >
       ↑
     </button>
-    <button class="ren-icon-btn" aria-label={t("find.next")} onclick={() => nextMatch(true)}>
+    <button
+      type="button"
+      class="ren-icon-btn"
+      aria-label={t("find.next")}
+      onclick={() => nextMatch(true)}
+    >
       ↓
     </button>
-    <button class="ren-icon-btn" aria-label={t("find.close")} onclick={onClose}>
+    <button type="button" class="ren-icon-btn" aria-label={t("find.close")} onclick={onClose}>
       <X size={14} />
     </button>
   </div>

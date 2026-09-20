@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { onDestroy } from "svelte";
+  import { useEventListener } from "runed";
   import {
     ChevronLeft,
     ChevronRight,
@@ -80,21 +81,17 @@
     tocOpen = false;
   }
 
-  $effect(() => {
-    if (!tocOpen) {
-      return;
-    }
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeToc();
+  useEventListener(
+    () => window,
+    "keydown",
+    (event) => {
+      if (!tocOpen || event.key !== "Escape") {
+        return;
       }
-    };
-    window.addEventListener("keydown", onEscape);
-    return () => {
-      window.removeEventListener("keydown", onEscape);
-    };
-  });
+      event.preventDefault();
+      closeToc();
+    },
+  );
 
   function onKeyDown(event: KeyboardEvent) {
     if (loading || error || searchOpen) {
@@ -118,19 +115,13 @@
     }
   });
 
-  $effect(() => {
-    const el = viewportEl;
-    if (!el) {
-      return;
-    }
-    const handler = (event: KeyboardEvent) => {
+  useEventListener(
+    () => viewportEl,
+    "keydown",
+    (event) => {
       onKeyDown(event);
-    };
-    el.addEventListener("keydown", handler);
-    return () => {
-      el.removeEventListener("keydown", handler);
-    };
-  });
+    },
+  );
 
   $effect(() => {
     const el = viewportEl;
@@ -503,6 +494,11 @@
     flex-direction: column;
     outline: none;
     touch-action: pan-y;
+  }
+
+  .viewport:focus-visible {
+    outline: 2px solid var(--ren-focus);
+    outline-offset: -2px;
   }
 
   .chapter {

@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import { useEventListener } from "runed";
   import { t } from "$lib/i18n/i18n.svelte";
   import {
     capturePointer,
@@ -74,13 +75,26 @@
     const delta = event.key === "ArrowLeft" ? -2 : 2;
     onRatioChange(clampSplitRatio(ratio + delta));
   }
-</script>
 
-<svelte:window
-  onpointermove={dragging ? onPointerMove : undefined}
-  onpointerup={dragging ? onPointerUp : undefined}
-  onpointercancel={dragging ? onPointerUp : undefined}
-/>
+  useEventListener(
+    () => window,
+    "pointermove",
+    (event) => {
+      if (dragging) {
+        onPointerMove(event);
+      }
+    },
+  );
+  useEventListener(
+    () => window,
+    ["pointerup", "pointercancel"],
+    (event) => {
+      if (dragging) {
+        onPointerUp(event);
+      }
+    },
+  );
+</script>
 
 <div class="split-root" class:dragging bind:this={rootEl} style:--split-ratio="{ratio}%">
   <div class="pane primary">

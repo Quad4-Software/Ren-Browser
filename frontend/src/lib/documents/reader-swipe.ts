@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+import { on } from "svelte/events";
 import { READER_SWIPE_MAX_VERTICAL, READER_SWIPE_THRESHOLD } from "./reader-layout";
 
 export type ReaderSwipeOptions = {
@@ -77,17 +78,18 @@ export function attachReaderSwipe(
     finish(event);
   };
 
-  surface.addEventListener("pointerdown", onPointerDown);
-  surface.addEventListener("pointermove", onPointerMove);
-  surface.addEventListener("pointerup", onPointerUp);
-  surface.addEventListener("pointercancel", onPointerUp);
+  const offPointer = [
+    on(surface, "pointerdown", onPointerDown),
+    on(surface, "pointermove", onPointerMove),
+    on(surface, "pointerup", onPointerUp),
+    on(surface, "pointercancel", onPointerUp),
+  ];
 
   return {
     teardown: () => {
-      surface.removeEventListener("pointerdown", onPointerDown);
-      surface.removeEventListener("pointermove", onPointerMove);
-      surface.removeEventListener("pointerup", onPointerUp);
-      surface.removeEventListener("pointercancel", onPointerUp);
+      for (const off of offPointer) {
+        off();
+      }
     },
   };
 }

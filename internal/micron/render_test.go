@@ -25,14 +25,17 @@ func TestMicronHeadingAndLink(t *testing.T) {
 	if !strings.Contains(html, `/page/index.mu`) {
 		t.Fatalf("missing link href: %s", html)
 	}
-	if !strings.Contains(html, `class="Mu-mnt"`) {
-		t.Fatalf("expected force-monospace cells for ASCII alignment: %s", html)
+	if !strings.Contains(html, "Mu-mnt") {
+		t.Fatalf("expected force-monospace markup (Mu-mnt or Mu-mnt-group): %s", html)
 	}
 }
 
 func TestRenderDarkAlwaysForceMonospace(t *testing.T) {
 	html, _, _ := micron.RenderDark("|=|\n|A|")
-	if !strings.Contains(html, `class="Mu-mnt"`) {
-		t.Fatalf("ASCII art must use Mu-mnt cells: %s", html)
+	if !strings.Contains(html, "Mu-mnt") {
+		t.Fatalf("ASCII art must use monospace markup: %s", html)
+	}
+	if !strings.Contains(plainText(html), "|A|") {
+		t.Fatalf("ASCII art text lost: %s", html)
 	}
 }

@@ -9,14 +9,13 @@ import (
 	"strings"
 )
 
-func appendQuotedHTMLStyleAttr(b *strings.Builder, st Style, defaultBG string) bool {
+func appendQuotedHTMLStyleAttr(b *strings.Builder, st Style, defaultBG string) {
 	if !hasAnyStyle(st, defaultBG) {
-		return false
+		return
 	}
 	b.WriteString(` style="`)
 	appendStyleAttr(b, st, defaultBG)
 	b.WriteByte('"')
-	return true
 }
 
 func appendStyledSpanOpen(b *strings.Builder, st Style, defaultBG string) bool {
@@ -71,7 +70,7 @@ func (p *Parser) appendOutput(b *strings.Builder, parts []linePart, s *State) {
 			case pr.link != nil:
 				p.writeLink(b, pr.link, s)
 			default:
-				p.writePartial(b, pr.partial, s)
+				p.writePartial(b, pr.partial, s, 0)
 			}
 			continue
 		}
@@ -88,11 +87,7 @@ func (p *Parser) appendOutput(b *strings.Builder, parts []linePart, s *State) {
 		if pr.html != "" {
 			b.WriteString(pr.html)
 		} else if p.ForceMonospace {
-			if s.Literal {
-				p.appendForceMonospace(b, pr.text)
-			} else {
-				p.appendSplitAtSpaces(b, pr.text)
-			}
+			p.appendSplitAtSpaces(b, pr.text)
 		} else {
 			appendHTMLText(b, pr.text)
 		}
@@ -154,6 +149,10 @@ func (p *Parser) writeField(b *strings.Builder, f *Field, s *State) {
 }
 
 func (p *Parser) writeLink(b *strings.Builder, lk *Link, s *State) {
+	if lk.Image != nil {
+		p.writeImage(b, lk.Image)
+		return
+	}
 	direct := linkDirectURL(lk.URL)
 	if len(lk.Fields) == 0 {
 		b.WriteString(`<a class="Mu-nl" href="`)
@@ -165,7 +164,11 @@ func (p *Parser) writeLink(b *strings.Builder, lk *Link, s *State) {
 		b.WriteString(`"`)
 		appendQuotedHTMLStyleAttr(b, lk.Style, s.DefaultBG)
 		b.WriteString(`>`)
-		b.WriteString(lk.Label)
+		if p.ForceMonospace {
+			p.appendSplitAtSpaces(b, lk.Label)
+		} else {
+			appendHTMLText(b, lk.Label)
+		}
 		b.WriteString(`</a>`)
 		return
 	}
@@ -212,12 +215,95 @@ func (p *Parser) writeLink(b *strings.Builder, lk *Link, s *State) {
 	b.WriteString(`"`)
 	appendQuotedHTMLStyleAttr(b, lk.Style, s.DefaultBG)
 	b.WriteString(`>`)
-	b.WriteString(lk.Label)
+	if p.ForceMonospace {
+		p.appendSplitAtSpaces(b, lk.Label)
+	} else {
+		appendHTMLText(b, lk.Label)
+	}
 	b.WriteString(`</a>`)
 }
 
-func (p *Parser) writePartial(b *strings.Builder, pt *Partial, s *State) {
-	b.WriteString(`<div class="Mu-partial" data-partial-url="`)
+// writeImage emits the deferred image placeholder consumed by the MeshChatX
+// frontend. It mirrors MicronParser.createImagePlaceholder: the div carries
+// data attributes, a meta span shows alt text plus optional size hint, an
+// actions span holds the load button, and a hidden img receives the loaded
+// resource.
+func (p *Parser) writeImage(b *strings.Builder, im *LinkImage) {
+	alt := htmlAttr(im.Alt)
+	b.WriteString(`<div class="mu-image" data-mu-image-url="`)
+	b.WriteString(htmlAttr(im.RawURL))
+	b.WriteString(`" data-mu-image-path="`)
+	b.WriteString(htmlAttr(im.Path))
+	b.WriteString(`" data-mu-image-alt="`)
+	b.WriteString(alt)
+	b.WriteString(`"`)
+	if im.Width > 0 {
+		b.WriteString(` data-mu-image-w="`)
+		b.WriteString(strconv.Itoa(im.Width))
+		b.WriteString(`"`)
+	}
+	if im.Height > 0 {
+		b.WriteString(` data-mu-image-h="`)
+		b.WriteString(strconv.Itoa(im.Height))
+		b.WriteString(`"`)
+	}
+	if im.Size > 0 {
+		b.WriteString(` data-mu-image-s="`)
+		b.WriteString(strconv.Itoa(im.Size))
+		b.WriteString(`"`)
+	}
+	if im.Key != "" {
+		b.WriteString(` data-mu-image-k="`)
+		b.WriteString(htmlAttr(im.Key))
+		b.WriteString(`"`)
+	}
+	if im.Align != "" {
+		b.WriteString(` data-mu-image-a="`)
+		b.WriteString(htmlAttr(im.Align))
+		b.WriteString(`"`)
+	}
+	if im.Profile != "" {
+		b.WriteString(` data-mu-image-profile="`)
+		b.WriteString(htmlAttr(im.Profile))
+		b.WriteString(`"`)
+	}
+	b.WriteString(` role="img" aria-label="`)
+	b.WriteString(alt)
+	b.WriteString(`"`)
+	if im.Width > 0 || im.Height > 0 {
+		b.WriteString(` style="`)
+		if im.Width > 0 {
+			b.WriteString("width:")
+			b.WriteString(strconv.Itoa(im.Width))
+			b.WriteString("px")
+		}
+		if im.Height > 0 {
+			if im.Width > 0 {
+				b.WriteString(";")
+			}
+			b.WriteString("min-height:")
+			b.WriteString(strconv.Itoa(im.Height))
+			b.WriteString("px")
+		}
+		b.WriteString(`"`)
+	}
+	b.WriteString(`><span class="mu-image-meta"><span class="mu-image-alt">`)
+	appendHTMLText(b, im.Alt)
+	b.WriteString(`</span>`)
+	if im.Size > 0 {
+		b.WriteString(` <span class="mu-image-size">`)
+		b.WriteString(formatMicronImageSize(im.Size))
+		b.WriteString(`</span>`)
+	}
+	b.WriteString(`</span><span class="mu-image-actions"><a class="mu-image-action" data-mu-image-action="load" role="button" tabindex="0">Load image</a></span><img class="mu-image-output" alt="`)
+	b.WriteString(alt)
+	b.WriteString(`" hidden=""></div>`)
+}
+
+func (p *Parser) writePartial(b *strings.Builder, pt *Partial, s *State, srcLine int) {
+	b.WriteString(`<div class="Mu-partial"`)
+	writeDataMuLine(b, srcLine)
+	b.WriteString(` data-partial-url="`)
 	b.WriteString(htmlAttr(pt.URL))
 	b.WriteString(`" data-partial-destination="`)
 	b.WriteString(htmlAttr(pt.Destination))

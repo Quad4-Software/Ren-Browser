@@ -176,7 +176,7 @@ func normalizePath(path string) string {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
-	if strings.HasPrefix(path, "/page/") || strings.HasPrefix(path, "/file/") {
+	if strings.HasPrefix(path, "/page/") || strings.HasPrefix(path, "/file/") || strings.HasPrefix(path, "/media/") {
 		return path
 	}
 	if strings.HasSuffix(path, ".mu") || strings.HasSuffix(path, ".html") || strings.HasSuffix(path, ".md") {

@@ -240,6 +240,7 @@
                 <button
                   type="button"
                   class="hash"
+                  aria-label={t("identity.copyHash")}
                   title={t("identity.copyHash")}
                   onclick={() => void copyHash(row.hash)}
                 >

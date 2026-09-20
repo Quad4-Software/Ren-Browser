@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { Collapsible } from "bits-ui";
   import { ChevronDown } from "@lucide/svelte";
   import type { Snippet } from "svelte";
 
@@ -16,15 +17,19 @@
   let { id, title, collapsed, onToggle, children, actions, heading = "h3" }: Props = $props();
 </script>
 
-<section class="settings-section">
+<Collapsible.Root
+  class="settings-section"
+  bind:open={
+    () => !collapsed,
+    (next) => {
+      if (next === collapsed) {
+        onToggle(id);
+      }
+    }
+  }
+>
   <div class="section-header">
-    <button
-      type="button"
-      class="section-toggle"
-      aria-expanded={!collapsed}
-      aria-controls={`settings-section-${id}`}
-      onclick={() => onToggle(id)}
-    >
+    <Collapsible.Trigger class="section-toggle">
       <span class="chevron" class:collapsed>
         <ChevronDown size={16} />
       </span>
@@ -33,22 +38,20 @@
       {:else}
         <h3>{title}</h3>
       {/if}
-    </button>
+    </Collapsible.Trigger>
     {#if actions}
       <div class="section-actions">
         {@render actions()}
       </div>
     {/if}
   </div>
-  {#if !collapsed}
-    <div class="section-body" id={`settings-section-${id}`}>
-      {@render children()}
-    </div>
-  {/if}
-</section>
+  <Collapsible.Content class="section-body" id={`settings-section-${id}`}>
+    {@render children()}
+  </Collapsible.Content>
+</Collapsible.Root>
 
 <style>
-  .settings-section {
+  :global(.settings-section) {
     display: grid;
     gap: 0.65rem;
     min-width: 0;
@@ -68,7 +71,7 @@
     align-items: center;
   }
 
-  .section-toggle {
+  :global(.section-toggle) {
     display: flex;
     align-items: center;
     gap: 0.45rem;
@@ -82,8 +85,8 @@
     text-align: left;
   }
 
-  .section-toggle h2,
-  .section-toggle h3 {
+  :global(.section-toggle) h2,
+  :global(.section-toggle) h3 {
     margin: 0;
     flex: 1;
     min-width: 0;
@@ -92,13 +95,13 @@
     white-space: nowrap;
   }
 
-  .section-toggle h2 {
+  :global(.section-toggle) h2 {
     font-size: 1rem;
     font-weight: 600;
     color: var(--ren-fg);
   }
 
-  .section-toggle h3 {
+  :global(.section-toggle) h3 {
     margin-top: 0.15rem;
     color: var(--ren-muted);
     font-size: 0.9rem;
@@ -118,7 +121,7 @@
     transform: rotate(-90deg);
   }
 
-  .section-body {
+  :global(.section-body) {
     display: grid;
     gap: 0.85rem;
     min-width: 0;

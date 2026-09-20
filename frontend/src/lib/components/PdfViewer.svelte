@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { onDestroy } from "svelte";
+  import { useEventListener, useMutationObserver } from "runed";
   import { ChevronLeft, ChevronRight, RotateCw, ZoomIn, ZoomOut } from "@lucide/svelte";
   import { t } from "$lib/i18n/i18n.svelte";
   import { resolveDocumentErrorMessage } from "$lib/documents/async";
@@ -34,16 +35,13 @@
   let ownedDoc: PDFDocumentProxy | undefined;
   let readerTheme = $state<ReaderTheme>(resolvedReaderTheme());
 
-  $effect(() => {
-    const root = document.documentElement;
-    const syncTheme = () => {
+  useMutationObserver(
+    () => document.documentElement,
+    () => {
       readerTheme = resolvedReaderTheme();
-    };
-    syncTheme();
-    const observer = new MutationObserver(syncTheme);
-    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => observer.disconnect();
-  });
+    },
+    { attributes: true, attributeFilter: ["data-theme"] },
+  );
 
   function dropOwnedDoc() {
     if (ownedDoc) {
@@ -197,19 +195,13 @@
     });
   }
 
-  $effect(() => {
-    const el = viewportEl;
-    if (!el) {
-      return;
-    }
-    const handler = (event: KeyboardEvent) => {
+  useEventListener(
+    () => viewportEl,
+    "keydown",
+    (event) => {
       onKeyDown(event);
-    };
-    el.addEventListener("keydown", handler);
-    return () => {
-      el.removeEventListener("keydown", handler);
-    };
-  });
+    },
+  );
 
   $effect(() => {
     const el = viewportEl;
@@ -236,6 +228,15 @@
     }
   });
 
+  useEventListener(
+    () => frameEl,
+    "load",
+    () => {
+      void paintPage();
+    },
+    { once: true },
+  );
+
   $effect(() => {
     const frame = frameEl;
     void readerTheme;
@@ -244,13 +245,8 @@
       pageScrollEl = null;
       return;
     }
-    const init = () => {
-      void paintPage();
-    };
     if (frame.contentDocument?.readyState === "complete") {
-      init();
-    } else {
-      frame.addEventListener("load", init, { once: true });
+      void paintPage();
     }
     return () => {
       pageScrollEl = null;
@@ -395,6 +391,11 @@
     flex-direction: column;
     outline: none;
     touch-action: pan-y;
+  }
+
+  .viewport:focus-visible {
+    outline: 2px solid var(--ren-focus);
+    outline-offset: -2px;
   }
 
   .pdf-frame {

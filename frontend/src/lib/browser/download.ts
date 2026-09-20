@@ -114,7 +114,8 @@ export function isFileURL(url: string): boolean {
   ) {
     return false;
   }
-  return meshBarePath(url).startsWith("/file/");
+  const bare = meshBarePath(url);
+  return bare.startsWith("/file/") || bare.startsWith("/media/");
 }
 
 export async function downloadMeshFile(url: string): Promise<string> {

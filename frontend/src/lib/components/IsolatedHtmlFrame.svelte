@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { useEventListener, useMutationObserver } from "runed";
   import { buildIsolatedHtmlDocument, ISOLATED_FRAME_SANDBOX } from "$lib/documents/isolated-html";
   import { resolvedReaderTheme, type ReaderTheme } from "$lib/documents/reader-theme";
 
@@ -24,16 +25,13 @@
   let frameEl: HTMLIFrameElement | undefined = $state();
   let readerTheme = $state<ReaderTheme>(resolvedReaderTheme());
 
-  $effect(() => {
-    const root = document.documentElement;
-    const syncTheme = () => {
+  useMutationObserver(
+    () => document.documentElement,
+    () => {
       readerTheme = resolvedReaderTheme();
-    };
-    syncTheme();
-    const observer = new MutationObserver(syncTheme);
-    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
-    return () => observer.disconnect();
-  });
+    },
+    { attributes: true, attributeFilter: ["data-theme"] },
+  );
 
   function scrollRootFromFrame(frame: HTMLIFrameElement | undefined): HTMLElement | null {
     const doc = frame?.contentDocument;
@@ -67,6 +65,19 @@
     };
   });
 
+  useEventListener(
+    () => frameEl,
+    "load",
+    () => {
+      const frame = frameEl;
+      if (!frame || !html) {
+        return;
+      }
+      writeFrameContent(frame, html, readerTheme, fontScale, rotation);
+    },
+    { once: true },
+  );
+
   $effect(() => {
     const frame = frameEl;
     const bodyHtml = html;
@@ -78,14 +89,8 @@
       return;
     }
 
-    const apply = () => {
-      writeFrameContent(frame, bodyHtml, theme, scale, rotate);
-    };
-
     if (frame.contentDocument?.readyState === "complete") {
-      apply();
-    } else {
-      frame.addEventListener("load", apply, { once: true });
+      writeFrameContent(frame, bodyHtml, theme, scale, rotate);
     }
 
     return () => {

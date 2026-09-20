@@ -14,22 +14,33 @@ import (
 )
 
 func TestMicronForceMonospaceAmplification(t *testing.T) {
-	// RenderDark always enables ForceMonospace (per-rune Mu-mnt spans).
+	// RenderDark always enables ForceMonospace. micron-parser-go v1.2.0
+	// groups plain printable ASCII runs into a single Mu-mnt-group span, so
+	// ASCII input stays near 1x. HTML-significant bytes and grapheme
+	// clusters still get per-rune Mu-mnt cells, which is the residual
+	// worst case and must stay bounded.
 	const n = 64 * 1024
-	src := strings.Repeat("A", n)
-	html, _, _ := micron.RenderDark(src)
-	ratio := float64(len(html)) / float64(len(src))
-	t.Logf("input=%d html=%d ratio=%.1fx", len(src), len(html), ratio)
-	if ratio < 20 {
-		t.Fatalf("expected ForceMonospace amplification >=20x, got %.1fx", ratio)
+	for _, tc := range []struct {
+		name    string
+		r       string
+		maxMult float64
+	}{
+		{"ascii", "A", 2.0},
+		{"html-significant", "&", 40.0},
+		{"emoji", "\U0001F642", 12.0},
+	} {
+		src := strings.Repeat(tc.r, n/len(tc.r))
+		html, _, _ := micron.RenderDark(src)
+		ratio := float64(len(html)) / float64(len(src))
+		t.Logf("%s input=%d html=%d ratio=%.1fx", tc.name, len(src), len(html), ratio)
+		if ratio > tc.maxMult {
+			t.Fatalf("%s amplification %.1fx exceeds bound %.1fx", tc.name, ratio, tc.maxMult)
+		}
 	}
-	// Extrapolate to default page cap.
+	// Extrapolate the residual worst case to the default page cap.
 	pageCap := limits.DefaultMaxPageBytes
-	projected := int64(float64(pageCap) * ratio)
-	t.Logf("projected HTML at %d page cap: %d bytes (%.1f MiB)", pageCap, projected, float64(projected)/(1024*1024))
-	if projected < 100*1024*1024 {
-		t.Fatalf("expected projected HTML over 100MiB at page cap, got %d", projected)
-	}
+	projected := int64(float64(pageCap) * 33)
+	t.Logf("projected worst-case HTML at %d page cap: %d bytes (%.1f MiB)", pageCap, projected, float64(projected)/(1024*1024))
 }
 
 func TestMicronLeadingAngleRecursion(t *testing.T) {
@@ -83,9 +94,10 @@ func TestMicronBuiltinRendererSkipsSanitizeHTML(t *testing.T) {
 func TestMicronHeadingDepthUnbounded(t *testing.T) {
 	src := strings.Repeat(">", 5000) + "Title"
 	html := micron.ToHTMLDark(src)
-	// ForceMonospace splits "Title" into per-rune spans.
-	if !strings.Contains(html, `>T</span>`) || !strings.Contains(html, `>e</span>`) {
-		t.Fatalf("missing heading glyphs in html (%d bytes): %s", len(html), truncate(html, 400))
+	// v1.2.0 groups plain ASCII into Mu-mnt-group spans; assert the heading
+	// text survived whatever wrapping the parser chose.
+	if !strings.Contains(html, "Title") {
+		t.Fatalf("missing heading text in html (%d bytes): %s", len(html), truncate(html, 400))
 	}
 	// Depth is capped at 16: indent = (16-1)*2*0.6 = 18.0em.
 	// micron-parser-go v1.0.7+ emits margin-inline-start (older builds used margin-left).
@@ -101,19 +113,30 @@ func TestMicronHeadingDepthUnbounded(t *testing.T) {
 	t.Logf("heading depth 5000 capped -> html %d bytes with 18.0em indent", len(html))
 }
 
-func TestMicronPageCapStillAllowsHugeHTML(t *testing.T) {
-	// Even a small fraction of MaxPageBytes blows up after ForceMonospace.
+func TestMicronPageCapHTMLAmplificationBounds(t *testing.T) {
+	// A page-capped input used to blow up ~30x through per-rune Mu-mnt
+	// spans. v1.2.0 groups ASCII so plain text stays near 1x, while
+	// HTML-significant bytes remain the bounded worst case.
 	budget := 256 * 1024
-	src := strings.Repeat("W", budget)
-	var before, after runtime.MemStats
-	runtime.GC()
-	runtime.ReadMemStats(&before)
-	html, _, _ := micron.RenderDark(src)
-	runtime.ReadMemStats(&after)
-	delta := int64(after.HeapAlloc) - int64(before.HeapAlloc)
-	t.Logf("src=%d html=%d heapDelta≈%d", len(src), len(html), delta)
-	if len(html) < budget*20 {
-		t.Fatalf("html %d too small for ForceMonospace on %d input", len(html), budget)
+	for _, tc := range []struct {
+		name    string
+		r       string
+		maxMult int64
+	}{
+		{"ascii", "W", 2},
+		{"html-significant", "&", 40},
+	} {
+		src := strings.Repeat(tc.r, budget)
+		var before, after runtime.MemStats
+		runtime.GC()
+		runtime.ReadMemStats(&before)
+		html, _, _ := micron.RenderDark(src)
+		runtime.ReadMemStats(&after)
+		delta := int64(after.HeapAlloc) - int64(before.HeapAlloc)
+		t.Logf("%s src=%d html=%d heapDelta≈%d", tc.name, len(src), len(html), delta)
+		if int64(len(html)) > int64(budget)*tc.maxMult {
+			t.Fatalf("%s html %d exceeds %dx bound on %d input", tc.name, len(html), tc.maxMult, budget)
+		}
 	}
 }
 

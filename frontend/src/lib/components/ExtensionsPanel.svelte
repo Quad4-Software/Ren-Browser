@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { DropdownMenu } from "bits-ui";
   import { ChevronDown, Cpu, FolderOpen, Package, Plus, X } from "@lucide/svelte";
   import { System } from "@wailsio/runtime";
   import Toggle from "$lib/components/Toggle.svelte";
@@ -323,46 +324,50 @@
   <p class="hint">{t("extensions.pluginsDir", { path: pluginsDir || "—" })}</p>
 
   <div class="install">
-    <details class="install-menu" bind:open={installMenuOpen}>
-      <summary
-        class="pick-btn"
+    <DropdownMenu.Root bind:open={installMenuOpen}>
+      <DropdownMenu.Trigger
+        class="extensions-install-trigger"
         aria-label={t("extensions.installButton")}
-        class:disabled={loading || picking || !desktop}
+        disabled={loading || picking || !desktop}
       >
         <Plus size={16} />
         <span>{t("extensions.installButton")}</span>
         <span class="chevron"><ChevronDown size={14} /></span>
-      </summary>
-      <div class="install-options" role="menu">
-        <button
-          type="button"
-          role="menuitem"
-          disabled={loading || picking || !desktop}
-          onclick={() => void pickAndInstallZip()}
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          class="extensions-install-menu"
+          align="start"
+          sideOffset={5}
+          collisionPadding={8}
         >
-          <Package size={16} />
-          <span>{t("extensions.installZipButton")}</span>
-        </button>
-        <button
-          type="button"
-          role="menuitem"
-          disabled={loading || picking || !desktop}
-          onclick={() => void pickAndInstallDir()}
-        >
-          <FolderOpen size={16} />
-          <span>{t("extensions.installFolderButton")}</span>
-        </button>
-        <button
-          type="button"
-          role="menuitem"
-          disabled={loading || picking || !desktop}
-          onclick={() => void pickAndInstallWasm()}
-        >
-          <Cpu size={16} />
-          <span>{t("extensions.installWasmButton")}</span>
-        </button>
-      </div>
-    </details>
+          <DropdownMenu.Item
+            textValue={t("extensions.installZipButton")}
+            disabled={loading || picking || !desktop}
+            onSelect={() => void pickAndInstallZip()}
+          >
+            <Package size={16} />
+            <span>{t("extensions.installZipButton")}</span>
+          </DropdownMenu.Item>
+          <DropdownMenu.Item
+            textValue={t("extensions.installFolderButton")}
+            disabled={loading || picking || !desktop}
+            onSelect={() => void pickAndInstallDir()}
+          >
+            <FolderOpen size={16} />
+            <span>{t("extensions.installFolderButton")}</span>
+          </DropdownMenu.Item>
+          <DropdownMenu.Item
+            textValue={t("extensions.installWasmButton")}
+            disabled={loading || picking || !desktop}
+            onSelect={() => void pickAndInstallWasm()}
+          >
+            <Cpu size={16} />
+            <span>{t("extensions.installWasmButton")}</span>
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
     {#if !desktop}
       <p class="muted">{t("extensions.pickerUnavailable")}</p>
     {/if}
@@ -495,40 +500,24 @@
     gap: 0.5rem;
   }
 
-  .install-menu {
-    position: relative;
-  }
-
-  .install-menu > summary {
-    list-style: none;
-  }
-
-  .install-menu > summary::-webkit-details-marker {
-    display: none;
-  }
-
-  .install-menu > summary.disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
-
   .chevron {
     margin-left: auto;
     opacity: 0.75;
   }
 
-  .install-options {
-    margin-top: 0.35rem;
+  :global(.extensions-install-menu) {
+    z-index: 1100;
+    min-width: var(--bits-floating-anchor-width, 12rem);
     display: grid;
     gap: 0.35rem;
     border: 1px solid var(--ren-border);
     border-radius: calc(var(--ren-radius) + 2px);
     background: var(--ren-input-bg);
     padding: 0.35rem;
+    box-shadow: var(--ren-shadow);
   }
 
-  .install-options button {
+  :global(.extensions-install-menu [role="menuitem"]) {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -543,16 +532,16 @@
     text-align: left;
   }
 
-  .install-options button:hover:not(:disabled) {
+  :global(.extensions-install-menu [data-highlighted]) {
     background: var(--ren-tab-hover);
   }
 
-  .install-options button:disabled {
+  :global(.extensions-install-menu [data-disabled]) {
     opacity: 0.55;
     cursor: not-allowed;
   }
 
-  .pick-btn {
+  :global(.extensions-install-trigger) {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -568,12 +557,12 @@
     text-align: left;
   }
 
-  .pick-btn:hover:not(:disabled) {
+  :global(.extensions-install-trigger:hover:not(:disabled)) {
     background: var(--ren-tab-hover);
     border-color: var(--ren-border-strong);
   }
 
-  .pick-btn:disabled {
+  :global(.extensions-install-trigger:disabled) {
     opacity: 0.55;
     cursor: not-allowed;
   }

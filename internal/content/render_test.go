@@ -25,8 +25,8 @@ func TestRenderMicron(t *testing.T) {
 	if !strings.Contains(plain, "Title") {
 		t.Fatalf("html = %s", out.HTML)
 	}
-	if !strings.Contains(out.HTML, `class="Mu-mnt"`) {
-		t.Fatalf("expected force-monospace cells: %s", out.HTML)
+	if !strings.Contains(out.HTML, "Mu-mnt") {
+		t.Fatalf("expected force-monospace markup (Mu-mnt or Mu-mnt-group): %s", out.HTML)
 	}
 }
 

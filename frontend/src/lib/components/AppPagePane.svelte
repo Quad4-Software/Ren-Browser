@@ -23,7 +23,9 @@
 {#snippet primaryPane()}
   {#if app.contentType === "editor"}
     {#if app.loading}
-      <div class="editor-loading">{t("editor.loadingMicron")}</div>
+      <div class="editor-loading" role="status" aria-live="polite">
+        {t("editor.loadingMicron")}
+      </div>
     {:else}
       <MicronEditor
         source={app.lastRaw}
@@ -31,13 +33,18 @@
         micronWasmEnabled={app.micronWasmEnabled}
         micronWasmParserId={app.micronWasmParserId}
         micronWasmReady={app.micronWasmReady}
+        micronImagesMode={app.micronImagesMode}
+        micronImageNodes={app.micronImageNodes}
+        onMicronImageNodePolicy={app.setMicronImageNodePolicy}
         onSourceChange={app.updateEditorSource}
         onNavigate={app.openPage}
       />
     {/if}
   {:else if app.contentType === "config"}
     {#if app.loading}
-      <div class="editor-loading">{t("editor.loadingConfig")}</div>
+      <div class="editor-loading" role="status" aria-live="polite">
+        {t("editor.loadingConfig")}
+      </div>
     {:else}
       <section class="config-page">
         <ReticulumConfigEditor
@@ -56,7 +63,7 @@
     {/if}
   {:else if app.contentType === "settings"}
     {#if app.loading}
-      <div class="editor-loading">{t("common.loading")}</div>
+      <div class="editor-loading" role="status" aria-live="polite">{t("common.loading")}</div>
     {:else}
       <div class="settings-page">
         {@render settingsPane()}
@@ -82,6 +89,9 @@
       onPageHighlightDone={app.clearPageHighlight}
       micronEngine={app.effectiveMicronEngine}
       micronPreserveLayout={app.micronPreserveLayout}
+      micronImagesMode={app.micronImagesMode}
+      micronImageNodes={app.micronImageNodes}
+      onMicronImageNodePolicy={app.setMicronImageNodePolicy}
       mobileGestures={app.mobileUI && app.activePanel === "browser" && !app.mobileTabsOpen}
       canGoBack={app.canGoBack}
       canGoForward={app.canGoForward}
@@ -118,6 +128,9 @@
         findOpen={false}
         micronEngine={app.effectiveMicronEngine}
         micronPreserveLayout={app.micronPreserveLayout}
+        micronImagesMode={app.micronImagesMode}
+        micronImageNodes={app.micronImageNodes}
+        onMicronImageNodePolicy={app.setMicronImageNodePolicy}
         canGoBack={app.canGoBack}
         canGoForward={app.canGoForward}
         onBack={app.goBack}

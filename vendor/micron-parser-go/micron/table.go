@@ -47,12 +47,8 @@ func escapeTableBackticks(s string) string {
 
 func parseTableRow(line string) []string {
 	line = strings.TrimSpace(line)
-	if strings.HasPrefix(line, "|") {
-		line = line[1:]
-	}
-	if strings.HasSuffix(line, "|") {
-		line = line[:len(line)-1]
-	}
+	line = strings.TrimPrefix(line, "|")
+	line = strings.TrimSuffix(line, "|")
 	var cells []string
 	var cur strings.Builder
 	escaped := false
@@ -130,7 +126,7 @@ func padTableCell(text string, width int, align string) string {
 	}
 }
 
-// formatTableRaw converts GitHub-style pipe rows (header, separator, body…) into
+// formatTableRaw converts GitHub-style pipe rows (header, separator, body...) into
 // Micron box-drawing lines, matching Reticulum MarkdownToMicron.format_table_raw.
 func formatTableRaw(rows []string, blockAlign string, maxWidth int) []string {
 	if len(rows) < 2 {
@@ -167,9 +163,7 @@ func formatTableRaw(rows []string, blockAlign string, maxWidth int) []string {
 	numCols := len(headerCells)
 	colWidths := make([]int, numCols)
 	allRows := [][]string{headerCells}
-	for i := range dataRows {
-		allRows = append(allRows, dataRows[i])
-	}
+	allRows = append(allRows, dataRows...)
 	for _, row := range allRows {
 		for i, cell := range row {
 			if i < len(colWidths) {
@@ -305,29 +299,8 @@ func formatTableRaw(rows []string, blockAlign string, maxWidth int) []string {
 	return out
 }
 
-func parseTableFenceOptions(rest string) (align string, maxW int) {
-	if len(rest) == 0 {
-		return "", 0
-	}
-	switch rest[0] {
-	case 'l', 'c', 'r':
-		align = rest[:1]
-		rest = rest[1:]
-	default:
-		align = ""
-	}
-	rest = strings.TrimSpace(rest)
-	if rest == "" {
-		return align, 0
-	}
-	n, err := strconv.Atoi(rest)
-	if err != nil || n <= 0 {
-		return align, 0
-	}
-	return align, n
-}
-
-func (p *Parser) consumeTableFence(out *strings.Builder, line string, s *State) int {
+// consumeTableFence handles `t` open/close fences for the streaming convert path.
+func (p *Parser) consumeTableFence(out *strings.Builder, line string, s *State, srcLine int) int {
 	if s.TableMode {
 		optsAlign := s.TableOptsAlign
 		optsMax := s.TableOptsMaxW
@@ -346,7 +319,7 @@ func (p *Parser) consumeTableFence(out *strings.Builder, line string, s *State) 
 			return lineOmit
 		}
 		for _, ml := range micronLines {
-			p.parseLineInto(out, ml, s)
+			p.parseLineInto(out, ml, s, srcLine)
 		}
 		return lineHTML
 	}
@@ -362,4 +335,26 @@ func (p *Parser) consumeTableFence(out *strings.Builder, line string, s *State) 
 	s.TableOptsAlign = align
 	s.TableOptsMaxW = maxW
 	return lineOmit
+}
+
+func parseTableFenceOptions(rest string) (align string, maxW int) {
+	if rest == "" {
+		return "", 0
+	}
+	switch rest[0] {
+	case 'l', 'c', 'r':
+		align = rest[:1]
+		rest = rest[1:]
+	default:
+		align = ""
+	}
+	rest = strings.TrimSpace(rest)
+	if rest == "" {
+		return align, 0
+	}
+	n, err := strconv.Atoi(rest)
+	if err != nil || n <= 0 {
+		return align, 0
+	}
+	return align, n
 }

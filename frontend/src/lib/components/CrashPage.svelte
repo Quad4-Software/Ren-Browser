@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { TriangleAlert } from "@lucide/svelte";
+  import { AlertDialog } from "bits-ui";
+  import { useDebounce } from "runed";
   import { buildCrashDebugLog } from "$lib/browser/crash-log";
   import { t } from "$lib/i18n/i18n.svelte";
 
@@ -24,46 +26,61 @@
         : t("crash.copyLogs"),
   );
 
+  const resetCopyState = useDebounce(
+    () => {
+      copyState = "idle";
+    },
+    () => (copyState === "failed" ? 2500 : 2000),
+  );
+
   async function copyDebugLogs() {
     try {
       await navigator.clipboard.writeText(buildCrashDebugLog(message, cause));
       copyState = "copied";
-      window.setTimeout(() => {
-        copyState = "idle";
-      }, 2000);
+      void resetCopyState();
     } catch {
       copyState = "failed";
-      window.setTimeout(() => {
-        copyState = "idle";
-      }, 2500);
+      void resetCopyState();
     }
   }
 </script>
 
-<div class="crash-page" role="alertdialog" aria-modal="true" aria-labelledby="crash-title">
-  <div class="panel">
-    <div class="icon" aria-hidden="true">
-      <TriangleAlert size={28} strokeWidth={1.75} />
-    </div>
-    <h1 id="crash-title">{t("crash.title")}</h1>
-    <p class="description">{t("crash.description")}</p>
-    {#if message}
-      <pre class="message">{message}</pre>
-    {/if}
-    <div class="actions">
-      <button type="button" class="secondary" onclick={() => void copyDebugLogs()}>
-        {copyLabel}
-      </button>
-      <button type="button" class="primary" onclick={onReload}>{t("crash.reload")}</button>
-      <button type="button" class="danger" disabled={closing} onclick={onClose}>
-        {t("crash.closeApp")}
-      </button>
-    </div>
-  </div>
-</div>
+<AlertDialog.Root open={true}>
+  <AlertDialog.Portal>
+    <AlertDialog.Content
+      class="crash-page"
+      interactOutsideBehavior="ignore"
+      onEscapeKeydown={(e) => e.preventDefault()}
+    >
+      <div class="panel">
+        <div class="icon" aria-hidden="true">
+          <TriangleAlert size={28} strokeWidth={1.75} />
+        </div>
+        <AlertDialog.Title id="crash-title" level={1} class="crash-title">
+          {t("crash.title")}
+        </AlertDialog.Title>
+        <AlertDialog.Description class="crash-description">
+          {t("crash.description")}
+        </AlertDialog.Description>
+        {#if message}
+          <pre class="message">{message}</pre>
+        {/if}
+        <div class="actions">
+          <button type="button" class="secondary" onclick={() => void copyDebugLogs()}>
+            {copyLabel}
+          </button>
+          <button type="button" class="primary" onclick={onReload}>{t("crash.reload")}</button>
+          <button type="button" class="danger" disabled={closing} onclick={onClose}>
+            {t("crash.closeApp")}
+          </button>
+        </div>
+      </div>
+    </AlertDialog.Content>
+  </AlertDialog.Portal>
+</AlertDialog.Root>
 
 <style>
-  .crash-page {
+  :global(.crash-page) {
     min-height: 100vh;
     min-height: 100dvh;
     display: grid;
@@ -90,13 +107,13 @@
     color: var(--ren-danger);
   }
 
-  h1 {
+  :global(.crash-title) {
     margin: 0 0 0.5rem;
     font-size: 1.2rem;
     font-weight: 600;
   }
 
-  .description {
+  :global(.crash-description) {
     margin: 0;
     color: var(--ren-muted);
     font-size: 0.92rem;

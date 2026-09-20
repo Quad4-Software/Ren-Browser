@@ -16,7 +16,7 @@ func withRegressionRoot(fn func(root *os.Root) error) error {
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 	return fn(root)
 }
 

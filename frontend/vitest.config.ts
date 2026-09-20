@@ -17,6 +17,7 @@ const domTests = [
   "src/lib/documents/epub.test.ts",
   "src/lib/documents/sanitize-html.exploratory.test.ts",
   "src/lib/browser/page-links.test.ts",
+  "src/lib/micron/images.test.ts",
   "src/lib/micron/multiline.test.ts",
   "src/lib/micron/ascii-render.test.ts",
   "src/lib/micron/nomad-security.exploratory.test.ts",
@@ -62,6 +63,9 @@ export default defineConfig({
           name: "dom",
           environment: "happy-dom",
           include: domTests,
+          // First happy-dom mount absorbs transform+env warmup; on slow
+          // machines it can exceed the default 5s.
+          testTimeout: 60000,
         },
       },
     ],

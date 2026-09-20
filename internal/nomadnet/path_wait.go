@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	rlink "quad4/reticulum-go/pkg/link"
-	"quad4/reticulum-go/pkg/transport"
+	rlink "github.com/Quad4-Software/Reticulum-Go/pkg/link"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/transport"
 )
 
 var errInvalidPathDestination = errors.New("invalid destination")

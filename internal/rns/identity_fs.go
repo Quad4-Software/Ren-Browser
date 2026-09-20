@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"quad4/reticulum-go/pkg/identity"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/identity"
 )
 
 func openStorageRoot(storageDir string) (*os.Root, error) {

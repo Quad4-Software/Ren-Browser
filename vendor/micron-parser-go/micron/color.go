@@ -68,7 +68,7 @@ func writeMicronColorHex(b *strings.Builder, c string) {
 	}
 }
 
-func tryAppendColorProperty(b *strings.Builder, prop string, c string) bool {
+func tryAppendColorProperty(b *strings.Builder, prop, c string) bool {
 	if !micronColorToken(c) {
 		return false
 	}

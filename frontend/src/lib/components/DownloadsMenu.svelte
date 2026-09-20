@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { Dialog, Popover, Progress } from "bits-ui";
   import { Download, FolderOpen, RotateCcw, Trash2, X, BookOpen } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
@@ -56,6 +57,21 @@
     onClose,
   }: Props = $props();
 
+  let dropdownAnchorEl = $state<HTMLElement | null>(null);
+
+  function handleOpenChange(next: boolean) {
+    if (!next) {
+      onClose();
+    }
+  }
+
+  function handleDropdownInteractOutside(event: PointerEvent) {
+    const wrapper = dropdownAnchorEl?.parentElement;
+    if (wrapper && event.target instanceof Node && wrapper.contains(event.target)) {
+      event.preventDefault();
+    }
+  }
+
   function formatWhen(ts: number): string {
     if (!ts) {
       return "";
@@ -89,189 +105,204 @@
   }
 </script>
 
-{#if open}
-  <button
-    type="button"
-    class="backdrop"
-    class:sheet={variant === "sheet"}
-    aria-label={t("downloads.close")}
-    onclick={onClose}
-  ></button>
-  <div
-    class="menu"
-    class:sheet={variant === "sheet"}
-    role="dialog"
-    aria-label={t("downloads.title")}
-    tabindex="-1"
-  >
-    <header>
-      <div class="header-row">
-        <h2>{t("downloads.title")}</h2>
-        {#if downloads.length > 0}
-          <button
-            type="button"
-            class="clear-history-btn"
-            aria-label={t("downloads.clearHistory")}
-            disabled={clearingHistory}
-            onclick={onClearHistory}
-          >
-            <Trash2 size={14} />
-          </button>
-        {/if}
-      </div>
-      <button type="button" class="page-btn" onclick={onDownloadPage}>
-        <Download size={14} />
-        <span>{t("downloads.saveCurrentPage")}</span>
-      </button>
-    </header>
-
-    <div class="list">
-      {#if active.length > 0}
-        <ul class="active-list">
-          {#each active as item (item.id)}
-            {@const percent = progressPercent(item)}
-            <li
-              class="active-row"
-              class:error={item.status === "failed" || item.status === "canceled"}
-            >
-              <div class="active-head">
-                <span class="name" class:pending={item.status === "pending"} title={item.name}
-                  >{item.name}</span
-                >
-                <div class="active-actions">
-                  {#if item.status === "pending" || item.status === "downloading" || item.status === "retrying"}
-                    <button
-                      type="button"
-                      class="icon-btn"
-                      aria-label={t("downloads.cancel")}
-                      onclick={() => onCancelActive(item.id)}
-                    >
-                      <X size={13} />
-                    </button>
-                  {:else if item.status === "failed" || item.status === "interrupted" || item.status === "canceled"}
-                    <button
-                      type="button"
-                      class="icon-btn"
-                      class:spinning={retryingIds?.has(item.id)}
-                      aria-label={t("downloads.retry")}
-                      disabled={retryingIds?.has(item.id)}
-                      onclick={() => onRetryActive(item.id)}
-                    >
-                      <RotateCcw size={13} />
-                    </button>
-                    <button
-                      type="button"
-                      class="icon-btn"
-                      aria-label={t("downloads.dismiss")}
-                      onclick={() => onDismissActive(item.id)}
-                    >
-                      <X size={13} />
-                    </button>
-                  {:else}
-                    <button
-                      type="button"
-                      class="icon-btn"
-                      aria-label={t("downloads.dismiss")}
-                      onclick={() => onDismissActive(item.id)}
-                    >
-                      <X size={13} />
-                    </button>
-                  {/if}
-                </div>
-              </div>
-              {#if item.status === "failed"}
-                <span class="error-text">{item.error || t("downloads.downloadFailed")}</span>
-              {:else if item.status === "interrupted"}
-                <span class="error-text">{item.error || t("downloads.interrupted")}</span>
-              {:else if item.status === "retrying"}
-                <span class="meta"
-                  >{t("downloads.retrying", {
-                    attempt: item.attempt ?? 1,
-                    max: item.maxAttempts ?? 1,
-                  })}</span
-                >
-              {:else if item.status === "canceled"}
-                <span class="meta">{t("downloads.canceled")}</span>
-              {:else if item.status === "completed"}
-                <span class="meta success">{t("downloads.fileSaved")}</span>
-              {:else if item.status === "pending"}
-                <span class="meta">{t("downloads.starting")}</span>
-              {:else}
-                <div class="progress-track">
-                  <div
-                    class="progress-fill"
-                    class:indeterminate={percent === null}
-                    style={percent !== null ? `width:${percent}%` : ""}
-                  ></div>
-                </div>
-                <span class="meta">{metaLine(item)}</span>
-              {/if}
-            </li>
-          {/each}
-        </ul>
+{#snippet panel()}
+  <header>
+    <div class="header-row">
+      {#if variant === "sheet"}
+        <Dialog.Title class="downloads-title">{t("downloads.title")}</Dialog.Title>
+      {:else}
+        <h2 class="downloads-title">{t("downloads.title")}</h2>
       {/if}
-
-      {#if downloads.length === 0 && active.length === 0}
-        <EmptyState
-          title={t("downloads.noDownloads")}
-          description={t("downloads.noDownloadsDescription")}
+      {#if downloads.length > 0}
+        <button
+          type="button"
+          class="clear-history-btn"
+          aria-label={t("downloads.clearHistory")}
+          disabled={clearingHistory}
+          onclick={onClearHistory}
         >
-          <Download size={22} />
-        </EmptyState>
-      {:else if downloads.length > 0}
-        <ul>
-          {#each downloads as item (item.path)}
-            <li class="file-item">
-              <button type="button" class="file-row" onclick={() => onOpenFile(item.path)}>
-                <span class="name" title={item.name}>{item.name}</span>
-                <span class="meta">{formatBytes(item.size)} · {formatWhen(item.modifiedAt)}</span>
-              </button>
-              {#if isReadableDocumentName(item.name)}
-                <button
-                  type="button"
-                  class="read-btn"
-                  aria-label={t("downloads.readDocument", { name: item.name })}
-                  title={t("downloads.readDocument", { name: item.name })}
-                  onclick={() => onReadFile(item.path)}
-                >
-                  <BookOpen size={15} />
-                </button>
-              {/if}
-            </li>
-          {/each}
-        </ul>
+          <Trash2 size={14} />
+        </button>
       {/if}
     </div>
+    <button type="button" class="page-btn" onclick={onDownloadPage}>
+      <Download size={14} />
+      <span>{t("downloads.saveCurrentPage")}</span>
+    </button>
+  </header>
 
-    <footer>
-      <button type="button" class="folder-btn" onclick={onOpenFolder}>
-        <FolderOpen size={14} />
-        <span class="folder-label">{downloadDir || t("downloads.downloadsFolder")}</span>
-      </button>
-    </footer>
+  <div class="list">
+    {#if active.length > 0}
+      <ul class="active-list">
+        {#each active as item (item.id)}
+          {@const percent = progressPercent(item)}
+          <li
+            class="active-row"
+            class:error={item.status === "failed" || item.status === "canceled"}
+          >
+            <div class="active-head">
+              <span class="name" class:pending={item.status === "pending"} title={item.name}
+                >{item.name}</span
+              >
+              <div class="active-actions">
+                {#if item.status === "pending" || item.status === "downloading" || item.status === "retrying"}
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    aria-label={t("downloads.cancel")}
+                    onclick={() => onCancelActive(item.id)}
+                  >
+                    <X size={13} />
+                  </button>
+                {:else if item.status === "failed" || item.status === "interrupted" || item.status === "canceled"}
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    class:spinning={retryingIds?.has(item.id)}
+                    aria-label={t("downloads.retry")}
+                    disabled={retryingIds?.has(item.id)}
+                    onclick={() => onRetryActive(item.id)}
+                  >
+                    <RotateCcw size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    aria-label={t("downloads.dismiss")}
+                    onclick={() => onDismissActive(item.id)}
+                  >
+                    <X size={13} />
+                  </button>
+                {:else}
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    aria-label={t("downloads.dismiss")}
+                    onclick={() => onDismissActive(item.id)}
+                  >
+                    <X size={13} />
+                  </button>
+                {/if}
+              </div>
+            </div>
+            {#if item.status === "failed"}
+              <span class="error-text">{item.error || t("downloads.downloadFailed")}</span>
+            {:else if item.status === "interrupted"}
+              <span class="error-text">{item.error || t("downloads.interrupted")}</span>
+            {:else if item.status === "retrying"}
+              <span class="meta"
+                >{t("downloads.retrying", {
+                  attempt: item.attempt ?? 1,
+                  max: item.maxAttempts ?? 1,
+                })}</span
+              >
+            {:else if item.status === "canceled"}
+              <span class="meta">{t("downloads.canceled")}</span>
+            {:else if item.status === "completed"}
+              <span class="meta success">{t("downloads.fileSaved")}</span>
+            {:else if item.status === "pending"}
+              <span class="meta">{t("downloads.starting")}</span>
+            {:else}
+              <Progress.Root class="downloads-progress" value={percent} max={100}>
+                <div
+                  class="progress-fill"
+                  class:indeterminate={percent === null}
+                  style={percent !== null ? `width:${percent}%` : ""}
+                ></div>
+              </Progress.Root>
+              <span class="meta">{metaLine(item)}</span>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    {/if}
+
+    {#if downloads.length === 0 && active.length === 0}
+      <EmptyState
+        title={t("downloads.noDownloads")}
+        description={t("downloads.noDownloadsDescription")}
+      >
+        <Download size={22} />
+      </EmptyState>
+    {:else if downloads.length > 0}
+      <ul>
+        {#each downloads as item (item.path)}
+          <li class="file-item">
+            <button type="button" class="file-row" onclick={() => onOpenFile(item.path)}>
+              <span class="name" title={item.name}>{item.name}</span>
+              <span class="meta">{formatBytes(item.size)} · {formatWhen(item.modifiedAt)}</span>
+            </button>
+            {#if isReadableDocumentName(item.name)}
+              <button
+                type="button"
+                class="read-btn"
+                aria-label={t("downloads.readDocument", { name: item.name })}
+                title={t("downloads.readDocument", { name: item.name })}
+                onclick={() => onReadFile(item.path)}
+              >
+                <BookOpen size={15} />
+              </button>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    {/if}
   </div>
+
+  <footer>
+    <button type="button" class="folder-btn" onclick={onOpenFolder}>
+      <FolderOpen size={14} />
+      <span class="folder-label">{downloadDir || t("downloads.downloadsFolder")}</span>
+    </button>
+  </footer>
+{/snippet}
+
+{#if variant === "sheet"}
+  <Dialog.Root {open} onOpenChange={handleOpenChange}>
+    <Dialog.Portal>
+      <Dialog.Overlay class="downloads-sheet-backdrop" />
+      <Dialog.Content class="menu sheet downloads-menu downloads-sheet">
+        {@render panel()}
+      </Dialog.Content>
+    </Dialog.Portal>
+  </Dialog.Root>
+{:else}
+  <span class="downloads-menu-anchor" bind:this={dropdownAnchorEl} aria-hidden="true"></span>
+  <Popover.Root {open} onOpenChange={handleOpenChange}>
+    <Popover.Portal>
+      <Popover.Content
+        class="menu downloads-menu"
+        aria-label={t("downloads.title")}
+        customAnchor={dropdownAnchorEl}
+        side="bottom"
+        align="end"
+        sideOffset={6}
+        collisionPadding={8}
+        trapFocus={false}
+        onInteractOutside={handleDropdownInteractOutside}
+      >
+        {@render panel()}
+      </Popover.Content>
+    </Popover.Portal>
+  </Popover.Root>
 {/if}
 
 <style>
-  .backdrop {
-    position: fixed;
+  .downloads-menu-anchor {
+    position: absolute;
     inset: 0;
-    z-index: 900;
-    border: none;
-    background: transparent;
-    cursor: default;
+    pointer-events: none;
   }
 
-  .backdrop.sheet {
+  :global(.downloads-sheet-backdrop) {
+    position: fixed;
+    inset: 0;
     z-index: 115;
     background: color-mix(in srgb, var(--ren-surface-bg) 35%, transparent);
   }
 
-  .menu {
-    position: absolute;
-    top: calc(100% + 0.35rem);
-    right: 0;
-    z-index: 901;
+  :global(.downloads-menu) {
+    z-index: 1100;
     width: min(22rem, calc(100vw - 1.5rem));
     max-height: min(24rem, calc(100vh - 8rem));
     display: flex;
@@ -283,7 +314,7 @@
     overflow: hidden;
   }
 
-  .menu.sheet {
+  :global(.downloads-sheet) {
     position: fixed;
     top: auto;
     left: 0.75rem;
@@ -333,7 +364,7 @@
     cursor: default;
   }
 
-  h2 {
+  :global(.downloads-title) {
     margin: 0;
     font-size: 0.95rem;
     font-weight: 600;
@@ -476,7 +507,7 @@
     }
   }
 
-  .progress-track {
+  :global(.downloads-progress) {
     height: 5px;
     border-radius: 999px;
     background: var(--ren-surface-muted);

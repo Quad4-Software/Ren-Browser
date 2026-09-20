@@ -1,3 +1,5 @@
+### Pure-Go SQLite, no cgo
+
 The repository you are currently viewing might be a mirror. Please review the guidelines below based on where you are viewing this:
 
 | Platform | Role | Contributing Guidelines |
@@ -32,6 +34,11 @@ The repository you are currently viewing might be a mirror. Please review the gu
 [The SQLite Drivers Benchmarks Game]: https://pkg.go.dev/modernc.org/sqlite-bench#readme-tl-dr-scorecard
 
 ---
+
+Changelog
+---------
+
+Release notes are kept in [CHANGELOG.md](CHANGELOG.md).
 
 Virtual Tables (vtab)
 ---------------------

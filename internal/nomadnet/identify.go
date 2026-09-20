@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"quad4/reticulum-go/pkg/identity"
-	rlink "quad4/reticulum-go/pkg/link"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/identity"
+	rlink "github.com/Quad4-Software/Reticulum-Go/pkg/link"
 )
 
 func (b *Browser) Identify(nodeHash string, localID *identity.Identity) error {

@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MIT
 package app
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strings"
+)
 
 const browserPrefsKey = "browserPrefs"
 
@@ -21,6 +24,12 @@ type BrowserPrefs struct {
 	MicronPreserveLayout      bool            `json:"micronPreserveLayout"`
 	InitialSetupComplete      bool            `json:"initialSetupComplete"`
 	SettingsSectionsCollapsed map[string]bool `json:"settingsSectionsCollapsed"`
+	// MicronImagesMode controls inline image loading on micron pages:
+	// "off" hides the load control, "ask" shows a per-image opt-in button,
+	// "always" auto-loads. Nodes listed in MicronImageNodes override the
+	// global mode with "always" or "never".
+	MicronImagesMode string            `json:"micronImagesMode"`
+	MicronImageNodes map[string]string `json:"micronImageNodes"`
 }
 
 func DefaultBrowserPrefs() BrowserPrefs {
@@ -32,6 +41,7 @@ func DefaultBrowserPrefs() BrowserPrefs {
 		MicronWasmParserID: "bundled",
 		PageCacheEnabled:   true,
 		TabHoverPreviews:   true,
+		MicronImagesMode:   "ask",
 	}
 }
 
@@ -61,6 +71,26 @@ func mergeBrowserPrefs(saved BrowserPrefs) BrowserPrefs {
 	defaults.InitialSetupComplete = saved.InitialSetupComplete
 	if len(saved.SettingsSectionsCollapsed) > 0 {
 		defaults.SettingsSectionsCollapsed = saved.SettingsSectionsCollapsed
+	}
+	switch saved.MicronImagesMode {
+	case "off", "ask", "always":
+		defaults.MicronImagesMode = saved.MicronImagesMode
+	}
+	if len(saved.MicronImageNodes) > 0 {
+		merged := make(map[string]string, len(saved.MicronImageNodes))
+		for hash, policy := range saved.MicronImageNodes {
+			key := strings.ToLower(strings.TrimSpace(hash))
+			if !nodeImageHashRe.MatchString(key) {
+				continue
+			}
+			if policy != "always" && policy != "never" {
+				continue
+			}
+			merged[key] = policy
+		}
+		if len(merged) > 0 {
+			defaults.MicronImageNodes = merged
+		}
 	}
 	return defaults
 }

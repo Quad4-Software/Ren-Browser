@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { useEventListener } from "runed";
   import MobileTabsPage from "$lib/components/MobileTabsPage.svelte";
   import AppPagePane from "$lib/components/AppPagePane.svelte";
   import AppSidePanel from "$lib/components/AppSidePanel.svelte";
@@ -95,13 +96,26 @@
     sidebarWidth = next;
     writeSidebarWidth(next);
   }
-</script>
 
-<svelte:window
-  onpointermove={resizing ? onResizePointerMove : undefined}
-  onpointerup={resizing ? onResizePointerUp : undefined}
-  onpointercancel={resizing ? onResizePointerUp : undefined}
-/>
+  useEventListener(
+    () => window,
+    "pointermove",
+    (event) => {
+      if (resizing) {
+        onResizePointerMove(event);
+      }
+    },
+  );
+  useEventListener(
+    () => window,
+    ["pointerup", "pointercancel"],
+    (event) => {
+      if (resizing) {
+        onResizePointerUp(event);
+      }
+    },
+  );
+</script>
 
 <main
   class="workspace"

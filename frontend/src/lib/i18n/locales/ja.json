@@ -75,6 +75,7 @@
   "tab": {
     "new": "新しいタブ",
     "close": "タブを閉じる",
+    "list": "ブラウザータブ",
     "newTab": "新しいタブ",
     "limitReached": "タブ上限 ({max}) に達しました",
     "reload": "再読み込み",
@@ -249,7 +250,17 @@
     "shareApkShareFailed": "共有シートを開けませんでした",
     "shareApkStartFailed": "Wi-Fi 共有を開始できませんでした",
     "shareApkStopFailed": "共有を停止できませんでした",
-    "shareApkCopyFailed": "ダウンロード URL をコピーできませんでした"
+    "shareApkCopyFailed": "ダウンロード URL をコピーできませんでした",
+    "micronImages": "micron ページのインライン画像",
+    "micronImagesAsk": "毎回確認（推奨）",
+    "micronImagesAlways": "自動で読み込む",
+    "micronImagesOff": "読み込まない",
+    "micronImagesHint": "画像はメッシュ内に留まり、Reticulum 経由で取得されます。ノードを許可するか自動読み込みを選ばない限り、承認なしで読み込まれることはありません。",
+    "micronImageNodes": "ノードごとの画像ルール",
+    "micronImageNodePolicy": "ノードの画像ポリシー",
+    "micronImageNodeRemove": "削除",
+    "micronImagePolicyAlways": "許可",
+    "micronImagePolicyNever": "ブロック"
   },
   "keybinds": {
     "focusUrl": "アドレスバーにフォーカス",
@@ -414,7 +425,14 @@
     "multilineHint": "Enter をもう一度押すと複数行に展開します",
     "pullToRefresh": "引っ張って更新",
     "releaseToRefresh": "離して更新",
-    "swipeBack": "戻る"
+    "swipeBack": "戻る",
+    "imageLoad": "画像を読み込む",
+    "imageAllowNode": "このノードの画像を常に許可",
+    "imageDisabled": "設定で画像が無効になっています",
+    "imageBlocked": "このノードの画像はブロックされています",
+    "imageTooLarge": "画像がサイズ制限を超えています",
+    "imageLoading": "画像を読み込み中...",
+    "imageFailed": "画像の読み込みに失敗しました"
   },
   "find": {
     "placeholder": "ページ内検索",

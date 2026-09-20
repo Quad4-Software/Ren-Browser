@@ -59,7 +59,7 @@
 
 ### Стек Reticulum (`internal/rns`)
 
-Обёртка `quad4/reticulum-go`:
+Обёртка `github.com/Quad4-Software/Reticulum-Go`:
 
 - старт и останов транспорта
 - статистика интерфейсов

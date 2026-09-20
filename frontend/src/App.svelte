@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { onMount } from "svelte";
+  import { useEventListener } from "runed";
   import { Events } from "@wailsio/runtime";
   import { createApp } from "$lib/app/create-app.svelte";
   import PluginToast from "$lib/components/PluginToast.svelte";
@@ -49,29 +50,30 @@
     });
   }
 
+  useEventListener(
+    () => window.visualViewport,
+    ["resize", "scroll"],
+    () => syncKeyboardChrome(),
+  );
+  useEventListener(
+    () => window,
+    "resize",
+    () => syncKeyboardChrome(),
+  );
+  useEventListener(() => window, "focusin", onFocusIn);
+  useEventListener(() => window, "focusout", onFocusOut);
+
   onMount(() => {
-    const viewport = window.visualViewport;
-    const onViewport = () => syncKeyboardChrome();
-    viewport?.addEventListener("resize", onViewport);
-    viewport?.addEventListener("scroll", onViewport);
-    window.addEventListener("resize", onViewport);
     const offKeyboard = Events.On("common:keyboard", (event: { data?: unknown }) => {
       nativeKeyboard = parseNativeKeyboardEvent(event);
       syncKeyboardChrome();
     });
     syncKeyboardChrome();
-    return () => {
-      viewport?.removeEventListener("resize", onViewport);
-      viewport?.removeEventListener("scroll", onViewport);
-      window.removeEventListener("resize", onViewport);
-      offKeyboard?.();
-    };
+    return () => offKeyboard?.();
   });
 
   onMount(app.mount);
 </script>
-
-<svelte:window onfocusin={onFocusIn} onfocusout={onFocusOut} />
 
 <div
   class="app-shell"

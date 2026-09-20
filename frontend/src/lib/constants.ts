@@ -7,11 +7,11 @@ export const communityDirectoryUrl =
 
 export const micronParserGoReleaseDownloadBase =
   "https://github.com/Quad4-Software/Micron-Parser-Go/releases/download";
-export const micronParserGoReleaseTag = "v1.0.7";
+export const micronParserGoReleaseTag = "v1.2.0";
 export const micronParserGoWasmFilename = "micron-parser-go.wasm";
 export const micronParserGoShasumsFilename = "SHASUMS256.txt";
 export const micronParserGoMaxWasmBytes = 14 * 1024 * 1024;
-export const micronParserGoGoWasmExecVersion = "go1.26.2";
+export const micronParserGoGoWasmExecVersion = "go1.27.1";
 
 export const serverAuthSessionCookieName = "renbrowser_session";
 export const serverAuthLoginPath = "/api/auth/login";

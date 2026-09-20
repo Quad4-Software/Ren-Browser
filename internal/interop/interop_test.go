@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"quad4/reticulum-go/pkg/reticulumconfig"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/reticulumconfig"
 
 	"renbrowser/internal/nomadnet"
 	"renbrowser/internal/paths"

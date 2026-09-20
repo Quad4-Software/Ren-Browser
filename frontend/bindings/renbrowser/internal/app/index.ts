@@ -29,6 +29,7 @@ export type {
     InitialSetupState,
     KeybindSettings,
     NetworkEntry,
+    NodeImageResult,
     PageCacheStats,
     PageResponse,
     PluginHTTPRequest,

@@ -11,7 +11,7 @@ import (
 var reticulumVersionPinned string
 
 func ReticulumGoVersion() string {
-	if v := moduleVersion("quad4/reticulum-go"); v != "" && !isPseudoModuleVersion(v) {
+	if v := moduleVersion("github.com/Quad4-Software/Reticulum-Go"); v != "" && !isPseudoModuleVersion(v) {
 		return normalizeVersionTag(v)
 	}
 	if v := strings.TrimSpace(reticulumVersionPinned); v != "" {

@@ -75,6 +75,7 @@
   "tab": {
     "new": "",
     "close": "",
+    "list": "",
     "newTab": "",
     "limitReached": "",
     "reload": "",
@@ -249,7 +250,17 @@
     "shareApkShareFailed": "",
     "shareApkStartFailed": "",
     "shareApkStopFailed": "",
-    "shareApkCopyFailed": ""
+    "shareApkCopyFailed": "",
+    "micronImages": "",
+    "micronImagesAsk": "",
+    "micronImagesAlways": "",
+    "micronImagesOff": "",
+    "micronImagesHint": "",
+    "micronImageNodes": "",
+    "micronImageNodePolicy": "",
+    "micronImageNodeRemove": "",
+    "micronImagePolicyAlways": "",
+    "micronImagePolicyNever": ""
   },
   "keybinds": {
     "focusUrl": "",
@@ -414,7 +425,14 @@
     "multilineHint": "",
     "pullToRefresh": "",
     "releaseToRefresh": "",
-    "swipeBack": ""
+    "swipeBack": "",
+    "imageLoad": "",
+    "imageAllowNode": "",
+    "imageDisabled": "",
+    "imageBlocked": "",
+    "imageTooLarge": "",
+    "imageLoading": "",
+    "imageFailed": ""
   },
   "find": {
     "placeholder": "",

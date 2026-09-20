@@ -75,6 +75,7 @@
   "tab": {
     "new": "Nueva pestaña",
     "close": "Cerrar pestaña",
+    "list": "Pestañas del navegador",
     "newTab": "Nueva pestaña",
     "limitReached": "Límite de pestañas ({max}) alcanzado",
     "reload": "Recargar",
@@ -249,7 +250,17 @@
     "shareApkShareFailed": "No se pudo abrir el menú de compartir",
     "shareApkStartFailed": "No se pudo iniciar la compartición por Wi-Fi",
     "shareApkStopFailed": "No se pudo detener la compartición",
-    "shareApkCopyFailed": "No se pudo copiar la URL de descarga"
+    "shareApkCopyFailed": "No se pudo copiar la URL de descarga",
+    "micronImages": "Imágenes en línea en páginas micron",
+    "micronImagesAsk": "Preguntar cada vez (recomendado)",
+    "micronImagesAlways": "Cargar automáticamente",
+    "micronImagesOff": "Nunca cargar",
+    "micronImagesHint": "Las imágenes permanecen en la malla y se obtienen a través de Reticulum. Nunca se cargan sin tu aprobación salvo que permitas el nodo o elijas la carga automática.",
+    "micronImageNodes": "Reglas de imágenes por nodo",
+    "micronImageNodePolicy": "Política de imágenes para el nodo",
+    "micronImageNodeRemove": "Eliminar",
+    "micronImagePolicyAlways": "Permitir",
+    "micronImagePolicyNever": "Bloquear"
   },
   "keybinds": {
     "focusUrl": "Enfocar barra de direcciones",
@@ -414,7 +425,14 @@
     "multilineHint": "Pulse Intro de nuevo para ampliar a varias líneas",
     "pullToRefresh": "Desliza hacia abajo para actualizar",
     "releaseToRefresh": "Suelta para actualizar",
-    "swipeBack": "Atrás"
+    "swipeBack": "Atrás",
+    "imageLoad": "Cargar imagen",
+    "imageAllowNode": "Permitir siempre las imágenes de este nodo",
+    "imageDisabled": "Las imágenes están desactivadas en la configuración",
+    "imageBlocked": "Las imágenes de este nodo están bloqueadas",
+    "imageTooLarge": "La imagen supera el límite de tamaño",
+    "imageLoading": "Cargando imagen...",
+    "imageFailed": "No se pudo cargar la imagen"
   },
   "find": {
     "placeholder": "Buscar en la página",

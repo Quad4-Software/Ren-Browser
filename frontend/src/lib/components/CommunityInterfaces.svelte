@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Check, Globe } from "@lucide/svelte";
+  import { Toggle } from "bits-ui";
   import type { CommunityInterface } from "../../../bindings/renbrowser/internal/rns/models.js";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
@@ -85,12 +86,11 @@
     {:else}
       {#each filtered as item (item.id)}
         <li class:installed={item.installed} class:selected={selected.has(item.id)}>
-          <button
-            type="button"
+          <Toggle.Root
             class="iface-card"
             disabled={item.installed || importing}
-            aria-pressed={selected.has(item.id)}
-            onclick={() => onToggle(item.id)}
+            pressed={selected.has(item.id)}
+            onPressedChange={() => onToggle(item.id)}
           >
             <span class="body">
               <span class="name">{item.name}</span>
@@ -109,7 +109,7 @@
                 <Check size={18} strokeWidth={2.5} />
               </span>
             {/if}
-          </button>
+          </Toggle.Root>
         </li>
       {/each}
     {/if}
@@ -201,7 +201,7 @@
     opacity: 0.72;
   }
 
-  .iface-card {
+  :global(.iface-card) {
     width: 100%;
     display: flex;
     align-items: flex-start;
@@ -216,11 +216,11 @@
     font: inherit;
   }
 
-  .iface-card:disabled {
+  :global(.iface-card:disabled) {
     cursor: not-allowed;
   }
 
-  .iface-card:not(:disabled):hover {
+  :global(.iface-card:not(:disabled):hover) {
     background: var(--ren-tab-hover);
   }
 

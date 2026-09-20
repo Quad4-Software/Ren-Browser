@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { DropdownMenu } from "bits-ui";
   import { FileCode, Download } from "@lucide/svelte";
-  import { clampMenuPosition } from "$lib/browser/context-menu";
   import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
@@ -15,50 +15,37 @@
 
   let { x, y, canViewSource, onViewSource, onDownload, onClose }: Props = $props();
 
-  let menuEl = $state<HTMLDivElement | null>(null);
-  let menuPos = $state({ x: 0, y: 0 });
-
-  $effect(() => {
-    if (!menuEl) {
-      menuPos = { x, y };
-      return;
-    }
-    const rect = menuEl.getBoundingClientRect();
-    menuPos = clampMenuPosition(x, y, rect.width, rect.height);
+  const anchor = $derived({
+    getBoundingClientRect: () => new DOMRect(x, y, 0, 0),
   });
 </script>
 
-<svelte:window onclick={onClose} />
-
-<div
-  class="context-menu"
-  bind:this={menuEl}
-  style:left="{menuPos.x}px"
-  style:top="{menuPos.y}px"
-  role="menu"
-  tabindex="0"
-  onclick={(event) => event.stopPropagation()}
-  onkeydown={(event) => {
-    if (event.key === "Escape") {
+<DropdownMenu.Root
+  open={true}
+  onOpenChange={(next) => {
+    if (!next) {
       onClose();
     }
   }}
 >
-  {#if canViewSource}
-    <button role="menuitem" onclick={onViewSource}>
-      <FileCode size={14} />
-      <span>{t("content.viewSource")}</span>
-    </button>
-  {/if}
-  <button role="menuitem" onclick={onDownload}>
-    <Download size={14} />
-    <span>{t("content.downloadPage")}</span>
-  </button>
-</div>
+  <DropdownMenu.Portal>
+    <DropdownMenu.Content class="page-context-menu" customAnchor={anchor} align="start">
+      {#if canViewSource}
+        <DropdownMenu.Item textValue={t("content.viewSource")} onSelect={onViewSource}>
+          <FileCode size={14} />
+          <span>{t("content.viewSource")}</span>
+        </DropdownMenu.Item>
+      {/if}
+      <DropdownMenu.Item textValue={t("content.downloadPage")} onSelect={onDownload}>
+        <Download size={14} />
+        <span>{t("content.downloadPage")}</span>
+      </DropdownMenu.Item>
+    </DropdownMenu.Content>
+  </DropdownMenu.Portal>
+</DropdownMenu.Root>
 
 <style>
-  .context-menu {
-    position: fixed;
+  :global(.page-context-menu) {
     z-index: 1100;
     min-width: 10rem;
     max-width: calc(100vw - 1rem);
@@ -71,7 +58,8 @@
     gap: 0.15rem;
   }
 
-  .context-menu button {
+  :global(.page-context-menu [data-bits-ui-dropdown-menu-item]),
+  :global(.page-context-menu [role="menuitem"]) {
     display: flex;
     align-items: center;
     gap: 0.45rem;
@@ -86,7 +74,7 @@
     cursor: pointer;
   }
 
-  .context-menu button:hover {
+  :global(.page-context-menu [data-highlighted]) {
     background: var(--ren-tab-hover);
   }
 </style>

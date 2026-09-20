@@ -6,23 +6,26 @@ package micron
 import "strings"
 
 // ConvertMicronToHTML renders Micron markup to a self-contained HTML fragment.
-// Text is escaped and ASCII control characters (U+0000–U+001F) are stripped from
+// Text is escaped and ASCII control characters (U+0000-U+001F) are stripped from
 // emitted text and attributes. Only parser-emitted tags and attributes appear in the output.
 // The caller supplies the full document. Optional leading #!fg= / #!bg= lines set default colors.
 // Treat the result as safe HTML only together with a sensible CSP and link handling policy on the host.
+//
+// Convert streams HTML in one pass without building a Document IR. Use Parse and
+// RenderHTML when you need the AST, spans, or diagnostics.
 func (p *Parser) ConvertMicronToHTML(markup string) string {
 	pc := ParseHeaderTags(markup)
-	return p.convertMicronToHTML(markup, pc)
+	return p.streamHTML(markup, pc)
 }
 
 // ConvertMicronToHTMLWithColors renders markup and returns page colors from leading directives.
 func (p *Parser) ConvertMicronToHTMLWithColors(markup string) (html, fg, bg string) {
 	pc := ParseHeaderTags(markup)
-	html = p.convertMicronToHTML(markup, pc)
+	html = p.streamHTML(markup, pc)
 	return html, pc.FG, pc.BG
 }
 
-func (p *Parser) convertMicronToHTML(markup string, pc PageColors) string {
+func (p *Parser) streamHTML(markup string, pc PageColors) string {
 	plain := plainStyle(p)
 	defaultFG := pc.FG
 	if defaultFG == "" {
@@ -41,12 +44,28 @@ func (p *Parser) convertMicronToHTML(markup string, pc PageColors) string {
 		Align:        "start",
 		DefaultFG:    defaultFG,
 		DefaultBG:    defaultBGVal,
+		FoldOpen:     pc.FoldOpen,
+		FoldClosed:   pc.FoldClosed,
+	}
+	if s.FoldOpen == "" {
+		s.FoldOpen = "▾"
+	}
+	if s.FoldClosed == "" {
+		s.FoldClosed = "▸"
 	}
 	var b strings.Builder
-	if len(markup) > 0 {
-		// Output is often larger than input. Pre-grow reduces reallocations for typical docs.
-		b.Grow(4 * len(markup))
+	n := len(markup)
+	if n > 0 {
+		if p.ForceMonospace {
+			b.Grow(8*n + 160)
+		} else {
+			b.Grow(4*n + 160)
+		}
+	} else {
+		b.Grow(160)
 	}
+	writeRootOpen(&b, defaultFG, defaultBGVal)
+	lineNum := 1
 	for start := 0; start <= len(markup); {
 		nextRel := strings.IndexByte(markup[start:], '\n')
 		line := ""
@@ -58,25 +77,10 @@ func (p *Parser) convertMicronToHTML(markup string, pc PageColors) string {
 			line = markup[start:next]
 			start = next + 1
 		}
-		k := p.parseLineInto(&b, line, &s)
-		switch k {
-		case lineOmit:
-			continue
-		}
+		p.parseLineInto(&b, line, &s, lineNum)
+		lineNum++
 	}
-	var out strings.Builder
-	out.Grow(b.Len() + 128)
-	// dir=auto picks LTR or RTL from the first strong character so Arabic Persian
-	// Hebrew and similar pages lay out correctly without a host-side hint.
-	out.WriteString(`<div dir="auto" style="line-height:1.5;`)
-	if defaultFG != "" && defaultFG != "default" && tryAppendColorProperty(&out, "color:", defaultFG) {
-		out.WriteByte(';')
-	}
-	if defaultBGVal != "" && defaultBGVal != "default" && tryAppendColorProperty(&out, "background-color:", defaultBGVal) {
-		out.WriteByte(';')
-	}
-	out.WriteString(`">`)
-	out.WriteString(b.String())
-	out.WriteString(`</div>`)
-	return out.String()
+	p.closeFolds(&b, &s, 0)
+	b.WriteString(`</div>`)
+	return b.String()
 }

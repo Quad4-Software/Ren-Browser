@@ -1,5 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { Switch } from "bits-ui";
+
   type Props = {
     checked: boolean;
     label: string;
@@ -11,16 +13,9 @@
 
 <label class="toggle">
   <span class="label">{label}</span>
-  <button
-    type="button"
-    role="switch"
-    class="track"
-    aria-checked={checked}
-    aria-label={label}
-    onclick={() => onchange(!checked)}
-  >
-    <span class="thumb" class:on={checked}></span>
-  </button>
+  <Switch.Root {checked} onCheckedChange={onchange} aria-label={label} class="ren-switch-track">
+    <Switch.Thumb class="ren-switch-thumb" />
+  </Switch.Root>
 </label>
 
 <style>
@@ -41,7 +36,7 @@
     font-size: 0.9rem;
   }
 
-  .track {
+  :global(.ren-switch-track) {
     position: relative;
     flex-shrink: 0;
     width: 2.6rem;
@@ -56,12 +51,12 @@
       border-color 0.15s ease;
   }
 
-  .track[aria-checked="true"] {
+  :global(.ren-switch-track[data-state="checked"]) {
     background: var(--ren-accent);
     border-color: var(--ren-accent);
   }
 
-  .thumb {
+  :global(.ren-switch-thumb) {
     position: absolute;
     top: 2px;
     left: 2px;
@@ -70,9 +65,10 @@
     border-radius: 50%;
     background: var(--ren-fg);
     transition: transform 0.15s ease;
+    display: block;
   }
 
-  .thumb.on {
+  :global(.ren-switch-thumb[data-state="checked"]) {
     transform: translateX(1.15rem);
     background: #fff;
   }

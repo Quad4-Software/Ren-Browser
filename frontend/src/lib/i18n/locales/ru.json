@@ -75,6 +75,7 @@
   "tab": {
     "new": "Новая вкладка",
     "close": "Закрыть вкладку",
+    "list": "Вкладки браузера",
     "newTab": "Новая вкладка",
     "limitReached": "Достигнут лимит вкладок ({max})",
     "reload": "Обновить",
@@ -249,7 +250,17 @@
     "shareApkShareFailed": "Не удалось открыть меню «Поделиться»",
     "shareApkStartFailed": "Не удалось запустить раздачу по Wi-Fi",
     "shareApkStopFailed": "Не удалось остановить раздачу",
-    "shareApkCopyFailed": "Не удалось скопировать URL для скачивания"
+    "shareApkCopyFailed": "Не удалось скопировать URL для скачивания",
+    "micronImages": "Встроенные изображения на страницах micron",
+    "micronImagesAsk": "Спрашивать каждый раз (рекомендуется)",
+    "micronImagesAlways": "Загружать автоматически",
+    "micronImagesOff": "Никогда не загружать",
+    "micronImagesHint": "Изображения остаются в сети и загружаются через Reticulum. Они никогда не загружаются без вашего разрешения, если вы не разрешили узел или не выбрали автоматическую загрузку.",
+    "micronImageNodes": "Правила изображений для узлов",
+    "micronImageNodePolicy": "Политика изображений для узла",
+    "micronImageNodeRemove": "Удалить",
+    "micronImagePolicyAlways": "Разрешить",
+    "micronImagePolicyNever": "Блокировать"
   },
   "keybinds": {
     "focusUrl": "Фокус на адресной строке",
@@ -414,7 +425,14 @@
     "multilineHint": "Нажмите Enter ещё раз, чтобы развернуть в несколько строк",
     "pullToRefresh": "Потяните вниз для обновления",
     "releaseToRefresh": "Отпустите для обновления",
-    "swipeBack": "Назад"
+    "swipeBack": "Назад",
+    "imageLoad": "Загрузить изображение",
+    "imageAllowNode": "Всегда разрешать изображения с этого узла",
+    "imageDisabled": "Изображения отключены в настройках",
+    "imageBlocked": "Изображения с этого узла заблокированы",
+    "imageTooLarge": "Изображение превышает ограничение размера",
+    "imageLoading": "Загрузка изображения...",
+    "imageFailed": "Не удалось загрузить изображение"
   },
   "find": {
     "placeholder": "Поиск на странице",

@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
+  import { AlertDialog } from "bits-ui";
   import Toggle from "$lib/components/Toggle.svelte";
   import PluginSignatureBadge from "$lib/components/PluginSignatureBadge.svelte";
   import { t, tPermission } from "$lib/i18n/i18n.svelte";
@@ -54,6 +55,7 @@
 
   let { open, preview, confirming = false, onConfirm, onCancel }: Props = $props();
 
+  let confirmed = false;
   let dontShowAgain = $state(false);
   let trustPublisher = $state(false);
   const signature = $derived(
@@ -65,6 +67,7 @@
     if (!open || !preview) {
       return;
     }
+    confirmed = false;
     dontShowAgain = false;
     trustPublisher = false;
     const next: Record<string, boolean> = {};
@@ -101,168 +104,172 @@
   function networkFetchGranted(): boolean {
     return grantedPermissions["network.fetch"] === true;
   }
-
-  function handleKeyDown(event: KeyboardEvent) {
-    if (event.key === "Escape" && !confirming) {
-      onCancel();
-    }
-  }
 </script>
 
-<svelte:window onkeydown={open ? handleKeyDown : undefined} />
-
-{#if open && preview}
-  <button
-    type="button"
-    class="backdrop"
-    aria-label={t("dialog.close")}
-    disabled={confirming}
-    onclick={onCancel}
-  ></button>
-  <div
-    class="dialog"
-    role="alertdialog"
-    aria-modal="true"
-    aria-labelledby="plugin-network-install-title"
-    aria-describedby="plugin-network-install-message"
-  >
-    <h2 id="plugin-network-install-title">
-      {preview.requiresNetworkFetch
-        ? t("extensions.networkInstallTitle")
-        : t("extensions.installTitle")}
-    </h2>
-    <p id="plugin-network-install-message">
-      {t("extensions.installMessage", {
-        name: preview.name,
-        id: preview.id,
-      })}
-    </p>
-
-    <div class="plugin-meta">
-      <div class="title-row">
-        <span class="version">v{preview.version}</span>
-        <PluginSignatureBadge {signature} />
-      </div>
-      {#if preview.description}
-        <p class="description">{preview.description}</p>
-      {/if}
-    </div>
-
-    {#if preview.permissions?.length}
-      <section class="permissions" aria-labelledby="plugin-permissions-heading">
-        <h3 id="plugin-permissions-heading">{t("extensions.installPermissions")}</h3>
-        <p class="muted">{t("extensions.installPermissionsHint")}</p>
-        <ul class="permission-list">
-          {#each preview.permissions as perm (perm)}
-            <li>
-              <Toggle
-                label={permissionLabel(perm)}
-                checked={grantedPermissions[perm] ?? false}
-                onchange={(value) => {
-                  grantedPermissions = { ...grantedPermissions, [perm]: value };
-                }}
-              />
-            </li>
-          {/each}
-        </ul>
-      </section>
-    {/if}
-
-    {#if preview.requiresNetworkFetch}
-      <section class="endpoints" aria-labelledby="plugin-network-endpoints-heading">
-        <h3 id="plugin-network-endpoints-heading">{t("extensions.networkInstallEndpoints")}</h3>
-        {#if !networkFetchGranted()}
-          <p class="muted">{t("extensions.networkInstallEndpointsBlocked")}</p>
-        {/if}
-        {#if (preview.networkEndpoints ?? []).length > 0}
-          <ul>
-            {#each preview.networkEndpoints ?? [] as endpoint (endpoint)}
-              <li><code>{endpoint}</code></li>
-            {/each}
-          </ul>
-        {:else}
-          <p class="muted">{t("extensions.networkInstallEndpointsUnknown")}</p>
-        {/if}
-      </section>
-    {/if}
-
-    {#if (preview.i18nLocales ?? []).length > 0}
-      <section class="locales" aria-labelledby="plugin-i18n-locales-heading">
-        <h3 id="plugin-i18n-locales-heading">{t("extensions.installI18nLocales")}</h3>
-        <p class="locale-list">{(preview.i18nLocales ?? []).join(", ")}</p>
-      </section>
-    {/if}
-
-    <section class="signature" aria-labelledby="plugin-signature-heading">
-      <h3 id="plugin-signature-heading">{t("extensions.signatureTitle")}</h3>
-      <p
-        class:muted={!signature.present}
-        class:error={signature.present && !signature.valid}
-        class:trusted={signature.present && signature.valid && signature.trusted}
+<AlertDialog.Root
+  open={open && preview !== null}
+  onOpenChange={(next) => {
+    if (!next) {
+      if (!confirmed) {
+        onCancel();
+      }
+      confirmed = false;
+    }
+  }}
+>
+  <AlertDialog.Portal>
+    {#if preview}
+      <AlertDialog.Overlay class="plugin-install-overlay" />
+      <AlertDialog.Content
+        class="plugin-install-dialog"
+        interactOutsideBehavior={confirming ? "ignore" : "close"}
+        onEscapeKeydown={(e) => {
+          if (confirming) {
+            e.preventDefault();
+          }
+        }}
       >
-        {signatureLabel(signature)}
-      </p>
-      {#if signature.present && signature.signer}
-        <p class="signer"><code>{signature.signer}</code></p>
-      {/if}
-      {#if signature.present && !signature.valid && signature.error}
-        <p class="error-detail">{signature.error}</p>
-      {/if}
-      {#if signature.present && signature.valid && !signature.trusted}
+        <AlertDialog.Title id="plugin-network-install-title" class="plugin-install-title">
+          {preview.requiresNetworkFetch
+            ? t("extensions.networkInstallTitle")
+            : t("extensions.installTitle")}
+        </AlertDialog.Title>
+        <AlertDialog.Description id="plugin-network-install-message" class="plugin-install-message">
+          {t("extensions.installMessage", {
+            name: preview.name,
+            id: preview.id,
+          })}
+        </AlertDialog.Description>
+
+        <div class="plugin-meta">
+          <div class="title-row">
+            <span class="version">v{preview.version}</span>
+            <PluginSignatureBadge {signature} />
+          </div>
+          {#if preview.description}
+            <p class="description">{preview.description}</p>
+          {/if}
+        </div>
+
+        {#if preview.permissions?.length}
+          <section class="permissions" aria-labelledby="plugin-permissions-heading">
+            <h3 id="plugin-permissions-heading">{t("extensions.installPermissions")}</h3>
+            <p class="muted">{t("extensions.installPermissionsHint")}</p>
+            <ul class="permission-list">
+              {#each preview.permissions as perm (perm)}
+                <li>
+                  <Toggle
+                    label={permissionLabel(perm)}
+                    checked={grantedPermissions[perm] ?? false}
+                    onchange={(value) => {
+                      grantedPermissions = { ...grantedPermissions, [perm]: value };
+                    }}
+                  />
+                </li>
+              {/each}
+            </ul>
+          </section>
+        {/if}
+
+        {#if preview.requiresNetworkFetch}
+          <section class="endpoints" aria-labelledby="plugin-network-endpoints-heading">
+            <h3 id="plugin-network-endpoints-heading">{t("extensions.networkInstallEndpoints")}</h3>
+            {#if !networkFetchGranted()}
+              <p class="muted">{t("extensions.networkInstallEndpointsBlocked")}</p>
+            {/if}
+            {#if (preview.networkEndpoints ?? []).length > 0}
+              <ul>
+                {#each preview.networkEndpoints ?? [] as endpoint (endpoint)}
+                  <li><code>{endpoint}</code></li>
+                {/each}
+              </ul>
+            {:else}
+              <p class="muted">{t("extensions.networkInstallEndpointsUnknown")}</p>
+            {/if}
+          </section>
+        {/if}
+
+        {#if (preview.i18nLocales ?? []).length > 0}
+          <section class="locales" aria-labelledby="plugin-i18n-locales-heading">
+            <h3 id="plugin-i18n-locales-heading">{t("extensions.installI18nLocales")}</h3>
+            <p class="locale-list">{(preview.i18nLocales ?? []).join(", ")}</p>
+          </section>
+        {/if}
+
+        <section class="signature" aria-labelledby="plugin-signature-heading">
+          <h3 id="plugin-signature-heading">{t("extensions.signatureTitle")}</h3>
+          <p
+            class:muted={!signature.present}
+            class:error={signature.present && !signature.valid}
+            class:trusted={signature.present && signature.valid && signature.trusted}
+          >
+            {signatureLabel(signature)}
+          </p>
+          {#if signature.present && signature.signer}
+            <p class="signer"><code>{signature.signer}</code></p>
+          {/if}
+          {#if signature.present && !signature.valid && signature.error}
+            <p class="error-detail">{signature.error}</p>
+          {/if}
+          {#if signature.present && signature.valid && !signature.trusted}
+            <Toggle
+              label={t("extensions.trustPublisher")}
+              checked={trustPublisher}
+              onchange={(value) => {
+                trustPublisher = value;
+              }}
+            />
+          {/if}
+        </section>
+
+        {#if preview.security?.findings?.length}
+          <section class="security" aria-labelledby="plugin-security-heading">
+            <h3 id="plugin-security-heading">
+              {t("extensions.securityTitle", { level: preview.security.riskLevel })}
+            </h3>
+            <ul class="security-findings">
+              {#each preview.security.findings as finding (finding.id)}
+                <li data-severity={finding.severity}>{finding.message}</li>
+              {/each}
+            </ul>
+          </section>
+        {/if}
+
         <Toggle
-          label={t("extensions.trustPublisher")}
-          checked={trustPublisher}
+          label={t("extensions.networkInstallDontShowAgain")}
+          checked={dontShowAgain}
           onchange={(value) => {
-            trustPublisher = value;
+            dontShowAgain = value;
           }}
         />
-      {/if}
-    </section>
 
-    {#if preview.security?.findings?.length}
-      <section class="security" aria-labelledby="plugin-security-heading">
-        <h3 id="plugin-security-heading">
-          {t("extensions.securityTitle", { level: preview.security.riskLevel })}
-        </h3>
-        <ul class="security-findings">
-          {#each preview.security.findings as finding (finding.id)}
-            <li data-severity={finding.severity}>{finding.message}</li>
-          {/each}
-        </ul>
-      </section>
+        <div class="actions">
+          <AlertDialog.Cancel type="button" class="plugin-install-cancel-btn" disabled={confirming}>
+            {t("common.cancel")}
+          </AlertDialog.Cancel>
+          <AlertDialog.Action
+            type="button"
+            class="plugin-install-confirm-btn"
+            disabled={confirming || (signature.present && !signature.valid)}
+            onclick={() => {
+              confirmed = true;
+              onConfirm({
+                dontShowAgain,
+                trustPublisher,
+                grantedPermissions: selectedPermissions(),
+              });
+            }}
+          >
+            {t("extensions.networkInstallConfirm")}
+          </AlertDialog.Action>
+        </div>
+      </AlertDialog.Content>
     {/if}
-
-    <Toggle
-      label={t("extensions.networkInstallDontShowAgain")}
-      checked={dontShowAgain}
-      onchange={(value) => {
-        dontShowAgain = value;
-      }}
-    />
-
-    <div class="actions">
-      <button type="button" class="cancel-btn" disabled={confirming} onclick={onCancel}>
-        {t("common.cancel")}
-      </button>
-      <button
-        type="button"
-        class="confirm-btn"
-        disabled={confirming || (signature.present && !signature.valid)}
-        onclick={() =>
-          onConfirm({
-            dontShowAgain,
-            trustPublisher,
-            grantedPermissions: selectedPermissions(),
-          })}
-      >
-        {t("extensions.networkInstallConfirm")}
-      </button>
-    </div>
-  </div>
-{/if}
+  </AlertDialog.Portal>
+</AlertDialog.Root>
 
 <style>
-  .backdrop {
+  :global(.plugin-install-overlay) {
     position: fixed;
     inset: 0;
     z-index: 1200;
@@ -271,7 +278,7 @@
     cursor: default;
   }
 
-  .dialog {
+  :global(.plugin-install-dialog) {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -289,11 +296,18 @@
     gap: 0.85rem;
   }
 
-  h2 {
+  :global(.plugin-install-title) {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
     color: var(--ren-fg);
+  }
+
+  :global(.plugin-install-message) {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: var(--ren-fg-secondary);
   }
 
   h3 {
@@ -427,8 +441,8 @@
     padding-top: 0.15rem;
   }
 
-  .cancel-btn,
-  .confirm-btn {
+  :global(.plugin-install-cancel-btn),
+  :global(.plugin-install-confirm-btn) {
     border: 1px solid var(--ren-border);
     border-radius: 10px;
     padding: 0.5rem 0.85rem;
@@ -441,28 +455,28 @@
       color 0.15s ease;
   }
 
-  .cancel-btn {
+  :global(.plugin-install-cancel-btn) {
     background: transparent;
     color: var(--ren-fg);
   }
 
-  .cancel-btn:hover:not(:disabled) {
+  :global(.plugin-install-cancel-btn:hover:not(:disabled)) {
     background: var(--ren-tab-hover);
   }
 
-  .cancel-btn:disabled,
-  .confirm-btn:disabled {
+  :global(.plugin-install-cancel-btn:disabled),
+  :global(.plugin-install-confirm-btn:disabled) {
     opacity: 0.55;
     cursor: not-allowed;
   }
 
-  .confirm-btn {
+  :global(.plugin-install-confirm-btn) {
     background: var(--ren-accent);
     border-color: var(--ren-accent);
     color: #fff;
   }
 
-  .confirm-btn:hover:not(:disabled) {
+  :global(.plugin-install-confirm-btn:hover:not(:disabled)) {
     background: var(--ren-accent-hover);
     border-color: var(--ren-accent-hover);
   }

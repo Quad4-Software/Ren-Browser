@@ -4,7 +4,7 @@ package rns
 import (
 	"strings"
 
-	"quad4/reticulum-go/pkg/common"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/common"
 )
 
 // EffectiveInterfaceConfig returns the runtime interface config.

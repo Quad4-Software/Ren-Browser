@@ -28,8 +28,8 @@ func TestReliabilityPipelineRenderAndClassify(t *testing.T) {
 	if !strings.Contains(plain, "Title") {
 		t.Fatal("expected rendered title")
 	}
-	if !strings.Contains(rendered.HTML, `class="Mu-mnt"`) {
-		t.Fatal("expected force-monospace cells for ASCII alignment")
+	if !strings.Contains(rendered.HTML, "Mu-mnt") {
+		t.Fatal("expected force-monospace markup (Mu-mnt or Mu-mnt-group) for ASCII alignment")
 	}
 
 	kind, _ := apperrors.ClassifyFetch("response too large: received 16 bytes (limit 8)", nil)

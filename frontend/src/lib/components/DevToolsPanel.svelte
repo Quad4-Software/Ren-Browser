@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { Activity, FileCode, Terminal } from "@lucide/svelte";
+  import { Slider, Tabs } from "bits-ui";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import PluginPanelHost from "$lib/components/PluginPanelHost.svelte";
   import { t } from "$lib/i18n/i18n.svelte";
@@ -118,67 +119,65 @@
 </script>
 
 <section class="devtools">
-  <header>
-    <div class="tabs">
-      <button class:active={tab === "console"} onclick={() => (tab = "console")}
-        >{t("devtools.console")}</button
-      >
-      <button class:active={tab === "network"} onclick={() => (tab = "network")}
-        >{t("devtools.network")}</button
-      >
-      <button class:active={tab === "raw"} onclick={() => (tab = "raw")}>{t("devtools.raw")}</button
-      >
-      {#each pluginTabs as pluginTab (pluginTab.pluginId + ":" + pluginTab.id)}
-        <button
-          class:active={tab === `plugin:${pluginTab.pluginId}:${pluginTab.id}`}
-          onclick={() => (tab = `plugin:${pluginTab.pluginId}:${pluginTab.id}`)}
+  <Tabs.Root bind:value={tab} class="devtools-tabs">
+    <header>
+      <Tabs.List class="tabs">
+        <Tabs.Trigger value="console">{t("devtools.console")}</Tabs.Trigger>
+        <Tabs.Trigger value="network">{t("devtools.network")}</Tabs.Trigger>
+        <Tabs.Trigger value="raw">{t("devtools.raw")}</Tabs.Trigger>
+        {#each pluginTabs as pluginTab (pluginTab.pluginId + ":" + pluginTab.id)}
+          <Tabs.Trigger value={`plugin:${pluginTab.pluginId}:${pluginTab.id}`}>
+            {pluginTab.title}
+          </Tabs.Trigger>
+        {/each}
+      </Tabs.List>
+      <div class="actions">
+        <label>
+          {t("devtools.log")}
+          <Slider.Root
+            type="single"
+            class="devtools-slider"
+            value={logLevel}
+            min={1}
+            max={7}
+            step={1}
+            onValueChange={onLogLevel}
+          >
+            <Slider.Range class="devtools-slider-range" />
+            <Slider.Thumb index={0} class="devtools-slider-thumb" aria-label={t("devtools.log")} />
+          </Slider.Root>
+        </label>
+        <button type="button" onclick={onExport}>{t("devtools.export")}</button>
+        <button type="button" onclick={onClear}>{t("devtools.clear")}</button>
+      </div>
+    </header>
+
+    <div class="page-info">
+      <span>{contentType || t("common.unknown")}</span>
+      {#if micronRendererBadge}
+        <span class="renderer-badge">{micronRendererBadge}</span>
+      {/if}
+      {#if hops >= 0}
+        <span>{formatHops(hops)}</span>
+      {/if}
+      {#if durationMs > 0}
+        <span>{durationMs} ms</span>
+      {/if}
+      {#if fromCache}
+        <span
+          >{t("devtools.cached", {
+            when: cachedAt > 0 ? new Date(cachedAt).toLocaleString() : "",
+          })}</span
         >
-          {pluginTab.title}
-        </button>
-      {/each}
+      {/if}
     </div>
-    <div class="actions">
-      <label>
-        {t("devtools.log")}
-        <input
-          type="range"
-          min="1"
-          max="7"
-          value={logLevel}
-          oninput={(event) => onLogLevel(Number((event.currentTarget as HTMLInputElement).value))}
-        />
-      </label>
-      <button onclick={onExport}>{t("devtools.export")}</button>
-      <button onclick={onClear}>{t("devtools.clear")}</button>
-    </div>
-  </header>
 
-  <div class="page-info">
-    <span>{contentType || t("common.unknown")}</span>
-    {#if micronRendererBadge}
-      <span class="renderer-badge">{micronRendererBadge}</span>
-    {/if}
-    {#if hops >= 0}
-      <span>{formatHops(hops)}</span>
-    {/if}
-    {#if durationMs > 0}
-      <span>{durationMs} ms</span>
-    {/if}
-    {#if fromCache}
-      <span
-        >{t("devtools.cached", {
-          when: cachedAt > 0 ? new Date(cachedAt).toLocaleString() : "",
-        })}</span
-      >
-    {/if}
-  </div>
-
-  {#if tab === "console"}
-    <div class="panel logs">
+    <Tabs.Content value="console" class="panel logs">
       <input
         class="search ren-input"
         type="search"
         bind:value={logQuery}
+        aria-label={t("devtools.searchLogs")}
         placeholder={t("devtools.searchLogs")}
         spellcheck="false"
         autocomplete="off"
@@ -209,9 +208,8 @@
           </div>
         {/each}
       {/if}
-    </div>
-  {:else if tab === "network"}
-    <div class="panel network">
+    </Tabs.Content>
+    <Tabs.Content value="network" class="panel network">
       {#if network.length === 0}
         <EmptyState
           title={t("devtools.noNetwork")}
@@ -251,9 +249,8 @@
           </tbody>
         </table>
       {/if}
-    </div>
-  {:else if tab === "raw"}
-    <div class="panel raw">
+    </Tabs.Content>
+    <Tabs.Content value="raw" class="panel raw">
       <div class="raw-actions">
         <button class:active={rawMode === "text"} onclick={() => (rawMode = "text")}
           >{t("devtools.text")}</button
@@ -269,8 +266,7 @@
       {:else}
         <pre>{rawMode === "text" ? raw : toHex(raw)}</pre>
       {/if}
-    </div>
-  {:else}
+    </Tabs.Content>
     {#each pluginTabs as pluginTab (pluginTab.pluginId + ":" + pluginTab.id)}
       {#if tab === `plugin:${pluginTab.pluginId}:${pluginTab.id}`}
         <PluginPanelHost
@@ -281,7 +277,7 @@
         />
       {/if}
     {/each}
-  {/if}
+  </Tabs.Root>
 </section>
 
 <style>
@@ -320,14 +316,22 @@
     color: var(--ren-accent);
   }
 
-  .tabs,
+  .devtools :global(.devtools-tabs) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .devtools :global(.tabs),
   .actions {
     display: flex;
     gap: 0.35rem;
     align-items: center;
   }
 
-  .tabs button,
+  .devtools :global(.tabs button),
   .actions button,
   .raw-actions button {
     border: 1px solid var(--ren-border);
@@ -344,26 +348,31 @@
       border-color 0.15s ease;
   }
 
-  .tabs button:hover,
+  .devtools :global(.tabs button:hover),
   .actions button:hover,
   .raw-actions button:hover {
     background: var(--ren-tab-hover);
     color: var(--ren-fg);
   }
 
-  .tabs button.active,
+  .devtools :global(.tabs button.active),
+  .devtools :global(.tabs button[data-state="active"]),
   .raw-actions button.active {
     border-color: var(--ren-accent);
     background: var(--ren-accent);
     color: #fff;
   }
 
-  .panel {
+  .devtools :global(.panel) {
     flex: 1;
     overflow: auto;
     padding: 0.75rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.82rem;
+  }
+
+  .devtools :global(.panel[hidden]) {
+    display: none;
   }
 
   .search {
@@ -415,5 +424,41 @@
     gap: 0.35rem;
     color: var(--ren-muted);
     font-size: 0.78rem;
+  }
+
+  :global(.devtools-slider) {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    width: 5.5rem;
+    height: 0.45rem;
+    border: 1px solid var(--ren-border);
+    border-radius: 999px;
+    background: var(--ren-input-bg);
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+  }
+
+  :global(.devtools-slider-range) {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--ren-accent);
+  }
+
+  :global(.devtools-slider-thumb) {
+    display: block;
+    width: 0.85rem;
+    height: 0.85rem;
+    border: 1px solid var(--ren-border-strong, var(--ren-border));
+    border-radius: 50%;
+    background: var(--ren-fg);
+    cursor: grab;
+  }
+
+  :global(.devtools-slider-thumb:focus-visible) {
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ren-focus) 28%, transparent);
   }
 </style>

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"maps"
 
-	"quad4/reticulum-go/pkg/common"
-	"quad4/reticulum-go/pkg/debug"
-	"quad4/reticulum-go/pkg/interfaces"
-	"quad4/reticulum-go/pkg/reticulumconfig"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/common"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/debug"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/interfaces"
+	"github.com/Quad4-Software/Reticulum-Go/pkg/reticulumconfig"
 )
 
 func sliceEqual(a, b []string) bool {

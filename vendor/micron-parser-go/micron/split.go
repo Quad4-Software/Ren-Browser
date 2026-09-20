@@ -29,24 +29,15 @@ func splitAfterSpaceSegments(s string) []string {
 	return out
 }
 
-func (p *Parser) splitAtSpaces(line string) string {
-	var b strings.Builder
-	p.appendSplitAtSpaces(&b, line)
-	return b.String()
-}
-
-func (p *Parser) forceMonospace(line string) string {
-	if !p.ForceMonospace {
-		return htmlText(line)
-	}
-	var b strings.Builder
-	p.appendForceMonospace(&b, line)
-	return b.String()
-}
-
+// appendSplitAtSpaces mirrors micron-parser-js splitAtSpaces / wrapWord.
+// Every space-delimited segment is wrapped in a whitespace-preserving span so
+// multiple consecutive spaces are not collapsed. Plain printable ASCII words
+// (no & < >) use Mu-mnt-group; words that need escaping or contain non-ASCII
+// use Mu-mws with Mu-mnt cells around complex grapheme clusters and HTML-special
+// bytes.
 func (p *Parser) appendSplitAtSpaces(b *strings.Builder, line string) {
 	if line == "" {
-		b.WriteString(`<span class="Mu-mws"></span>`)
+		b.WriteString(`<span class="Mu-mnt-group"></span>`)
 		return
 	}
 	start := 0
@@ -56,18 +47,40 @@ func (p *Parser) appendSplitAtSpaces(b *strings.Builder, line string) {
 		if rel >= 0 {
 			end = start + rel + 1
 		}
-		b.WriteString(`<span class="Mu-mws">`)
-		p.appendForceMonospace(b, line[start:end])
-		b.WriteString(`</span>`)
+		word := line[start:end]
+		if wordNeedsMonoWrap(word) {
+			b.WriteString(`<span class="Mu-mws">`)
+			p.appendForceMonospace(b, word)
+			b.WriteString(`</span>`)
+		} else {
+			b.WriteString(`<span class="Mu-mnt-group">`)
+			b.WriteString(word)
+			b.WriteString(`</span>`)
+		}
 		start = end
 	}
 }
 
-// isComplexScriptBase reports scripts that require contextual shaping or strong
-// RTL layout. Wrapping each rune in display:inline-block Mu-mnt spans breaks
-// Arabic Persian Hebrew Syriac and related joining and bidirectional order.
+func wordNeedsMonoWrap(word string) bool {
+	for i := range len(word) {
+		c := word[i]
+		if c < 0x20 || c >= 0x7F || c == '&' || c == '<' || c == '>' {
+			return true
+		}
+	}
+	return false
+}
+
+// isComplexScriptBase reports scripts that must stay as continuous text runs
+// under ForceMonospace. Wrapping each rune in display:inline-block Mu-mnt spans
+// breaks Arabic/Persian joining, Hebrew/RTL order, CJK spacing, and Indic/Thai
+// cluster shaping.
 func isComplexScriptBase(r rune) bool {
 	switch {
+	case r >= 0x0400 && r <= 0x04FF: // Cyrillic
+		return true
+	case r >= 0x0500 && r <= 0x052F: // Cyrillic Supplement
+		return true
 	case r >= 0x0590 && r <= 0x05FF: // Hebrew
 		return true
 	case r >= 0x0600 && r <= 0x06FF: // Arabic
@@ -90,13 +103,37 @@ func isComplexScriptBase(r rune) bool {
 		return true
 	case r >= 0x08A0 && r <= 0x08FF: // Arabic Extended-A
 		return true
+	case r >= 0x0900 && r <= 0x097F: // Devanagari
+		return true
+	case r >= 0x0E00 && r <= 0x0E7F: // Thai
+		return true
+	case r >= 0x1100 && r <= 0x11FF: // Hangul Jamo
+		return true
+	case r >= 0x3040 && r <= 0x309F: // Hiragana
+		return true
+	case r >= 0x30A0 && r <= 0x30FF: // Katakana
+		return true
+	case r >= 0x3130 && r <= 0x318F: // Hangul Compatibility Jamo
+		return true
+	case r >= 0x3400 && r <= 0x4DBF: // CJK Unified Ideographs Extension A
+		return true
+	case r >= 0x4E00 && r <= 0x9FFF: // CJK Unified Ideographs
+		return true
+	case r >= 0xAC00 && r <= 0xD7AF: // Hangul Syllables
+		return true
+	case r >= 0xF900 && r <= 0xFAFF: // CJK Compatibility Ideographs
+		return true
 	case r >= 0xFB1D && r <= 0xFB4F: // Hebrew presentation forms
 		return true
 	case r >= 0xFB50 && r <= 0xFDFF: // Arabic Presentation Forms-A
 		return true
 	case r >= 0xFE70 && r <= 0xFEFF: // Arabic Presentation Forms-B
 		return true
+	case r >= 0xFF66 && r <= 0xFF9D: // Halfwidth Katakana
+		return true
 	case r >= 0x1EE00 && r <= 0x1EEFF: // Arabic Mathematical Alphabetic Symbols
+		return true
+	case r >= 0x20000 && r <= 0x2A6DF: // CJK Extension B
 		return true
 	default:
 		return false
@@ -112,9 +149,54 @@ func isJoinControl(r rune) bool {
 	return r == '\u200C' || r == '\u200D'
 }
 
+const muMntOpen = `<span class="Mu-mnt">`
+const muMntClose = `</span>`
+
+func hasASCIIControl(s string) bool {
+	for i := range len(s) {
+		if s[i] < 0x20 {
+			return true
+		}
+	}
+	return false
+}
+
+// appendForceMonospace emits Mu-mnt cells for complex/non-ASCII runs and
+// HTML-special ASCII, leaving ordinary printable ASCII bare (micron-parser-js).
 func (p *Parser) appendForceMonospace(b *strings.Builder, line string) {
-	line = stripASCIIControls(line)
+	if line == "" {
+		return
+	}
+	if hasASCIIControl(line) {
+		line = stripASCIIControls(line)
+		if line == "" {
+			return
+		}
+	}
 	for i := 0; i < len(line); {
+		c := line[i]
+		if c < utf8.RuneSelf {
+			if c == '&' || c == '<' || c == '>' || c < 0x20 || c >= 0x7F {
+				b.WriteString(muMntOpen)
+				switch c {
+				case '&':
+					b.WriteString("&amp;")
+				case '<':
+					b.WriteString("&lt;")
+				case '>':
+					b.WriteString("&gt;")
+				default:
+					if c >= 0x20 {
+						b.WriteByte(c)
+					}
+				}
+				b.WriteString(muMntClose)
+			} else {
+				b.WriteByte(c)
+			}
+			i++
+			continue
+		}
 		r, sz := utf8.DecodeRuneInString(line[i:])
 		if isComplexScriptBase(r) {
 			j := i + sz
@@ -126,7 +208,6 @@ func (p *Parser) appendForceMonospace(b *strings.Builder, line string) {
 				}
 				break
 			}
-			// Emit the whole shaping run as one text node so letters can join.
 			appendHTMLText(b, line[i:j])
 			i = j
 			continue
@@ -139,26 +220,9 @@ func (p *Parser) appendForceMonospace(b *strings.Builder, line string) {
 			}
 			end += sz2
 		}
-		b.WriteString(`<span class="Mu-mnt">`)
-		if end == i+1 && line[i] < utf8.RuneSelf {
-			switch line[i] {
-			case '&':
-				b.WriteString("&amp;")
-			case '<':
-				b.WriteString("&lt;")
-			case '>':
-				b.WriteString("&gt;")
-			case '"':
-				b.WriteString("&#34;")
-			case '\'':
-				b.WriteString("&#39;")
-			default:
-				b.WriteByte(line[i])
-			}
-		} else {
-			appendHTMLText(b, line[i:end])
-		}
-		b.WriteString(`</span>`)
+		b.WriteString(muMntOpen)
+		appendHTMLText(b, line[i:end])
+		b.WriteString(muMntClose)
 		i = end
 	}
 }

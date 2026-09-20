@@ -1,6 +1,6 @@
 # Reticulum の設定
 
-Ren Browser は `quad4/reticulum-go` スタックを通じて [Reticulum](https://reticulum.network/) を使用します。このページでは、アプリが何を期待しているか、よくあるメッシュの問題の解決方法を説明します。
+Ren Browser は `github.com/Quad4-Software/Reticulum-Go` スタックを通じて [Reticulum](https://reticulum.network/) を使用します。このページでは、アプリが何を期待しているか、よくあるメッシュの問題の解決方法を説明します。
 
 ## デフォルトの設定場所
 

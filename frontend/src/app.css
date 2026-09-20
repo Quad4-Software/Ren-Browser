@@ -205,6 +205,14 @@ select option,
   color: #fff;
 }
 
+button:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="link"]:focus-visible {
+  outline: 2px solid var(--ren-focus);
+  outline-offset: 1px;
+}
+
 :root[data-compact-toolbar="true"] .ren-icon-btn {
   width: 1.65rem;
   height: 1.65rem;

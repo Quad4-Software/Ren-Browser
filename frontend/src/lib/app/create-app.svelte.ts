@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 import { SvelteSet } from "svelte/reactivity";
+import { useDebounce, useEventListener, useInterval } from "runed";
 import { Events, System } from "@wailsio/runtime";
 import {
   AddFavorite,
@@ -172,6 +173,11 @@ import {
   type MicronRendererPreference,
 } from "$lib/micron/render-page";
 import { isMicronWasmAvailable } from "$lib/micron/wasm-loader";
+import {
+  normalizeMicronImagesMode,
+  type MicronImageNodePolicy,
+  type MicronImagesMode,
+} from "$lib/micron/images";
 import { randomId } from "$lib/browser/id";
 import { initUILocale, setUILocale, t, detectOSLocale } from "$lib/i18n/i18n.svelte";
 import type {
@@ -327,6 +333,8 @@ export function createApp() {
   let mobileDevTools = $state(false);
   let tabHoverPreviews = $state(true);
   let micronPreserveLayout = $state(false);
+  let micronImagesMode = $state<MicronImagesMode>("ask");
+  let micronImageNodes = $state<Record<string, string>>({});
   let mobileTabsOpen = $state(false);
   let settingsSectionsCollapsed = $state<Record<string, boolean>>({});
 
@@ -334,9 +342,22 @@ export function createApp() {
   const DISCOVERY_POLL_SLOW_MS = 15000;
   const DISCOVERY_EVENT_DEBOUNCE_MS = 5000;
   const DISCOVERY_EVENT_DEBOUNCE_FAST_MS = 400;
-  let statusTimer: ReturnType<typeof setInterval> | undefined;
-  let nodeDiscoverTimer: ReturnType<typeof setTimeout> | undefined;
   let appForeground = $state(true);
+
+  const statusPoll = useInterval(() => discoveryPollInterval(), {
+    immediate: false,
+    callback: () => {
+      void loadNodes();
+      void loadInterfaces();
+    },
+  });
+
+  const loadNodesDebounced = useDebounce(
+    () => {
+      void loadNodes();
+    },
+    () => (discoverySlowMode ? DISCOVERY_EVENT_DEBOUNCE_MS : DISCOVERY_EVENT_DEBOUNCE_FAST_MS),
+  );
 
   // Tab page bodies are large and only reassigned. Raw avoids proxying HTML.
   let tabs = $state.raw<Tab[]>([{ id: randomId(), title: "", url: "", active: true }]);
@@ -374,7 +395,7 @@ export function createApp() {
     return findPanel(activePanel);
   });
 
-  let persistTimer: ReturnType<typeof setTimeout> | undefined;
+  const persistTabsDebounced = useDebounce(() => persistTabs(), 250);
 
   function setPanel(panel: ActivePanel) {
     if (panel === "devtools" && !mobileDevTools) {
@@ -550,20 +571,15 @@ export function createApp() {
   }
 
   function schedulePersistTabs() {
-    if (persistTimer) {
-      clearTimeout(persistTimer);
-    }
-    persistTimer = setTimeout(() => {
-      persistTimer = undefined;
-      return persistTabs();
-    }, 250);
+    void persistTabsDebounced().catch(() => {
+      // Rejected when a pending persist is cancelled during teardown.
+    });
   }
 
   function dispose() {
-    if (persistTimer) {
-      clearTimeout(persistTimer);
-      persistTimer = undefined;
-    }
+    statusPoll.pause();
+    void loadNodesDebounced.cancel();
+    void persistTabsDebounced.cancel();
   }
 
   async function persistTabs() {
@@ -1201,14 +1217,8 @@ export function createApp() {
   }
 
   function pauseBackgroundPolling() {
-    if (statusTimer !== undefined) {
-      clearInterval(statusTimer);
-      statusTimer = undefined;
-    }
-    if (nodeDiscoverTimer !== undefined) {
-      clearTimeout(nodeDiscoverTimer);
-      nodeDiscoverTimer = undefined;
-    }
+    statusPoll.pause();
+    void loadNodesDebounced.cancel();
   }
 
   async function resumeForegroundSync() {
@@ -1247,29 +1257,17 @@ export function createApp() {
   }
 
   function restartStatusTimer() {
-    if (statusTimer !== undefined) {
-      clearInterval(statusTimer);
-    }
-    statusTimer = setInterval(() => {
-      void loadNodes();
-      void loadInterfaces();
-    }, discoveryPollInterval());
+    statusPoll.pause();
+    statusPoll.resume();
   }
 
   function scheduleLoadNodesFromEvent() {
-    if (!appForeground) {
+    if (!appForeground || loadNodesDebounced.pending) {
       return;
     }
-    if (nodeDiscoverTimer !== undefined) {
-      return;
-    }
-    const delay = discoverySlowMode
-      ? DISCOVERY_EVENT_DEBOUNCE_MS
-      : DISCOVERY_EVENT_DEBOUNCE_FAST_MS;
-    nodeDiscoverTimer = setTimeout(() => {
-      nodeDiscoverTimer = undefined;
-      void loadNodes();
-    }, delay);
+    void loadNodesDebounced().catch(() => {
+      // Rejected when a pending run is cancelled during backgrounding.
+    });
   }
 
   async function loadLogs() {
@@ -1591,6 +1589,19 @@ export function createApp() {
     return out;
   }
 
+  function normalizeMicronImageNodes(
+    nodes: { [_ in string]?: string } | null | undefined,
+  ): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const [key, value] of Object.entries(nodes ?? {})) {
+      const hash = key.toLowerCase();
+      if (/^[a-f0-9]{32}$/.test(hash) && (value === "always" || value === "never")) {
+        out[hash] = value;
+      }
+    }
+    return out;
+  }
+
   async function loadBrowserPrefs() {
     const prefs = await GetBrowserPrefs();
     openLinksInNewTab = !!prefs.openLinksInNewTab;
@@ -1608,6 +1619,8 @@ export function createApp() {
     pageCacheEnabled = prefs.pageCacheEnabled !== false;
     tabHoverPreviews = prefs.tabHoverPreviews !== false;
     micronPreserveLayout = !!prefs.micronPreserveLayout;
+    micronImagesMode = normalizeMicronImagesMode(prefs.micronImagesMode);
+    micronImageNodes = normalizeMicronImageNodes(prefs.micronImageNodes);
     settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
     if (activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
@@ -1630,6 +1643,8 @@ export function createApp() {
       pageCacheEnabled,
       tabHoverPreviews,
       micronPreserveLayout,
+      micronImagesMode,
+      micronImageNodes,
       settingsSectionsCollapsed,
       initialSetupComplete,
     };
@@ -1647,6 +1662,8 @@ export function createApp() {
     pageCacheEnabled?: boolean;
     tabHoverPreviews?: boolean;
     micronPreserveLayout?: boolean;
+    micronImagesMode?: MicronImagesMode;
+    micronImageNodes?: Record<string, string>;
     settingsSectionsCollapsed?: Record<string, boolean>;
   }) {
     const prefs = await SetBrowserPrefs({
@@ -1664,6 +1681,8 @@ export function createApp() {
     pageCacheEnabled = prefs.pageCacheEnabled !== false;
     tabHoverPreviews = prefs.tabHoverPreviews !== false;
     micronPreserveLayout = !!prefs.micronPreserveLayout;
+    micronImagesMode = normalizeMicronImagesMode(prefs.micronImagesMode);
+    micronImageNodes = normalizeMicronImageNodes(prefs.micronImageNodes);
     settingsSectionsCollapsed = normalizeSettingsSectionsCollapsed(prefs.settingsSectionsCollapsed);
     if (activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
@@ -1697,6 +1716,23 @@ export function createApp() {
   async function saveMicronPreserveLayout(value: boolean) {
     micronPreserveLayout = value;
     await persistBrowserPrefs({ micronPreserveLayout: value });
+  }
+
+  async function saveMicronImagesMode(value: MicronImagesMode) {
+    micronImagesMode = normalizeMicronImagesMode(value);
+    await persistBrowserPrefs({ micronImagesMode });
+  }
+
+  async function setMicronImageNodePolicy(nodeHash: string, policy: MicronImageNodePolicy | null) {
+    const next = { ...micronImageNodes };
+    const key = nodeHash.toLowerCase();
+    if (policy === "always" || policy === "never") {
+      next[key] = policy;
+    } else {
+      delete next[key];
+    }
+    micronImageNodes = next;
+    await persistBrowserPrefs({ micronImageNodes: next });
   }
 
   async function saveDiscoverySlowMode(value: boolean) {
@@ -2008,6 +2044,8 @@ export function createApp() {
     pageCacheEnabled = reset.browserPrefs.pageCacheEnabled !== false;
     tabHoverPreviews = reset.browserPrefs.tabHoverPreviews !== false;
     micronPreserveLayout = !!reset.browserPrefs.micronPreserveLayout;
+    micronImagesMode = normalizeMicronImagesMode(reset.browserPrefs.micronImagesMode);
+    micronImageNodes = normalizeMicronImageNodes(reset.browserPrefs.micronImageNodes);
     if (activePanel === "devtools" && !mobileDevTools) {
       activePanel = "browser";
     }
@@ -2403,7 +2441,6 @@ export function createApp() {
       compactViewport = isCompactViewport();
     };
     onResize();
-    window.addEventListener("resize", onResize, { passive: true });
 
     void loadTheme();
     void loadKeybinds();
@@ -2586,7 +2623,6 @@ export function createApp() {
         handleAppBackground();
       }
     };
-    document.addEventListener("visibilitychange", onVisibilityChange);
 
     Events.On("android:ActivityResumed", () => {
       void resumeForegroundSync();
@@ -2609,9 +2645,16 @@ export function createApp() {
     const blockExternalLink = (event: Event) => {
       blockExternalLinkPointerEvent(event);
     };
-    window.addEventListener("keydown", onKeyDown);
-    document.addEventListener("click", blockExternalLink, true);
-    document.addEventListener("auxclick", blockExternalLink, true);
+    // An effect root lets runed listeners work both inside onMount and when
+    // mount() is invoked directly, e.g. in tests. stopListeners() detaches all.
+    const stopListeners = $effect.root(() => {
+      useEventListener(() => window, "resize", onResize, { passive: true });
+      useEventListener(() => document, "visibilitychange", onVisibilityChange);
+      useEventListener(() => window, "keydown", onKeyDown);
+      useEventListener(() => document, ["click", "auxclick"], blockExternalLink, {
+        capture: true,
+      });
+    });
 
     if (screenshotScene) {
       void loadNodes().then(async () => {
@@ -2625,23 +2668,13 @@ export function createApp() {
     }
 
     return () => {
-      if (statusTimer !== undefined) {
-        clearInterval(statusTimer);
-      }
-      if (nodeDiscoverTimer !== undefined) {
-        clearTimeout(nodeDiscoverTimer);
-      }
-      window.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-      document.removeEventListener("click", blockExternalLink, true);
-      document.removeEventListener("auxclick", blockExternalLink, true);
-      window.removeEventListener("resize", onResize);
+      statusPoll.pause();
+      void loadNodesDebounced.cancel();
+      stopListeners();
       if (androidBackWindow.__renHandleAndroidBack === handleAndroidBack) {
         delete androidBackWindow.__renHandleAndroidBack;
       }
-      if (persistTimer) {
-        clearTimeout(persistTimer);
-      }
+      void persistTabsDebounced.cancel();
       void persistTabs();
     };
   }
@@ -3006,6 +3039,12 @@ export function createApp() {
     get micronPreserveLayout() {
       return micronPreserveLayout;
     },
+    get micronImagesMode() {
+      return micronImagesMode;
+    },
+    get micronImageNodes() {
+      return micronImageNodes;
+    },
     get mobileTabsOpen() {
       return mobileTabsOpen;
     },
@@ -3093,6 +3132,8 @@ export function createApp() {
     saveMicronRenderer,
     saveMicronWasmEnabled,
     saveMicronPreserveLayout,
+    saveMicronImagesMode,
+    setMicronImageNodePolicy,
     saveMicronWasmParser,
     setMicronWasmReady,
     saveTheme,

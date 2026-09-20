@@ -42,6 +42,32 @@ describe("ContentViewer layout regressions", () => {
     expect(getComputedStyle(text!).overflowWrap).toBe("anywhere");
   });
 
+  it("caps page form fields so typing cannot scroll the page sideways", async () => {
+    instance = await mountInBody(ContentViewer, {
+      html: `<input type="text" name="q" size="80">`,
+      contentType: "micron",
+      loading: false,
+      error: "",
+      currentURL: "mesh:/form",
+      showSource: false,
+      findOpen: false,
+      micronEngine: "js",
+      onNavigate: noop,
+      onRetry: noop,
+      onReloadFresh: noop,
+      onShowSourceChange: noop,
+      onFindClose: noop,
+    });
+
+    const input = document.querySelector(".content input");
+    expect(input).not.toBeNull();
+    expect(getComputedStyle(input!).maxWidth).toBe("100%");
+
+    const content = document.querySelector(".content");
+    expect(content).not.toBeNull();
+    expect(getComputedStyle(content!).overflowX).toBe("clip");
+  });
+
   it("applies preserve-layout styles on micron pages when enabled", async () => {
     instance = await mountInBody(ContentViewer, {
       html: "<span class='Mu-mws'>wide</span>",
