@@ -7,18 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0] [unreleased] - 2026-09-TBD
 
+### Added
+
+- Micron inline images: node image fetch with raster sniffing and byte caps, frontend placeholder hydration, per-node policy plumbing, and localized strings (#24, in progress)
+
 ### Fixed
 
+- Mobile input fields no longer overflow the viewport: typing can no longer scroll the page sideways with no way back, and fields wrap or expand into a full-width multiline textarea (#29)
 - Keep go mod tidy / task build from polluting vendor/golang.org/x/* with dependency tests and wiping LICENSE/PATENTS
 - Open the system file picker for HTML file inputs on Android so Micron WASM upload and theme import work
 - Tighten mobile bottom nav padding so icons sit closer to the home indicator instead of floating above a large gap
 
+### Security
+
+- Preview thumbnails strip executable markup through DOM parsing instead of regexes so malformed tags cannot survive, and fail closed with no DOM
+- Deep link scheme checks ignore tab, CR, and LF inside scheme names and block vbscript on both the frontend and Go paths
+- CI workflow permissions reduced to read-only except the jobs that publish, and third-party actions are pinned to commit SHAs with harden-runner restored
+- CodeQL skips vendored and generated trees; stale code scanning findings triaged
+- reticulum-go v1.3.0 carries upstream fixes for malformed msgpack map keys, resource replay and size limits, and channel buffering caps
+
 ### Changed
 
+- Bump reticulum-go to v1.3.0 on the renamed module path github.com/Quad4-Software/Reticulum-Go
+- Upgrade Wails from v3.0.0-beta.8 to v3.0.0-beta.23
 - Bump micron-parser-go to v1.0.7
-- Bump reticulum-go to v1.1.1
-- Refresh Go and frontend dependencies
+- Go toolchain moves to 1.27.1 across CI and the Docker builder images
+- Refresh Go and frontend dependencies (quic-go 0.62, webtransport 0.13, sqlite 1.59, x/* latest)
 - Stop tracking Android libwails.so and other build junk to shrink clones
+- renbrowser.rsm required signer now matches the active commit identity
 
 ## [0.3.0] [released] - 2026-08-21
 
