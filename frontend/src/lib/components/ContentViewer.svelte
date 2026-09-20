@@ -331,23 +331,20 @@
       },
     });
 
-    const offImageProgress = Events.On(
-      "micron:image-progress",
-      (event: { data?: unknown }) => {
-        try {
-          const data = JSON.parse(String(event.data ?? "")) as {
-            url?: string;
-            received?: number;
-            total?: number;
-          };
-          if (data.url) {
-            imageHandle.onProgress(data.url, data.received ?? 0, data.total ?? 0);
-          }
-        } catch {
-          // Ignore malformed progress payloads.
+    const offImageProgress = Events.On("micron:image-progress", (event: { data?: unknown }) => {
+      try {
+        const data = JSON.parse(String(event.data ?? "")) as {
+          url?: string;
+          received?: number;
+          total?: number;
+        };
+        if (data.url) {
+          imageHandle.onProgress(data.url, data.received ?? 0, data.total ?? 0);
         }
-      },
-    );
+      } catch {
+        // Ignore malformed progress payloads.
+      }
+    });
 
     const expansion = attachMicronMultilineExpansion(root, {
       onArmed: () => {

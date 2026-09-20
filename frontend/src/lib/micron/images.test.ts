@@ -161,7 +161,9 @@ describe("attachMicronImages", () => {
 
   it("forwards the page-declared key and profile to the fetch", async () => {
     const fetchImage = fetchOK();
-    root = makeRoot(holder(":/media/x.png", 'data-mu-image-k="abc123" data-mu-image-profile="low"'));
+    root = makeRoot(
+      holder(":/media/x.png", 'data-mu-image-k="abc123" data-mu-image-profile="low"'),
+    );
     attachMicronImages(root, {
       pageNodeHash: NODE,
       mode: "always",
