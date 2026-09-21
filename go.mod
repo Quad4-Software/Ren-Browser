@@ -7,7 +7,7 @@ require (
 	github.com/Quad4-Software/msgpack/v5 v5.9.2
 	github.com/adrg/xdg v0.5.3
 	github.com/tetratelabs/wazero v1.12.0
-	github.com/wailsapp/wails/v3 v3.0.0-beta.23
+	github.com/wailsapp/wails/v3 v3.0.0-beta.24
 	go.uber.org/goleak v1.3.0
 	golang.org/x/crypto v0.57.0
 	golang.org/x/sys v0.48.0

@@ -156,7 +156,7 @@ github.com/tetratelabs/wazero/internal/wasm/binary
 github.com/tetratelabs/wazero/internal/wasmdebug
 github.com/tetratelabs/wazero/internal/wasmruntime
 github.com/tetratelabs/wazero/sys
-# github.com/wailsapp/wails/v3 v3.0.0-beta.23
+# github.com/wailsapp/wails/v3 v3.0.0-beta.24
 ## explicit; go 1.25.0
 github.com/wailsapp/wails/v3/internal/assetserver
 github.com/wailsapp/wails/v3/internal/assetserver/bundledassets
