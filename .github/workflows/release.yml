@@ -15,8 +15,11 @@ concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
+# Job-level permissions on reusable workflow callers are rejected at
+# startup, so contents: write stays at the workflow level for the
+# desktop-build publish job.
 permissions:
-  contents: read
+  contents: write # zizmor: ignore[excessive-permissions] caller jobs cannot set permissions and the callee cannot elevate
   actions: read
 
 jobs:
@@ -30,8 +33,6 @@ jobs:
 
   build:
     needs: ci
-    permissions:
-      contents: write
     uses: $/.github/workflows/desktop-build.yml
     with:
       channel: release
