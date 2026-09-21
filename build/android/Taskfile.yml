@@ -140,8 +140,8 @@ tasks:
           done
         fi
 
-        # Mobile builds use a tip Go toolchain with Android MTE fixes
-        # (and an iOS parity patch). Desktop/server keep system Go.
+        # Mobile builds use a patched Go toolchain with the iOS MTE
+        # parity patch. Desktop/server keep system Go.
         bash "{{.ROOT_DIR}}/build/scripts/with-go-mte.sh" build -buildmode=c-shared \
           -overlay build/android/overlay.json {{.BUILD_FLAGS}} \
           -o build/android/app/src/main/jniLibs/$JNI_DIR/libwails.so

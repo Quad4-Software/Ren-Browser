@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Build or reuse a Go tip toolchain with Android MTE fixes (upstream CLs
-# 749062 / 751020) plus a local iOS parity patch for findnull / IndexByte.
+# Build or reuse a patched Go toolchain for mobile builds. Go 1.27.1
+# already carries the upstream Android MTE fixes (CLs 749062 / 751020);
+# the local patch only adds the iOS parity for findnull / IndexByte.
+# Remove this once the upstream iOS fix lands (golang/go CL 751000,
+# tracked as golang/go PR 77915).
 #
 # Used only for Android and iOS app builds. Desktop and server builds keep
 # the system Go from go.mod.
@@ -17,8 +20,9 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/../.." && pwd)"
-# Tip commit after both Android MTE CLs. Override with GO_MTE_REF if needed.
-default_ref="1ad6b283d410fb05be4ba63aaacb25b560d23839"
+# Go release tag carrying the Android MTE CLs. The iOS patch applies on
+# top of this release. Override with GO_MTE_REF if needed.
+default_ref="go1.27.1"
 ref="${GO_MTE_REF:-${default_ref}}"
 toolchain_dir="${GO_MTE_DIR:-${root}/build/tools/go-mte}"
 patch_file="${root}/build/patches/go/mte-ios.patch"
@@ -119,7 +123,7 @@ git -C "${tmp}/go" checkout -q FETCH_HEAD
 
 if ! grep -q '4096\*(1-goos.IsAndroid) + 16\*goos.IsAndroid' "${tmp}/go/src/runtime/string.go"; then
   echo "pinned Go ref ${ref} is missing upstream Android MTE findnull fix" >&2
-  echo "bump GO_MTE_REF to a tip commit after CL 749062 / 751020" >&2
+  echo "choose a Go release carrying CL 749062 / 751020" >&2
   exit 1
 fi
 

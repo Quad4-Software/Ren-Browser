@@ -325,7 +325,7 @@ tasks:
       - task: darwin:build
 
   toolchain:mte:
-    desc: Build or refresh the mobile Go tip toolchain (Android/iOS MTE)
+    desc: Build or refresh the patched mobile Go toolchain (iOS MTE parity)
     cmds:
       - bash build/scripts/ensure-go-mte.sh
 
