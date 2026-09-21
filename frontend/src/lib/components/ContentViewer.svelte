@@ -469,7 +469,7 @@
             aria-label={t("content.dismissCache")}
             onclick={() => (dismissedCacheKey = cacheBannerKey)}
           >
-            <X size={17} />
+            <X size={15} />
           </button>
         </div>
       </div>
@@ -651,14 +651,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
+    gap: 0.5rem;
     flex-wrap: wrap;
     min-width: 0;
-    padding: 0.55rem 1rem;
+    padding: 0.3rem 0.75rem;
     background: color-mix(in srgb, var(--ren-accent) 12%, var(--ren-chrome-bg));
     border-bottom: 1px solid var(--ren-border);
     color: var(--ren-fg);
-    font-size: 0.88rem;
+    font-size: 0.8rem;
   }
 
   .cache-text {
@@ -671,10 +671,10 @@
     border: 1px solid var(--ren-border);
     background: var(--ren-input-bg);
     color: var(--ren-fg);
-    border-radius: 8px;
-    padding: 0.35rem 0.7rem;
+    border-radius: 7px;
+    padding: 0.2rem 0.55rem;
     font: inherit;
-    font-size: 0.82rem;
+    font-size: 0.76rem;
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
@@ -828,6 +828,7 @@
   .content.micron {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     line-height: 1.25;
+    padding: 0.5rem 0.75rem 1.25rem;
   }
 
   .content.micron.preserve-layout {

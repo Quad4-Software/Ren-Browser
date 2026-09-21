@@ -32,6 +32,10 @@ cat >"${CONF_DIR}/fonts.conf" <<'EOF'
   <dir>/usr/local/share/fonts</dir>
   <dir prefix="xdg">fonts</dir>
   <cachedir prefix="xdg">fontconfig</cachedir>
+  <!-- Pull in the host alias/hinting rules so family names like sans-serif
+       resolve correctly. Skip it if the bundled libfontconfig is too old. -->
+  <include ignore_missing="yes">/etc/fonts/conf.d</include>
+  <include ignore_missing="yes" prefix="xdg">fontconfig/conf.d</include>
 </fontconfig>
 EOF
 
