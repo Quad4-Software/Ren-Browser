@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -106,6 +106,27 @@ async function waitForScene(page, scene) {
   await page.waitForTimeout(settleMs);
 }
 
+function which(cmd) {
+  const res = spawnSync(cmd, ["-version"], { stdio: "ignore" });
+  return !res.error && res.status === 0;
+}
+
+// PNG stays the canonical visual-regression baseline; WebP is emitted
+// alongside for web use (site/ references the .webp files via CDN).
+function toWebp(pngFile) {
+  const webpFile = pngFile.replace(/\.png$/, ".webp");
+  if (which("cwebp")) {
+    const res = spawnSync("cwebp", ["-quiet", "-q", "82", pngFile, "-o", webpFile]);
+    if (res.status === 0) return webpFile;
+  }
+  if (which("magick")) {
+    const res = spawnSync("magick", [pngFile, "-quality", "82", webpFile]);
+    if (res.status === 0) return webpFile;
+  }
+  process.stderr.write(`webp conversion skipped for ${pngFile} (install cwebp or ImageMagick)\n`);
+  return null;
+}
+
 async function captureShot(browser, layout, scene, mode) {
   const dir = path.join(outRoot, layout.id, mode);
   await mkdir(dir, { recursive: true });
@@ -123,6 +144,7 @@ async function captureShot(browser, layout, scene, mode) {
   const file = path.join(dir, `${scene.name}.png`);
   await page.screenshot({ path: file, fullPage: false });
   await page.close();
+  toWebp(file);
   return file;
 }
 
