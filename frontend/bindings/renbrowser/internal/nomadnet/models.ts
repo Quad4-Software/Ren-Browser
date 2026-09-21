@@ -9,6 +9,7 @@ export interface Node {
     "timestamp": number;
     "maxSizeKb": number;
     "lastSeen": number;
+    "announces": number;
 }
 
 /**

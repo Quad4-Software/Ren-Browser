@@ -19,12 +19,20 @@ export interface HistoryEntry {
 export interface Store {
 }
 
+export interface TabGroup {
+    "id": string;
+    "name": string;
+    "color": string;
+    "collapsed": boolean;
+}
+
 export interface TabSnapshot {
     "id": string;
     "title": string;
     "url": string;
     "active": boolean;
     "pinned"?: boolean;
+    "groupId"?: string;
     "html"?: string;
     "contentType"?: string;
     "error"?: string;

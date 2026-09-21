@@ -32,6 +32,7 @@ type Node struct {
 	Timestamp int64  `json:"timestamp"`
 	MaxSizeKB int16  `json:"maxSizeKb"`
 	LastSeen  int64  `json:"lastSeen"`
+	Announces uint32 `json:"announces"`
 }
 
 type announcedPeer struct {
@@ -87,6 +88,11 @@ func (h *AnnounceHandler) ReceivedAnnounce(destHash []byte, ident any, appData [
 	}
 
 	h.mu.Lock()
+	if prev, ok := h.nodes[hash]; ok {
+		node.Announces = prev.node.Announces + 1
+	} else {
+		node.Announces = 1
+	}
 	h.nodes[hash] = announcedPeer{node: node, id: id}
 	h.evictOldestLocked()
 	onAnnounce := h.onAnnounce

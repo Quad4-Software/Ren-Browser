@@ -18,6 +18,7 @@ type TabSnapshot struct {
 	URL         string `json:"url"`
 	Active      bool   `json:"active"`
 	Pinned      bool   `json:"pinned,omitempty"`
+	GroupID     string `json:"groupId,omitempty"`
 	HTML        string `json:"html,omitempty"`
 	ContentType string `json:"contentType,omitempty"`
 	Error       string `json:"error,omitempty"`
@@ -25,6 +26,13 @@ type TabSnapshot struct {
 	LastRaw     string `json:"lastRaw,omitempty"`
 	PageFG      string `json:"pageFg,omitempty"`
 	PageBG      string `json:"pageBg,omitempty"`
+}
+
+type TabGroup struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Color     string `json:"color"`
+	Collapsed bool   `json:"collapsed"`
 }
 
 type HistoryEntry struct {
@@ -202,7 +210,38 @@ func (s *Store) UpsertNode(node nomadnet.Node) error {
 		Timestamp: node.Timestamp,
 		MaxSizeKB: node.MaxSizeKB,
 		LastSeen:  node.LastSeen,
+		Announces: node.Announces,
 	})
+}
+
+// AnnounceNode stores a node seen via announce and bumps its counter.
+func (s *Store) AnnounceNode(node nomadnet.Node) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.db.AnnounceNode(db.NodeRow{
+		Hash:      node.Hash,
+		Name:      node.Name,
+		Hops:      node.Hops,
+		Enabled:   node.Enabled,
+		Timestamp: node.Timestamp,
+		MaxSizeKB: node.MaxSizeKB,
+		LastSeen:  node.LastSeen,
+	})
+}
+
+// SetNodeIdentifyOnConnect toggles automatic link identification for a node.
+func (s *Store) SetNodeIdentifyOnConnect(hash string, on bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.db.SetNodeIdentifyOnConnect(strings.ToLower(hash), on)
+}
+
+// NodeIdentifyOnConnect reports whether a node should be identified to on connect.
+func (s *Store) NodeIdentifyOnConnect(hash string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	on, err := s.db.NodeIdentifyOnConnect(strings.ToLower(hash))
+	return err == nil && on
 }
 
 func (s *Store) ListNodes() ([]nomadnet.Node, error) {
@@ -222,6 +261,7 @@ func (s *Store) ListNodes() ([]nomadnet.Node, error) {
 			Timestamp: r.Timestamp,
 			MaxSizeKB: r.MaxSizeKB,
 			LastSeen:  r.LastSeen,
+			Announces: r.Announces,
 		}
 	}
 	return out, nil

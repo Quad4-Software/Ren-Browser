@@ -41,6 +41,7 @@ export type {
     SelfCheckResult,
     SettingsReset,
     StoreHealth,
+    TabGroup,
     TabSnapshot,
     ThemeSettings,
     WindowChrome,

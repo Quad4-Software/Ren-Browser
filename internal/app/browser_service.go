@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/Quad4-Software/Reticulum-Go/pkg/debug"
+	rlink "github.com/Quad4-Software/Reticulum-Go/pkg/link"
 	"github.com/Quad4-Software/Reticulum-Go/pkg/transport"
 	"github.com/wailsapp/wails/v3/pkg/application"
 
@@ -83,6 +84,8 @@ type HistoryState struct {
 }
 
 type TabSnapshot = store.TabSnapshot
+
+type TabGroup = store.TabGroup
 
 type HistoryEntry = store.HistoryEntry
 
@@ -233,11 +236,19 @@ func (s *BrowserService) bindPersistence() {
 		return
 	}
 	stack.Handler().SetOnAnnounce(func(node nomadnet.Node) {
-		_ = s.store.UpsertNode(node)
+		_ = s.store.AnnounceNode(node)
 		if s.app != nil {
 			// UI only uses this as a debounce ping and re-fetches via ListNodes.
 			// Do not build/marshal the full node list on every announce.
 			s.app.Event.Emit("node:discovered", nil)
+		}
+	})
+	stack.Browser().SetOnLinkEstablished(func(destHash []byte, lnk *rlink.Link) {
+		if !s.store.NodeIdentifyOnConnect(hex.EncodeToString(destHash)) {
+			return
+		}
+		if ident := stack.LocalIdentity(); ident != nil {
+			_ = lnk.Identify(ident)
 		}
 	})
 }
@@ -449,12 +460,19 @@ func mergeNodes(stored, live []nomadnet.Node) []nomadnet.Node {
 	for _, n := range live {
 		liveMap[strings.ToLower(n.Hash)] = n
 	}
+	storedMap := make(map[string]nomadnet.Node, len(stored))
+	for _, n := range stored {
+		storedMap[strings.ToLower(n.Hash)] = n
+	}
 	seen := make(map[string]bool, len(stored)+len(live))
 	out := make([]nomadnet.Node, 0, len(stored)+len(live))
 
 	for _, n := range live {
 		key := strings.ToLower(n.Hash)
 		seen[key] = true
+		if s, ok := storedMap[key]; ok && s.Announces > n.Announces {
+			n.Announces = s.Announces
+		}
 		out = append(out, n)
 	}
 	for _, n := range stored {
@@ -829,6 +847,59 @@ func (s *BrowserService) GetTabs() []TabSnapshot {
 		return []TabSnapshot{}
 	}
 	return s.store.Tabs()
+}
+
+const tabGroupsKey = "tabGroups"
+
+const maxTabGroups = 16
+
+func sanitizeTabGroups(groups []TabGroup) []TabGroup {
+	if len(groups) > maxTabGroups {
+		groups = groups[:maxTabGroups]
+	}
+	out := make([]TabGroup, 0, len(groups))
+	seen := make(map[string]bool, len(groups))
+	for _, group := range groups {
+		group.ID = strings.TrimSpace(group.ID)
+		group.Name = strings.TrimSpace(group.Name)
+		if len(group.Name) > 48 {
+			group.Name = group.Name[:48]
+		}
+		if group.ID == "" || seen[group.ID] {
+			continue
+		}
+		seen[group.ID] = true
+		out = append(out, group)
+	}
+	return out
+}
+
+func (s *BrowserService) GetTabGroups() []TabGroup {
+	if s.publicMode {
+		return []TabGroup{}
+	}
+	raw, err := s.store.GetSetting(tabGroupsKey)
+	if err != nil || raw == "" {
+		return []TabGroup{}
+	}
+	var groups []TabGroup
+	if err := json.Unmarshal([]byte(raw), &groups); err != nil {
+		return []TabGroup{}
+	}
+	return sanitizeTabGroups(groups)
+}
+
+func (s *BrowserService) SetTabGroups(groups []TabGroup) []TabGroup {
+	clean := sanitizeTabGroups(groups)
+	if s.publicMode {
+		return clean
+	}
+	encoded, err := json.Marshal(clean)
+	if err != nil {
+		return clean
+	}
+	_ = s.store.SetSetting(tabGroupsKey, string(encoded))
+	return clean
 }
 
 func (s *BrowserService) SaveTabs(tabs []TabSnapshot) []TabSnapshot {

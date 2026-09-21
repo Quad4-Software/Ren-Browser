@@ -52,3 +52,34 @@ func TestDefaultBrowserPrefsNativeTitlebarMatchesPlatform(t *testing.T) {
 		t.Fatalf("nativeTitlebar = %v, want %v", got.NativeTitlebar, want)
 	}
 }
+
+func TestBrowserPrefsTabLayoutDefaultsTop(t *testing.T) {
+	svc := newTestService(t)
+
+	got := svc.GetBrowserPrefs()
+	if got.TabLayout != "top" {
+		t.Fatalf("tabLayout = %q, want top", got.TabLayout)
+	}
+}
+
+func TestBrowserPrefsTabLayoutPersist(t *testing.T) {
+	svc := newTestService(t)
+
+	want := svc.GetBrowserPrefs()
+	want.TabLayout = "left"
+	svc.SetBrowserPrefs(want)
+	if got := svc.GetBrowserPrefs(); got.TabLayout != "left" {
+		t.Fatalf("tabLayout = %q, want left", got.TabLayout)
+	}
+}
+
+func TestBrowserPrefsTabLayoutInvalidFallsBack(t *testing.T) {
+	svc := newTestService(t)
+
+	want := svc.GetBrowserPrefs()
+	want.TabLayout = "sideways"
+	svc.SetBrowserPrefs(want)
+	if got := svc.GetBrowserPrefs(); got.TabLayout != "top" {
+		t.Fatalf("tabLayout = %q, want top", got.TabLayout)
+	}
+}

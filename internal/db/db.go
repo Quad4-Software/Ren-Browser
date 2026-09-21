@@ -127,6 +127,16 @@ func (d *DB) migrate() error {
 			return err
 		}
 	}
+	if _, err := d.sql.Exec(`ALTER TABLE nodes ADD COLUMN announces INTEGER NOT NULL DEFAULT 0`); err != nil {
+		if !strings.Contains(strings.ToLower(err.Error()), "duplicate column") {
+			return err
+		}
+	}
+	if _, err := d.sql.Exec(`ALTER TABLE nodes ADD COLUMN identify INTEGER NOT NULL DEFAULT 0`); err != nil {
+		if !strings.Contains(strings.ToLower(err.Error()), "duplicate column") {
+			return err
+		}
+	}
 	if _, err := d.sql.Exec(`PRAGMA user_version = ` + fmt.Sprint(schemaVersion)); err != nil {
 		return fmt.Errorf("user_version: %w", err)
 	}
@@ -141,19 +151,43 @@ type NodeRow struct {
 	Timestamp int64
 	MaxSizeKB int16
 	LastSeen  int64
+	Announces uint32
 }
 
 func (d *DB) UpsertNode(n NodeRow) error {
 	_, err := d.sql.Exec(
-		`INSERT INTO nodes (hash, name, hops, enabled, timestamp, max_size_kb, last_seen)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)
+		`INSERT INTO nodes (hash, name, hops, enabled, timestamp, max_size_kb, last_seen, announces)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		 ON CONFLICT(hash) DO UPDATE SET
 		   name=excluded.name,
 		   hops=excluded.hops,
 		   enabled=excluded.enabled,
 		   timestamp=excluded.timestamp,
 		   max_size_kb=excluded.max_size_kb,
-		   last_seen=excluded.last_seen`,
+		   last_seen=excluded.last_seen,
+		   announces=excluded.announces`,
+		n.Hash, n.Name, n.Hops, boolInt(n.Enabled), n.Timestamp, n.MaxSizeKB, n.LastSeen, n.Announces,
+	)
+	if err != nil {
+		return err
+	}
+	d.pruneNodes()
+	return nil
+}
+
+// AnnounceNode records a fresh announce, bumping the stored counter.
+func (d *DB) AnnounceNode(n NodeRow) error {
+	_, err := d.sql.Exec(
+		`INSERT INTO nodes (hash, name, hops, enabled, timestamp, max_size_kb, last_seen, announces)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+		 ON CONFLICT(hash) DO UPDATE SET
+		   name=excluded.name,
+		   hops=excluded.hops,
+		   enabled=excluded.enabled,
+		   timestamp=excluded.timestamp,
+		   max_size_kb=excluded.max_size_kb,
+		   last_seen=excluded.last_seen,
+		   announces=nodes.announces+1`,
 		n.Hash, n.Name, n.Hops, boolInt(n.Enabled), n.Timestamp, n.MaxSizeKB, n.LastSeen,
 	)
 	if err != nil {
@@ -161,6 +195,22 @@ func (d *DB) UpsertNode(n NodeRow) error {
 	}
 	d.pruneNodes()
 	return nil
+}
+
+// SetNodeIdentifyOnConnect toggles automatic link identification for a node.
+func (d *DB) SetNodeIdentifyOnConnect(hash string, on bool) error {
+	_, err := d.sql.Exec(`UPDATE nodes SET identify = ? WHERE hash = ?`, boolInt(on), hash)
+	return err
+}
+
+// NodeIdentifyOnConnect reports whether a node should be identified to on connect.
+func (d *DB) NodeIdentifyOnConnect(hash string) (bool, error) {
+	var v int
+	err := d.sql.QueryRow(`SELECT identify FROM nodes WHERE hash = ?`, hash).Scan(&v)
+	if err != nil {
+		return false, err
+	}
+	return v != 0, nil
 }
 
 func (d *DB) pruneNodes() {
@@ -184,7 +234,7 @@ func (d *DB) pruneNodes() {
 
 func (d *DB) ListNodes() ([]NodeRow, error) {
 	rows, err := d.sql.Query(
-		`SELECT hash, name, hops, enabled, timestamp, max_size_kb, last_seen
+		`SELECT hash, name, hops, enabled, timestamp, max_size_kb, last_seen, announces
 		 FROM nodes ORDER BY last_seen DESC`,
 	)
 	if err != nil {
@@ -196,7 +246,7 @@ func (d *DB) ListNodes() ([]NodeRow, error) {
 	for rows.Next() {
 		var n NodeRow
 		var enabled int
-		if err := rows.Scan(&n.Hash, &n.Name, &n.Hops, &enabled, &n.Timestamp, &n.MaxSizeKB, &n.LastSeen); err != nil {
+		if err := rows.Scan(&n.Hash, &n.Name, &n.Hops, &enabled, &n.Timestamp, &n.MaxSizeKB, &n.LastSeen, &n.Announces); err != nil {
 			return nil, err
 		}
 		n.Enabled = enabled != 0

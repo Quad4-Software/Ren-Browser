@@ -9,18 +9,21 @@ import (
 const browserPrefsKey = "browserPrefs"
 
 type BrowserPrefs struct {
-	OpenLinksInNewTab         bool            `json:"openLinksInNewTab"`
-	OpenLinksInNewWindow      bool            `json:"openLinksInNewWindow"`
-	NativeTitlebar            bool            `json:"nativeTitlebar"`
-	MicronRenderer            string          `json:"micronRenderer"`
-	MicronWasmEnabled         bool            `json:"micronWasmEnabled"`
-	MicronWasmParserID        string          `json:"micronWasmParserId"`
-	DocsLanguage              string          `json:"docsLanguage"`
-	UILanguage                string          `json:"uiLanguage"`
-	DiscoverySlowMode         bool            `json:"discoverySlowMode"`
-	MobileDevTools            bool            `json:"mobileDevTools"`
-	PageCacheEnabled          bool            `json:"pageCacheEnabled"`
-	TabHoverPreviews          bool            `json:"tabHoverPreviews"`
+	OpenLinksInNewTab    bool   `json:"openLinksInNewTab"`
+	OpenLinksInNewWindow bool   `json:"openLinksInNewWindow"`
+	NativeTitlebar       bool   `json:"nativeTitlebar"`
+	MicronRenderer       string `json:"micronRenderer"`
+	MicronWasmEnabled    bool   `json:"micronWasmEnabled"`
+	MicronWasmParserID   string `json:"micronWasmParserId"`
+	DocsLanguage         string `json:"docsLanguage"`
+	UILanguage           string `json:"uiLanguage"`
+	DiscoverySlowMode    bool   `json:"discoverySlowMode"`
+	MobileDevTools       bool   `json:"mobileDevTools"`
+	PageCacheEnabled     bool   `json:"pageCacheEnabled"`
+	TabHoverPreviews     bool   `json:"tabHoverPreviews"`
+	// TabLayout selects the desktop tab strip position: "top" keeps the
+	// horizontal tab bar, "left" moves tabs into a vertical sidebar.
+	TabLayout                 string          `json:"tabLayout"`
 	MicronPreserveLayout      bool            `json:"micronPreserveLayout"`
 	InitialSetupComplete      bool            `json:"initialSetupComplete"`
 	SettingsSectionsCollapsed map[string]bool `json:"settingsSectionsCollapsed"`
@@ -41,6 +44,7 @@ func DefaultBrowserPrefs() BrowserPrefs {
 		MicronWasmParserID: "bundled",
 		PageCacheEnabled:   true,
 		TabHoverPreviews:   true,
+		TabLayout:          "top",
 		MicronImagesMode:   "ask",
 	}
 }
@@ -67,6 +71,10 @@ func mergeBrowserPrefs(saved BrowserPrefs) BrowserPrefs {
 	defaults.MobileDevTools = saved.MobileDevTools
 	defaults.PageCacheEnabled = saved.PageCacheEnabled
 	defaults.TabHoverPreviews = saved.TabHoverPreviews
+	switch saved.TabLayout {
+	case "top", "left":
+		defaults.TabLayout = saved.TabLayout
+	}
 	defaults.MicronPreserveLayout = saved.MicronPreserveLayout
 	defaults.InitialSetupComplete = saved.InitialSetupComplete
 	if len(saved.SettingsSectionsCollapsed) > 0 {

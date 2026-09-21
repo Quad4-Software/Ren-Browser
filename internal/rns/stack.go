@@ -127,6 +127,14 @@ func (s *Stack) Identify(nodeHash string) error {
 	return s.browser.Identify(nodeHash, ident)
 }
 
+// LocalIdentity returns the active transport identity, or nil before one
+// is loaded.
+func (s *Stack) LocalIdentity() *identity.Identity {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.identity
+}
+
 func (s *Stack) fromConfigContext() *interfaces.FromConfigContext {
 	storage := transportStorageDir(s.cfg)
 	var transportID []byte

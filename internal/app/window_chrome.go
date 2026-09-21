@@ -65,3 +65,22 @@ func (s *BrowserService) IdentifyToNode(rawURL string) error {
 	s.log("info", "identified to node", hash)
 	return nil
 }
+
+// SetNodeIdentifyOnConnect toggles automatic identification to a node
+// whenever a fresh link to it is established.
+func (s *BrowserService) SetNodeIdentifyOnConnect(rawURL string, enabled bool) error {
+	hash, err := nodeHashFromURL(rawURL)
+	if err != nil {
+		return err
+	}
+	return s.store.SetNodeIdentifyOnConnect(hash, enabled)
+}
+
+// GetNodeIdentifyOnConnect reports whether a node is set to auto-identify.
+func (s *BrowserService) GetNodeIdentifyOnConnect(rawURL string) bool {
+	hash, err := nodeHashFromURL(rawURL)
+	if err != nil {
+		return false
+	}
+	return s.store.NodeIdentifyOnConnect(hash)
+}

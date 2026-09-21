@@ -191,6 +191,10 @@ export function GetNetworkLog(): $CancellablePromise<$models.NetworkEntry[] | nu
     return $Call.ByID(560803913);
 }
 
+export function GetNodeIdentifyOnConnect(rawURL: string): $CancellablePromise<boolean> {
+    return $Call.ByID(237879726, rawURL);
+}
+
 export function GetPageCacheStats(): $CancellablePromise<$models.PageCacheStats> {
     return $Call.ByID(1429924087);
 }
@@ -217,6 +221,10 @@ export function GetStatus(): $CancellablePromise<rns$0.Status> {
 
 export function GetStoreHealth(): $CancellablePromise<$models.StoreHealth> {
     return $Call.ByID(4060167012);
+}
+
+export function GetTabGroups(): $CancellablePromise<$models.TabGroup[] | null> {
+    return $Call.ByID(2240651852);
 }
 
 export function GetTabs(): $CancellablePromise<$models.TabSnapshot[] | null> {
@@ -515,12 +523,20 @@ export function SetNativeTitlebar(enabled: boolean): $CancellablePromise<$models
     return $Call.ByID(1710067077, enabled);
 }
 
+export function SetNodeIdentifyOnConnect(rawURL: string, enabled: boolean): $CancellablePromise<void> {
+    return $Call.ByID(1293097418, rawURL, enabled);
+}
+
 export function SetPluginManager(manager: plugins$0.Manager | null): $CancellablePromise<void> {
     return $Call.ByID(3077852421, manager);
 }
 
 export function SetShareInstance(enabled: boolean): $CancellablePromise<void> {
     return $Call.ByID(2756669151, enabled);
+}
+
+export function SetTabGroups(groups: $models.TabGroup[] | null): $CancellablePromise<$models.TabGroup[] | null> {
+    return $Call.ByID(1286196088, groups);
 }
 
 export function SetTheme(theme: $models.ThemeSettings): $CancellablePromise<$models.ThemeSettings> {

@@ -5,5 +5,6 @@ export type {
     Health,
     HistoryEntry,
     Store,
+    TabGroup,
     TabSnapshot
 } from "./models.js";

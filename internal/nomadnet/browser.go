@@ -89,6 +89,9 @@ type Browser struct {
 	handler      *AnnounceHandler
 	links        map[string]*rlink.Link
 	establishing map[string]*linkEstablishWait
+
+	hookMu            sync.RWMutex
+	onLinkEstablished func(destHash []byte, lnk *rlink.Link)
 }
 
 type linkEstablishWait struct {
@@ -362,7 +365,22 @@ func (b *Browser) establishLink(ctx context.Context, destHash []byte, remoteID *
 	}
 
 	lnk.Start()
+
+	b.hookMu.RLock()
+	hook := b.onLinkEstablished
+	b.hookMu.RUnlock()
+	if hook != nil {
+		hook(destHash, lnk)
+	}
 	return lnk, nil
+}
+
+// SetOnLinkEstablished registers a callback fired once after each fresh
+// link activates. Reused cached links do not retrigger it.
+func (b *Browser) SetOnLinkEstablished(fn func(destHash []byte, lnk *rlink.Link)) {
+	b.hookMu.Lock()
+	b.onLinkEstablished = fn
+	b.hookMu.Unlock()
 }
 
 func waitLinkEstablished(ctx context.Context, lnk *rlink.Link, established <-chan struct{}, timeout time.Duration) error {

@@ -80,6 +80,7 @@ export interface BrowserPrefs {
     "mobileDevTools": boolean;
     "pageCacheEnabled": boolean;
     "tabHoverPreviews": boolean;
+    "tabLayout": string;
     "micronPreserveLayout": boolean;
     "initialSetupComplete": boolean;
     "settingsSectionsCollapsed": { [_ in string]?: boolean } | null;
@@ -298,6 +299,8 @@ export interface SettingsReset {
 }
 
 export type StoreHealth = store$0.Health;
+
+export type TabGroup = store$0.TabGroup;
 
 export type TabSnapshot = store$0.TabSnapshot;
 
