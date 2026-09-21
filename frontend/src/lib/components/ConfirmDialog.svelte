@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import { AlertDialog } from "bits-ui";
+  import type { Snippet } from "svelte";
   import { t } from "$lib/i18n/i18n.svelte";
 
   type Props = {
@@ -11,6 +12,7 @@
     cancelLabel?: string;
     onConfirm: () => void;
     onCancel: () => void;
+    children?: Snippet;
   };
 
   let {
@@ -21,6 +23,7 @@
     cancelLabel = t("common.cancel"),
     onConfirm,
     onCancel,
+    children,
   }: Props = $props();
 
   let confirmed = false;
@@ -46,6 +49,9 @@
       <AlertDialog.Description id="confirm-dialog-message" class="confirm-message">
         {message}
       </AlertDialog.Description>
+      {#if children}
+        {@render children()}
+      {/if}
       <div class="confirm-actions">
         <AlertDialog.Cancel type="button" class="confirm-cancel-btn"
           >{cancelLabel}</AlertDialog.Cancel
