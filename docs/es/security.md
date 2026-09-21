@@ -30,7 +30,7 @@ Consulta [Modo servidor](server-mode.md) para flags de proxy.
 
 ## Plugins de escritorio
 
-Instala extensiones solo de personas o proyectos en los que confíes. Lee la lista de permisos en **Settings → Extensions** antes de activar.
+Instala extensiones solo de personas o proyectos en los que confíes. Lee la lista de permisos en **Settings -> Extensions** antes de activar.
 
 ### Comprobaciones al instalar
 
@@ -51,7 +51,7 @@ Las firmas no válidas bloquean la instalación. Las extensiones sin firmar pued
 - Hash de integridad de archivos; manipulación externa desactiva la extensión
 - Lista de publicadores de confianza protegida por digest en la base de datos
 
-El tráfico HTTP de plugins aparece en **Developer tools → Network**. Consulta [Extensiones](extensions.md).
+El tráfico HTTP de plugins aparece en **Developer tools -> Network**. Consulta [Extensiones](extensions.md).
 
 ## Verificar descargas
 

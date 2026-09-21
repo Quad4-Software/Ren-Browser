@@ -6,7 +6,7 @@ Ren Browser admite plugins que añaden esquemas de URL, paneles laterales, coman
 
 ### Desde Settings
 
-1. Abre **Settings → Extensions**
+1. Abre **Settings -> Extensions**
 2. Elige **Install extension**, luego **.zip**, **carpeta** o **módulo .wasm empaquetado**
 3. Revisa la vista previa de instalación:
    - Permisos solicitados (puedes desactivar permisos individuales antes de instalar)
@@ -140,7 +140,7 @@ Con backend WASM: `ctx.wasm.call("export", input)`. Cadenas con `ctx.i18n.t("key
 
 Un archivo `.wasm` puede llevar manifiesto (`renbrowser.plugin`), archivos (`renbrowser.files`) y firma opcional (`renbrowser.signature`).
 
-Instala desde **Settings → Extensions → Choose .wasm module**.
+Instala desde **Settings -> Extensions -> Choose .wasm module**.
 
 `extensions/micron-translator/` usa TinyGo (`build-wasm.sh`, `go run ./extensions/micron-translator/bundle`).
 
@@ -150,7 +150,7 @@ Instala desde **Settings → Extensions → Choose .wasm module**.
 
 ## DevTools
 
-En **Developer tools → Network**, las peticiones HTTP salientes de extensiones aparecen como **Extension fetch** con código de estado y duración.
+En **Developer tools -> Network**, las peticiones HTTP salientes de extensiones aparecen como **Extension fetch** con código de estado y duración.
 
 ## Integridad
 

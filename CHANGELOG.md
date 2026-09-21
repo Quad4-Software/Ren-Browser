@@ -5,6 +5,26 @@ All notable changes to Ren Browser are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] [unreleased]
+
+### Added
+
+- Vertical tab layout and tab groups on desktop: a left-side tab rail with named, colored, collapsible groups, group assignment from the tab context menu, and a Settings -> Browsing "Tab position" option
+- Per-node auto identify: the identify dialog gains an "Always identify to this node" option, and fresh links identify automatically for nodes with the flag set
+- Discovery announce counts: nodes track how many announces were seen, persisted across restarts, with a sort menu (newest, most announces, name) and a combined node card with inline favorite star
+- Project site at site/ for GitHub Pages and issue templates
+
+### Fixed
+
+- AppImage text rendering: the bundled fontconfig config now includes host conf.d rules so family aliases and hinting resolve correctly
+- Cached-page banner is slimmer
+- Node pages use more of the render area with tighter content padding
+
+### Changed
+
+- Pin the mobile Go MTE toolchain base to the go1.27.1 release instead of a tip commit; the iOS patch stays until golang/go#77915 lands
+- Screenshot tooling emits WebP alongside PNG baselines
+
 ## [0.4.0] [released] - 2026-09-21
 
 ### Added

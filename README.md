@@ -171,7 +171,7 @@ Type `license` in the address bar to read the in-app license text.
 
 ## Extensions
 
-Install extensions from **Settings → Extensions** (zip or folder), or unpack into `~/.renbrowser/plugins/<id>/` with a `renbrowser.plugin.json` manifest.
+Install extensions from **Settings -> Extensions** (zip or folder), or unpack into `~/.renbrowser/plugins/<id>/` with a `renbrowser.plugin.json` manifest.
 
 An example extension lives in `extensions/hello-extension/`. Extension authors work with permissions (storage, navigation, network, and related caps) declared in the manifest. See `internal/plugins/manifest.go` for the full schema.
 

@@ -44,7 +44,7 @@ Use `SHA256SUMS.txt` from the release page. See [Security](security.md).
 
 ## How do I install an extension?
 
-Settings → Extensions, or unpack into `~/.renbrowser/plugins/<id>/`. See [Extensions](extensions.md).
+Settings -> Extensions, or unpack into `~/.renbrowser/plugins/<id>/`. See [Extensions](extensions.md).
 
 ## How do I type a node address?
 
@@ -72,4 +72,4 @@ Yes when an APK is published for your release. Build from source with the Androi
 
 ## How do I change keyboard shortcuts?
 
-Settings → Keybinds. See [Keyboard shortcuts](keyboard-shortcuts.md).
+Settings -> Keybinds. See [Keyboard shortcuts](keyboard-shortcuts.md).

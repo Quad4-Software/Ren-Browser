@@ -38,7 +38,7 @@ Consulta [Atajos de teclado](keyboard-shortcuts.md) para los valores predetermin
 
 ## Extensiones
 
-Gestiona plugins desde **Settings → Extensions**:
+Gestiona plugins desde **Settings -> Extensions**:
 
 - Instalar desde zip, carpeta o módulo `.wasm` empaquetado
 - Vista previa: permisos, endpoints de red, insignias de firma, notas de seguridad, idiomas de UI

@@ -6,7 +6,7 @@ Ren Browser は、URL スキーム、サイドバーパネル、コマンド、�
 
 ### 設定から
 
-1. **設定 → 拡張機能** を開く
+1. **設定 -> 拡張機能** を開く
 2. **拡張機能のインストール** を選択し、**.zip**、**フォルダー**、または**バンドルされた .wasm モジュール**を選ぶ
 3. インストールプレビューを確認する：
    - 要求された権限（インストール前に個別の権限を無効化できる）
@@ -155,7 +155,7 @@ Ren Browser は、URL スキーム、サイドバーパネル、コマンド、�
 - `renbrowser.files` — 相対パスから UTF-8 ファイル内容へのマップ（例：`main.js`、`locales/en.json`）
 - `renbrowser.signature` — オプションの RSG 署名バイト
 
-**設定 → 拡張機能 → 拡張機能のインストール → .wasm モジュールを選択** からインストールします。ホストはメタデータをプラグインディレクトリに展開し、WASM バイナリをマニフェストの `backend` として保持します。
+**設定 -> 拡張機能 -> 拡張機能のインストール -> .wasm モジュールを選択** からインストールします。ホストはメタデータをプラグインディレクトリに展開し、WASM バイナリをマニフェストの `backend` として保持します。
 
 `extensions/micron-translator/` は `translator.wasm`（TinyGo）を同梱します。`extensions/micron-translator/build-wasm.sh` で再ビルドするか、ビルド後に `go run ./extensions/micron-translator/bundle` でバンドルします。
 
@@ -169,7 +169,7 @@ Ren Browser は、URL スキーム、サイドバーパネル、コマンド、�
 
 ## DevTools
 
-**開発者ツール → ネットワーク** が開いているとき、拡張機能（JS の `PluginFetch` および WASM の `http_fetch`）が行ったアウトバウンド HTTP リクエストが、ソース **Extension fetch**、ステータスコード、所要時間とともにログに表示されます。
+**開発者ツール -> ネットワーク** が開いているとき、拡張機能（JS の `PluginFetch` および WASM の `http_fetch`）が行ったアウトバウンド HTTP リクエストが、ソース **Extension fetch**、ステータスコード、所要時間とともにログに表示されます。
 
 ## 整合性と改ざん
 

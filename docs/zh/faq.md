@@ -44,7 +44,7 @@ Nomad Network 节点上使用的一种带宽高效的标记语言。Ren Browser 
 
 ## 如何安装扩展？
 
-设置 → 扩展，或解压到 `~/.renbrowser/plugins/<id>/`。参见[扩展](extensions.md)。
+设置 -> 扩展，或解压到 `~/.renbrowser/plugins/<id>/`。参见[扩展](extensions.md)。
 
 ## 如何输入节点地址？
 
@@ -72,4 +72,4 @@ Go、Wails v3、Svelte 5、SQLite 和 Quad4 Reticulum 库。参见[架构](archi
 
 ## 如何更改键盘快捷键？
 
-设置 → 快捷键绑定。参见[键盘快捷键](keyboard-shortcuts.md)。
+设置 -> 快捷键绑定。参见[键盘快捷键](keyboard-shortcuts.md)。

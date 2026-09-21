@@ -38,7 +38,7 @@ See [Keyboard shortcuts](keyboard-shortcuts.md) for defaults and how to record n
 
 ## Extensions
 
-Manage plugins from **Settings → Extensions**:
+Manage plugins from **Settings -> Extensions**:
 
 - Install from a zip archive, folder, or bundled `.wasm` module
 - Review install preview: permissions, network endpoints, signature badges, security notes, bundled UI languages

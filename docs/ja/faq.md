@@ -44,7 +44,7 @@ Nomad Network ノードで使用される帯域効率の良いマークアップ
 
 ## 拡張機能をインストールするには？
 
-設定 → 拡張機能から、または `~/.renbrowser/plugins/<id>/` に解凍します。[拡張機能](extensions.md) を参照してください。
+設定 -> 拡張機能から、または `~/.renbrowser/plugins/<id>/` に解凍します。[拡張機能](extensions.md) を参照してください。
 
 ## ノードのアドレスを入力するには？
 
@@ -72,4 +72,4 @@ Go、Wails v3、Svelte 5、SQLite、Quad4 Reticulum ライブラリです。[ア
 
 ## キーボードショートカットを変更するには？
 
-設定 → キーバインドから。[キーボードショートカット](keyboard-shortcuts.md) を参照してください。
+設定 -> キーバインドから。[キーボードショートカット](keyboard-shortcuts.md) を参照してください。

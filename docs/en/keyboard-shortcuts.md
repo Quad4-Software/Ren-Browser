@@ -1,6 +1,6 @@
 # Keyboard shortcuts
 
-Default keybindings on desktop. You can change them in **Settings → Keybinds**.
+Default keybindings on desktop. You can change them in **Settings -> Keybinds**.
 
 `mod` means **Ctrl** on Windows and Linux, **Cmd** on macOS.
 
@@ -21,7 +21,7 @@ Default keybindings on desktop. You can change them in **Settings → Keybinds**
 
 ## Recording a new binding
 
-1. Open **Settings → Keybinds**
+1. Open **Settings -> Keybinds**
 2. Click the action you want to change
 3. Press the new key combination
 4. Conflicts with another action show in the UI. Resolve before saving.

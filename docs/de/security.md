@@ -30,7 +30,7 @@ Siehe [Servermodus](server-mode.md) für Proxy-Flags.
 
 ## Desktop-Plugins
 
-Installieren Sie Erweiterungen nur von Personen oder Projekten, denen Sie vertrauen. Lesen Sie die Berechtigungsliste unter **Einstellungen → Erweiterungen** vor dem Aktivieren.
+Installieren Sie Erweiterungen nur von Personen oder Projekten, denen Sie vertrauen. Lesen Sie die Berechtigungsliste unter **Einstellungen -> Erweiterungen** vor dem Aktivieren.
 
 ### Prüfungen bei der Installation
 
@@ -51,7 +51,7 @@ Ungültige Signaturen blockieren die Installation. Unsignierte Erweiterungen kö
 - Integritäts-Hash der Dateien; externe Änderungen deaktivieren die Erweiterung
 - Digest-geschützte Benutzer-Vertrauensliste
 
-Plugin-HTTP erscheint in **Entwicklertools → Netzwerk**. Siehe [Erweiterungen](extensions.md).
+Plugin-HTTP erscheint in **Entwicklertools -> Netzwerk**. Siehe [Erweiterungen](extensions.md).
 
 ## Downloads prüfen
 

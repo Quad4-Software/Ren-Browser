@@ -6,7 +6,7 @@ Ren Browser supports plugins that add URL schemes, sidebar panels, commands, the
 
 ### From Settings
 
-1. Open **Settings → Extensions**
+1. Open **Settings -> Extensions**
 2. Choose **Install extension**, then pick a **.zip**, **folder**, or **bundled .wasm module**
 3. Review the install preview:
    - Requested permissions (you can disable individual permissions before install)
@@ -155,7 +155,7 @@ A distributable extension can be shipped as one `.wasm` file. The module carries
 - `renbrowser.files` — map of relative paths to UTF-8 file contents (for example `main.js`, `locales/en.json`)
 - `renbrowser.signature` — optional RSG signature bytes
 
-Install from **Settings → Extensions → Install extension → Choose .wasm module**. The host unpacks metadata into the plugins directory and keeps the WASM binary as the manifest `backend`.
+Install from **Settings -> Extensions -> Install extension -> Choose .wasm module**. The host unpacks metadata into the plugins directory and keeps the WASM binary as the manifest `backend`.
 
 `extensions/micron-translator/` ships `translator.wasm` (TinyGo). Rebuild with `extensions/micron-translator/build-wasm.sh`, or bundle with `go run ./extensions/micron-translator/bundle` after building.
 
@@ -169,7 +169,7 @@ Safeguards include per-call network request limits, WASM call timeouts, and inpu
 
 ## DevTools
 
-When **Developer tools → Network** is open, outbound HTTP requests made by extensions (JS `PluginFetch` and WASM `http_fetch`) appear in the log with source **Extension fetch**, status code, and duration.
+When **Developer tools -> Network** is open, outbound HTTP requests made by extensions (JS `PluginFetch` and WASM `http_fetch`) appear in the log with source **Extension fetch**, status code, and duration.
 
 ## Integrity and tampering
 

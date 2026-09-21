@@ -44,7 +44,7 @@ Usa `SHA256SUMS.txt` de la página de release. Consulta [Seguridad](security.md)
 
 ## ¿Cómo instalo una extensión?
 
-Settings → Extensions, o descomprime en `~/.renbrowser/plugins/<id>/`. Consulta [Extensiones](extensions.md).
+Settings -> Extensions, o descomprime en `~/.renbrowser/plugins/<id>/`. Consulta [Extensiones](extensions.md).
 
 ## ¿Cómo escribo la dirección de un nodo?
 
@@ -72,4 +72,4 @@ Sí cuando se publique un APK para tu release. Compila desde el código fuente c
 
 ## ¿Cómo cambio los atajos de teclado?
 
-Settings → Keybinds. Consulta [Atajos de teclado](keyboard-shortcuts.md).
+Settings -> Keybinds. Consulta [Atajos de teclado](keyboard-shortcuts.md).

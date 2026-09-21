@@ -6,7 +6,7 @@ Ren Browser 支持添加 URL 方案、侧边栏面板、命令、主题、设置
 
 ### 通过设置安装
 
-1. 打开**设置 → 扩展**
+1. 打开**设置 -> 扩展**
 2. 选择**安装扩展**，然后选择 **.zip** 文件、**文件夹**或**捆绑的 .wasm 模块**
 3. 查看安装预览：
    - 请求的权限（安装前可以禁用单个权限）
@@ -155,7 +155,7 @@ Ren Browser 支持添加 URL 方案、侧边栏面板、命令、主题、设置
 - `renbrowser.files` — 相对路径到 UTF-8 文件内容的映射（例如 `main.js`、`locales/en.json`）
 - `renbrowser.signature` — 可选的 RSG 签名字节
 
-通过**设置 → 扩展 → 安装扩展 → 选择 .wasm 模块**安装。主机将元数据解包到插件目录，并将 WASM 二进制文件保留为清单的 `backend`。
+通过**设置 -> 扩展 -> 安装扩展 -> 选择 .wasm 模块**安装。主机将元数据解包到插件目录，并将 WASM 二进制文件保留为清单的 `backend`。
 
 `extensions/micron-translator/` 附带 `translator.wasm`（TinyGo）。使用 `extensions/micron-translator/build-wasm.sh` 重新构建，或在构建后使用 `go run ./extensions/micron-translator/bundle` 打包。
 
@@ -169,7 +169,7 @@ Ren Browser 支持添加 URL 方案、侧边栏面板、命令、主题、设置
 
 ## 开发工具
 
-当**开发工具 → 网络**打开时，扩展发起的出站 HTTP 请求（JS 的 `PluginFetch` 和 WASM 的 `http_fetch`）会以**扩展请求**为来源，显示状态码和持续时间。
+当**开发工具 -> 网络**打开时，扩展发起的出站 HTTP 请求（JS 的 `PluginFetch` 和 WASM 的 `http_fetch`）会以**扩展请求**为来源，显示状态码和持续时间。
 
 ## 完整性与篡改检测
 

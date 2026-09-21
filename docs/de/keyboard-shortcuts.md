@@ -1,6 +1,6 @@
 # Tastenkürzel
 
-Standard-Tastenbelegungen auf dem Desktop. Sie können sie unter **Einstellungen → Tastenkürzel** ändern.
+Standard-Tastenbelegungen auf dem Desktop. Sie können sie unter **Einstellungen -> Tastenkürzel** ändern.
 
 `mod` bedeutet **Ctrl** unter Windows und Linux, **Cmd** unter macOS.
 
@@ -21,7 +21,7 @@ Standard-Tastenbelegungen auf dem Desktop. Sie können sie unter **Einstellungen
 
 ## Neue Belegung aufzeichnen
 
-1. Öffnen Sie **Einstellungen → Tastenkürzel**
+1. Öffnen Sie **Einstellungen -> Tastenkürzel**
 2. Klicken Sie die Aktion, die Sie ändern möchten
 3. Drücken Sie die neue Tastenkombination
 4. Konflikte mit einer anderen Aktion erscheinen in der UI. Lösen Sie sie vor dem Speichern.

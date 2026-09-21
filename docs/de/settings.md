@@ -38,7 +38,7 @@ Siehe [Tastenkürzel](keyboard-shortcuts.md) für Standardbelegungen und wie Sie
 
 ## Erweiterungen
 
-Verwalten Sie Plugins unter **Einstellungen → Erweiterungen**:
+Verwalten Sie Plugins unter **Einstellungen -> Erweiterungen**:
 
 - Installation aus Zip, Ordner oder gebündeltem `.wasm`-Modul
 - Installationsvorschau: Berechtigungen, Netzwerk-Endpunkte, Signatur-Badges, Sicherheitshinweise, UI-Sprachen

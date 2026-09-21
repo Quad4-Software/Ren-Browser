@@ -44,7 +44,7 @@ Nutzen Sie `SHA256SUMS.txt` von der Release-Seite. Siehe [Sicherheit](security.m
 
 ## Wie installiere ich eine Erweiterung?
 
-Einstellungen → Erweiterungen, oder entpacken nach `~/.renbrowser/plugins/<id>/`. Siehe [Erweiterungen](extensions.md).
+Einstellungen -> Erweiterungen, oder entpacken nach `~/.renbrowser/plugins/<id>/`. Siehe [Erweiterungen](extensions.md).
 
 ## Wie gebe ich eine Knotenadresse ein?
 
@@ -72,4 +72,4 @@ Ja, wenn für Ihr Release eine APK veröffentlicht ist. Bauen Sie bei Bedarf aus
 
 ## Wie ändere ich Tastenkürzel?
 
-Einstellungen → Tastenkürzel. Siehe [Tastenkürzel](keyboard-shortcuts.md).
+Einstellungen -> Tastenkürzel. Siehe [Tastenkürzel](keyboard-shortcuts.md).

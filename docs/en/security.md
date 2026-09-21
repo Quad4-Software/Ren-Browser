@@ -30,7 +30,7 @@ See [Server mode](server-mode.md) for proxy flags.
 
 ## Desktop plugins
 
-Only install extensions from people or projects you trust. Read the permission list in **Settings → Extensions** before enabling.
+Only install extensions from people or projects you trust. Read the permission list in **Settings -> Extensions** before enabling.
 
 ### Install-time checks
 
@@ -51,7 +51,7 @@ Invalid signatures block installation. Unsigned extensions can still be installe
 - Extension file integrity is hashed after install; external tampering disables the extension until you re-enable it
 - User trusted publisher list changes outside the app are detected via a database-backed digest
 
-Plugin HTTP traffic appears in **Developer tools → Network** when DevTools is open.
+Plugin HTTP traffic appears in **Developer tools -> Network** when DevTools is open.
 
 See [Extensions](extensions.md) for signing, locales, and manifest fields.
 

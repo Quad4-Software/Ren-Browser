@@ -1,6 +1,6 @@
 # Atajos de teclado
 
-Atajos predeterminados en escritorio. Puedes cambiarlos en **Settings → Keybinds**.
+Atajos predeterminados en escritorio. Puedes cambiarlos en **Settings -> Keybinds**.
 
 `mod` significa **Ctrl** en Windows y Linux, **Cmd** en macOS.
 
@@ -21,7 +21,7 @@ Atajos predeterminados en escritorio. Puedes cambiarlos en **Settings → Keybin
 
 ## Grabar un atajo nuevo
 
-1. Abre **Settings → Keybinds**
+1. Abre **Settings -> Keybinds**
 2. Haz clic en la acción que quieres cambiar
 3. Pulsa la nueva combinación de teclas
 4. Los conflictos con otra acción se muestran en la UI. Resuélvelos antes de guardar.
