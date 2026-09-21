@@ -5,7 +5,7 @@ import type { KeybindSettings } from "$lib/browser/keybinds";
 import type { MicronRendererPreference } from "$lib/micron/render-page";
 import type { ActivePanel, ContributionsSnapshot } from "$lib/plugins/api-types.js";
 import type { ThemeSettings } from "$lib/theme/tokens";
-import type { Tab, TabPage } from "$lib/browser/url";
+import type { Tab, TabGroup, TabLayout, TabPage } from "$lib/browser/url";
 import type { ActiveDownloadRow } from "$lib/browser/download-progress";
 
 export type InitialSetupStep = "welcome" | "suggested" | "pick" | "config";
@@ -15,6 +15,7 @@ export type Node = {
   name: string;
   hops: number;
   lastSeen: number;
+  announces: number;
 };
 
 export type PageResponse = {
@@ -78,6 +79,7 @@ export type TabSnapshot = {
   url: string;
   active: boolean;
   pinned?: boolean;
+  groupId?: string;
   html?: string;
   contentType?: string;
   error?: string;
@@ -214,9 +216,11 @@ export type AppState = {
   discoverySlowMode: boolean;
   mobileDevTools: boolean;
   tabHoverPreviews: boolean;
+  tabLayout: TabLayout;
   mobileTabsOpen: boolean;
   settingsSectionsCollapsed: Record<string, boolean>;
   tabs: Tab[];
+  tabGroups: TabGroup[];
 };
 
-export type { Tab, TabPage };
+export type { Tab, TabGroup, TabLayout, TabPage };

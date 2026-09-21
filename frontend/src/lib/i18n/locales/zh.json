@@ -99,7 +99,16 @@
     "documentation": "文档",
     "document": "文档",
     "settings": "设置",
-    "nomadNet": "NomadNet"
+    "nomadNet": "NomadNet",
+    "groupUnnamed": "分组",
+    "groupName": "分组名称",
+    "addToGroup": "添加到分组",
+    "newGroup": "新建分组",
+    "removeFromGroup": "移出分组",
+    "renameGroup": "重命名分组",
+    "groupColor": "分组颜色",
+    "ungroup": "取消分组",
+    "closeBelow": "关闭下方标签页"
   },
   "settings": {
     "appearance": "外观",
@@ -260,7 +269,10 @@
     "micronImageNodePolicy": "节点的图片策略",
     "micronImageNodeRemove": "移除",
     "micronImagePolicyAlways": "允许",
-    "micronImagePolicyNever": "阻止"
+    "micronImagePolicyNever": "阻止",
+    "tabLayout": "标签页位置",
+    "tabLayoutTop": "顶部",
+    "tabLayoutLeft": "左侧"
   },
   "keybinds": {
     "focusUrl": "聚焦地址栏",
@@ -292,7 +304,13 @@
     "favoritesOnlyOff": "仅收藏关",
     "noFavorites": "未发现收藏站点",
     "noFavoritesDescription": "在发现中为站点加星，或在浏览时将页面标为收藏。",
-    "favoriteSite": "收藏站点"
+    "favoriteSite": "收藏站点",
+    "sort": "排序",
+    "sortNewest": "最新",
+    "sortAnnounces": "最多通告",
+    "sortName": "名称",
+    "announcesCount": "{count} 次通告",
+    "announcesCountPlural": "{count} 次通告"
   },
   "history": {
     "title": "历史记录",
@@ -628,7 +646,8 @@
     "identifyMessage": "向此节点表明你的身份？之后页面将重新加载。",
     "resetDbTitle": "重置数据库",
     "resetDbMessage": "这将永久删除已保存的标签页、历史记录、收藏和设置。继续？",
-    "resetDbConfirm": "重置数据库"
+    "resetDbConfirm": "重置数据库",
+    "identifyAlways": "始终向此节点标识身份"
   },
   "errors": {
     "connectionFailedTitle": "连接节点失败",

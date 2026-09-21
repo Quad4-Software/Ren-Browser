@@ -99,7 +99,16 @@
     "documentation": "Documentación",
     "document": "Documento",
     "settings": "Configuración",
-    "nomadNet": "NomadNet"
+    "nomadNet": "NomadNet",
+    "groupUnnamed": "Grupo",
+    "groupName": "Nombre del grupo",
+    "addToGroup": "Añadir al grupo",
+    "newGroup": "Nuevo grupo",
+    "removeFromGroup": "Quitar del grupo",
+    "renameGroup": "Renombrar grupo",
+    "groupColor": "Color del grupo",
+    "ungroup": "Desagrupar",
+    "closeBelow": "Cerrar pestañas inferiores"
   },
   "settings": {
     "appearance": "Apariencia",
@@ -260,7 +269,10 @@
     "micronImageNodePolicy": "Política de imágenes para el nodo",
     "micronImageNodeRemove": "Eliminar",
     "micronImagePolicyAlways": "Permitir",
-    "micronImagePolicyNever": "Bloquear"
+    "micronImagePolicyNever": "Bloquear",
+    "tabLayout": "Posición de pestañas",
+    "tabLayoutTop": "Arriba",
+    "tabLayoutLeft": "Izquierda"
   },
   "keybinds": {
     "focusUrl": "Enfocar barra de direcciones",
@@ -292,7 +304,13 @@
     "favoritesOnlyOff": "Solo favoritos desactivado",
     "noFavorites": "No hay sitios favoritos descubiertos",
     "noFavoritesDescription": "Marca un sitio en Descubrir o guarda una página como favorita al navegar.",
-    "favoriteSite": "Marcar sitio como favorito"
+    "favoriteSite": "Marcar sitio como favorito",
+    "sort": "Ordenar",
+    "sortNewest": "Mas recientes",
+    "sortAnnounces": "Mas anuncios",
+    "sortName": "Nombre",
+    "announcesCount": "{count} anuncio",
+    "announcesCountPlural": "{count} anuncios"
   },
   "history": {
     "title": "Historial",
@@ -628,7 +646,8 @@
     "identifyMessage": "¿Identificarse en este nodo? La página se recargará después.",
     "resetDbTitle": "Restablecer base de datos",
     "resetDbMessage": "Esto elimina permanentemente las pestañas guardadas, el historial, los favoritos y los ajustes. ¿Continuar?",
-    "resetDbConfirm": "Restablecer base de datos"
+    "resetDbConfirm": "Restablecer base de datos",
+    "identifyAlways": "Identificarse siempre con este nodo"
   },
   "errors": {
     "connectionFailedTitle": "Error de conexión con el nodo",

@@ -24,6 +24,7 @@
   onChangeUILanguage={app.saveUILanguage}
   openLinksInNewTab={app.openLinksInNewTab}
   tabHoverPreviews={app.tabHoverPreviews}
+  tabLayout={app.tabLayout}
   nativeTitlebar={app.nativeTitlebar}
   micronRenderer={app.micronRenderer}
   micronWasmEnabled={app.micronWasmEnabled}
@@ -52,6 +53,7 @@
   onPickDownloadDir={app.pickDownloadDir}
   onChangeOpenLinksInNewTab={app.saveOpenLinksInNewTab}
   onChangeTabHoverPreviews={app.saveTabHoverPreviews}
+  onChangeTabLayout={app.saveTabLayout}
   onChangeMobileDevTools={app.saveMobileDevTools}
   onOpenSearch={() => app.setPanel("search")}
   onChangeNativeTitlebar={app.saveNativeTitlebar}

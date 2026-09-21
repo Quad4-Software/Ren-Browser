@@ -99,7 +99,16 @@
     "documentation": "Dokumentation",
     "document": "Dokument",
     "settings": "Einstellungen",
-    "nomadNet": "NomadNet"
+    "nomadNet": "NomadNet",
+    "groupUnnamed": "Gruppe",
+    "groupName": "Gruppenname",
+    "addToGroup": "Zu Gruppe hinzufügen",
+    "newGroup": "Neue Gruppe",
+    "removeFromGroup": "Aus Gruppe entfernen",
+    "renameGroup": "Gruppe umbenennen",
+    "groupColor": "Gruppenfarbe",
+    "ungroup": "Gruppierung aufheben",
+    "closeBelow": "Darunterliegende Tabs schließen"
   },
   "settings": {
     "appearance": "Erscheinungsbild",
@@ -260,7 +269,10 @@
     "micronImageNodePolicy": "Bildregel für Knoten",
     "micronImageNodeRemove": "Entfernen",
     "micronImagePolicyAlways": "Erlauben",
-    "micronImagePolicyNever": "Blockieren"
+    "micronImagePolicyNever": "Blockieren",
+    "tabLayout": "Tab-Position",
+    "tabLayoutTop": "Oben",
+    "tabLayoutLeft": "Links"
   },
   "keybinds": {
     "focusUrl": "Adressleiste fokussieren",
@@ -292,7 +304,13 @@
     "favoritesOnlyOff": "Nur Favoriten aus",
     "noFavorites": "Keine favorisierten Seiten entdeckt",
     "noFavoritesDescription": "Markiere eine Seite in Entdecken oder setze eine Seite beim Surfen als Favorit.",
-    "favoriteSite": "Seite favorisieren"
+    "favoriteSite": "Seite favorisieren",
+    "sort": "Sortieren",
+    "sortNewest": "Neueste",
+    "sortAnnounces": "Meiste Announces",
+    "sortName": "Name",
+    "announcesCount": "{count} Announce",
+    "announcesCountPlural": "{count} Announces"
   },
   "history": {
     "title": "Verlauf",
@@ -628,7 +646,8 @@
     "identifyMessage": "Bei diesem Knoten identifizieren? Die Seite wird danach neu geladen.",
     "resetDbTitle": "Datenbank zurücksetzen",
     "resetDbMessage": "Dies löscht dauerhaft gespeicherte Tabs, Verlauf, Favoriten und Einstellungen. Fortfahren?",
-    "resetDbConfirm": "Datenbank zurücksetzen"
+    "resetDbConfirm": "Datenbank zurücksetzen",
+    "identifyAlways": "Diesem Node immer identifizieren"
   },
   "errors": {
     "connectionFailedTitle": "Verbindung zum Knoten fehlgeschlagen",

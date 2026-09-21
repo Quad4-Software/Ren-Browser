@@ -15,6 +15,7 @@ export default ts.config(
   {
     rules: {
       "security/detect-object-injection": "off",
+      "@typescript-eslint/no-unused-vars": ["error", { ignoreRestSiblings: true }],
     },
   },
   {

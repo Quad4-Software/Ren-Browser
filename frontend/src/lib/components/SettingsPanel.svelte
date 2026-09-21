@@ -23,6 +23,7 @@
   import ExtensionsPanel from "$lib/components/ExtensionsPanel.svelte";
   import SettingsSection from "$lib/components/SettingsSection.svelte";
   import type { MicronRendererPreference } from "$lib/micron/render-page";
+  import type { TabLayout } from "$lib/browser/url";
   import type { MicronImageNodePolicy, MicronImagesMode } from "$lib/micron/images";
   import { isWebAssemblySupported } from "$lib/micron/wasm-loader";
   import type { ThemeSettings } from "$lib/theme/tokens";
@@ -90,6 +91,7 @@
     downloadDir: string;
     openLinksInNewTab: boolean;
     tabHoverPreviews: boolean;
+    tabLayout: TabLayout;
     nativeTitlebar: boolean;
     micronRenderer: MicronRendererPreference;
     micronWasmEnabled: boolean;
@@ -122,6 +124,7 @@
     onPickDownloadDir: () => void;
     onChangeOpenLinksInNewTab: (value: boolean) => void;
     onChangeTabHoverPreviews: (value: boolean) => void;
+    onChangeTabLayout: (value: TabLayout) => void;
     onChangeMobileDevTools: (value: boolean) => void;
     onOpenSearch?: () => void;
     onChangeNativeTitlebar: (value: boolean) => void;
@@ -170,6 +173,7 @@
     downloadDir = $bindable(),
     openLinksInNewTab,
     tabHoverPreviews,
+    tabLayout,
     nativeTitlebar,
     micronRenderer,
     micronWasmEnabled,
@@ -197,6 +201,7 @@
     onPickDownloadDir,
     onChangeOpenLinksInNewTab,
     onChangeTabHoverPreviews,
+    onChangeTabLayout,
     onChangeMobileDevTools,
     onOpenSearch = () => {},
     onChangeNativeTitlebar,
@@ -356,6 +361,11 @@
   ]);
 
   const fontItems = $derived(fontOptions.map((font) => ({ value: font, label: font })));
+
+  const tabLayoutItems = $derived([
+    { value: "top", label: t("settings.tabLayoutTop") },
+    { value: "left", label: t("settings.tabLayoutLeft") },
+  ]);
 
   const micronRendererItems = $derived.by(() => {
     const items = [{ value: "auto", label: t("settings.rendererAuto") }];
@@ -628,6 +638,28 @@
     {/if}
 
     {#if desktopChrome}
+      <label>
+        <span>{t("settings.tabLayout")}</span>
+        <Select.Root
+          type="single"
+          value={tabLayout}
+          items={tabLayoutItems}
+          onValueChange={(value) => onChangeTabLayout(value as TabLayout)}
+        >
+          <Select.Trigger class="ren-select" aria-label={t("settings.tabLayout")}>
+            <Select.Value />
+          </Select.Trigger>
+          <Select.Portal>
+            <Select.Content class="ren-select-content" sideOffset={4}>
+              <Select.Viewport>
+                {#each tabLayoutItems as item (item.value)}
+                  <Select.Item value={item.value} label={item.label}>{item.label}</Select.Item>
+                {/each}
+              </Select.Viewport>
+            </Select.Content>
+          </Select.Portal>
+        </Select.Root>
+      </label>
       <Toggle
         label={t("settings.tabHoverPreviews")}
         checked={tabHoverPreviews}

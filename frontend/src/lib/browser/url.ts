@@ -27,10 +27,133 @@ export type Tab = {
   url: string;
   active: boolean;
   pinned?: boolean;
+  groupId?: string;
   page?: TabPage;
   navGeneration?: number;
   loading?: boolean;
 };
+
+export type TabLayout = "top" | "left";
+
+export type TabGroup = {
+  id: string;
+  name: string;
+  color: string;
+  collapsed: boolean;
+};
+
+export const TAB_GROUP_COLORS = [
+  "#71717a",
+  "#60a5fa",
+  "#34d399",
+  "#fbbf24",
+  "#f87171",
+  "#a78bfa",
+] as const;
+
+export function tabGroupColor(groups: TabGroup[], groupId: string | undefined): string {
+  if (!groupId) {
+    return "";
+  }
+  return groups.find((group) => group.id === groupId)?.color ?? "";
+}
+
+export function setTabGroupInList(tabs: Tab[], id: string, groupId: string | undefined): Tab[] {
+  return tabs.map((tab) => {
+    if (tab.id !== id) {
+      return tab;
+    }
+    if (!groupId) {
+      const { groupId: _drop, ...rest } = tab;
+      return rest;
+    }
+    return { ...tab, groupId };
+  });
+}
+
+export type TabListItem =
+  { type: "tab"; tab: Tab } | { type: "group"; group: TabGroup; tabs: Tab[] };
+
+// Assigns a tab to a group and moves it directly after the last current
+// member so grouped tabs stay contiguous in the list.
+export function assignTabToGroupInList(
+  tabs: Tab[],
+  tabId: string,
+  groupId: string | undefined,
+): Tab[] {
+  const tab = tabs.find((item) => item.id === tabId);
+  if (!tab || tab.pinned || tab.groupId === groupId) {
+    return tabs;
+  }
+  const next = setTabGroupInList(tabs, tabId, groupId);
+  if (!groupId) {
+    return next;
+  }
+  const members = next.filter((item) => item.groupId === groupId && item.id !== tabId);
+  if (members.length === 0) {
+    return next;
+  }
+  const moved = next.find((item) => item.id === tabId);
+  if (!moved) {
+    return next;
+  }
+  const without = next.filter((item) => item.id !== tabId);
+  const lastMemberIdx = without.findIndex((item) => item.id === members[members.length - 1].id);
+  without.splice(lastMemberIdx + 1, 0, moved);
+  return without;
+}
+
+// Drops groups with no member tabs and clears dangling groupId references.
+// Returns null when nothing changed so callers can skip state updates.
+export function pruneTabGroups(
+  tabs: Tab[],
+  groups: TabGroup[],
+): { tabs: Tab[]; groups: TabGroup[] } | null {
+  const groupIds = new Set(groups.map((group) => group.id));
+  const memberCounts = new Map<string, number>();
+  let tabsChanged = false;
+  const nextTabs = tabs.map((tab) => {
+    if (!tab.groupId || groupIds.has(tab.groupId)) {
+      if (tab.groupId) {
+        memberCounts.set(tab.groupId, (memberCounts.get(tab.groupId) ?? 0) + 1);
+      }
+      return tab;
+    }
+    tabsChanged = true;
+    const { groupId: _drop, ...rest } = tab;
+    return rest;
+  });
+  const nextGroups = groups.filter((group) => (memberCounts.get(group.id) ?? 0) > 0);
+  if (!tabsChanged && nextGroups.length === groups.length) {
+    return null;
+  }
+  return { tabs: nextTabs, groups: nextGroups };
+}
+
+// Groups render at the position of their first member tab. Pinned tabs
+// always lead and are never grouped.
+export function groupTabsForDisplay(tabs: Tab[], groups: TabGroup[]): TabListItem[] {
+  const groupById = new Map(groups.map((group) => [group.id, group]));
+  const items: TabListItem[] = [];
+  const seen = new Set<string>();
+  for (const tab of tabs) {
+    const group = tab.groupId ? groupById.get(tab.groupId) : undefined;
+    if (!group) {
+      items.push({ type: "tab", tab });
+      continue;
+    }
+    if (seen.has(group.id)) {
+      continue;
+    }
+    seen.add(group.id);
+    items.push({
+      type: "group",
+      group,
+      tabs: tabs.filter((member) => member.groupId === group.id),
+    });
+  }
+  return items;
+}
 
 export const MAX_TABS = 32;
 
@@ -55,7 +178,13 @@ export function pinTabInList(tabs: Tab[], id: string): Tab[] {
     return tabs;
   }
   return orderTabsPinnedFirst(
-    tabs.map((item) => (item.id === id ? { ...item, pinned: true } : item)),
+    tabs.map((item) => {
+      if (item.id !== id) {
+        return item;
+      }
+      const { groupId: _drop, ...rest } = item;
+      return { ...rest, pinned: true };
+    }),
   );
 }
 

@@ -6,6 +6,7 @@
   import { createApp } from "$lib/app/create-app.svelte";
   import PluginToast from "$lib/components/PluginToast.svelte";
   import AppDesktopChrome from "$lib/components/AppDesktopChrome.svelte";
+  import VerticalTabBar from "$lib/components/VerticalTabBar.svelte";
   import AppWorkspace from "$lib/components/AppWorkspace.svelte";
   import AppConfirmDialogs from "$lib/components/AppConfirmDialogs.svelte";
   import InitialSetupModal from "$lib/components/InitialSetupModal.svelte";
@@ -78,6 +79,7 @@
 <div
   class="app-shell"
   class:mobile-ui={app.mobileUI}
+  class:tabs-left={!app.mobileUI && app.tabLayout === "left"}
   class:keyboard-open={app.mobileUI && keyboardOpen}
   style:--ime-inset="{app.mobileUI ? imeInset : 0}px"
 >
@@ -97,6 +99,40 @@
       onIdentify={app.requestIdentify}
     />
   {:else}
+    {#if app.tabLayout === "left"}
+      <VerticalTabBar
+        tabs={app.tabs}
+        tabGroups={app.tabGroups}
+        nativeTitlebar={app.nativeTitlebar}
+        mobileUI={app.mobileUI}
+        tabHoverPreviews={app.tabHoverPreviews}
+        micronEngine={app.effectiveMicronEngine}
+        splitViewOpen={app.splitViewOpen}
+        splitTabId={app.splitTabId}
+        onSelect={app.setActiveTab}
+        onClose={app.closeTab}
+        onNew={app.newTab}
+        onReorder={app.reorderTabs}
+        onReload={app.reloadTab}
+        onDuplicate={app.duplicateTab}
+        onFavorite={app.favoriteTab}
+        onViewSource={app.viewSourceTab}
+        onDownload={app.downloadTab}
+        onSplit={app.splitTabView}
+        onCloseSplit={app.closeSplitView}
+        onCloseOthers={app.closeOtherTabs}
+        onCloseRight={app.closeTabsToRight}
+        onCloseAll={app.requestCloseAllTabs}
+        onTogglePin={app.togglePinTab}
+        onCreateGroup={app.createTabGroup}
+        onAssignGroup={app.assignTabToGroup}
+        onRenameGroup={app.renameTabGroup}
+        onGroupColor={app.setTabGroupColor}
+        onToggleGroupCollapsed={app.toggleTabGroupCollapsed}
+        onRemoveGroup={app.removeTabGroup}
+        onWindowChromeError={(message) => app.showPluginToast(message, { isError: true })}
+      />
+    {/if}
     <AppDesktopChrome {app} />
   {/if}
 
@@ -160,6 +196,16 @@
     min-width: 0;
     max-width: 100%;
     overflow-x: clip;
+  }
+
+  .app-shell.tabs-left {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .app-shell.tabs-left :global(.vtabs) {
+    grid-column: 1;
+    grid-row: 1 / -1;
   }
 
   .app-shell.mobile-ui {

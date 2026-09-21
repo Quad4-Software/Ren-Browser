@@ -17,7 +17,11 @@ import {
   tabWidthForCount,
   tabWidthForTab,
   unpinTabInList,
+  assignTabToGroupInList,
+  groupTabsForDisplay,
+  pruneTabGroups,
   type Tab,
+  type TabGroup,
 } from "./url";
 
 function sampleTab(id: string, pinned = false): Tab {
@@ -250,5 +254,83 @@ describe("tab pinning", () => {
     const tabs = [sampleTab("a", true), sampleTab("b"), sampleTab("c")];
     expect(tabWidthForTab(600, tabs, tabs[0])).toBe(44);
     expect(tabWidthForTab(600, tabs, tabs[1])).toBeGreaterThan(44);
+  });
+});
+
+describe("tab groups", () => {
+  const group = (id: string, collapsed = false): TabGroup => ({
+    id,
+    name: id,
+    color: "#60a5fa",
+    collapsed,
+  });
+
+  it("assigns a tab to a group and moves it after existing members", () => {
+    const tabs = [
+      { ...sampleTab("a"), groupId: "g1" },
+      sampleTab("b"),
+      { ...sampleTab("c"), groupId: "g1" },
+      sampleTab("d"),
+    ];
+    const next = assignTabToGroupInList(tabs, "b", "g1");
+    expect(next.map((item) => item.id)).toEqual(["a", "c", "b", "d"]);
+    expect(next[2].groupId).toBe("g1");
+  });
+
+  it("clears groupId when unassigned", () => {
+    const tabs = [{ ...sampleTab("a"), groupId: "g1" }, sampleTab("b")];
+    const next = assignTabToGroupInList(tabs, "a", undefined);
+    expect(next[0].groupId).toBeUndefined();
+  });
+
+  it("refuses to group pinned tabs", () => {
+    const tabs = [sampleTab("a", true), sampleTab("b")];
+    const next = assignTabToGroupInList(tabs, "a", "g1");
+    expect(next).toBe(tabs);
+  });
+
+  it("drops groupId when a tab is pinned", () => {
+    const tabs = [{ ...sampleTab("a"), groupId: "g1" }, sampleTab("b")];
+    const next = pinTabInList(tabs, "a");
+    expect(next[0].pinned).toBe(true);
+    expect(next[0].groupId).toBeUndefined();
+  });
+
+  it("groups tabs for display at the first member position", () => {
+    const tabs = [
+      { ...sampleTab("a"), groupId: "g1" },
+      sampleTab("b"),
+      { ...sampleTab("c"), groupId: "g1" },
+      sampleTab("d"),
+    ];
+    const items = groupTabsForDisplay(tabs, [group("g1")]);
+    expect(items.map((item) => (item.type === "group" ? item.group.id : item.tab.id))).toEqual([
+      "g1",
+      "b",
+      "d",
+    ]);
+    expect(items[0].type === "group" && items[0].tabs.map((tab) => tab.id)).toEqual(["a", "c"]);
+  });
+
+  it("renders tabs with unknown groupId as ungrouped", () => {
+    const tabs = [{ ...sampleTab("a"), groupId: "ghost" }, sampleTab("b")];
+    const items = groupTabsForDisplay(tabs, []);
+    expect(items.every((item) => item.type === "tab")).toBe(true);
+  });
+
+  it("prunes empty groups and dangling groupIds", () => {
+    const tabs = [
+      { ...sampleTab("a"), groupId: "g1" },
+      { ...sampleTab("b"), groupId: "gone" },
+    ];
+    const result = pruneTabGroups(tabs, [group("g1"), group("g2")]);
+    expect(result).not.toBeNull();
+    expect(result!.groups.map((item) => item.id)).toEqual(["g1"]);
+    expect(result!.tabs[1].groupId).toBeUndefined();
+  });
+
+  it("returns null when nothing needs pruning", () => {
+    const tabs = [{ ...sampleTab("a"), groupId: "g1" }];
+    expect(pruneTabGroups(tabs, [group("g1")])).toBeNull();
   });
 });

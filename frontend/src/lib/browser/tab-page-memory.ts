@@ -96,6 +96,7 @@ export function tabSnapshotForPersist(tab: Tab, keepFull: boolean): TabSnapshot 
     url: tab.url,
     active: tab.active,
     pinned: tab.pinned,
+    groupId: tab.groupId,
     contentType: tab.page?.contentType,
     error: tab.page?.error,
     errorKind: tab.page?.errorKind,

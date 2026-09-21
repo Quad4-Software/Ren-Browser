@@ -99,7 +99,16 @@
     "documentation": "Documentation",
     "document": "Document",
     "settings": "Settings",
-    "nomadNet": "NomadNet"
+    "nomadNet": "NomadNet",
+    "groupUnnamed": "Group",
+    "groupName": "Group name",
+    "addToGroup": "Add to group",
+    "newGroup": "New group",
+    "removeFromGroup": "Remove from group",
+    "renameGroup": "Rename group",
+    "groupColor": "Group color",
+    "ungroup": "Ungroup",
+    "closeBelow": "Close tabs below"
   },
   "settings": {
     "appearance": "Appearance",
@@ -260,7 +269,10 @@
     "micronImageNodePolicy": "Image policy for node",
     "micronImageNodeRemove": "Remove",
     "micronImagePolicyAlways": "Allow",
-    "micronImagePolicyNever": "Block"
+    "micronImagePolicyNever": "Block",
+    "tabLayout": "Tab position",
+    "tabLayoutTop": "Top",
+    "tabLayoutLeft": "Left side"
   },
   "keybinds": {
     "focusUrl": "Focus address bar",
@@ -292,7 +304,13 @@
     "favoritesOnlyOff": "Favorites only off",
     "noFavorites": "No favorite sites discovered",
     "noFavoritesDescription": "Star a site in Discovery or mark a page as a favorite while browsing.",
-    "favoriteSite": "Favorite site"
+    "favoriteSite": "Favorite site",
+    "sort": "Sort",
+    "sortNewest": "Newest",
+    "sortAnnounces": "Most announces",
+    "sortName": "Name",
+    "announcesCount": "{count} announce",
+    "announcesCountPlural": "{count} announces"
   },
   "history": {
     "title": "History",
@@ -628,7 +646,8 @@
     "identifyMessage": "Identify yourself to this node? The page will reload afterward.",
     "resetDbTitle": "Reset database",
     "resetDbMessage": "This permanently deletes saved tabs, history, favorites, and settings. Continue?",
-    "resetDbConfirm": "Reset database"
+    "resetDbConfirm": "Reset database",
+    "identifyAlways": "Always identify to this node"
   },
   "errors": {
     "connectionFailedTitle": "Connection to node failed",

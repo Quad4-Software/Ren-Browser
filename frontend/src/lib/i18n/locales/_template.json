@@ -99,7 +99,16 @@
     "documentation": "",
     "document": "",
     "settings": "",
-    "nomadNet": ""
+    "nomadNet": "",
+    "groupUnnamed": "",
+    "groupName": "",
+    "addToGroup": "",
+    "newGroup": "",
+    "removeFromGroup": "",
+    "renameGroup": "",
+    "groupColor": "",
+    "ungroup": "",
+    "closeBelow": ""
   },
   "settings": {
     "appearance": "",
@@ -260,7 +269,10 @@
     "micronImageNodePolicy": "",
     "micronImageNodeRemove": "",
     "micronImagePolicyAlways": "",
-    "micronImagePolicyNever": ""
+    "micronImagePolicyNever": "",
+    "tabLayout": "",
+    "tabLayoutTop": "",
+    "tabLayoutLeft": ""
   },
   "keybinds": {
     "focusUrl": "",
@@ -292,7 +304,13 @@
     "favoritesOnlyOff": "",
     "noFavorites": "",
     "noFavoritesDescription": "",
-    "favoriteSite": ""
+    "favoriteSite": "",
+    "sort": "",
+    "sortNewest": "",
+    "sortAnnounces": "",
+    "sortName": "",
+    "announcesCount": "",
+    "announcesCountPlural": ""
   },
   "history": {
     "title": "",
@@ -493,8 +511,8 @@
     "trustPublisher": "",
     "networkInstallEndpoints": "",
     "networkInstallEndpointsBlocked": "",
-    "installI18nLocales": "",
     "networkInstallEndpointsUnknown": "",
+    "installI18nLocales": "",
     "networkInstallDontShowAgain": "",
     "networkInstallConfirm": "",
     "signatureTitle": "",
@@ -628,7 +646,8 @@
     "identifyMessage": "",
     "resetDbTitle": "",
     "resetDbMessage": "",
-    "resetDbConfirm": ""
+    "resetDbConfirm": "",
+    "identifyAlways": ""
   },
   "errors": {
     "connectionFailedTitle": "",

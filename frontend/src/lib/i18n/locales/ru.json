@@ -99,7 +99,16 @@
     "documentation": "Документация",
     "document": "Документ",
     "settings": "Настройки",
-    "nomadNet": "NomadNet"
+    "nomadNet": "NomadNet",
+    "groupUnnamed": "Группа",
+    "groupName": "Имя группы",
+    "addToGroup": "Добавить в группу",
+    "newGroup": "Новая группа",
+    "removeFromGroup": "Убрать из группы",
+    "renameGroup": "Переименовать группу",
+    "groupColor": "Цвет группы",
+    "ungroup": "Разгруппировать",
+    "closeBelow": "Закрыть вкладки ниже"
   },
   "settings": {
     "appearance": "Внешний вид",
@@ -260,7 +269,10 @@
     "micronImageNodePolicy": "Политика изображений для узла",
     "micronImageNodeRemove": "Удалить",
     "micronImagePolicyAlways": "Разрешить",
-    "micronImagePolicyNever": "Блокировать"
+    "micronImagePolicyNever": "Блокировать",
+    "tabLayout": "Положение вкладок",
+    "tabLayoutTop": "Сверху",
+    "tabLayoutLeft": "Слева"
   },
   "keybinds": {
     "focusUrl": "Фокус на адресной строке",
@@ -292,7 +304,13 @@
     "favoritesOnlyOff": "Только избранное выключено",
     "noFavorites": "Избранные сайты не обнаружены",
     "noFavoritesDescription": "Отметьте сайт в Обзоре или добавьте страницу в избранное при просмотре.",
-    "favoriteSite": "Добавить сайт в избранное"
+    "favoriteSite": "Добавить сайт в избранное",
+    "sort": "Сортировка",
+    "sortNewest": "Сначала новые",
+    "sortAnnounces": "По анонсам",
+    "sortName": "По имени",
+    "announcesCount": "{count} анонс",
+    "announcesCountPlural": "{count} анонсов"
   },
   "history": {
     "title": "История",
@@ -628,7 +646,8 @@
     "identifyMessage": "Идентифицироваться на этом узле? Страница будет перезагружена.",
     "resetDbTitle": "Сброс базы данных",
     "resetDbMessage": "Это навсегда удалит сохранённые вкладки, историю, избранное и настройки. Продолжить?",
-    "resetDbConfirm": "Сбросить базу данных"
+    "resetDbConfirm": "Сбросить базу данных",
+    "identifyAlways": "Всегда идентифицироваться на этом узле"
   },
   "errors": {
     "connectionFailedTitle": "Не удалось подключиться к узлу",

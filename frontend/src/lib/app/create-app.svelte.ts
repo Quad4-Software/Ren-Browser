@@ -24,6 +24,7 @@ import {
   GetKeybinds,
   GetNetworkLog,
   GetStoreHealth,
+  GetTabGroups,
   GetTabs,
   GetTheme,
   GetWindowChrome,
@@ -68,7 +69,9 @@ import {
   SetKeybinds,
   SetLogLevel,
   SetNativeTitlebar,
+  SetNodeIdentifyOnConnect,
   SetShareInstance,
+  SetTabGroups,
   SetTheme,
   ShowConfigDir,
   ShowDownloadDir,
@@ -145,9 +148,14 @@ import {
   orderTabsPinnedFirst,
   pinTabInList,
   reorderTabsInList,
+  assignTabToGroupInList,
+  pruneTabGroups,
   tabTitleFromURL,
   unpinTabInList,
+  TAB_GROUP_COLORS,
   type Tab,
+  type TabGroup,
+  type TabLayout,
   type TabPage,
 } from "$lib/browser/url";
 import {
@@ -332,6 +340,7 @@ export function createApp() {
   let discoverySlowMode = $state(false);
   let mobileDevTools = $state(false);
   let tabHoverPreviews = $state(true);
+  let tabLayout = $state<TabLayout>("top");
   let micronPreserveLayout = $state(false);
   let micronImagesMode = $state<MicronImagesMode>("ask");
   let micronImageNodes = $state<Record<string, string>>({});
@@ -361,6 +370,7 @@ export function createApp() {
 
   // Tab page bodies are large and only reassigned. Raw avoids proxying HTML.
   let tabs = $state.raw<Tab[]>([{ id: randomId(), title: "", url: "", active: true }]);
+  let tabGroups = $state.raw<TabGroup[]>([]);
 
   const effectiveMicronEngine = $derived(
     resolveEffectiveMicronEngine(micronRenderer, {
@@ -583,10 +593,16 @@ export function createApp() {
   }
 
   async function persistTabs() {
+    const pruned = pruneTabGroups(tabs, tabGroups);
+    if (pruned) {
+      tabs = pruned.tabs;
+      tabGroups = pruned.groups;
+    }
     syncActiveTabPage();
     const hot = hotTabIds(tabs, splitTabId);
     const payload: TabSnapshot[] = tabs.map((tab) => tabSnapshotForPersist(tab, hot.has(tab.id)));
     await SaveTabs(payload);
+    await SetTabGroups(tabGroups);
     compactInactiveTabBodies();
   }
 
@@ -601,6 +617,7 @@ export function createApp() {
         url: tab.url ?? "",
         active: tab.active,
         pinned: tab.pinned,
+        groupId: tab.groupId,
         page: {
           html: tab.html ?? "",
           contentType: tab.contentType ?? "",
@@ -941,6 +958,61 @@ export function createApp() {
 
   function reorderTabs(fromId: string, toId: string) {
     tabs = reorderTabsInList(tabs, fromId, toId);
+    schedulePersistTabs();
+  }
+
+  function createTabGroup(tabId: string) {
+    const tab = tabs.find((item) => item.id === tabId);
+    if (!tab || tab.pinned) {
+      return;
+    }
+    const group: TabGroup = {
+      id: randomId(),
+      name: "",
+      color: TAB_GROUP_COLORS[tabGroups.length % TAB_GROUP_COLORS.length],
+      collapsed: false,
+    };
+    tabGroups = [...tabGroups, group];
+    tabs = assignTabToGroupInList(tabs, tabId, group.id);
+    schedulePersistTabs();
+  }
+
+  function assignTabToGroup(tabId: string, groupId: string | undefined) {
+    const next = assignTabToGroupInList(tabs, tabId, groupId);
+    if (next !== tabs) {
+      tabs = next;
+      schedulePersistTabs();
+    }
+  }
+
+  function renameTabGroup(groupId: string, name: string) {
+    tabGroups = tabGroups.map((group) =>
+      group.id === groupId ? { ...group, name: name.trim().slice(0, 48) } : group,
+    );
+    schedulePersistTabs();
+  }
+
+  function setTabGroupColor(groupId: string, color: string) {
+    tabGroups = tabGroups.map((group) => (group.id === groupId ? { ...group, color } : group));
+    schedulePersistTabs();
+  }
+
+  function toggleTabGroupCollapsed(groupId: string) {
+    tabGroups = tabGroups.map((group) =>
+      group.id === groupId ? { ...group, collapsed: !group.collapsed } : group,
+    );
+    schedulePersistTabs();
+  }
+
+  function removeTabGroup(groupId: string) {
+    tabGroups = tabGroups.filter((group) => group.id !== groupId);
+    tabs = tabs.map((tab) => {
+      if (tab.groupId !== groupId) {
+        return tab;
+      }
+      const { groupId: _drop, ...rest } = tab;
+      return rest;
+    });
     schedulePersistTabs();
   }
 
@@ -1618,6 +1690,7 @@ export function createApp() {
     mobileDevTools = !!prefs.mobileDevTools;
     pageCacheEnabled = prefs.pageCacheEnabled !== false;
     tabHoverPreviews = prefs.tabHoverPreviews !== false;
+    tabLayout = normalizeTabLayout(prefs.tabLayout);
     micronPreserveLayout = !!prefs.micronPreserveLayout;
     micronImagesMode = normalizeMicronImagesMode(prefs.micronImagesMode);
     micronImageNodes = normalizeMicronImageNodes(prefs.micronImageNodes);
@@ -1642,6 +1715,7 @@ export function createApp() {
       mobileDevTools,
       pageCacheEnabled,
       tabHoverPreviews,
+      tabLayout,
       micronPreserveLayout,
       micronImagesMode,
       micronImageNodes,
@@ -1661,6 +1735,7 @@ export function createApp() {
     mobileDevTools?: boolean;
     pageCacheEnabled?: boolean;
     tabHoverPreviews?: boolean;
+    tabLayout?: TabLayout;
     micronPreserveLayout?: boolean;
     micronImagesMode?: MicronImagesMode;
     micronImageNodes?: Record<string, string>;
@@ -1680,6 +1755,7 @@ export function createApp() {
     mobileDevTools = !!prefs.mobileDevTools;
     pageCacheEnabled = prefs.pageCacheEnabled !== false;
     tabHoverPreviews = prefs.tabHoverPreviews !== false;
+    tabLayout = normalizeTabLayout(prefs.tabLayout);
     micronPreserveLayout = !!prefs.micronPreserveLayout;
     micronImagesMode = normalizeMicronImagesMode(prefs.micronImagesMode);
     micronImageNodes = normalizeMicronImageNodes(prefs.micronImageNodes);
@@ -1694,6 +1770,15 @@ export function createApp() {
   async function saveTabHoverPreviews(value: boolean) {
     tabHoverPreviews = value;
     await persistBrowserPrefs({ tabHoverPreviews: value });
+  }
+
+  function normalizeTabLayout(value: string | undefined): TabLayout {
+    return value === "left" ? "left" : "top";
+  }
+
+  async function saveTabLayout(value: TabLayout) {
+    tabLayout = normalizeTabLayout(value);
+    await persistBrowserPrefs({ tabLayout });
   }
 
   async function savePageCacheEnabled(value: boolean) {
@@ -1803,13 +1888,14 @@ export function createApp() {
     identifyConfirmOpen = true;
   }
 
-  async function confirmIdentify() {
+  async function confirmIdentify(always = false) {
     identifyConfirmOpen = false;
     if (!canIdentify || identifying) {
       return;
     }
     identifying = true;
     try {
+      await SetNodeIdentifyOnConnect(url, always);
       await IdentifyToNode(url);
       await openPage(url, false, { skipCache: true });
     } catch (err) {
@@ -2043,6 +2129,7 @@ export function createApp() {
     mobileDevTools = !!reset.browserPrefs.mobileDevTools;
     pageCacheEnabled = reset.browserPrefs.pageCacheEnabled !== false;
     tabHoverPreviews = reset.browserPrefs.tabHoverPreviews !== false;
+    tabLayout = normalizeTabLayout(reset.browserPrefs.tabLayout);
     micronPreserveLayout = !!reset.browserPrefs.micronPreserveLayout;
     micronImagesMode = normalizeMicronImagesMode(reset.browserPrefs.micronImagesMode);
     micronImageNodes = normalizeMicronImageNodes(reset.browserPrefs.micronImageNodes);
@@ -2457,8 +2544,17 @@ export function createApp() {
     const screenshotScene = screenshotSceneFromQuery();
     void loadNodes().then(async () => {
       if (!screenshotScene) {
-        const saved = (await GetTabs()) as TabSnapshot[];
+        const [saved, savedGroups] = await Promise.all([
+          GetTabs() as Promise<TabSnapshot[]>,
+          GetTabGroups() as Promise<TabGroup[]>,
+        ]);
+        tabGroups = Array.isArray(savedGroups) ? savedGroups : [];
         restoreTabs(saved);
+        const pruned = pruneTabGroups(tabs, tabGroups);
+        if (pruned) {
+          tabs = pruned.tabs;
+          tabGroups = pruned.groups;
+        }
       }
     });
     void loadLogs();
@@ -3036,6 +3132,12 @@ export function createApp() {
     get tabHoverPreviews() {
       return tabHoverPreviews;
     },
+    get tabLayout() {
+      return tabLayout;
+    },
+    get tabGroups() {
+      return tabGroups;
+    },
     get micronPreserveLayout() {
       return micronPreserveLayout;
     },
@@ -3104,6 +3206,12 @@ export function createApp() {
     viewSourceTab,
     newTab,
     reorderTabs,
+    createTabGroup,
+    assignTabToGroup,
+    renameTabGroup,
+    setTabGroupColor,
+    toggleTabGroupCollapsed,
+    removeTabGroup,
     reloadTab,
     duplicateTab,
     favoriteTab,
@@ -3123,6 +3231,7 @@ export function createApp() {
     resetDefaults,
     saveUILanguage,
     saveTabHoverPreviews,
+    saveTabLayout,
     savePageCacheEnabled,
     saveMobileDevTools,
     saveDiscoverySlowMode,

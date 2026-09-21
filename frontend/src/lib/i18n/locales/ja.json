@@ -99,7 +99,16 @@
     "documentation": "ドキュメント",
     "document": "ドキュメント",
     "settings": "設定",
-    "nomadNet": "NomadNet"
+    "nomadNet": "NomadNet",
+    "groupUnnamed": "グループ",
+    "groupName": "グループ名",
+    "addToGroup": "グループに追加",
+    "newGroup": "新しいグループ",
+    "removeFromGroup": "グループから削除",
+    "renameGroup": "グループ名を変更",
+    "groupColor": "グループの色",
+    "ungroup": "グループ解除",
+    "closeBelow": "下のタブを閉じる"
   },
   "settings": {
     "appearance": "外観",
@@ -135,7 +144,7 @@
     "micronPreserveLayout": "Micron の行レイアウトを保持",
     "micronPreserveLayoutHint": "Micron ページで固定幅の行を維持します。幅の広いアートやメニューは折り返さず横スクロールします。",
     "micronRenderer": "Micron レンダラー (.mu)",
-    "rendererAuto": "自動 (Go 優先 → WASM → JS)",
+    "rendererAuto": "自動 (Go 優先 -> WASM -> JS)",
     "rendererWasm": "WebAssembly (micron-parser-go)",
     "rendererGo": "Go (micron-parser-go サーバー)",
     "rendererJs": "JavaScript (micron-parser-js)",
@@ -260,7 +269,10 @@
     "micronImageNodePolicy": "ノードの画像ポリシー",
     "micronImageNodeRemove": "削除",
     "micronImagePolicyAlways": "許可",
-    "micronImagePolicyNever": "ブロック"
+    "micronImagePolicyNever": "ブロック",
+    "tabLayout": "タブの位置",
+    "tabLayoutTop": "上",
+    "tabLayoutLeft": "左"
   },
   "keybinds": {
     "focusUrl": "アドレスバーにフォーカス",
@@ -292,7 +304,13 @@
     "favoritesOnlyOff": "お気に入りのみオフ",
     "noFavorites": "お気に入りサイトがありません",
     "noFavoritesDescription": "ディスカバリーでサイトに星を付けるか、閲覧中にページをお気に入りに登録してください。",
-    "favoriteSite": "お気に入りサイト"
+    "favoriteSite": "お気に入りサイト",
+    "sort": "並び替え",
+    "sortNewest": "新しい順",
+    "sortAnnounces": "アナウンス数順",
+    "sortName": "名前順",
+    "announcesCount": "{count} 件のアナウンス",
+    "announcesCountPlural": "{count} 件のアナウンス"
   },
   "history": {
     "title": "履歴",
@@ -628,7 +646,8 @@
     "identifyMessage": "このノードに自分を識別しますか？その後ページが再読み込みされます。",
     "resetDbTitle": "データベースをリセット",
     "resetDbMessage": "保存されたタブ、履歴、お気に入り、設定が完全に削除されます。続行しますか？",
-    "resetDbConfirm": "データベースをリセット"
+    "resetDbConfirm": "データベースをリセット",
+    "identifyAlways": "このノードに常に識別する"
   },
   "errors": {
     "connectionFailedTitle": "ノードへの接続に失敗しました",
