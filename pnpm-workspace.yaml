@@ -13,8 +13,8 @@ overrides:
   minimatch@^9.0.0: 10.2.6
   dompurify: 3.4.15
   typescript: 6.0.3
-  "@types/node": 22.20.2
-  marked: 18.0.12
+  "@types/node": 26.6.1
+  marked: 18.0.13
   "@napi-rs/canvas": 1.0.8
 
 minimumReleaseAge: 1440
