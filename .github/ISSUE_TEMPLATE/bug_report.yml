@@ -1,0 +1,53 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug in Ren Browser.
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release version or commit, e.g. v0.4.0 or nightly-2026.09.21.2c588f2
+      placeholder: v0.4.0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Where does the bug happen?
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Android
+        - iOS
+        - Server mode
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you do, what happened, what did you expect?
+      placeholder: |
+        1. Open ...
+        2. Navigate to ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Paste relevant log output or drag screenshots here. Do not include identity keys or profile secrets.
+      render: text
+    validations:
+      required: false
