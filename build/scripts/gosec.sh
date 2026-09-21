@@ -23,7 +23,7 @@ cat "$out"
 
 # gosec can exit non-zero when cgo/SSA package load fails even with zero findings.
 if [[ "$status" -ne 0 ]]; then
-  if grep -Eq 'Issues[[:space:]]*:[[:space:]]*0[[:space:]]*$' "$out"; then
+  if sed 's/\x1b\[[0-9;]*m//g' "$out" | grep -Eq 'Issues[[:space:]]*:[[:space:]]*0[[:space:]]*$'; then
     exit 0
   fi
   exit "$status"

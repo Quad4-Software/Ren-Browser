@@ -123,7 +123,7 @@ func relocateForAppImage(cfg *config.Runtime) {
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return
 	}
-	if info, err := os.Stat(usrAbs); err != nil || !info.IsDir() {
+	if info, err := os.Stat(usrAbs); err != nil || !info.IsDir() { // #nosec G703 -- usrAbs is confined to APPDIR by the filepath.Rel check above
 		return
 	}
 	absolutize(&cfg.ReticulumConfig)
