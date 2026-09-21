@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ren Browser — Reticulum-native mesh browser</title>
-<meta name="description" content="A modern browser for the Reticulum network. Micron-first rendering, NomadNet compatible, desktop, mobile, and headless server.">
+<title>Ren Browser - a browser for NomadNet</title>
+<meta name="description" content="A browser for NomadNet nodes on the Reticulum network. Micron rendering, desktop, mobile, and headless server builds.">
 <meta name="theme-color" content="#0a0a0b">
 <meta property="og:title" content="Ren Browser">
-<meta property="og:description" content="A Reticulum-native mesh browser for NomadNet pages.">
+<meta property="og:description" content="A browser for NomadNet nodes on the Reticulum network.">
 <meta property="og:type" content="website">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <style>
@@ -130,42 +130,11 @@ header {
   transition: color 0.15s, background 0.15s;
 }
 .nav-links a:hover { color: var(--void-100); background: var(--void-850); }
-.nav-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--void-950) !important;
-  background: var(--void-50);
-  padding: 6px 14px !important;
-  border-radius: 6px;
-}
-.nav-cta:hover { background: #ffffff !important; }
 
 /* ---------- hero ---------- */
 .hero {
   padding: 96px 0 72px;
   text-align: center;
-}
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Space Mono', monospace;
-  font-size: 11.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--void-400);
-  border: 1px solid var(--void-700);
-  border-radius: 999px;
-  padding: 5px 14px;
-  margin-bottom: 28px;
-}
-.eyebrow .dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
 }
 h1 {
   font-size: clamp(38px, 6vw, 60px);
@@ -249,9 +218,7 @@ h1 {
 .shot-frame img {
   display: block;
   width: 100%;
-  aspect-ratio: 1280 / 800;
-  object-fit: cover;
-  object-position: top;
+  height: auto;
 }
 
 /* ---------- stats ---------- */
@@ -374,7 +341,8 @@ section { padding: 88px 0; }
   background: var(--void-900);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
 }
-.gallery-main img { display: block; width: 100%; }
+.gallery-main img { display: block; width: 100%; height: auto; }
+.gallery-main.mobile img { width: auto; max-width: 100%; max-height: 70vh; margin: 0 auto; }
 .thumbs {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -392,6 +360,7 @@ section { padding: 88px 0; }
   position: relative;
 }
 .thumbs button img { display: block; width: 100%; aspect-ratio: 1280/800; object-fit: cover; object-position: top; }
+.thumbs.mobile button img { aspect-ratio: 390/844; }
 .thumbs button.active { border-color: var(--accent); }
 .thumbs button:not(.active):hover { border-color: var(--void-500); }
 .thumbs button .t {
@@ -465,7 +434,7 @@ footer {
 @media (max-width: 560px) {
   .feat-grid { grid-template-columns: 1fr; }
   .dl-grid { grid-template-columns: 1fr; }
-  .nav-links a:not(.nav-cta):not(.keep) { display: none; }
+  .nav-links a:not(.keep) { display: none; }
   .hero { padding: 64px 0 48px; }
   section { padding: 56px 0; }
 }
@@ -503,10 +472,7 @@ footer {
       <a href="#screenshots" class="keep">Screenshots</a>
       <a href="#download">Download</a>
       <a href="https://github.com/Quad4-Software/Ren-Browser/tree/master/docs">Docs</a>
-      <a class="nav-cta" href="https://github.com/Quad4-Software/Ren-Browser">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-        GitHub
-      </a>
+      <a href="https://github.com/Quad4-Software/Ren-Browser">Source</a>
     </nav>
   </div>
 </header>
@@ -514,9 +480,8 @@ footer {
 <main id="top">
 
   <div class="wrap hero">
-    <div class="eyebrow"><span class="dot"></span>Reticulum-native &middot; NomadNet compatible</div>
-    <h1>Browse the mesh,<br>not the cloud.</h1>
-    <p class="sub">Ren Browser renders Micron pages served over the Reticulum network. No ISPs, no DNS, no gatekeepers &mdash; just encrypted links between nodes.</p>
+    <h1>Browse the NomadNet.</h1>
+    <p class="sub">Ren Browser renders Micron pages served by NomadNet nodes over the Reticulum network. Traffic moves over encrypted links, not the public internet.</p>
     <div class="cta-row">
       <a class="btn btn-primary" href="https://github.com/Quad4-Software/Ren-Browser/releases/latest">Download v0.4.0</a>
       <a class="btn btn-ghost" href="https://github.com/Quad4-Software/Ren-Browser">View source</a>
@@ -536,7 +501,7 @@ footer {
   <div class="wrap stats">
     <div class="stat"><div class="num">v0.4.0</div><div class="lbl">Latest release</div></div>
     <div class="stat"><div class="num">6</div><div class="lbl">Platforms</div></div>
-    <div class="stat"><div class="num">4</div><div class="lbl">Languages</div></div>
+    <div class="stat"><div class="num">6</div><div class="lbl">Languages</div></div>
     <div class="stat"><div class="num">MIT</div><div class="lbl">License</div></div>
     <div class="stat"><div class="num">0</div><div class="lbl">Trackers</div></div>
   </div>
@@ -545,8 +510,8 @@ footer {
     <div class="wrap">
       <div class="section-head">
         <div class="kicker">Features</div>
-        <h2>Built for a network<br>without a backbone.</h2>
-        <p>Everything you need to publish, browse, and extend on Reticulum and NomadNet.</p>
+        <h2>Made for mesh networks.</h2>
+        <p>Browse pages, run nodes, and extend the browser over Reticulum and NomadNet.</p>
       </div>
       <div class="feat-grid">
         <div class="card">
@@ -599,8 +564,8 @@ footer {
           <button data-v="light">Light</button>
         </div>
       </div>
-      <div class="gallery-main">
-        <img id="shot-main" src="" alt="Ren Browser screenshot" width="1280" height="800">
+      <div class="gallery-main" id="gallery-main">
+        <img id="shot-main" src="" alt="Ren Browser screenshot">
       </div>
       <div class="thumbs" id="thumbs"></div>
     </div>
@@ -617,42 +582,42 @@ footer {
         <a class="dl" href="https://github.com/Quad4-Software/Ren-Browser/releases/latest">
           <span class="os">Linux</span>
           <span class="fmt">AppImage &middot; deb &middot; rpm &middot; Flatpak</span>
-          <span class="arrow">Download &rarr;</span>
+          <span class="arrow">Download -&gt;</span>
         </a>
         <a class="dl" href="https://github.com/Quad4-Software/Ren-Browser/releases/latest">
           <span class="os">Windows</span>
           <span class="fmt">installer &middot; portable exe</span>
-          <span class="arrow">Download &rarr;</span>
+          <span class="arrow">Download -&gt;</span>
         </a>
         <a class="dl" href="https://github.com/Quad4-Software/Ren-Browser/releases/latest">
           <span class="os">macOS</span>
           <span class="fmt">universal zip</span>
-          <span class="arrow">Download &rarr;</span>
+          <span class="arrow">Download -&gt;</span>
         </a>
         <a class="dl" href="https://github.com/Quad4-Software/Ren-Browser/releases/latest">
           <span class="os">Android</span>
           <span class="fmt">universal apk</span>
-          <span class="arrow">Download &rarr;</span>
+          <span class="arrow">Download -&gt;</span>
         </a>
         <a class="dl" href="https://github.com/Quad4-Software/Ren-Browser/releases/latest">
           <span class="os">iOS</span>
           <span class="fmt">ipa</span>
-          <span class="arrow">Download &rarr;</span>
+          <span class="arrow">Download -&gt;</span>
         </a>
         <a class="dl" href="https://github.com/Quad4-Software/Ren-Browser/releases/latest">
           <span class="os">Server</span>
           <span class="fmt">linux &middot; bsd &middot; docker</span>
-          <span class="arrow">Download &rarr;</span>
+          <span class="arrow">Download -&gt;</span>
         </a>
         <a class="dl" href="https://github.com/Quad4-Software/Ren-Browser">
           <span class="os">Source</span>
           <span class="fmt">git clone &middot; MIT</span>
-          <span class="arrow">Repository &rarr;</span>
+          <span class="arrow">Repository -&gt;</span>
         </a>
         <a class="dl" href="https://github.com/Quad4-Software/Ren-Browser/tree/master/docs">
           <span class="os">Docs</span>
-          <span class="fmt">en &middot; ru &middot; es &middot; de</span>
-          <span class="arrow">Read &rarr;</span>
+          <span class="fmt">en &middot; de &middot; es &middot; ja &middot; ru &middot; zh</span>
+          <span class="arrow">Read -&gt;</span>
         </a>
       </div>
     </div>
@@ -669,9 +634,8 @@ footer {
     </div>
     <div class="quad4">
       <a href="https://quad4.io" aria-label="Quad4">
-        <svg width="16" height="16" viewBox="0 0 64 64" aria-hidden="true">
-          <rect width="64" height="64" rx="14" fill="#16161a"/>
-          <g transform="translate(32 32) scale(24)" fill="#a1a1aa" fill-rule="nonzero">
+        <svg width="24" height="24" viewBox="0 0 64 64" aria-hidden="true">
+          <g transform="translate(32 32) scale(30)" fill="#a1a1aa" fill-rule="nonzero">
             <path d="M 0.10097 -0.97999 L 0.09859 -0.69728 L 0.39556 -0.52385 L 0.09859 -0.35517 L 0.09859 -0.11522 L 0.83983 -0.54286 Z"/>
             <path d="M -0.09859 -0.97762 L -0.83745 -0.54523 L -0.10097 -0.11760 L -0.09622 -0.35517 L -0.39081 -0.52385 L -0.09622 -0.69728 Z"/>
             <path d="M -0.86121 -0.49059 L -0.86121 0.36943 L -0.62363 0.23163 L -0.62126 -0.10810 L -0.32666 0.06533 L -0.11285 -0.05821 Z"/>
@@ -740,6 +704,9 @@ footer {
       this.querySelectorAll('button').forEach(function (b) {
         b.classList.toggle('active', b === btn);
       });
+      var mobile = state.layout === 'mobile';
+      document.getElementById('gallery-main').classList.toggle('mobile', mobile);
+      thumbs.classList.toggle('mobile', mobile);
       renderMain();
       renderThumbs();
     });
