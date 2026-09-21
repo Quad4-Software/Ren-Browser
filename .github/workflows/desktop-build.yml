@@ -72,13 +72,16 @@ jobs:
       - name: Resolve version
         id: meta
         shell: bash
+        env:
+          INPUT_CHANNEL: ${{ inputs.channel }}
+          INPUT_TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
           base="$(sed -n 's/^  version: "\(.*\)".*/\1/p' build/config.yml)"
           sha="$(git rev-parse --short HEAD)"
           date="$(date -u +%Y.%m.%d)"
-          channel="${{ inputs.channel }}"
-          tag="${{ inputs.tag }}"
+          channel="$INPUT_CHANNEL"
+          tag="$INPUT_TAG"
 
           if [ -z "$tag" ]; then
             case "$channel" in
@@ -113,7 +116,7 @@ jobs:
 
   frontend:
     name: Frontend artifact
-    uses: ./.github/workflows/frontend-build.yml
+    uses: $/.github/workflows/frontend-build.yml
     with:
       artifact_name: renbrowser-frontend-${{ github.run_id }}-${{ github.run_attempt }}
       retention_days: 7
@@ -144,12 +147,12 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend.outputs.artifact_name }}
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-linux-deps: "true"
           cache-node: "false"
@@ -223,12 +226,12 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend.outputs.artifact_name }}
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-linux-deps: "true"
           cache-node: "false"
@@ -277,12 +280,12 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend.outputs.artifact_name }}
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           cache-node: "false"
 
@@ -336,12 +339,12 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend.outputs.artifact_name }}
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-linux-deps: "false"
           cache-node: "false"
@@ -424,12 +427,12 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend.outputs.artifact_name }}
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-wails: "false"
           cache-node: "false"
@@ -469,7 +472,7 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend.outputs.artifact_name }}
 
@@ -517,19 +520,19 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend.outputs.artifact_name }}
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-linux-deps: "false"
           install-wails: "true"
           cache-node: "false"
 
       - name: Setup Android SDK
-        uses: ./.github/actions/setup-android
+        uses: $/.github/actions/setup-android
 
       - name: Detect Android signing
         id: android_sign
@@ -603,10 +606,13 @@ jobs:
       - name: Stage artifacts
         if: inputs.channel != 'release' || inputs.android_sign_release == false || steps.android_sign.outputs.available == 'true'
         shell: bash
+        env:
+          INPUT_CHANNEL: ${{ inputs.channel }}
+          ANDROID_SIGN_AVAILABLE: ${{ steps.android_sign.outputs.available }}
         run: |
           set -euo pipefail
           mkdir -p dist/release
-          channel="${{ inputs.channel }}"
+          channel="$INPUT_CHANNEL"
           apk="$(find bin -maxdepth 1 -type f -name '*.apk' | head -n 1)"
           if [ -z "$apk" ]; then
             echo "No APK found in bin/" >&2
@@ -614,7 +620,7 @@ jobs:
             exit 1
           fi
           suffix=""
-          if [ "${{ steps.android_sign.outputs.available }}" = "true" ]; then
+          if [ "$ANDROID_SIGN_AVAILABLE" = "true" ]; then
             if [ "$channel" != "release" ]; then
               suffix="-signed"
             fi
@@ -652,12 +658,12 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend.outputs.artifact_name }}
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-linux-deps: "false"
           install-wails: "true"
@@ -696,7 +702,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-linux-deps: "false"
           install-wails: "false"
@@ -727,7 +733,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-wails: "false"
           install-linux-deps: "false"
@@ -820,11 +826,15 @@ jobs:
 
       - name: Release notes
         shell: bash
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          TAG: ${{ needs.version.outputs.tag }}
+          CHANNEL: ${{ inputs.channel }}
         run: |
           set -euo pipefail
-          version="${{ needs.version.outputs.version }}"
-          tag="${{ needs.version.outputs.tag }}"
-          channel="${{ inputs.channel }}"
+          version="$VERSION"
+          tag="$TAG"
+          channel="$CHANNEL"
           warning=""
           if [ "$channel" = "nightly" ] || [ "$channel" = "beta" ]; then
             warning=$'> [!WARNING]\n> This build may be unstable. It can include regressions, unfinished changes, or breaking behavior. Use a release build for production.\n\n'
@@ -833,7 +843,7 @@ jobs:
           ${warning}## Ren Browser ${version}
 
           Channel: **${channel}**
-          Commit: \`${{ github.sha }}\`
+          Commit: \`${GITHUB_SHA}\`
 
           ### Assets
           - Linux amd64/arm64 AppImage, plain binary, .deb, .rpm, and Arch `.pkg.tar.zst`
@@ -847,19 +857,24 @@ jobs:
           - Micron Translator extension WASM (`renbrowser-micron-translator.wasm` one-file install; `renbrowser-micron-translator-backend.wasm` raw backend when TinyGo build succeeds)
           - Software Bill of Materials (`renbrowser-sbom.spdx.json`, `renbrowser-sbom.cyclonedx.json`)
 
-          See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${tag}/CHANGELOG.md) for details.
+          See [CHANGELOG.md](https://github.com/${GITHUB_REPOSITORY}/blob/${tag}/CHANGELOG.md) for details.
           EOF
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          CHANNEL: ${{ inputs.channel }}
+          TAG: ${{ needs.version.outputs.tag }}
+          VERSION: ${{ needs.version.outputs.version }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          IS_LATEST: ${{ inputs.channel == 'release' && 'true' || 'false' }}
         run: |
           set -euo pipefail
           bash build/scripts/github-publish-release.sh \
-            "${{ inputs.channel }}" \
-            "${{ needs.version.outputs.tag }}" \
-            "Ren Browser ${{ needs.version.outputs.version }}" \
-            "${{ inputs.prerelease }}" \
-            "${{ inputs.channel == 'release' && 'true' || 'false' }}" \
+            "$CHANNEL" \
+            "$TAG" \
+            "Ren Browser $VERSION" \
+            "$PRERELEASE" \
+            "$IS_LATEST" \
             release-notes.md \
             release

@@ -57,7 +57,7 @@ jobs:
 
       - name: Setup dependencies
         if: matrix.language == 'go'
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-wails: "false"
           install-linux-deps: "true"

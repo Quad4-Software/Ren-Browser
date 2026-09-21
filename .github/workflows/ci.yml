@@ -16,6 +16,13 @@ on:
   pull_request:
   workflow_dispatch:
   workflow_call:
+    secrets:
+      ANDROID_KEYSTORE_BASE64:
+        required: false
+      ANDROID_KEYSTORE_PASSWORD:
+        required: false
+      ANDROID_KEY_PASSWORD:
+        required: false
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -53,7 +60,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-wails: "false"
           install-linux-deps: ${{ matrix.os == 'ubuntu-latest' && 'true' || 'false' }}
@@ -89,7 +96,7 @@ jobs:
         run: task test:contract
 
       - name: Verify workspace clean
-        uses: ./.github/actions/verify-workspace-clean
+        uses: $/.github/actions/verify-workspace-clean
 
   reproducible-binary:
     name: Reproducible server binary
@@ -105,7 +112,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-wails: "false"
           cache-node: "true"
@@ -114,7 +121,7 @@ jobs:
         run: task check:reproducible
 
       - name: Verify workspace clean
-        uses: ./.github/actions/verify-workspace-clean
+        uses: $/.github/actions/verify-workspace-clean
 
   benchmark:
     name: Go benchmarks
@@ -131,7 +138,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-wails: "false"
           install-linux-deps: "true"
@@ -140,10 +147,10 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: bench/baseline
-          # v3: reset after Wails/dep bump left SanitizeHTMLDirty median noise vs old cache.
-          key: go-bench-v3-${{ runner.os }}-${{ github.sha }}
+          # v4: reset after Wails/dep bump left SanitizeHTMLDirty median noise vs old cache.
+          key: go-bench-v4-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
-            go-bench-v3-${{ runner.os }}-
+            go-bench-v4-${{ runner.os }}-
 
       - name: Run benchmarks
         run: task bench:go
@@ -188,7 +195,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-wails: "false"
           install-linux-deps: "true"
@@ -227,7 +234,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-wails: "false"
           install-linux-deps: "false"
@@ -265,7 +272,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-wails: "false"
 
@@ -287,7 +294,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-wails: "false"
           install-linux-deps: "false"
@@ -298,7 +305,7 @@ jobs:
 
   frontend-artifact:
     name: Frontend artifact
-    uses: ./.github/workflows/frontend-build.yml
+    uses: $/.github/workflows/frontend-build.yml
     with:
       artifact_name: renbrowser-frontend-ci-${{ github.run_id }}-${{ github.run_attempt }}
       retention_days: 1
@@ -318,7 +325,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-wails: "false"
           install-linux-deps: "false"
@@ -381,12 +388,12 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend-artifact.outputs.artifact_name }}
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-linux-deps: "true"
           cache-node: "false"
@@ -448,19 +455,19 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend-artifact.outputs.artifact_name }}
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-linux-deps: "false"
           install-wails: "true"
           cache-node: "false"
 
       - name: Setup Android SDK
-        uses: ./.github/actions/setup-android
+        uses: $/.github/actions/setup-android
 
       - name: Cache mobile MTE Go toolchain
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
@@ -580,12 +587,12 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend-artifact.outputs.artifact_name }}
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-linux-deps: ${{ matrix.install_linux_deps }}
           install-wails: ${{ matrix.install_wails }}
@@ -630,12 +637,12 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend-artifact.outputs.artifact_name }}
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-linux-deps: "false"
           install-wails: "true"
@@ -706,12 +713,12 @@ jobs:
           persist-credentials: false
 
       - name: Fetch frontend artifact
-        uses: ./.github/actions/fetch-frontend-artifact
+        uses: $/.github/actions/fetch-frontend-artifact
         with:
           artifact-name: ${{ needs.frontend-artifact.outputs.artifact_name }}
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-linux-deps: "false"
           install-wails: "false"

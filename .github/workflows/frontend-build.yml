@@ -65,7 +65,7 @@ jobs:
           echo "artifact_name=${name}" >> "$GITHUB_OUTPUT"
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-linux-deps: "false"
           install-wails: "false"

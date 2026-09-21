@@ -31,7 +31,7 @@ jobs:
           persist-credentials: false
 
       - name: Setup dependencies
-        uses: ./.github/actions/setup
+        uses: $/.github/actions/setup
         with:
           install-wails: "false"
           install-linux-deps: "true"

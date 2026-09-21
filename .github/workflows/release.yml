@@ -22,14 +22,17 @@ permissions:
 jobs:
   ci:
     name: Require CI
-    uses: ./.github/workflows/ci.yml
-    secrets: inherit
+    uses: $/.github/workflows/ci.yml
+    secrets:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
   build:
     needs: ci
     permissions:
       contents: write
-    uses: ./.github/workflows/desktop-build.yml
+    uses: $/.github/workflows/desktop-build.yml
     with:
       channel: release
       prerelease: false
