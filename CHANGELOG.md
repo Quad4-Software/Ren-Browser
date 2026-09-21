@@ -5,7 +5,7 @@ All notable changes to Ren Browser are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.0] [unreleased] - 2026-09-TBD
+## [0.4.0] [released] - 2026-09-21
 
 ### Added
 
@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keep go mod tidy / task build from polluting vendor/golang.org/x/* with dependency tests and wiping LICENSE/PATENTS
 - Open the system file picker for HTML file inputs on Android so Micron WASM upload and theme import work
 - Tighten mobile bottom nav padding so icons sit closer to the home indicator instead of floating above a large gap
+- Repair nightly, beta, and release workflows: job-level permissions on reusable workflow callers were rejected at startup, so contents: write stays at the workflow level
 
 ### Security
 
@@ -29,10 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bump reticulum-go to v1.3.0 on the renamed module path github.com/Quad4-Software/Reticulum-Go
-- Upgrade Wails from v3.0.0-beta.8 to v3.0.0-beta.23
+- Upgrade Wails from v3.0.0-beta.8 to v3.0.0-beta.24
 - Bump micron-parser-go to v1.0.7
 - Go toolchain moves to 1.27.1 across CI and the Docker builder images
-- Refresh Go and frontend dependencies (quic-go 0.62, webtransport 0.13, sqlite 1.59, x/* latest)
+- Refresh Go and frontend dependencies (quic-go 0.62, webtransport 0.13, sqlite 1.59, x/* latest, vitest 5.0.1, marked 18.0.13, @types/node 26.6.1, @lucide/svelte 1.47.0)
 - Stop tracking Android libwails.so and other build junk to shrink clones
 - renbrowser.rsm required signer now matches the active commit identity
 
