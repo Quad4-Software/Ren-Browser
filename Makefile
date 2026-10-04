@@ -4,7 +4,7 @@
 SHELL := /bin/bash
 .PHONY: help check format test test-go test-regression frontend-check frontend-test frontend-fmt \
 	build build-frontend build-server screenshots e2e coverage-go server-smoke dev clean vendor mod-tidy gosec sbom \
-	tree-manifest tree-rsm-sign tree-rsm-verify hooks-install
+	tree-manifest tree-rsm-sign tree-rsm-verify hooks-install ci ci-pr ci-full
 
 export GOFLAGS ?= -mod=vendor
 export PNPM ?= pnpm
@@ -20,6 +20,8 @@ help:
 	@printf '%s\n' \
 		"Targets:" \
 		"  make check            Run Go and frontend quality gates" \
+		"  make ci-pr            Portable PR CI (Forgejo, Gitea, local)" \
+		"  make ci-full          Extended portable CI" \
 		"  make format           Format Go and frontend sources" \
 		"  make test             Run Go and frontend unit tests" \
 		"  make e2e              Playwright E2E against renbrowser-server" \
@@ -37,6 +39,15 @@ help:
 		"  make hooks-install    Enable .githooks pre-commit (resigns RSM)"
 
 check: fmt-go test-go gosec frontend-check
+
+ci-pr:
+	bash build/scripts/ci/run.sh pr
+
+ci-full:
+	bash build/scripts/ci/run.sh full
+
+ci-docker:
+	bash build/scripts/ci/run-docker.sh pr
 
 format: fmt-go frontend-fmt
 

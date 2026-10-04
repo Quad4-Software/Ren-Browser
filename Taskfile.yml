@@ -232,6 +232,51 @@ tasks:
     env:
       GOFLAGS: "-mod=vendor"
 
+  ci:setup:
+    desc: Portable CI prep (tree RSM verify, ci-prep-go, optional deps via env)
+    cmds:
+      - bash build/scripts/ci/setup.sh
+
+  ci:pr:
+    desc: PR quality gate (local, Forgejo, Gitea, or workflow wrapper)
+    cmds:
+      - bash build/scripts/ci/run.sh pr
+
+  ci:go:
+    desc: Portable CI Go job (hard tests on Linux)
+    cmds:
+      - bash build/scripts/ci/run.sh go
+
+  ci:frontend:
+    desc: Portable CI frontend job
+    cmds:
+      - bash build/scripts/ci/run.sh frontend
+
+  ci:coverage:
+    desc: Portable CI coverage job
+    cmds:
+      - bash build/scripts/ci/run.sh coverage
+
+  ci:e2e:
+    desc: Portable CI Playwright job
+    cmds:
+      - bash build/scripts/ci/run.sh e2e
+
+  ci:full:
+    desc: Extended portable CI (pr, coverage, e2e, reproducible)
+    cmds:
+      - bash build/scripts/ci/run.sh full
+
+  ci:list:
+    desc: List portable CI job names
+    cmds:
+      - bash build/scripts/ci/run.sh list
+
+  ci:docker:
+    desc: PR gate inside Dockerfile.ci (no host toolchain)
+    cmds:
+      - bash build/scripts/ci/run-docker.sh pr
+
   frontend:check:
     desc: Typecheck, lint, format check, knip, and unit tests
     deps:

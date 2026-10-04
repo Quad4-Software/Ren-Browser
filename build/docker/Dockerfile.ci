@@ -1,0 +1,37 @@
+# CI runner image: pinned Go, Node, pnpm, Task. No GitHub Actions required.
+# Base matches ubuntu-latest GTK/WebKit versions used in .github/workflows/ci.yml.
+# Build: bash build/scripts/ci/run-docker.sh pr
+
+FROM ubuntu:24.04
+
+RUN apt-get update \
+	&& DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+		bash ca-certificates curl git xz-utils \
+		libgtk-3-0t64 libnss3 libxss1 libasound2t64 libgbm1 \
+		fonts-liberation \
+		pkg-config gcc libc6-dev libglib2.0-dev \
+		libgtk-4-dev libwebkitgtk-6.0-dev \
+		bubblewrap xdg-dbus-proxy \
+		librsvg2-bin patchelf \
+	&& rm -rf /var/lib/apt/lists/*
+
+ENV CGO_ENABLED=1
+
+ENV CI_TOOLCHAIN_ROOT=/opt/ci-toolchain
+ENV PATH=/opt/ci-toolchain/bin:/opt/ci-toolchain/go/bin:${PATH}
+ENV GOPATH=/opt/ci-toolchain/gopath
+ENV GOCACHE=/opt/ci-toolchain/gocache
+ENV GOTOOLCHAIN=local
+
+WORKDIR /src
+COPY build/scripts/ci/versions.env build/scripts/ci/versions.env
+COPY build/scripts/ci/env.sh build/scripts/ci/env.sh
+COPY build/scripts/ci/bootstrap.sh build/scripts/ci/bootstrap.sh
+
+RUN CI_BOOTSTRAP=install CI_TOOLCHAIN_ROOT=/opt/ci-toolchain GOFLAGS= \
+	bash build/scripts/ci/bootstrap.sh install
+
+COPY . .
+
+# Default PR gate. Override: docker run ... renbrowser-ci:local full
+CMD ["bash", "build/scripts/ci/run.sh", "pr"]

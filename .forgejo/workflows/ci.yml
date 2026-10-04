@@ -1,0 +1,43 @@
+# Portable CI without marketplace Actions. Forgejo and Gitea check out the repo
+# into the job workspace before these steps run.
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+      - beta
+  pull_request:
+
+env:
+  GOFLAGS: -mod=vendor
+  PNPM_CONFIG_STRICT_DEP_BUILDS: "false"
+  RNS_REQUIRED_SIGNER: e318cbc04468bd574db2b4523dddd710
+
+jobs:
+  pr:
+    name: PR gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Bootstrap toolchain
+        run: bash build/scripts/ci/bootstrap.sh install
+      - name: PR gate
+        env:
+          RNS_INVENTORY_OUT: /tmp/renbrowser-ci-inventory.txt
+        run: bash build/scripts/ci/run.sh pr
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Bootstrap toolchain
+        run: bash build/scripts/ci/bootstrap.sh install
+      - name: Frontend job
+        env:
+          RNS_INVENTORY_OUT: /tmp/renbrowser-ci-inventory.txt
+        run: bash build/scripts/ci/run.sh frontend

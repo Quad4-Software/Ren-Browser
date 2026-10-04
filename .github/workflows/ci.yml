@@ -66,37 +66,11 @@ jobs:
           install-linux-deps: ${{ matrix.os == 'ubuntu-latest' && 'true' || 'false' }}
           cache-node: ${{ matrix.os == 'ubuntu-latest' && 'true' || 'false' }}
 
-      - name: Verify vendored modules
-        run: go list -mod=vendor ./...
-
-      - name: gofmt check
-        if: matrix.os == 'ubuntu-latest'
+      - name: Go CI job
         shell: bash
-        run: bash build/scripts/gofmt-project.sh check
-
-      - name: Go tests
-        run: task test:go
-
-      - name: Install frontend dependencies
-        if: matrix.os == 'ubuntu-latest'
-        run: task common:install:frontend:deps
-
-      - name: Go hard tests
-        if: matrix.os == 'ubuntu-latest'
-        run: task test:go:hard
-
-      - name: Go plugin tests
-        if: matrix.os == 'ubuntu-latest'
-        run: go test ./internal/plugins/...
         env:
-          GOFLAGS: -mod=vendor
-
-      - name: Contract drift tests
-        if: matrix.os == 'ubuntu-latest'
-        run: task test:contract
-
-      - name: Verify workspace clean
-        uses: $/.github/actions/verify-workspace-clean
+          RNS_INVENTORY_OUT: ${{ runner.temp }}/renbrowser-tree-inventory.txt
+        run: CI_SKIP_SETUP=1 bash build/scripts/ci/run.sh go
 
   reproducible-binary:
     name: Reproducible server binary
@@ -118,10 +92,9 @@ jobs:
           cache-node: "true"
 
       - name: Reproducible binary check
-        run: task check:reproducible
-
-      - name: Verify workspace clean
-        uses: $/.github/actions/verify-workspace-clean
+        env:
+          RNS_INVENTORY_OUT: ${{ runner.temp }}/renbrowser-tree-inventory.txt
+        run: CI_SKIP_SETUP=1 bash build/scripts/ci/run.sh reproducible
 
   benchmark:
     name: Go benchmarks
@@ -152,25 +125,10 @@ jobs:
           restore-keys: |
             go-bench-v4-${{ runner.os }}-
 
-      - name: Run benchmarks
-        run: task bench:go
-
-      - name: Compare benchmarks
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -f bench/baseline/go.txt ]; then
-            task bench:compare BENCH_BASELINE=bench/baseline/go.txt
-          else
-            echo "No prior benchmark baseline; skipping regression gate."
-          fi
-
-      - name: Save benchmark baseline
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p bench/baseline
-          cp bench/go.txt bench/baseline/go.txt
+      - name: Benchmark job
+        env:
+          RNS_INVENTORY_OUT: ${{ runner.temp }}/renbrowser-tree-inventory.txt
+        run: CI_SKIP_SETUP=1 bash build/scripts/ci/run.sh benchmark
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -201,11 +159,10 @@ jobs:
           install-linux-deps: "true"
           cache-node: "true"
 
-      - name: Go coverage
-        run: task coverage:go
-
-      - name: Frontend coverage
-        run: task coverage:frontend
+      - name: Coverage job
+        env:
+          RNS_INVENTORY_OUT: ${{ runner.temp }}/renbrowser-tree-inventory.txt
+        run: CI_SKIP_SETUP=1 bash build/scripts/ci/run.sh coverage
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -240,12 +197,10 @@ jobs:
           install-linux-deps: "false"
           cache-node: "true"
 
-      - name: Playwright E2E
-        run: task test:e2e
-
-      - name: Playwright visual regression
-        continue-on-error: true
-        run: task test:visual
+      - name: E2E job
+        env:
+          RNS_INVENTORY_OUT: ${{ runner.temp }}/renbrowser-tree-inventory.txt
+        run: CI_SKIP_SETUP=1 bash build/scripts/ci/run.sh e2e
 
       - name: Upload Playwright report
         if: failure()
@@ -276,8 +231,8 @@ jobs:
         with:
           install-wails: "false"
 
-      - name: Check generated brand files
-        run: task common:check:brand
+      - name: Brand job
+        run: CI_SKIP_SETUP=1 bash build/scripts/ci/run.sh brand
 
   frontend:
     name: Frontend
@@ -300,8 +255,10 @@ jobs:
           install-linux-deps: "false"
           cache-node: "true"
 
-      - name: Frontend quality gates
-        run: task frontend:check
+      - name: Frontend job
+        env:
+          RNS_INVENTORY_OUT: ${{ runner.temp }}/renbrowser-tree-inventory.txt
+        run: CI_SKIP_SETUP=1 bash build/scripts/ci/run.sh frontend
 
   frontend-artifact:
     name: Frontend artifact

@@ -21,12 +21,20 @@ packages=(
   curl librsvg2-bin patchelf
 )
 
+apt_run() {
+	if [ "$(id -u)" -eq 0 ]; then
+		"$@"
+	else
+		sudo "$@"
+	fi
+}
+
 attempt=1
 max_attempts=3
 while [ "${attempt}" -le "${max_attempts}" ]; do
   echo "ci-install-linux-deps: attempt ${attempt}/${max_attempts}"
-  if sudo timeout 8m apt-get "${apt_opts[@]}" update \
-    && sudo timeout 10m apt-get "${apt_opts[@]}" install -y --no-install-recommends "${packages[@]}"; then
+  if apt_run timeout 8m apt-get "${apt_opts[@]}" update \
+    && apt_run timeout 10m apt-get "${apt_opts[@]}" install -y --no-install-recommends "${packages[@]}"; then
     pkg-config --modversion gtk4
     pkg-config --modversion webkitgtk-6.0
     exit 0

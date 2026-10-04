@@ -78,7 +78,37 @@ task coverage:frontend
 task test:server:smoke
 ```
 
-Nightly CI also runs `task test:interop` via `.github/workflows/interop.yml`.
+## Portable CI
+
+CI checks are **bash and Task only**. No dependency on GitHub Marketplace actions, composite actions, or other third-party workflow steps for the test logic.
+
+| Command | Purpose |
+|---------|---------|
+| `task ci:pr` or `make ci-pr` | PR gate when Go, Node, pnpm, and Task are already on `PATH` |
+| `bash build/scripts/ci/bootstrap.sh verify` | Fail fast if the toolchain is missing or too old |
+| `bash build/scripts/ci/bootstrap.sh install` | Download pinned Go, Node, pnpm, and Task into `.cache/ci-toolchain` |
+| `bash build/scripts/ci/run.sh <job>` | Run a job (`list` for names) |
+| `bash build/scripts/ci/run-docker.sh pr` | PR gate in `build/docker/Dockerfile.ci` (uses **podman** when available, else docker) |
+| `CI_CONTAINER=podman bash build/scripts/ci/run-docker.sh pr` | Force podman |
+| `task ci:docker` | Wrapper for `run-docker.sh pr` |
+
+Forgejo and Gitea: `.gitea/workflows/ci.yml` and `.forgejo/workflows/ci.yml` only run `bootstrap.sh install` and `run.sh`. The forge clones the repo into the workspace. No `uses: actions/*` steps.
+
+Local quick run without `renbrowser.rsm` / `rnid`:
+
+```sh
+CI_SKIP_TREE_VERIFY=1 task ci:pr
+```
+
+Optional env:
+
+- `CI_SKIP_TREE_VERIFY=1` skips signed tree inventory verify
+- `CI_SKIP_SETUP=1` skips `setup.sh` when prep already ran
+- `CI_TOOLCHAIN_ROOT` overrides the bootstrap install directory
+
+Pinned versions live in `build/scripts/ci/versions.env`.
+
+The large `.github/workflows/ci.yml` on github.com still uses Marketplace actions for matrix builds, caches, and releases. Use the bootstrap plus `run.sh` path above (or Gitea workflows) if you want CI without that stack.
 
 ## Frontend only
 
@@ -121,7 +151,7 @@ Install your dev plugin into `~/.renbrowser/plugins/` and reload the app.
 task test:interop
 ```
 
-Requires a live Reticulum network and the `interop` build tag. Skip for UI-only work.
+Requires a live Reticulum network and the `interop` build tag. Skip for UI-only work. Optional GitHub workflow: `.github/workflows/interop.yml`.
 
 ## Asset probe
 
