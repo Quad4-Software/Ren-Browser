@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig, type UserConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 import tailwindcss from "@tailwindcss/vite";
 import wails from "@wailsio/runtime/plugins/vite";
@@ -54,25 +54,69 @@ function loadMicronWasmIntegrity(): { wasm: string; wasmExec: string } | null {
 const micronWasmBundled = isMicronWasmBundled();
 const micronWasmIntegrity = loadMicronWasmIntegrity();
 
-export default defineConfig({
-  define: {
-    "import.meta.env.VITE_MICRON_WASM_BUNDLED": JSON.stringify(
-      micronWasmBundled ? "true" : "false",
-    ),
-    "import.meta.env.VITE_MICRON_PARSER_GO_RELEASE": JSON.stringify(MICRON_PARSER_GO_RELEASE_TAG),
-    __MICRON_WASM_SRI_WASM__: JSON.stringify(micronWasmIntegrity?.wasm ?? ""),
-    __MICRON_WASM_SRI_EXEC__: JSON.stringify(micronWasmIntegrity?.wasmExec ?? ""),
-  },
-  resolve: {
-    alias: {
-      $lib: path.resolve("src/lib"),
-      "micron-parser": path.resolve("node_modules/micron-parser/js/micron-parser.js"),
+const bundledDev = process.env.VITE_BUNDLED_DEV === "1";
+
+const productionRolldown: NonNullable<UserConfig["build"]>["rolldownOptions"] = {
+  output: {
+    codeSplitting: {
+      minSize: 20_000,
+      groups: [
+        {
+          name: "pdf",
+          test: /node_modules[\\/]pdfjs-dist/,
+          priority: 30,
+        },
+        {
+          name: "micron",
+          test: /micron-parser/,
+          priority: 25,
+        },
+        {
+          name: "vendor",
+          test: /node_modules/,
+          priority: 10,
+        },
+      ],
     },
   },
-  server: {
-    host: "127.0.0.1",
-    port: Number(process.env.WAILS_VITE_PORT) || 9245,
-    strictPort: true,
-  },
-  plugins: [brandHtmlPlugin(), tailwindcss(), svelte(), wails("./bindings")],
+};
+
+export default defineConfig(({ mode }) => {
+  const production = mode === "production";
+
+  return {
+    define: {
+      "import.meta.env.VITE_MICRON_WASM_BUNDLED": JSON.stringify(
+        micronWasmBundled ? "true" : "false",
+      ),
+      "import.meta.env.VITE_MICRON_PARSER_GO_RELEASE": JSON.stringify(MICRON_PARSER_GO_RELEASE_TAG),
+      __MICRON_WASM_SRI_WASM__: JSON.stringify(micronWasmIntegrity?.wasm ?? ""),
+      __MICRON_WASM_SRI_EXEC__: JSON.stringify(micronWasmIntegrity?.wasmExec ?? ""),
+    },
+    resolve: {
+      alias: {
+        $lib: path.resolve("src/lib"),
+        "micron-parser": path.resolve("node_modules/micron-parser/js/micron-parser.js"),
+      },
+    },
+    server: {
+      host: "127.0.0.1",
+      port: Number(process.env.WAILS_VITE_PORT) || 9245,
+      strictPort: true,
+    },
+    experimental: {
+      bundledDev,
+    },
+    optimizeDeps: {
+      include: ["pdfjs-dist", "marked", "dompurify", "@wailsio/runtime"],
+    },
+    build: {
+      minify: production ? "oxc" : false,
+      cssMinify: production ? "lightningcss" : false,
+      license: production ? { fileName: ".vite/license.json" } : false,
+      chunkImportMap: production,
+      rolldownOptions: production ? productionRolldown : undefined,
+    },
+    plugins: [brandHtmlPlugin(), tailwindcss(), svelte(), wails("./bindings")],
+  };
 });

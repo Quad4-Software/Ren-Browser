@@ -80,6 +80,11 @@ export interface BrowserPrefs {
     "mobileDevTools": boolean;
     "pageCacheEnabled": boolean;
     "tabHoverPreviews": boolean;
+
+    /**
+     * TabLayout selects the desktop tab strip position: "top" keeps the
+     * horizontal tab bar, "left" moves tabs into a vertical sidebar.
+     */
     "tabLayout": string;
     "micronPreserveLayout": boolean;
     "initialSetupComplete": boolean;

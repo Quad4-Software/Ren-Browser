@@ -191,6 +191,9 @@ export function GetNetworkLog(): $CancellablePromise<$models.NetworkEntry[] | nu
     return $Call.ByID(560803913);
 }
 
+/**
+ * GetNodeIdentifyOnConnect reports whether a node is set to auto-identify.
+ */
 export function GetNodeIdentifyOnConnect(rawURL: string): $CancellablePromise<boolean> {
     return $Call.ByID(237879726, rawURL);
 }
@@ -523,6 +526,10 @@ export function SetNativeTitlebar(enabled: boolean): $CancellablePromise<$models
     return $Call.ByID(1710067077, enabled);
 }
 
+/**
+ * SetNodeIdentifyOnConnect toggles automatic identification to a node
+ * whenever a fresh link to it is established.
+ */
 export function SetNodeIdentifyOnConnect(rawURL: string, enabled: boolean): $CancellablePromise<void> {
     return $Call.ByID(1293097418, rawURL, enabled);
 }
