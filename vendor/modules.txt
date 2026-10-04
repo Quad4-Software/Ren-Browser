@@ -1,4 +1,4 @@
-# github.com/Quad4-Software/Reticulum-Go v1.3.0 => ./third_party/reticulum-go
+# github.com/Quad4-Software/Reticulum-Go v1.4.0 => ./third_party/reticulum-go
 ## explicit; go 1.27.1
 github.com/Quad4-Software/Reticulum-Go/internal/storage
 github.com/Quad4-Software/Reticulum-Go/pkg/announce
@@ -156,7 +156,7 @@ github.com/tetratelabs/wazero/internal/wasm/binary
 github.com/tetratelabs/wazero/internal/wasmdebug
 github.com/tetratelabs/wazero/internal/wasmruntime
 github.com/tetratelabs/wazero/sys
-# github.com/wailsapp/wails/v3 v3.0.0-beta.24
+# github.com/wailsapp/wails/v3 v3.0.0-beta.27
 ## explicit; go 1.25.0
 github.com/wailsapp/wails/v3/internal/assetserver
 github.com/wailsapp/wails/v3/internal/assetserver/bundledassets
@@ -245,7 +245,7 @@ kernel.org/pub/linux/libs/security/libcap/psx
 # micron-parser-go v0.0.0 => github.com/Quad4-Software/Micron-Parser-Go v1.2.0
 ## explicit; go 1.27.1
 micron-parser-go/micron
-# modernc.org/libc v1.77.0
+# modernc.org/libc v1.77.1
 ## explicit; go 1.26.0
 modernc.org/libc
 modernc.org/libc/errno
@@ -279,8 +279,8 @@ modernc.org/mathutil
 # modernc.org/memory v1.12.1
 ## explicit; go 1.23.0
 modernc.org/memory
-# modernc.org/sqlite v1.59.0
-## explicit; go 1.25.0
+# modernc.org/sqlite v1.60.1
+## explicit; go 1.26.0
 modernc.org/sqlite
 modernc.org/sqlite/lib
 modernc.org/sqlite/vtab

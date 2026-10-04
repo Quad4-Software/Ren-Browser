@@ -3,17 +3,17 @@ module renbrowser
 go 1.27.1
 
 require (
-	github.com/Quad4-Software/Reticulum-Go v1.3.0
+	github.com/Quad4-Software/Reticulum-Go v1.4.0
 	github.com/Quad4-Software/msgpack/v5 v5.9.2
 	github.com/adrg/xdg v0.5.3
 	github.com/tetratelabs/wazero v1.12.0
-	github.com/wailsapp/wails/v3 v3.0.0-beta.24
+	github.com/wailsapp/wails/v3 v3.0.0-beta.27
 	go.uber.org/goleak v1.3.0
 	golang.org/x/crypto v0.57.0
 	golang.org/x/sys v0.48.0
 	golang.org/x/term v0.46.0
 	micron-parser-go v0.0.0
-	modernc.org/sqlite v1.59.0
+	modernc.org/sqlite v1.60.1
 )
 
 require (
@@ -40,7 +40,7 @@ require (
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.78 // indirect
-	modernc.org/libc v1.77.0 // indirect
+	modernc.org/libc v1.77.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
 )

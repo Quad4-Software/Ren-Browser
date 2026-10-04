@@ -109,16 +109,18 @@ type BaseInterface struct {
 	// deferInboundIFAC skips ApplyIFACInbound in ProcessIncoming so transport
 	// inbound preprocessing can apply IFAC once (RNS 1.5.0).
 	deferInboundIFAC bool
-	ifacScratch      []byte
-	prxc, ptxc       uint64
-	sampleARXB       uint64
-	sampleATXB       uint64
-	samplePRXB       uint64
-	samplePTXB       uint64
-	currentARXS      float64
-	currentATXS      float64
-	currentPRXS      float64
-	currentPTXS      float64
+	// ifacMu serializes outbound masking over the shared ifacScratch buffer.
+	ifacMu      sync.Mutex
+	ifacScratch []byte
+	prxc, ptxc  uint64
+	sampleARXB  uint64
+	sampleATXB  uint64
+	samplePRXB  uint64
+	samplePTXB  uint64
+	currentARXS float64
+	currentATXS float64
+	currentPRXS float64
+	currentPTXS float64
 
 	announceQueue     []queuedAnnounce
 	announceAllowedAt time.Time
@@ -248,7 +250,7 @@ func (i *BaseInterface) ProcessIncomingFrom(data []byte, peerKey string) {
 // instead of letting the transport silently swallow every outgoing packet.
 func (i *BaseInterface) ProcessOutgoing(data []byte) error {
 	debug.Log(debug.DebugCritical, "BaseInterface.ProcessOutgoing called directly, concrete interface type must override it", "name", i.Name, "bytes", len(data))
-	return fmt.Errorf("ProcessOutgoing not implemented on abstract interfaces.BaseInterface (name=%q, %d bytes); concrete interface type must override it", i.Name, len(data))
+	return fmt.Errorf("ProcessOutgoing not implemented on abstract interfaces.BaseInterface (name=%q, %d bytes). Concrete interface type must override it", i.Name, len(data))
 }
 
 func (i *BaseInterface) SendPathRequest(packet []byte) error {
@@ -300,6 +302,10 @@ func (i *BaseInterface) Enable() {
 	prevState := i.Enabled
 	i.Enabled = true
 	i.Online = true
+	// Enable resurrects a detached interface. Detach remains the
+	// power-down verb and a later Enable plus Start must be able to
+	// bring it back.
+	i.Detached = false
 
 	debug.Log(debug.DebugInfo, "Interface state changed", "name", i.Name, "enabled_prev", prevState, "enabled", i.Enabled, "online_prev", !i.Online, "online", i.Online)
 }
@@ -430,7 +436,9 @@ func (i *BaseInterface) Send(data []byte, address string) error {
 		debug.Log(debug.DebugTrace, "Interface sending bytes", "name", i.Name, "bytes", len(data), "address", address)
 	}
 
+	i.ifacMu.Lock()
 	masked, err := common.ApplyIFACOutboundInto(i, i.ifacOutboundScratch(len(data)), data)
+	i.ifacMu.Unlock()
 	if err != nil {
 		debug.Log(debug.DebugError, "Failed to mask outgoing packet for IFAC", "name", i.Name, "error", err)
 		return err

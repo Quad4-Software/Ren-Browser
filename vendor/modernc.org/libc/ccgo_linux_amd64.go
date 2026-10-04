@@ -25865,7 +25865,7 @@ func X__floatscan(tls *TLS, f uintptr, prec int32, pok int32) (r float64) {
 			if (*TFILE)(unsafe.Pointer(f)).Fshlim >= 0 {
 				(*TFILE)(unsafe.Pointer(f)).Frpos = (*TFILE)(unsafe.Pointer(f)).Frpos - 1
 			}
-			return float64(Xnanf(tls, __ccgo_ts))
+			return float64(X__builtin_nanf(tls, __ccgo_ts))
 		}
 		i = uint64(1)
 		for {
@@ -25882,7 +25882,7 @@ func X__floatscan(tls *TLS, f uintptr, prec int32, pok int32) (r float64) {
 				goto _23
 			}
 			if c == int32(')') {
-				return float64(Xnanf(tls, __ccgo_ts))
+				return float64(X__builtin_nanf(tls, __ccgo_ts))
 			}
 			if (*TFILE)(unsafe.Pointer(f)).Fshlim >= 0 {
 				(*TFILE)(unsafe.Pointer(f)).Frpos = (*TFILE)(unsafe.Pointer(f)).Frpos - 1
@@ -25902,13 +25902,13 @@ func X__floatscan(tls *TLS, f uintptr, prec int32, pok int32) (r float64) {
 					(*TFILE)(unsafe.Pointer(f)).Frpos = (*TFILE)(unsafe.Pointer(f)).Frpos - 1
 				}
 			}
-			return float64(Xnanf(tls, __ccgo_ts))
+			return float64(X__builtin_nanf(tls, __ccgo_ts))
 			goto _23
 		_23:
 			;
 			i = i + 1
 		}
-		return float64(Xnanf(tls, __ccgo_ts))
+		return float64(X__builtin_nanf(tls, __ccgo_ts))
 	}
 	if i != 0 {
 		if (*TFILE)(unsafe.Pointer(f)).Fshlim >= 0 {
@@ -109119,7 +109119,7 @@ func Xnan(tls *TLS, s uintptr) (r float64) {
 		trc("tls=%v s=%v, (%v:)", tls, s, origin(2))
 		defer func() { trc("-> %v", r) }()
 	}
-	return float64(Xnanf(tls, __ccgo_ts))
+	return float64(X__builtin_nanf(tls, __ccgo_ts))
 }
 
 func Xnanf(tls *TLS, s uintptr) (r float32) {
@@ -109127,7 +109127,7 @@ func Xnanf(tls *TLS, s uintptr) (r float32) {
 		trc("tls=%v s=%v, (%v:)", tls, s, origin(2))
 		defer func() { trc("-> %v", r) }()
 	}
-	return Xnanf(tls, __ccgo_ts)
+	return X__builtin_nanf(tls, __ccgo_ts)
 }
 
 func Xnanl(tls *TLS, s uintptr) (r float64) {
@@ -109135,7 +109135,7 @@ func Xnanl(tls *TLS, s uintptr) (r float64) {
 		trc("tls=%v s=%v, (%v:)", tls, s, origin(2))
 		defer func() { trc("-> %v", r) }()
 	}
-	return float64(Xnanf(tls, __ccgo_ts))
+	return float64(X__builtin_nanf(tls, __ccgo_ts))
 }
 
 func Xnextafter(tls *TLS, x3 float64, y3 float64) (r float64) {

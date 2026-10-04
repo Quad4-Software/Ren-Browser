@@ -25842,7 +25842,7 @@ func X__floatscan(tls *TLS, f uintptr, prec int32, pok int32) (r float64) {
 			if (*TFILE)(unsafe.Pointer(f)).Fshlim >= 0 {
 				(*TFILE)(unsafe.Pointer(f)).Frpos = (*TFILE)(unsafe.Pointer(f)).Frpos - 1
 			}
-			return float64(Xnanf(tls, __ccgo_ts))
+			return float64(X__builtin_nanf(tls, __ccgo_ts))
 		}
 		i = uint64(1)
 		for {
@@ -25859,7 +25859,7 @@ func X__floatscan(tls *TLS, f uintptr, prec int32, pok int32) (r float64) {
 				goto _23
 			}
 			if c == int32(')') {
-				return float64(Xnanf(tls, __ccgo_ts))
+				return float64(X__builtin_nanf(tls, __ccgo_ts))
 			}
 			if (*TFILE)(unsafe.Pointer(f)).Fshlim >= 0 {
 				(*TFILE)(unsafe.Pointer(f)).Frpos = (*TFILE)(unsafe.Pointer(f)).Frpos - 1
@@ -25879,13 +25879,13 @@ func X__floatscan(tls *TLS, f uintptr, prec int32, pok int32) (r float64) {
 					(*TFILE)(unsafe.Pointer(f)).Frpos = (*TFILE)(unsafe.Pointer(f)).Frpos - 1
 				}
 			}
-			return float64(Xnanf(tls, __ccgo_ts))
+			return float64(X__builtin_nanf(tls, __ccgo_ts))
 			goto _23
 		_23:
 			;
 			i = i + 1
 		}
-		return float64(Xnanf(tls, __ccgo_ts))
+		return float64(X__builtin_nanf(tls, __ccgo_ts))
 	}
 	if i != 0 {
 		if (*TFILE)(unsafe.Pointer(f)).Fshlim >= 0 {
@@ -107928,7 +107928,7 @@ func Xlog(tls *TLS, x1 float64) (r1 float64) {
 	/* log(x) = log1p(z/c-1) + log(c) + k*Ln2.  */
 	/* r ~= z/c - 1, |r| < 1/(2*N).  */
 	/* rounding error: 0x1p-55/N.  */
-	r = Xfma(tls, z, invc, -Float64FromFloat64(1))
+	r = float64(X__builtin_fma(tls, z, invc, -Float64FromFloat64(1)))
 	kd = float64(k)
 	/* hi + lo = r + log(c) + k*Ln2.  */
 	w = Tdouble_t(kd*X__log_data.Fln2hi) + logc
@@ -108381,7 +108381,7 @@ func Xlog2(tls *TLS, x1 float64) (r1 float64) {
 		}
 		r = x1 - float64(1)
 		hi = Tdouble_t(r * X__log2_data.Finvln2hi)
-		lo = Tdouble_t(r*X__log2_data.Finvln2lo) + Xfma(tls, r, X__log2_data.Finvln2hi, -hi)
+		lo = Tdouble_t(r*X__log2_data.Finvln2lo) + float64(X__builtin_fma(tls, r, X__log2_data.Finvln2hi, -hi))
 		r2 = Tdouble_t(r * r) /* rounding error: 0x1p-62.  */
 		r4 = Tdouble_t(r2 * r2)
 		/* Worst-case error is less than 0.54 ULP (0.55 ULP without fma).  */
@@ -108433,9 +108433,9 @@ func Xlog2(tls *TLS, x1 float64) (r1 float64) {
 	/* log2(x) = log2(z/c) + log2(c) + k.  */
 	/* r ~= z/c - 1, |r| < 1/(2*N).  */
 	/* rounding error: 0x1p-55/N.  */
-	r = Xfma(tls, z, invc, -Float64FromFloat64(1))
+	r = float64(X__builtin_fma(tls, z, invc, -Float64FromFloat64(1)))
 	t1 = Tdouble_t(r * X__log2_data.Finvln2hi)
-	t2 = Tdouble_t(r*X__log2_data.Finvln2lo) + Xfma(tls, r, X__log2_data.Finvln2hi, -t1)
+	t2 = Tdouble_t(r*X__log2_data.Finvln2lo) + float64(X__builtin_fma(tls, r, X__log2_data.Finvln2hi, -t1))
 	/* hi + lo = r/ln2 + log2(c) + k.  */
 	t3 = kd + logc
 	hi = t3 + t1
@@ -108943,7 +108943,7 @@ func Xnan(tls *TLS, s uintptr) (r float64) {
 		trc("tls=%v s=%v, (%v:)", tls, s, origin(2))
 		defer func() { trc("-> %v", r) }()
 	}
-	return float64(Xnanf(tls, __ccgo_ts))
+	return float64(X__builtin_nanf(tls, __ccgo_ts))
 }
 
 func Xnanf(tls *TLS, s uintptr) (r float32) {
@@ -108951,7 +108951,7 @@ func Xnanf(tls *TLS, s uintptr) (r float32) {
 		trc("tls=%v s=%v, (%v:)", tls, s, origin(2))
 		defer func() { trc("-> %v", r) }()
 	}
-	return Xnanf(tls, __ccgo_ts)
+	return X__builtin_nanf(tls, __ccgo_ts)
 }
 
 func Xnanl(tls *TLS, s uintptr) (r float64) {
@@ -108959,7 +108959,7 @@ func Xnanl(tls *TLS, s uintptr) (r float64) {
 		trc("tls=%v s=%v, (%v:)", tls, s, origin(2))
 		defer func() { trc("-> %v", r) }()
 	}
-	return float64(Xnanf(tls, __ccgo_ts))
+	return float64(X__builtin_nanf(tls, __ccgo_ts))
 }
 
 func Xnextafter(tls *TLS, x3 float64, y3 float64) (r float64) {
@@ -109356,7 +109356,7 @@ func _log_inline(tls *TLS, ix Tuint64_t, tail uintptr) (r1 Tdouble_t) {
 	})(__ccgo_up(uintptr(unsafe.Pointer(&X__pow_log_data)) + 72 + uintptr(i)*32))).Flogctail
 	/* Note: 1/c is j/N or j/N/2 where j is an integer in [N,2N) and
 	   |z/c - 1| < 1/N, so r = z/c - 1 is exactly representible.  */
-	r = Xfma(tls, z, invc, -Float64FromFloat64(1))
+	r = float64(X__builtin_fma(tls, z, invc, -Float64FromFloat64(1)))
 	/* k*Ln2 + log(c) + r.  */
 	t1 = Tdouble_t(kd*X__pow_log_data.Fln2hi) + logc
 	t2 = t1 + r
@@ -109367,7 +109367,7 @@ func _log_inline(tls *TLS, ix Tuint64_t, tail uintptr) (r1 Tdouble_t) {
 	ar3 = Tdouble_t(r * ar2)
 	/* k*Ln2 + log(c) + r + A[0]*r*r.  */
 	hi = t2 + ar2
-	lo3 = Xfma(tls, ar, r, -ar2)
+	lo3 = float64(X__builtin_fma(tls, ar, r, -ar2))
 	lo4 = t2 - hi + ar2
 	/* p = log1p(r) - r - A[0]*r*r.  */
 	p = Tdouble_t(ar3 * (**(**float64)(__ccgo_up(uintptr(unsafe.Pointer(&X__pow_log_data)) + 16 + 1*8)) + float64(r***(**float64)(__ccgo_up(uintptr(unsafe.Pointer(&X__pow_log_data)) + 16 + 2*8))) + float64(ar2*(**(**float64)(__ccgo_up(uintptr(unsafe.Pointer(&X__pow_log_data)) + 16 + 3*8))+float64(r***(**float64)(__ccgo_up(uintptr(unsafe.Pointer(&X__pow_log_data)) + 16 + 4*8)))+float64(ar2*(**(**float64)(__ccgo_up(uintptr(unsafe.Pointer(&X__pow_log_data)) + 16 + 5*8))+float64(r***(**float64)(__ccgo_up(uintptr(unsafe.Pointer(&X__pow_log_data)) + 16 + 6*8)))))))))
@@ -109668,7 +109668,7 @@ func Xpow(tls *TLS, x1 float64, y1 float64) (r float64) {
 	}
 	hi = _log_inline(tls, ix, bp)
 	ehi = Tdouble_t(y1 * hi)
-	elo = float64(y1***(**Tdouble_t)(__ccgo_up(bp))) + Xfma(tls, y1, hi, -ehi)
+	elo = float64(y1***(**Tdouble_t)(__ccgo_up(bp))) + float64(X__builtin_fma(tls, y1, hi, -ehi))
 	return _exp_inline(tls, ehi, elo, sign_bias)
 }
 
