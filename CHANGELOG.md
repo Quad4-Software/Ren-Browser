@@ -9,21 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Vertical tab layout and tab groups on desktop: a left-side tab rail with named, colored, collapsible groups, group assignment from the tab context menu, and a Settings -> Browsing "Tab position" option
-- Per-node auto identify: the identify dialog gains an "Always identify to this node" option, and fresh links identify automatically for nodes with the flag set
-- Discovery announce counts: nodes track how many announces were seen, persisted across restarts, with a sort menu (newest, most announces, name) and a combined node card with inline favorite star
+- Desktop vertical tabs and tab groups (left rail, collapsible groups, context-menu assignment, Settings -> Browsing tab position)
+- Per-node auto identify (dialog option and automatic identify on new links when enabled for that node)
+- Discovery announce counts on nodes, persisted across restarts, with sort by newest, announce count, or name
+- Combined discovery node card with inline favorite star
 - Project site at site/ for GitHub Pages and issue templates
+- Live interop test for shared-instance client NomadNet page fetch (`go test -tags=interop`)
 
 ### Fixed
 
-- AppImage text rendering: the bundled fontconfig config now includes host conf.d rules so family aliases and hinting resolve correctly
+- AppImage text rendering includes host fontconfig conf.d rules so family aliases and hinting resolve correctly
 - Cached-page banner is slimmer
 - Node pages use more of the render area with tighter content padding
+- Shared-instance clients (for example Python rnsd) receive mesh announces when the owner runs with transport disabled (reticulum-go 1.4.0)
 
 ### Changed
 
-- Pin the mobile Go MTE toolchain base to the go1.27.1 release instead of a tip commit; the iOS patch stays until golang/go#77915 lands
+- Mobile Go MTE toolchain base is go1.27.1 (upstream Android MTE fixes). iOS still uses build/patches/go/mte-ios.patch until golang/go#77915 lands
 - Screenshot tooling emits WebP alongside PNG baselines
+- Bump reticulum-go to v1.4.0, Wails v3 beta.27, and modernc.org/sqlite v1.60.1
 
 ## [0.4.0] [released] - 2026-09-21
 
