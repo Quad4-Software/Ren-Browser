@@ -32,7 +32,7 @@
     "bits-ui": "2.19.5",
     "dompurify": "3.4.16",
     "jszip": "^3.10.2",
-    "marked": "18.0.14",
+    "marked": "18.1.0",
     "micron-parser": "github:RFnexus/micron-parser-js",
     "pdfjs-dist": "^6.4.299",
     "runed": "0.37.1"
