@@ -5,7 +5,7 @@ Cómo trabajar en Ren Browser de forma local.
 ## Requisitos
 
 - Go 1.26+
-- Node.js 22+ y pnpm 11+
+- Node.js 22+ y pnpm 12+
 - Task (recomendado)
 - Configuración de Reticulum para pruebas en mesh en vivo (opcional)
 

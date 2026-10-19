@@ -5,3 +5,4 @@ playwright-report/**
 public/vendor/**
 src/lib/i18n/sync-template.mjs
 test-results/**
+.svelte-check

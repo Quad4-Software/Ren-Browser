@@ -51,6 +51,7 @@ export default ts.config(
       "dist/**",
       "bindings/**",
       "node_modules/**",
+      ".svelte-check/**",
       "src/lib/micron/parser.ts",
       "src/lib/micron/nomad-renderer.ts",
     ],

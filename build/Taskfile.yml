@@ -95,8 +95,8 @@ tasks:
     generates:
       - frontend/node_modules
     preconditions:
-      - sh: pnpm --version | awk -F. '{ exit ($1 < 11) }'
-        msg: "pnpm 11+ is required. Install with: corepack enable && corepack prepare pnpm@11.24.0 --activate"
+      - sh: pnpm --version | awk -F. '{ exit ($1 < 12) }'
+        msg: "pnpm 12+ is required. Install with: corepack enable && corepack prepare pnpm@12.14.0 --activate"
     cmds:
       - pnpm install --frozen-lockfile=false
 

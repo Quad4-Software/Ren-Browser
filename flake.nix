@@ -33,12 +33,20 @@
           else
             "dev";
 
-        # Match package.json packageManager (nixpkgs pnpm_11 may lag).
-        pnpm = pkgs.callPackage "${pkgs.path}/pkgs/development/tools/pnpm/generic.nix" {
-          version = "11.24.0";
-          hash = "sha256-0eqyQzFyZhzDahjshfzpP3cdsZYnFzKcwB7JwoJMok8=";
-          nodejs = null;
-        };
+        # Match package.json packageManager (pinned nixpkgs has no pnpm_12 yet).
+        # The pnpm 12 tarball no longer ships dist/reflink.*node or dist/vendor,
+        # so make the upstream postUnpack tolerant of missing paths.
+        pnpm =
+          (pkgs.callPackage "${pkgs.path}/pkgs/development/tools/pnpm/generic.nix" {
+            version = "12.14.0";
+            hash = "sha256-6iBuNUdL+HvpVkqFynDtHI69xF2lWq+wo78J0bppsXk=";
+            nodejs = null;
+          }).overrideAttrs
+            (_: {
+              postUnpack = ''
+                rm -rf package/dist/reflink.*node package/dist/vendor
+              '';
+            });
 
         pnpmConfigHook = pkgs.pnpmConfigHook.overrideAttrs (prev: {
           propagatedBuildInputs =

@@ -6,16 +6,16 @@ allowBuilds:
   esbuild: true
 
 overrides:
-  brace-expansion@^2: 2.1.4
+  brace-expansion@^2: 2.1.7
   brace-expansion@^5: 5.0.12
-  postcss@^8: 8.5.26
-  nanoid@^3: 3.3.18
+  postcss@^8: 8.5.30
+  nanoid@^3: 3.3.20
   minimatch@^9.0.0: 10.2.6
-  dompurify: 3.4.15
+  dompurify: 3.4.17
   typescript: 6.0.3
-  "@types/node": 26.6.1
-  marked: 18.0.13
-  "@napi-rs/canvas": 1.0.8
+  "@types/node": 26.6.5
+  marked: 18.1.1
+  "@napi-rs/canvas": 1.0.11
 
 minimumReleaseAge: 1440
 trustPolicy: no-downgrade

@@ -1,5 +1,5 @@
 # Pinned third-party actions (bump tag and SHA together when upgrading):
-#   pnpm/action-setup@v6.0.10          0977fd99725f1db4007ccb2928dbb4e90d06cc86
+#   pnpm/action-setup@v6.1.0           ea17c68df8912ef543352723c149a84f56e3d413
 #   actions/setup-go@v7.0.0            b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
 #   actions/setup-node@v7.0.0          820762786026740c76f36085b0efc47a31fe5020
 #   arduino/setup-task@v3.0.0          c0bc642852239c2689f73f4ea6459c29405f3c52
@@ -23,7 +23,7 @@ inputs:
   pnpm-version:
     description: pnpm version
     required: false
-    default: "11.24.0"
+    default: "12.14.0"
   task-version:
     description: Task version
     required: false
@@ -31,7 +31,7 @@ inputs:
   wails-version:
     description: wails3 module version tag
     required: false
-    default: "v3.0.0-beta.24"
+    default: "v3.0.0-beta.31"
   cache-node:
     description: Enable pnpm cache in setup-node (only when the job runs pnpm install)
     required: false
@@ -82,7 +82,7 @@ runs:
         sh build/scripts/verify-tree-rsm.sh
 
     - name: Setup pnpm
-      uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86
+      uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413
       with:
         version: ${{ inputs.pnpm-version }}
 

@@ -5,7 +5,7 @@ Ren Browser をローカルで開発する方法。
 ## 要件
 
 - Go 1.26 以降
-- Node.js 22 以降と pnpm 11 以降
+- Node.js 22 以降と pnpm 12 以降
 - Task（推奨）
 - ライブメッシュテスト用の Reticulum 設定（オプション）
 
