@@ -7,6 +7,12 @@ import (
 	"strings"
 )
 
+// isAnchorNameByte reports whether c may appear in a `:name anchor identifier,
+// matching micron-parser-js [A-Za-z0-9_-].
+func isAnchorNameByte(c byte) bool {
+	return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-'
+}
+
 func backslashEscapesOnlyMicronSpecial(line string, pos int) bool {
 	if pos >= len(line) {
 		return false
@@ -155,6 +161,18 @@ func (p *Parser) makeOutput(s *State, line string, preEscape bool) []linePart {
 				if sk, lk := p.parseLink(line, i, s); lk != nil {
 					out = append(out, linePart{link: lk})
 					i += sk
+					modeText = true
+					continue
+				}
+			case ':':
+				j := i + 1
+				for j < len(line) && isAnchorNameByte(line[j]) {
+					j++
+				}
+				if j > i+1 {
+					flushPart()
+					out = append(out, linePart{anchorName: line[i+1 : j]})
+					i = j
 					modeText = true
 					continue
 				}

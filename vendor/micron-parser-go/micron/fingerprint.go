@@ -4,9 +4,10 @@
 package micron
 
 // SemanticFingerprint is a JSON-serializable structural summary used for
-// differential tests against the NomadNet-aligned Python oracle (primary dialect
-// authority). Stock MicronParser emits Urwid widgets and is not invoked headlessly
-// Parity is semantic (sections, links, fields, partials, headers), not widget trees.
+// differential tests against the Python reference scanner (NomadNet is the
+// dialect authority). Stock MicronParser emits Urwid widgets and is not invoked
+// headlessly. Parity is semantic (sections, links, fields, partials, headers),
+// not widget trees.
 type SemanticFingerprint struct {
 	Authority string               `json:"authority"`
 	Sections  []int                `json:"sections"`

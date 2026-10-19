@@ -34,6 +34,6 @@
 //
 // Tests check behavioral parity with micron-parser-js by comparing structural
 // signatures of HTML output rather than byte-identical strings.
-// The JS script lives under micron/testdata/. Python oracle tests run when
+// The JS script lives under micron/testdata/. Python fingerprint tests run when
 // python3 and optionally nomadnet are available.
 package micron

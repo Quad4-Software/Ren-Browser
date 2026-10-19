@@ -32,25 +32,29 @@ func (p *Parser) RenderHTML(doc *Document) string {
 	} else {
 		b.Grow(160)
 	}
-	writeRootOpen(&b, doc.DefaultFG, doc.DefaultBG)
+	writeRootOpen(&b, doc.DefaultFG, doc.DefaultBG, p.Serif)
 	for i := range doc.Blocks {
 		p.renderBlock(&b, &doc.Blocks[i], &s)
 	}
 	b.WriteString(`</div>`)
-	return b.String()
+	return resolveEmptyAnchorHrefs(b.String())
 }
 
 func (p *Parser) wrapHTMLFragment(body, defaultFG, defaultBGVal string) string {
 	var out strings.Builder
 	out.Grow(len(body) + 160)
-	writeRootOpen(&out, defaultFG, defaultBGVal)
+	writeRootOpen(&out, defaultFG, defaultBGVal, p.Serif)
 	out.WriteString(body)
 	out.WriteString(`</div>`)
 	return out.String()
 }
 
-func writeRootOpen(b *strings.Builder, defaultFG, defaultBGVal string) {
-	b.WriteString(`<div class="Mu-root" dir="auto" style="line-height:1.5;min-height:100%;width:100%;box-sizing:border-box;`)
+func writeRootOpen(b *strings.Builder, defaultFG, defaultBGVal string, serif bool) {
+	if serif {
+		b.WriteString(`<div class="Mu-root Mu-serif" dir="auto" style="line-height:1.5;min-height:100%;width:100%;box-sizing:border-box;`)
+	} else {
+		b.WriteString(`<div class="Mu-root" dir="auto" style="line-height:1.5;min-height:100%;width:100%;box-sizing:border-box;`)
+	}
 	if defaultFG != "" && defaultFG != "default" && tryAppendColorProperty(b, "color:", defaultFG) {
 		b.WriteByte(';')
 	}
@@ -118,6 +122,9 @@ func (p *Parser) renderBlock(out *strings.Builder, bl *Block, s *State) {
 		s.BGColor = bl.HeadingStyle.BG
 		out.WriteString(`<div`)
 		writeDataMuLine(out, line)
+		if p.Accessibility {
+			out.WriteString(` role="separator"`)
+		}
 		out.WriteString(` style="white-space:pre;white-space:nowrap;overflow:hidden;width:100%;`)
 		if tryAppendColorProperty(out, "color:", s.FGColor) {
 			out.WriteByte(';')
@@ -145,11 +152,17 @@ func (p *Parser) renderBlock(out *strings.Builder, bl *Block, s *State) {
 		if tryAppendColorProperty(out, "background-color:", style.BG) {
 			out.WriteByte(';')
 		}
-		out.WriteString(`"><div style="`)
+		out.WriteString(`"><div`)
+		if p.Accessibility {
+			out.WriteString(` role="heading" aria-level="`)
+			out.WriteString(strconv.Itoa(bl.Depth))
+			out.WriteString(`"`)
+		}
+		out.WriteString(` style="`)
 		appendSectionIndentStyle(out, s)
 		out.WriteString(`">`)
 		s.Literal = false
-		p.appendOutput(out, inlinesToParts(bl.Inlines), s)
+		p.appendOutput(out, inlinesToParts(bl.Inlines), s, style.FG)
 		out.WriteString(`</div></div><br>`)
 	case BlockParagraph:
 		s.BGColor = bl.LineBG
@@ -170,11 +183,13 @@ func inlinesToParts(inlines []Inline) []linePart {
 	for i := range inlines {
 		in := &inlines[i]
 		parts[i] = linePart{
-			style:   in.Style,
-			text:    in.Text,
-			field:   in.Field,
-			link:    in.Link,
-			partial: in.Partial,
+			style:        in.Style,
+			text:         in.Text,
+			field:        in.Field,
+			link:         in.Link,
+			partial:      in.Partial,
+			anchorName:   in.AnchorName,
+			anchorHeader: in.AnchorHeader,
 		}
 	}
 	return parts

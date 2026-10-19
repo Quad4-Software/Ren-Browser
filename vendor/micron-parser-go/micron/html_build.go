@@ -18,7 +18,10 @@ func appendQuotedHTMLStyleAttr(b *strings.Builder, st Style, defaultBG string) {
 	b.WriteByte('"')
 }
 
-func appendStyledSpanOpen(b *strings.Builder, st Style, defaultBG string) bool {
+func appendStyledSpanOpen(b *strings.Builder, st Style, defaultBG, inheritedFG string) bool {
+	if inheritedFG != "" && st.FG == inheritedFG {
+		st.FG = ""
+	}
 	if !hasAnyStyle(st, defaultBG) {
 		return false
 	}
@@ -38,11 +41,41 @@ func hasAnyStyle(st Style, defaultBG string) bool {
 	return st.Bold || st.Underline || st.Italic
 }
 
+// writeAnchor emits an invisible same-page anchor, matching micron-parser-js
+// anchor parts. Header anchors additionally carry micron-header-anchor so
+// `href="#"` links can resolve to the next heading.
+func writeAnchor(b *strings.Builder, name string, header bool) {
+	b.WriteString(`<a id="`)
+	b.WriteString(htmlAttr(name))
+	b.WriteString(`" class="micron-anchor`)
+	if header {
+		b.WriteString(` micron-header-anchor`)
+	}
+	b.WriteString(`" aria-hidden="true"></a>`)
+}
+
+// appendReadableContent writes html with an aria-hidden visual copy and a
+// Mu-sr plain-text copy when the two differ, matching micron-parser-js
+// setReadableContent under options.accessibility.
+func appendReadableContent(b *strings.Builder, html, text string, a11y bool) {
+	if a11y && html != text {
+		b.WriteString(`<span aria-hidden="true">`)
+		b.WriteString(html)
+		b.WriteString(`</span><span class="Mu-sr">`)
+		appendHTMLText(b, text)
+		b.WriteString(`</span>`)
+		return
+	}
+	b.WriteString(html)
+}
+
 // appendOutput writes the styled HTML for parts directly into b. It defers
 // emitting the opening <span> until a non-empty body part is encountered,
 // which avoids both the intermediate per-line strings.Builder used for
 // buffering body text and any "open span / no body / discard" round trips.
-func (p *Parser) appendOutput(b *strings.Builder, parts []linePart, s *State) {
+// inheritedFG matches micron-parser-js: spans inheriting the surrounding
+// heading foreground skip re-emitting color so they inherit it instead.
+func (p *Parser) appendOutput(b *strings.Builder, parts []linePart, s *State, inheritedFG string) {
 	var cur Style
 	var styleSet bool
 	var spanOpen bool
@@ -56,12 +89,18 @@ func (p *Parser) appendOutput(b *strings.Builder, parts []linePart, s *State) {
 	}
 	ensureSpan := func() {
 		if !spanOpen && styleSet {
-			spanOpen = appendStyledSpanOpen(b, cur, s.DefaultBG)
+			spanOpen = appendStyledSpanOpen(b, cur, s.DefaultBG, inheritedFG)
 		}
 	}
+	monoSplit := p.ForceMonospace && (!p.Serif || s.Literal)
 
 	for i := range parts {
 		pr := &parts[i]
+		if pr.anchorName != "" {
+			closeSpan()
+			writeAnchor(b, pr.anchorName, pr.anchorHeader)
+			continue
+		}
 		if pr.field != nil || pr.link != nil || pr.partial != nil {
 			closeSpan()
 			switch {
@@ -86,8 +125,14 @@ func (p *Parser) appendOutput(b *strings.Builder, parts []linePart, s *State) {
 		ensureSpan()
 		if pr.html != "" {
 			b.WriteString(pr.html)
-		} else if p.ForceMonospace {
-			p.appendSplitAtSpaces(b, pr.text)
+		} else if monoSplit {
+			if p.Accessibility {
+				var tmp strings.Builder
+				p.appendSplitAtSpaces(&tmp, pr.text)
+				appendReadableContent(b, tmp.String(), pr.text, true)
+			} else {
+				p.appendSplitAtSpaces(b, pr.text)
+			}
 		} else {
 			appendHTMLText(b, pr.text)
 		}
@@ -126,6 +171,28 @@ func (p *Parser) writeField(b *strings.Builder, f *Field, s *State) {
 		appendHTMLText(b, f.Label)
 		b.WriteString(`</label>`)
 	default:
+		if f.Rows > 1 {
+			b.WriteString(`<textarea name="`)
+			b.WriteString(htmlAttr(f.Name))
+			b.WriteString(`" rows="`)
+			b.WriteString(strconv.Itoa(f.Rows))
+			b.WriteString(`"`)
+			if f.Width > 0 {
+				b.WriteString(` cols="`)
+				b.WriteString(strconv.Itoa(f.Width))
+				b.WriteString(`"`)
+			}
+			if p.Accessibility {
+				b.WriteString(` aria-label="`)
+				b.WriteString(htmlAttr(f.Name))
+				b.WriteString(`"`)
+			}
+			appendQuotedHTMLStyleAttr(b, f.Style, s.DefaultBG)
+			b.WriteString(`>`)
+			appendHTMLText(b, f.Value)
+			b.WriteString(`</textarea>`)
+			return
+		}
 		t := "text"
 		if f.Masked {
 			t = "password"
@@ -139,6 +206,11 @@ func (p *Parser) writeField(b *strings.Builder, f *Field, s *State) {
 		b.WriteString(`" value="`)
 		b.WriteString(htmlAttr(f.Value))
 		b.WriteString(`"`)
+		if p.Accessibility {
+			b.WriteString(` aria-label="`)
+			b.WriteString(htmlAttr(f.Name))
+			b.WriteString(`"`)
+		}
 		if f.Width > 0 {
 			b.WriteString(` size="`)
 			b.WriteString(strconv.Itoa(f.Width))
@@ -164,11 +236,7 @@ func (p *Parser) writeLink(b *strings.Builder, lk *Link, s *State) {
 		b.WriteString(`"`)
 		appendQuotedHTMLStyleAttr(b, lk.Style, s.DefaultBG)
 		b.WriteString(`>`)
-		if p.ForceMonospace {
-			p.appendSplitAtSpaces(b, lk.Label)
-		} else {
-			appendHTMLText(b, lk.Label)
-		}
+		p.appendLinkLabel(b, lk.Label, s)
 		b.WriteString(`</a>`)
 		return
 	}
@@ -215,12 +283,24 @@ func (p *Parser) writeLink(b *strings.Builder, lk *Link, s *State) {
 	b.WriteString(`"`)
 	appendQuotedHTMLStyleAttr(b, lk.Style, s.DefaultBG)
 	b.WriteString(`>`)
-	if p.ForceMonospace {
-		p.appendSplitAtSpaces(b, lk.Label)
-	} else {
-		appendHTMLText(b, lk.Label)
-	}
+	p.appendLinkLabel(b, lk.Label, s)
 	b.WriteString(`</a>`)
+}
+
+// appendLinkLabel writes a link label with monospace wrapping when enabled,
+// and wraps split output in readable content under Accessibility.
+func (p *Parser) appendLinkLabel(b *strings.Builder, label string, s *State) {
+	if p.ForceMonospace && (!p.Serif || s.Literal) {
+		if p.Accessibility {
+			var tmp strings.Builder
+			p.appendSplitAtSpaces(&tmp, label)
+			appendReadableContent(b, tmp.String(), label, true)
+		} else {
+			p.appendSplitAtSpaces(b, label)
+		}
+		return
+	}
+	appendHTMLText(b, label)
 }
 
 // writeImage emits the deferred image placeholder consumed by the MeshChatX
@@ -303,6 +383,9 @@ func (p *Parser) writeImage(b *strings.Builder, im *LinkImage) {
 func (p *Parser) writePartial(b *strings.Builder, pt *Partial, s *State, srcLine int) {
 	b.WriteString(`<div class="Mu-partial"`)
 	writeDataMuLine(b, srcLine)
+	if p.Accessibility {
+		b.WriteString(` role="status" aria-live="polite" aria-busy="true"`)
+	}
 	b.WriteString(` data-partial-url="`)
 	b.WriteString(htmlAttr(pt.URL))
 	b.WriteString(`" data-partial-destination="`)

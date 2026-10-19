@@ -158,6 +158,9 @@ func (p *Parser) appendBlocksFromLine(doc *Document, line string, lineSpan Span,
 				p.styleToState(style, s)
 				parts := p.makeOutput(s, headingLine, false)
 				p.styleToState(latched, s)
+				if slug := slugifyMicron(headingLine); slug != "" {
+					parts = append([]linePart{{anchorName: slug, anchorHeader: true}}, parts...)
+				}
 				inlines := partsToInlines(parts, lineSpan.Start+i)
 				if !inlinesHaveContent(inlines) {
 					p.styleToState(latched, s)
@@ -285,12 +288,14 @@ func partsToInlines(parts []linePart, base int) []Inline {
 			end = off + len(pr.text)
 		}
 		out[i] = Inline{
-			Span:    Span{Start: off, End: end},
-			Style:   pr.style,
-			Text:    pr.text,
-			Field:   pr.field,
-			Link:    pr.link,
-			Partial: pr.partial,
+			Span:         Span{Start: off, End: end},
+			Style:        pr.style,
+			Text:         pr.text,
+			Field:        pr.field,
+			Link:         pr.link,
+			Partial:      pr.partial,
+			AnchorName:   pr.anchorName,
+			AnchorHeader: pr.anchorHeader,
 		}
 		off = end
 	}
@@ -300,7 +305,7 @@ func partsToInlines(parts []linePart, base int) []Inline {
 func inlinesHaveContent(inlines []Inline) bool {
 	for i := range inlines {
 		in := &inlines[i]
-		if in.Field != nil || in.Link != nil || in.Partial != nil {
+		if in.Field != nil || in.Link != nil || in.Partial != nil || in.AnchorName != "" {
 			return true
 		}
 		if in.Text != "" {

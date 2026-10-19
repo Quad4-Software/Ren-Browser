@@ -2089,14 +2089,8 @@ func (t *Transport) handleAnnouncePacket(data []byte, iface common.NetworkInterf
 	}
 
 	if !t.transportEnabled() {
-		if !isPathResponse {
-			if err := t.forwardAnnounceToLocalClients(data, destinationHash, iface); err != nil {
-				debug.Log(debug.DebugVerbose, "Failed to forward announce to local shared-instance clients",
-					"dest_hash", fmt.Sprintf("%x", destinationHash), "error", err)
-			}
-		}
 		if debug.Enabled(debug.DebugVerbose) {
-			debug.Log(debug.DebugVerbose, "Not forwarding announce on mesh: transport disabled",
+			debug.Log(debug.DebugVerbose, "Not forwarding announce: transport disabled",
 				"dest_hash", fmt.Sprintf("%x", destinationHash))
 		}
 		return nil
@@ -2193,26 +2187,6 @@ func (t *Transport) processDelayedAnnounceJobs() {
 			announceForwardPool.Put(job.data)
 		}
 	}
-}
-
-// forwardAnnounceToLocalClients pushes a mesh announce to connected shared-
-// instance clients when transport relay is disabled on the owner. Python RNS
-// always retransmits to local_client_interfaces in this case.
-func (t *Transport) forwardAnnounceToLocalClients(data []byte, destinationHash []byte, fromIface common.NetworkInterface) error {
-	var lastErr error
-	for _, e := range t.snapshotRegisteredInterfaces() {
-		outIface := e.iface
-		if outIface == fromIface || !outIface.IsEnabled() || !isLocalClientInterface(outIface) {
-			continue
-		}
-		if !t.shouldForwardAnnounceOn(destinationHash, outIface, fromIface) {
-			continue
-		}
-		if err := t.transmitOrQueueAnnounce(outIface, e.name, data, destinationHash); err != nil {
-			lastErr = err
-		}
-	}
-	return lastErr
 }
 
 func (t *Transport) forwardAnnouncePacket(data []byte, dest hash16, destinationHash []byte, fromIface common.NetworkInterface) error {

@@ -60,6 +60,10 @@ type Inline struct {
 	Field   *Field   `json:"field,omitempty"`
 	Link    *Link    `json:"link,omitempty"`
 	Partial *Partial `json:"partial,omitempty"`
+	// AnchorName carries a `:name anchor identifier; AnchorHeader marks
+	// auto-generated heading slugs rendered as micron-header-anchor.
+	AnchorName   string `json:"anchor_name,omitempty"`
+	AnchorHeader bool   `json:"anchor_header,omitempty"`
 }
 
 // Severity ranks a diagnostic.

@@ -54,7 +54,12 @@ if [ -d "${app_dir}" ]; then
 
   server_app="${app_dir}/application_server.go"
   if [ -f "${server_app}" ] && ! grep -q 'OuterMiddleware' "${server_app}"; then
-    sed -i 's/return mux$/handler := http.Handler(mux)\n\tif wrap := h.app.options.Server.OuterMiddleware; wrap != nil {\n\t\thandler = wrap(handler)\n\t}\n\treturn handler/' "${server_app}"
+    if grep -q 'return requireAllowedHost(mux, h\.app, h\.bindHost, h\.app\.options\.Server)$' "${server_app}"; then
+      # beta.28+ wraps the mux in requireAllowedHost; keep auth outermost.
+      sed -i 's/return requireAllowedHost(mux, h\.app, h\.bindHost, h\.app\.options\.Server)$/handler := requireAllowedHost(mux, h.app, h.bindHost, h.app.options.Server)\n\tif wrap := h.app.options.Server.OuterMiddleware; wrap != nil {\n\t\thandler = wrap(handler)\n\t}\n\treturn handler/' "${server_app}"
+    else
+      sed -i 's/return mux$/handler := http.Handler(mux)\n\tif wrap := h.app.options.Server.OuterMiddleware; wrap != nil {\n\t\thandler = wrap(handler)\n\t}\n\treturn handler/' "${server_app}"
+    fi
   fi
 
   android_app="${app_dir}/application_android.go"

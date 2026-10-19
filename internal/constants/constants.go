@@ -6,11 +6,11 @@ package constants
 
 const (
 	MicronParserGoReleaseDownloadBase = "https://github.com/Quad4-Software/Micron-Parser-Go/releases/download"
-	MicronParserGoReleaseTag          = "v1.0.7"
+	MicronParserGoReleaseTag          = "v1.3.0"
 	MicronParserGoWasmFilename        = "micron-parser-go.wasm"
 	MicronParserGoShasumsFilename     = "SHASUMS256.txt"
 	MicronParserGoMaxWasmBytes        = 14 * 1024 * 1024
-	MicronParserGoGoWasmExecVersion   = "go1.26.2"
+	MicronParserGoGoWasmExecVersion   = "go1.27.1"
 
 	ServerAuthSessionCookieName = "renbrowser_session"
 	ServerAuthLoginPath         = "/api/auth/login"

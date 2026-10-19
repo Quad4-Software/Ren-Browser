@@ -21,6 +21,7 @@ func (p *Parser) parseField(line string, start int, s *State) (skip int, f *Fiel
 	fieldContent := line[fieldStart:bt]
 	masked := false
 	width := 24
+	rows := 1
 	kind := FieldText
 	name := fieldContent
 	value := ""
@@ -51,12 +52,21 @@ func (p *Parser) parseField(line string, start int, s *State) (skip int, f *Fiel
 			flags = stripByte(flags, '!')
 		}
 		if flags != "" {
-			if w, err := strconv.Atoi(flags); err == nil {
+			widthFlag, rowsFlag := flags, ""
+			if x := strings.IndexByte(flags, 'x'); x >= 0 {
+				widthFlag, rowsFlag = flags[:x], flags[x+1:]
+			}
+			if w, err := strconv.Atoi(widthFlag); err == nil {
 				if w > 256 {
 					w = 256
 				}
 				if w > 0 {
 					width = w
+				}
+			}
+			if rowsFlag != "" {
+				if r, err := strconv.Atoi(rowsFlag); err == nil {
+					rows = min(max(r, 1), 256)
 				}
 			}
 		}
@@ -90,6 +100,7 @@ func (p *Parser) parseField(line string, start int, s *State) (skip int, f *Fiel
 			Kind:   FieldText,
 			Name:   name,
 			Width:  width,
+			Rows:   rows,
 			Masked: masked,
 			Value:  data,
 			Style:  st,

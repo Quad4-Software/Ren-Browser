@@ -64,7 +64,8 @@ func (p *Parser) streamHTML(markup string, pc PageColors) string {
 	} else {
 		b.Grow(160)
 	}
-	writeRootOpen(&b, defaultFG, defaultBGVal)
+	markup = strings.NewReplacer("\r\n", "\n", "\r", "\n").Replace(markup)
+	writeRootOpen(&b, defaultFG, defaultBGVal, p.Serif)
 	lineNum := 1
 	for start := 0; start <= len(markup); {
 		nextRel := strings.IndexByte(markup[start:], '\n')
@@ -82,5 +83,5 @@ func (p *Parser) streamHTML(markup string, pc PageColors) string {
 	}
 	p.closeFolds(&b, &s, 0)
 	b.WriteString(`</div>`)
-	return b.String()
+	return resolveEmptyAnchorHrefs(b.String())
 }

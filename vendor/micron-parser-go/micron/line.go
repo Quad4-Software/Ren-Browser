@@ -46,7 +46,11 @@ func (p *Parser) openFold(out *strings.Builder, s *State, collapsed bool) {
 		out.WriteString(`<details class="Mu-fold" open data-mu-fold="open">`)
 	}
 	out.WriteString(`<summary class="Mu-fold-summary" style="display:block;list-style:none;cursor:pointer;">`)
-	out.WriteString(`<span class="Mu-fold-glyph">`)
+	out.WriteString(`<span class="Mu-fold-glyph"`)
+	if p.Accessibility {
+		out.WriteString(` aria-hidden="true"`)
+	}
+	out.WriteString(`>`)
 	if collapsed {
 		appendHTMLText(out, s.FoldClosed)
 	} else {
@@ -171,6 +175,9 @@ func (p *Parser) parseLineInto(out *strings.Builder, line string, s *State, srcL
 				p.styleToState(style, s)
 				parts := p.makeOutput(s, headingLine, false)
 				p.styleToState(latched, s)
+				if slug := slugifyMicron(headingLine); slug != "" {
+					parts = append([]linePart{{anchorName: slug, anchorHeader: true}}, parts...)
+				}
 				if !partsHaveContent(parts) {
 					p.styleToState(latched, s)
 					return lineOmit
@@ -188,10 +195,16 @@ func (p *Parser) parseLineInto(out *strings.Builder, line string, s *State, srcL
 				if tryAppendColorProperty(out, "background-color:", style.BG) {
 					out.WriteByte(';')
 				}
-				out.WriteString(`"><div style="`)
+				out.WriteString(`"><div`)
+				if p.Accessibility {
+					out.WriteString(` role="heading" aria-level="`)
+					out.WriteString(strconv.Itoa(i))
+					out.WriteString(`"`)
+				}
+				out.WriteString(` style="`)
 				appendSectionIndentStyle(out, s)
 				out.WriteString(`">`)
-				p.appendOutput(out, parts, s)
+				p.appendOutput(out, parts, s, style.FG)
 				out.WriteString(`</div></div>`)
 				if collapsible {
 					out.WriteString(`</summary>`)
@@ -221,6 +234,9 @@ func (p *Parser) parseLineInto(out *strings.Builder, line string, s *State, srcL
 				r, _ := utf8.DecodeRuneInString(line[firstSize:])
 				out.WriteString(`<div`)
 				writeDataMuLine(out, srcLine)
+				if p.Accessibility {
+					out.WriteString(` role="separator"`)
+				}
 				out.WriteString(` style="white-space:pre;white-space:nowrap;overflow:hidden;width:100%;`)
 				if tryAppendColorProperty(out, "color:", s.FGColor) {
 					out.WriteByte(';')
@@ -279,7 +295,7 @@ func (p *Parser) parseLineInto(out *strings.Builder, line string, s *State, srcL
 func partsHaveContent(parts []linePart) bool {
 	for i := range parts {
 		pr := &parts[i]
-		if pr.field != nil || pr.link != nil || pr.partial != nil {
+		if pr.field != nil || pr.link != nil || pr.partial != nil || pr.anchorName != "" {
 			return true
 		}
 		if pr.html != "" || pr.text != "" {
@@ -306,7 +322,7 @@ func (p *Parser) appendWrappedAlignedParts(out *strings.Builder, parts []linePar
 	out.WriteString(`;`)
 	appendSectionIndentStyle(out, s)
 	out.WriteString(`">`)
-	p.appendOutput(out, parts, s)
+	p.appendOutput(out, parts, s, "")
 	out.WriteString(`</div>`)
 	if bg {
 		out.WriteString(`</div>`)

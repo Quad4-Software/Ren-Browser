@@ -20,6 +20,9 @@ func FormatNomadnetworkURL(raw string) string {
 	if url == "" {
 		return ""
 	}
+	if url[0] == '#' {
+		return url
+	}
 	if schemePrefix.MatchString(url) {
 		if dangerousNavScheme(url) {
 			return "nomadnetwork://" + url

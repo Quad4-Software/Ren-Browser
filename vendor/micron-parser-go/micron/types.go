@@ -14,6 +14,14 @@ type Parser struct {
 	// ForceMonospace applies micron-parser-js monospace wrapping: plain ASCII
 	// stays bare, while complex scripts and HTML-special bytes use Mu-mws / Mu-mnt.
 	ForceMonospace bool
+	// Accessibility emits role and aria attributes matching micron-parser-js
+	// options.accessibility: heading roles and levels, field labels, partial
+	// status regions, divider separators, and Mu-sr readable text next to
+	// monospace-split spans.
+	Accessibility bool
+	// Serif marks the root with Mu-serif and skips monospace wrapping on
+	// non-literal text, matching micron-parser-js options.serif.
+	Serif bool
 }
 
 // Formatting tracks inline text styling inside backtick formatting mode.
@@ -81,6 +89,7 @@ type Field struct {
 	Value      string
 	Label      string
 	Width      int
+	Rows       int
 	Masked     bool
 	Prechecked bool
 	Style      Style
@@ -112,10 +121,12 @@ type Partial struct {
 
 // linePart is one segment on a line after makeOutput.
 type linePart struct {
-	style   Style
-	text    string
-	html    string
-	field   *Field
-	link    *Link
-	partial *Partial
+	style        Style
+	text         string
+	html         string
+	field        *Field
+	link         *Link
+	partial      *Partial
+	anchorName   string
+	anchorHeader bool
 }

@@ -61,8 +61,8 @@ func applyLandlock(opts Options) error {
 
 	handledFS, scoped := landlockHandledForABI(abi)
 	attr := unix.LandlockRulesetAttr{
-		Access_fs: handledFS,
-		Scoped:    scoped,
+		Handled_access_fs: handledFS,
+		Scoped:            scoped,
 	}
 
 	fd, _, errno := unix.Syscall(unix.SYS_LANDLOCK_CREATE_RULESET,
