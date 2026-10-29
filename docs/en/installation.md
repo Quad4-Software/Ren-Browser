@@ -79,7 +79,7 @@ For contributors or platforms without a pre-built package.
 
 ### Requirements
 
-- [Go](https://go.dev/) 1.26 or newer
+- [Go](https://go.dev/) 1.27.3 or newer
 - [Node.js](https://nodejs.org/) 22+ and [pnpm](https://pnpm.io/) 11+
 - [Task](https://taskfile.dev/) (recommended)
 - Reticulum config at `~/.reticulum-go/` (or set `REN_BROWSER_CONFIG`)
@@ -118,7 +118,7 @@ task package:windows          # Windows NSIS installer
 
 Android builds need the [Android SDK](https://developer.android.com/studio) (API 34, NDK r26+). Set `ANDROID_HOME` and run `task android:install:deps` if the build reports missing tools.
 
-Android and iOS Go compiles use a patched Go 1.27.1 toolchain (`task toolchain:mte`) that adds the iOS MTE parity patch on top of the upstream Android MTE fixes. The first mobile build downloads and builds that toolchain under `build/tools/go-mte`.
+Android and iOS Go compiles use a patched Go 1.27.3 toolchain (`task toolchain:mte`) with the upstream Android MTE fix and a local iOS parity patch. The first mobile build downloads and builds that toolchain under `build/tools/go-mte`.
 
 ## Server binary from source
 

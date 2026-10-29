@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build or reuse a patched Go toolchain for mobile builds. Go 1.27.1
+# Build or reuse a patched Go toolchain for mobile builds. Go 1.27.3
 # already carries the upstream Android MTE fixes (CLs 749062 / 751020);
 # the local patch only adds the iOS parity for findnull / IndexByte.
 # Remove this once the upstream iOS fix lands (golang/go CL 751000,
@@ -22,7 +22,7 @@ set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 # Go release tag carrying the Android MTE CLs. The iOS patch applies on
 # top of this release. Override with GO_MTE_REF if needed.
-default_ref="go1.27.1"
+default_ref="go1.27.3"
 ref="${GO_MTE_REF:-${default_ref}}"
 toolchain_dir="${GO_MTE_DIR:-${root}/build/tools/go-mte}"
 patch_file="${root}/build/patches/go/mte-ios.patch"

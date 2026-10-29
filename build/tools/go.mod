@@ -3,4 +3,4 @@
 // go mod tidy walk.
 module renbrowser.tools
 
-go 1.26.6
+go 1.27.3

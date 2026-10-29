@@ -84,7 +84,7 @@ For contributors or platforms without a pre-built package.
 
 **You will need:**
 
-- [Go](https://go.dev/) 1.26 or newer
+- [Go](https://go.dev/) 1.27.3 or newer
 - WebKitGTK-6.0 (for wails desktop apps)
 - [Node.js](https://nodejs.org/) 22+ and [pnpm](https://pnpm.io/) 11+
 - [Task](https://taskfile.dev/) (optional, recommended)
@@ -142,9 +142,7 @@ task package:android
 
 #### Android / iOS memory tagging (MTE)
 
-Stock Go 1.26.x still crashes under ARM Memory Tagging Extension (`SEGV_MTESERR`) because `C.GoString` / `runtime.findnull` over-reads tagged C memory. Tip has the Android fix (CLs 749062 / 751020). Go 1.27 should ship it. Upstream iOS support is still open (CL 751000).
-
-Android and iOS app builds therefore use a local tip toolchain under `build/tools/go-mte` (gitignored), with a small iOS parity patch. First mobile build compiles that toolchain once (needs network + a bootstrap Go). Desktop and server builds keep system Go from `go.mod`.
+Android and iOS app builds use a local Go 1.27.3 toolchain under `build/tools/go-mte` (gitignored). It includes the upstream Android MTE fix and applies a local iOS parity patch. The first mobile build compiles the toolchain once (needs network access and a bootstrap Go). Desktop and server builds use the version declared in `go.mod`.
 
 ```sh
 task toolchain:mte   # optional: prebuild the mobile Go toolchain
