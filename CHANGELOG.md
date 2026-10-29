@@ -189,7 +189,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Headless server mode, HTTP auth middleware hooks, and Docker deployment path
 - Android APK builds (including universal APK), optional release signing, and local APK sharing over HTTP
 - Experimental iOS app packaging
-- Linux AppImage, `.deb`, `.rpm`, Flatpak, Arch PKGBUILD, Nix flake, Windows (portable and NSIS), and macOS packaging
+- Linux AppImage, `.deb`, `.rpm`, Flatpak, Arch PKGBUILD, Windows (portable and NSIS), and macOS packaging
 - Headless server binaries for Linux, FreeBSD, OpenBSD, NetBSD, and Windows (including legacy Windows 7/8 toolchain build)
 - Landlock sandboxing on Linux with status reporting in Settings
 - Per-interface Reticulum hot reload with tx/rx stats in Settings

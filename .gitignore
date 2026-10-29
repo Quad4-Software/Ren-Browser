@@ -48,13 +48,6 @@ packaging/arch/*.log
 packaging/arch/*.tar.gz
 packaging/arch/renbrowser-*/
 
-# Nix flake / direnv
-/result
-/result-*
-.direnv/
-flake.lock.bak
-
-
 # Windows packaging
 build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
 

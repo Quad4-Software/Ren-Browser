@@ -121,13 +121,6 @@ task package
 task package:linux:arch
 ```
 
-Nix flake:
-
-```sh
-nix develop
-nix build
-```
-
 Android builds need the [Android SDK](https://developer.android.com/studio) (API 34, NDK r26+). Set `ANDROID_HOME` and run `task android:install:deps` if the build complains about missing tools.
 
 Release APK signing uses a Java keystore (`.jks` or `.keystore`), not a public certificate file. A `.p12` (PKCS#12) bundle also contains the **private** key and must be kept secret. Generate a release keystore locally (never commit it):

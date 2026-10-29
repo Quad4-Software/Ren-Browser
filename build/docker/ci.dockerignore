@@ -28,13 +28,6 @@ packaging/
 *.pkg.tar.*
 *.pkg.tar
 
-/result
-/result-*
-.direnv/
-flake.nix
-flake.lock
-.envrc
-
 coverage.out
 coverage.html
 *.test

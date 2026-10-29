@@ -114,18 +114,6 @@ task package:darwin:universal # macOS universal
 task package:windows          # Windows NSIS installer
 ```
 
-### Nix
-
-This repo ships a Nix flake (`flake.nix`).
-
-```sh
-nix develop          # Go, GTK4, WebKitGTK 6, Node, pnpm, task
-nix build            # desktop package
-nix build .#renbrowser-server
-```
-
-The first `nix build` may fail while computing the `pnpmDeps` hash; paste the hash Nix prints into `flake.nix` and rebuild.
-
 ### Android SDK
 
 Android builds need the [Android SDK](https://developer.android.com/studio) (API 34, NDK r26+). Set `ANDROID_HOME` and run `task android:install:deps` if the build reports missing tools.
