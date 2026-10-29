@@ -38,8 +38,8 @@
         # so make the upstream postUnpack tolerant of missing paths.
         pnpm =
           (pkgs.callPackage "${pkgs.path}/pkgs/development/tools/pnpm/generic.nix" {
-            version = "12.14.0";
-            hash = "sha256-6iBuNUdL+HvpVkqFynDtHI69xF2lWq+wo78J0bppsXk=";
+            version = "12.15.0";
+            hash = "sha256-9Rc/YSfMUFzbNuwXcZ/lSoURxv2FYMfOtL98c+O0RYs=";
             nodejs = null;
           }).overrideAttrs
             (_: {
