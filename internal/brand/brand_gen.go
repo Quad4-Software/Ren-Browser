@@ -17,7 +17,7 @@ const (
 	Tagline            = "Reticulum browser for NomadNet pages."
 	Comments           = "Micron-first mesh browser for NomadNet"
 	Copyright          = "(c) 2026 Quad4"
-	Version            = "0.4.0"
+	Version            = "0.5.0"
 	Homepage           = "https://quad4.io"
 	DataDirName        = ".renbrowser"
 	DBFileName         = "renbrowser.db"
@@ -26,7 +26,7 @@ const (
 	IndexedDBName      = "renbrowser_micron_wasm_parsers"
 	ProxyHeader        = "X-RenBrowser-Base-Path"
 	TempFilePrefix     = "renbrowser-rns-"
-	WailsVersion       = "v3.0.0-beta.16"
+	WailsVersion       = "v3.0.0"
 	WasmExecDomID      = "renbrowser-micron-wasm-exec"
 	WasmGlobalFlag     = "__renbrowserMicronWasmWrapped"
 )

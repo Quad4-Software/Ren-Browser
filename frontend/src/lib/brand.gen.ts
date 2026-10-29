@@ -8,7 +8,7 @@ export const description = "Reticulum browser for NomadNet pages";
 export const tagline = "Reticulum browser for NomadNet pages.";
 export const comments = "Micron-first mesh browser for NomadNet";
 export const copyright = "(c) 2026 Quad4";
-export const version = "0.4.0";
+export const version = "0.5.0";
 export const homepage = "https://quad4.io";
 export const dataDir = ".renbrowser";
 export const dbFile = "renbrowser.db";
@@ -17,7 +17,7 @@ export const localStoragePrefix = "renbrowser";
 export const indexedDbName = "renbrowser_micron_wasm_parsers";
 export const proxyHeader = "X-RenBrowser-Base-Path";
 export const tempFilePrefix = "renbrowser-rns-";
-export const wailsVersion = "v3.0.0-beta.16";
+export const wailsVersion = "v3.0.0";
 export const wasmExecDomId = "renbrowser-micron-wasm-exec";
 export const wasmGlobalFlag = "__renbrowserMicronWasmWrapped";
 

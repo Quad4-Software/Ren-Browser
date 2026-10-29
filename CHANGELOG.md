@@ -5,7 +5,7 @@ All notable changes to Ren Browser are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0] [unreleased]
+## [0.5.0] [released] - 2026-10-29
 
 ### Added
 
@@ -25,9 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Mobile Go MTE toolchain base is go1.27.1 (upstream Android MTE fixes). iOS still uses build/patches/go/mte-ios.patch until golang/go#77915 lands
+- Go toolchain baseline moves to 1.27.3; mobile builds use a patched Go 1.27.3 toolchain for iOS MTE parity
 - Screenshot tooling emits WebP alongside PNG baselines
-- Bump reticulum-go to v1.4.0, Wails v3 beta.27, and modernc.org/sqlite v1.60.1
+- Upgrade Reticulum-Go to v1.4.1, Wails to v3.0.0, and modernc.org/sqlite to v1.61.0; refresh frontend dependencies
+- Remove Nix flake development and packaging support
 
 ## [0.4.0] [released] - 2026-09-21
 
