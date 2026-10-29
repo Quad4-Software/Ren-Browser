@@ -31,7 +31,14 @@ COPY build/scripts/ci/bootstrap.sh build/scripts/ci/bootstrap.sh
 RUN CI_BOOTSTRAP=install CI_TOOLCHAIN_ROOT=/opt/ci-toolchain GOFLAGS= \
 	bash build/scripts/ci/bootstrap.sh install
 
-COPY . .
+COPY --chown=1000:1000 . .
+RUN chown 1000:1000 /src
+
+ENV HOME=/tmp
+ENV GOPATH=/tmp/renbrowser-ci-gopath
+ENV GOCACHE=/tmp/renbrowser-ci-gocache
+
+USER 1000:1000
 
 # Default PR gate. Override: docker run ... renbrowser-ci:local full
 CMD ["bash", "build/scripts/ci/run.sh", "pr"]

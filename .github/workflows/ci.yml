@@ -120,10 +120,10 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: bench/baseline
-          # v5: reset after dompurify 3.4.16 sanitize bench shift vs v4 cache.
-          key: go-bench-v5-${{ runner.os }}-${{ github.sha }}
+          # v6: reset for the Go 1.27.3 toolchain and dependency baseline update.
+          key: go-bench-v6-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
-            go-bench-v5-${{ runner.os }}-
+            go-bench-v6-${{ runner.os }}-
 
       - name: Benchmark job
         env:
