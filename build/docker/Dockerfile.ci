@@ -6,7 +6,7 @@ FROM ubuntu:24.04
 
 RUN apt-get update \
 	&& DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-		bash ca-certificates curl git xz-utils \
+		bash ca-certificates curl git python3-venv xz-utils \
 		libgtk-3-0t64 libnss3 libxss1 libasound2t64 libgbm1 \
 		fonts-liberation \
 		pkg-config gcc libc6-dev libglib2.0-dev \
@@ -34,7 +34,7 @@ RUN CI_BOOTSTRAP=install CI_TOOLCHAIN_ROOT=/opt/ci-toolchain GOFLAGS= \
 COPY --chown=1000:1000 . .
 RUN chown 1000:1000 /src
 
-ENV HOME=/tmp
+ENV HOME=/home/ubuntu
 ENV GOPATH=/tmp/renbrowser-ci-gopath
 ENV GOCACHE=/tmp/renbrowser-ci-gocache
 
