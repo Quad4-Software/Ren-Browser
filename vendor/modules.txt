@@ -73,8 +73,8 @@ github.com/godbus/dbus/v5/prop
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
-# github.com/landlock-lsm/go-landlock v0.10.1
-## explicit; go 1.24.0
+# github.com/landlock-lsm/go-landlock v0.11.0
+## explicit; go 1.26.0
 github.com/landlock-lsm/go-landlock/landlock
 github.com/landlock-lsm/go-landlock/landlock/internal
 github.com/landlock-lsm/go-landlock/landlock/syscall
@@ -96,7 +96,7 @@ github.com/ncruces/go-strftime
 # github.com/quic-go/qpack v0.6.0
 ## explicit; go 1.24
 github.com/quic-go/qpack
-# github.com/quic-go/quic-go v0.64.0
+# github.com/quic-go/quic-go v0.64.1
 ## explicit; go 1.26.0
 github.com/quic-go/quic-go
 github.com/quic-go/quic-go/http3
@@ -156,7 +156,7 @@ github.com/tetratelabs/wazero/internal/wasm/binary
 github.com/tetratelabs/wazero/internal/wasmdebug
 github.com/tetratelabs/wazero/internal/wasmruntime
 github.com/tetratelabs/wazero/sys
-# github.com/wailsapp/wails/v3 v3.0.0-beta.31
+# github.com/wailsapp/wails/v3 v3.0.0
 ## explicit; go 1.26.0
 github.com/wailsapp/wails/v3/internal/assetserver
 github.com/wailsapp/wails/v3/internal/assetserver/bundledassets
@@ -211,7 +211,7 @@ golang.org/x/crypto/curve25519
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/internal/alias
 golang.org/x/crypto/internal/poly1305
-# golang.org/x/net v0.61.0
+# golang.org/x/net v0.62.0
 ## explicit; go 1.26.0
 golang.org/x/net/bpf
 golang.org/x/net/http/httpguts
@@ -246,7 +246,7 @@ kernel.org/pub/linux/libs/security/libcap/psx
 # micron-parser-go v1.3.0 => github.com/Quad4-Software/Micron-Parser-Go v1.3.0
 ## explicit; go 1.27.1
 micron-parser-go/micron
-# modernc.org/libc v1.79.0
+# modernc.org/libc v1.79.1
 ## explicit; go 1.26.0
 modernc.org/libc
 modernc.org/libc/errno
@@ -280,7 +280,7 @@ modernc.org/mathutil
 # modernc.org/memory v1.12.1
 ## explicit; go 1.23.0
 modernc.org/memory
-# modernc.org/sqlite v1.60.1
+# modernc.org/sqlite v1.61.0
 ## explicit; go 1.26.0
 modernc.org/sqlite
 modernc.org/sqlite/lib
