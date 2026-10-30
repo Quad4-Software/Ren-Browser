@@ -21,6 +21,7 @@ func TestUnwrapRenBrowserForms(t *testing.T) {
 		{"renbrowser://", "", false},
 		{"renbrowser:about", "about:", true},
 		{"renbrowser:about:", "about:", true},
+		{"renBrowser:ABout :", "about:", true},
 		{"RENBROWSER:LICENSE", "license:", true},
 		{"renbrowser://about", "about:", true},
 		{"renbrowser://settings", "settings:", true},

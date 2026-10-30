@@ -283,6 +283,10 @@ func normalizeInternal(raw string) (string, bool) {
 func normalizeBuiltin(raw string) string {
 	raw = strings.TrimSpace(raw)
 	lower := strings.ToLower(raw)
+	if isBuiltinName(raw) {
+		name := strings.ToLower(strings.TrimSpace(strings.TrimSuffix(raw, ":")))
+		return name + ":"
+	}
 	for _, name := range builtinNames() {
 		if lower == name || lower == name+":" {
 			return name + ":"

@@ -14,6 +14,7 @@ func FuzzUnwrap(f *testing.F) {
 		"",
 		"about:",
 		"renbrowser:about",
+		"renBrowser:ABout :",
 		"renbrowser://open?url=about%3A",
 		"renbrowser://abb3ebcd03cb2388a838e70c001291f9/page/index.mu",
 		"rns://abb3ebcd03cb2388a838e70c001291f9/page/home.mu",
