@@ -120,10 +120,10 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: bench/baseline
-          # v6: reset for the Go 1.27.3 toolchain and dependency baseline update.
-          key: go-bench-v6-${{ runner.os }}-${{ github.sha }}
+          # v7: reset for the Go 1.27.3 toolchain and dependency baseline update.
+          key: go-bench-v7-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
-            go-bench-v6-${{ runner.os }}-
+            go-bench-v7-${{ runner.os }}-
 
       - name: Benchmark job
         env:
@@ -561,7 +561,10 @@ jobs:
       - name: Run self-check
         shell: bash
         run: |
+          # windows-latest runners cannot start AutoInterface (no usable
+          # IPv6 link-local/multicast), so use the hermetic loopback config.
           if [ "${{ matrix.target }}" = "windows-amd64" ]; then
+            export REN_BROWSER_CONFIG="$GITHUB_WORKSPACE/build/selfcheck.conf"
             ./bin/renbrowser.exe --self-check
           else
             ./bin/renbrowser --self-check
