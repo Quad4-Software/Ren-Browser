@@ -35,7 +35,7 @@
     "jszip": "^3.10.2",
     "marked": "18.1.2",
     "micron-parser": "github:RFnexus/micron-parser-js",
-    "pdfjs-dist": "^6.4.299",
+    "pdfjs-dist": "^6.5.438",
     "runed": "0.38.0"
   },
   "devDependencies": {
