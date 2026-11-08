@@ -566,9 +566,6 @@ jobs:
           if [ "${{ matrix.target }}" = "windows-amd64" ]; then
             export REN_BROWSER_CONFIG="$GITHUB_WORKSPACE/build/selfcheck.conf"
             ./bin/renbrowser.exe --self-check
-            # TEMP diagnostic: report default-config (AutoInterface) result
-            unset REN_BROWSER_CONFIG
-            ./bin/renbrowser.exe --self-check || true
           else
             ./bin/renbrowser --self-check
           fi
