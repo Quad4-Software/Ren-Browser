@@ -33,7 +33,7 @@ Official release binaries and packages are built in **automation on GitHub** or 
 
 ### Source tree integrity (`.rsm`)
 
-The repository root includes a signed rnid message file, `renbrowser.rsm`. It embeds a SHA-256 inventory of git-tracked files except itself and paths under any `vendor/` tree. CI verifies the signature against the required signer identity `e318cbc04468bd574db2b4523dddd710`, then re-hashes file bytes. Jobs also recheck the inventory at the end so a compromised runner cannot silently add or modify tracked files.
+The repository root includes a signed rnid message file, `renbrowser.rsm`. It embeds a SHA-256 inventory of git-tracked files except itself and paths under any `vendor/` tree. CI verifies the signature against the required signer identity `a04675559957d45741fa9eb646d04c83`, then re-hashes file bytes. Jobs also recheck the inventory at the end so a compromised runner cannot silently add or modify tracked files.
 
 Verify locally:
 
@@ -44,7 +44,7 @@ make tree-rsm-verify
 Maintainers regenerate the signature after intentional tree changes (requires a private identity file that hashes to the signer above, never commit `*.rid`):
 
 ```bash
-export RNS_ID_PATH="$HOME/.local/share/reticulum-go/reticulum-go-release.rid"
+export RNS_ID_PATH="$HOME/.local/share/reticulum-go/renbrowser-tree.rid"
 make tree-rsm-sign
 ```
 
