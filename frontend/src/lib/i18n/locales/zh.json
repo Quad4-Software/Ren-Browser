@@ -51,6 +51,9 @@
     "history": "历史记录",
     "search": "搜索",
     "discovery": "发现",
+    "favorites": "收藏",
+    "favoritePage": "收藏此页面",
+    "unfavoritePage": "取消收藏",
     "devtools": "开发者工具",
     "settings": "设置",
     "toggleTheme": "切换主题",
@@ -62,6 +65,7 @@
     "browse": "浏览",
     "search": "搜索",
     "discover": "发现",
+    "favorites": "收藏",
     "history": "历史",
     "downloads": "下载",
     "devtools": "开发工具",
@@ -321,6 +325,13 @@
     "noMatching": "没有匹配的页面",
     "clear": "清除历史",
     "clearConfirm": "清除所有浏览历史？此操作无法撤销。"
+  },
+  "favorites": {
+    "title": "收藏",
+    "subtitle": "你收藏的站点，方便快速访问。",
+    "empty": "暂无收藏",
+    "emptyDescription": "在发现中为站点加星，或点击地址栏旁的星标将其保存到这里。",
+    "remove": "移除收藏"
   },
   "search": {
     "title": "搜索",

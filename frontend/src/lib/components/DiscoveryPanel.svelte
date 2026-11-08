@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Check, Compass, ListFilter, Snail, Star } from "@lucide/svelte";
+  import { Check, Compass, ListFilter, Snail, Star, Waypoints } from "@lucide/svelte";
   import { DropdownMenu } from "bits-ui";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import { displayName } from "$lib/brand";
@@ -19,13 +19,13 @@
     favorites: string[];
     slowMode: boolean;
     onOpen: (url: string) => void;
-    onFavorite: (url: string) => void;
+    onToggleFavorite: (url: string) => void;
     onSlowModeChange: (value: boolean) => void;
   };
 
   type SortMode = "newest" | "announces" | "name";
 
-  let { nodes, favorites, slowMode, onOpen, onFavorite, onSlowModeChange }: Props = $props();
+  let { nodes, favorites, slowMode, onOpen, onToggleFavorite, onSlowModeChange }: Props = $props();
 
   let query = $state("");
   let favoritesOnly = $state(false);
@@ -221,22 +221,30 @@
             <button type="button" class="node-open" onclick={() => openNode(node)}>
               <span class="row">
                 <span class="name">{node.name || t("discovery.unnamedSite")}</span>
-                {#if node.hops >= 0}
-                  <span class="hops-badge">{formatHops(node.hops)}</span>
-                {/if}
               </span>
               <span class="meta">{formatMeta(node)}</span>
             </button>
-            <button
-              type="button"
-              class="fav"
-              class:faved={isFavorite(node.hash)}
-              aria-label={t("discovery.favoriteSite")}
-              aria-pressed={isFavorite(node.hash)}
-              onclick={() => onFavorite(`${node.hash}:/page/index.mu`)}
-            >
-              <Star size={14} fill={isFavorite(node.hash) ? "currentColor" : "none"} />
-            </button>
+            <div class="node-actions">
+              {#if node.hops >= 0}
+                <span
+                  class="hops-icon"
+                  title={formatHops(node.hops)}
+                  aria-label={formatHops(node.hops)}
+                >
+                  <Waypoints size={14} aria-hidden="true" />
+                </span>
+              {/if}
+              <button
+                type="button"
+                class="fav"
+                class:faved={isFavorite(node.hash)}
+                aria-label={t("discovery.favoriteSite")}
+                aria-pressed={isFavorite(node.hash)}
+                onclick={() => onToggleFavorite(`${node.hash}:/page/index.mu`)}
+              >
+                <Star size={14} fill={isFavorite(node.hash) ? "currentColor" : "none"} />
+              </button>
+            </div>
           </div>
         </li>
       {/each}
@@ -345,16 +353,24 @@
     white-space: nowrap;
   }
 
+  .node-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    padding: 0.35rem 0.45rem 0.35rem 0;
+    flex-shrink: 0;
+  }
+
   .fav {
     color: var(--ren-muted);
     flex-shrink: 0;
-    align-self: center;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 2rem;
     height: 2rem;
-    margin-right: 0.45rem;
     border: none;
     border-radius: 8px;
     padding: 0;
@@ -377,15 +393,12 @@
     outline-offset: 2px;
   }
 
-  .hops-badge {
-    flex-shrink: 0;
-    font-size: 0.72rem;
-    font-weight: 600;
+  .hops-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--ren-muted);
-    border: 1px solid var(--ren-border);
-    border-radius: 999px;
-    padding: 0.1rem 0.45rem;
-    white-space: nowrap;
+    line-height: 0;
   }
 
   .meta {

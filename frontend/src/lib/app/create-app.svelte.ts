@@ -59,6 +59,7 @@ import {
   ResetBrowser,
   RestartReticulum,
   ReloadReticulumConfig,
+  RemoveFavorite,
   RunSelfCheck,
   SaveTabs,
   SaveReticulumConfigText,
@@ -158,6 +159,10 @@ import {
   type TabLayout,
   type TabPage,
 } from "$lib/browser/url";
+import {
+  findFavoriteUrl as findStoredFavoriteUrl,
+  isFavoriteUrl as favoritesIncludeUrl,
+} from "$lib/browser/favorites";
 import {
   compactInactiveTabPages,
   hotTabIds,
@@ -393,6 +398,9 @@ export function createApp() {
   );
   const atTabLimit = $derived(tabs.length >= MAX_TABS);
   const activeTabId = $derived(tabs.find((tab) => tab.active)?.id ?? "");
+  const isCurrentPageFavorite = $derived(
+    favoritesIncludeUrl(tabs.find((tab) => tab.active)?.url ?? "", favorites),
+  );
   const splitTab = $derived(
     splitTabId && splitTabId !== activeTabId ? tabs.find((tab) => tab.id === splitTabId) : null,
   );
@@ -2523,6 +2531,39 @@ export function createApp() {
     favorites = (await AddFavorite(favUrl)) as string[];
   }
 
+  function isFavoriteUrl(favUrl: string): boolean {
+    return favoritesIncludeUrl(favUrl, favorites);
+  }
+
+  async function toggleFavoriteUrl(favUrl: string) {
+    const target = favUrl.trim();
+    if (!target) {
+      return;
+    }
+    const stored = findStoredFavoriteUrl(target, favorites);
+    if (stored !== undefined) {
+      favorites = (await RemoveFavorite(stored)) ?? favorites;
+      return;
+    }
+    favorites = (await AddFavorite(target)) ?? favorites;
+  }
+
+  async function removeFavoriteUrl(favUrl: string) {
+    const stored = findStoredFavoriteUrl(favUrl, favorites);
+    if (stored === undefined) {
+      return;
+    }
+    favorites = (await RemoveFavorite(stored)) ?? favorites;
+  }
+
+  async function toggleFavoriteCurrent() {
+    const current = tabs.find((tab) => tab.active)?.url ?? "";
+    if (!current.trim()) {
+      return;
+    }
+    await toggleFavoriteUrl(current);
+  }
+
   function mount() {
     const onResize = () => {
       compactViewport = isCompactViewport();
@@ -2838,6 +2879,9 @@ export function createApp() {
     },
     get favorites() {
       return favorites;
+    },
+    get isCurrentPageFavorite() {
+      return isCurrentPageFavorite;
     },
     get history() {
       return history;
@@ -3285,6 +3329,10 @@ export function createApp() {
     exportDevLogsFile,
     setDevLogLevel,
     addFavoriteUrl,
+    isFavoriteUrl,
+    toggleFavoriteUrl,
+    removeFavoriteUrl,
+    toggleFavoriteCurrent,
     cancelActiveDownload,
     dismissActiveDownload,
     retryActiveDownload,

@@ -10,11 +10,13 @@
     RefreshCw,
     Search,
     Settings,
+    Star,
     Terminal,
     X,
   } from "@lucide/svelte";
   import DownloadsMenu, { type DownloadRow } from "$lib/components/DownloadsMenu.svelte";
   import type { DownloadProgressView } from "$lib/browser/download-progress";
+  import { isFavoritableUrl } from "$lib/browser/favorites";
   import { t } from "$lib/i18n/i18n.svelte";
   import { pluginLabel } from "$lib/plugins/plugin-label.js";
   import PluginLucideIcon from "$lib/components/PluginLucideIcon.svelte";
@@ -34,6 +36,8 @@
     downloadDir: string;
     canIdentify: boolean;
     identifying: boolean;
+    currentFavorite: boolean;
+    onToggleFavorite: () => void;
     onNavigate: (url: string) => void;
     onBack: () => void;
     onForward: () => void;
@@ -67,6 +71,8 @@
     downloadDir,
     canIdentify,
     identifying,
+    currentFavorite,
+    onToggleFavorite,
     onNavigate,
     onBack,
     onForward,
@@ -93,6 +99,8 @@
         item.status === "pending" || item.status === "downloading" || item.status === "retrying",
     ).length,
   );
+
+  const canFavorite = $derived(isFavoritableUrl(url));
 
   function submit(event: Event) {
     event.preventDefault();
@@ -123,15 +131,30 @@
     </button>
   </div>
 
-  <form class="url-form" onsubmit={submit}>
-    <input
-      class="url-input ren-input"
-      bind:value={url}
-      placeholder={t("chrome.urlPlaceholder")}
-      spellcheck="false"
-      autocomplete="off"
-    />
-  </form>
+  <div class="url-cluster">
+    <form class="url-form" onsubmit={submit}>
+      <input
+        class="url-input ren-input"
+        bind:value={url}
+        placeholder={t("chrome.urlPlaceholder")}
+        spellcheck="false"
+        autocomplete="off"
+      />
+    </form>
+    {#if canFavorite}
+      <button
+        type="button"
+        class="ren-icon-btn fav-page"
+        class:active={currentFavorite}
+        aria-label={currentFavorite ? t("chrome.unfavoritePage") : t("chrome.favoritePage")}
+        title={currentFavorite ? t("chrome.unfavoritePage") : t("chrome.favoritePage")}
+        aria-pressed={currentFavorite}
+        onclick={onToggleFavorite}
+      >
+        <Star size={16} fill={currentFavorite ? "currentColor" : "none"} />
+      </button>
+    {/if}
+  </div>
 
   <div class="tool-cluster">
     <button
@@ -157,6 +180,15 @@
       onclick={() => onPanel("discovery")}
     >
       <Compass size={16} />
+    </button>
+    <button
+      class="ren-icon-btn mobile-nav-dup"
+      class:active={activePanel === "favorites"}
+      aria-label={t("chrome.favorites")}
+      title={t("chrome.favorites")}
+      onclick={() => onPanel("favorites")}
+    >
+      <Star size={16} />
     </button>
     <div class="downloads-anchor mobile-nav-dup">
       <button
@@ -289,7 +321,15 @@
     border: 1.5px solid var(--ren-chrome-bg);
   }
 
+  .url-cluster {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+  }
+
   .url-form {
+    flex: 1;
     min-width: 0;
   }
 

@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Compass, Download, History, Home, Settings, Terminal } from "@lucide/svelte";
+  import { Compass, Download, History, Home, Settings, Star, Terminal } from "@lucide/svelte";
   import type { ActivePanel } from "$lib/plugins/api-types.js";
   import { t } from "$lib/i18n/i18n.svelte";
 
@@ -35,6 +35,10 @@
   <button class:active={activePanel === "discovery"} onclick={() => onPanel("discovery")}>
     <Compass size={18} />
     <span>{t("mobileNav.discover")}</span>
+  </button>
+  <button class:active={activePanel === "favorites"} onclick={() => onPanel("favorites")}>
+    <Star size={18} />
+    <span>{t("mobileNav.favorites")}</span>
   </button>
   <button
     class="downloads-btn"

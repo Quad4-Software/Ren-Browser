@@ -341,4 +341,76 @@ describe("createApp controller", () => {
       expect(app.splitTabId).toBe(other!.id);
     });
   });
+
+  it("toggles favorites for the current page", async () => {
+    const meshUrl = "abb3ebcd03cb2388a838e70c001291f9:/page/index.mu";
+    browserMocks.Navigate.mockResolvedValue({
+      url: meshUrl,
+      html: "<article>site</article>",
+      contentType: "text/html",
+      raw: "",
+      binaryB64: "",
+      path: "",
+      error: "",
+      errorKind: "",
+      durationMs: 2,
+      pageFg: "",
+      pageBg: "",
+      fromCache: false,
+      cachedAt: 0,
+      hops: -1,
+    });
+
+    await withApp(async (app) => {
+      await app.openPage(meshUrl);
+      expect(app.isCurrentPageFavorite).toBe(false);
+
+      await app.toggleFavoriteCurrent();
+      expect(app.favorites).toEqual([meshUrl]);
+      expect(app.isCurrentPageFavorite).toBe(true);
+      expect(app.isFavoriteUrl(meshUrl)).toBe(true);
+
+      await app.toggleFavoriteCurrent();
+      expect(app.favorites).toEqual([]);
+      expect(app.isCurrentPageFavorite).toBe(false);
+    });
+  });
+
+  it("toggles favorites by hash equivalence", async () => {
+    const hash = "abb3ebcd03cb2388a838e70c001291f9";
+    const stored = `${hash}:/page/index.mu`;
+    await withApp(async (app) => {
+      await app.toggleFavoriteUrl(stored);
+      expect(app.favorites).toEqual([stored]);
+
+      // A bare hash and any path on the same node count as the same favorite.
+      expect(app.isFavoriteUrl(hash)).toBe(true);
+      expect(app.isFavoriteUrl(`${hash}:/page/deep/page.mu`)).toBe(true);
+
+      await app.toggleFavoriteUrl(`${hash}:/page/deep/page.mu`);
+      expect(app.favorites).toEqual([]);
+      expect(browserMocks.RemoveFavorite).toHaveBeenCalledWith(stored);
+    });
+  });
+
+  it("removes a stored favorite by hash equivalence", async () => {
+    const hash = "deadbeefdeadbeefdeadbeefdeadbeef";
+    const stored = `${hash}:/page/index.mu`;
+    await withApp(async (app) => {
+      await app.toggleFavoriteUrl(stored);
+      expect(app.favorites).toEqual([stored]);
+
+      await app.removeFavoriteUrl(hash);
+      expect(app.favorites).toEqual([]);
+      expect(browserMocks.RemoveFavorite).toHaveBeenCalledWith(stored);
+    });
+  });
+
+  it("does not favorite an empty current page", async () => {
+    await withApp(async (app) => {
+      await app.toggleFavoriteCurrent();
+      expect(browserMocks.AddFavorite).not.toHaveBeenCalled();
+      expect(app.favorites).toEqual([]);
+    });
+  });
 });

@@ -51,6 +51,9 @@
     "history": "履歴",
     "search": "検索",
     "discovery": "ディスカバリー",
+    "favorites": "お気に入り",
+    "favoritePage": "このページをお気に入りに追加",
+    "unfavoritePage": "お気に入りから削除",
     "devtools": "開発者ツール",
     "settings": "設定",
     "toggleTheme": "テーマ切替",
@@ -62,6 +65,7 @@
     "browse": "閲覧",
     "search": "検索",
     "discover": "発見",
+    "favorites": "お気に入り",
     "history": "履歴",
     "downloads": "ダウンロード",
     "devtools": "開発ツール",
@@ -321,6 +325,13 @@
     "noMatching": "一致するページがありません",
     "clear": "履歴をクリア",
     "clearConfirm": "すべての閲覧履歴をクリアしますか？この操作は取り消せません。"
+  },
+  "favorites": {
+    "title": "お気に入り",
+    "subtitle": "すばやくアクセスするために保存したサイト。",
+    "empty": "お気に入りはまだありません",
+    "emptyDescription": "ディスカバリーでサイトに星を付けるか、アドレスバーの横にある星をタップしてここに保存します。",
+    "remove": "お気に入りから削除"
   },
   "search": {
     "title": "検索",

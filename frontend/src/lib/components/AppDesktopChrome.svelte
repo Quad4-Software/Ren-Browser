@@ -86,6 +86,8 @@
     downloadDir={app.downloadDir}
     canIdentify={app.canIdentify}
     identifying={app.identifying}
+    currentFavorite={app.isCurrentPageFavorite}
+    onToggleFavorite={app.toggleFavoriteCurrent}
     onNavigate={app.openPage}
     onBack={app.goBack}
     onForward={app.goForward}

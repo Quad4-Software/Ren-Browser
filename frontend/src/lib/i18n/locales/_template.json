@@ -51,6 +51,9 @@
     "history": "",
     "search": "",
     "discovery": "",
+    "favorites": "",
+    "favoritePage": "",
+    "unfavoritePage": "",
     "devtools": "",
     "settings": "",
     "toggleTheme": "",
@@ -62,6 +65,7 @@
     "browse": "",
     "search": "",
     "discover": "",
+    "favorites": "",
     "history": "",
     "downloads": "",
     "devtools": "",
@@ -321,6 +325,13 @@
     "noMatching": "",
     "clear": "",
     "clearConfirm": ""
+  },
+  "favorites": {
+    "title": "",
+    "subtitle": "",
+    "empty": "",
+    "emptyDescription": "",
+    "remove": ""
   },
   "search": {
     "title": "",

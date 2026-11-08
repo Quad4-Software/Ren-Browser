@@ -51,6 +51,9 @@
     "history": "Verlauf",
     "search": "Suche",
     "discovery": "Entdecken",
+    "favorites": "Favoriten",
+    "favoritePage": "Zu Favoriten hinzufügen",
+    "unfavoritePage": "Aus Favoriten entfernen",
     "devtools": "Entwicklertools",
     "settings": "Einstellungen",
     "toggleTheme": "Design umschalten",
@@ -62,6 +65,7 @@
     "browse": "Durchsuchen",
     "search": "Suche",
     "discover": "Entdecken",
+    "favorites": "Favoriten",
     "history": "Verlauf",
     "downloads": "Downloads",
     "devtools": "Devtools",
@@ -321,6 +325,13 @@
     "noMatching": "Keine passenden Seiten",
     "clear": "Verlauf löschen",
     "clearConfirm": "Gesamten Browserverlauf löschen? Dies kann nicht rückgängig gemacht werden."
+  },
+  "favorites": {
+    "title": "Favoriten",
+    "subtitle": "Seiten, die Sie für den schnellen Zugriff gespeichert haben.",
+    "empty": "Noch keine Favoriten",
+    "emptyDescription": "Markieren Sie eine Seite in Entdecken mit einem Stern oder tippen Sie auf den Stern neben der Adressleiste, um sie hier zu speichern.",
+    "remove": "Favorit entfernen"
   },
   "search": {
     "title": "Suche",

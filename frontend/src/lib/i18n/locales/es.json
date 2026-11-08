@@ -51,6 +51,9 @@
     "history": "Historial",
     "search": "Buscar",
     "discovery": "Descubrir",
+    "favorites": "Favoritos",
+    "favoritePage": "Marcar esta página como favorita",
+    "unfavoritePage": "Quitar de favoritos",
     "devtools": "Herramientas de desarrollo",
     "settings": "Ajustes",
     "toggleTheme": "Cambiar tema",
@@ -62,6 +65,7 @@
     "browse": "Explorar",
     "search": "Buscar",
     "discover": "Descubrir",
+    "favorites": "Favoritos",
     "history": "Historial",
     "downloads": "Descargas",
     "devtools": "Devtools",
@@ -321,6 +325,13 @@
     "noMatching": "No hay páginas coincidentes",
     "clear": "Borrar historial",
     "clearConfirm": "¿Borrar todo el historial de navegación? Esto no se puede deshacer."
+  },
+  "favorites": {
+    "title": "Favoritos",
+    "subtitle": "Sitios que guardaste para acceder rápidamente.",
+    "empty": "Aún no hay favoritos",
+    "emptyDescription": "Marca un sitio en Descubrir o toca la estrella junto a la barra de direcciones para guardarlo aquí.",
+    "remove": "Quitar de favoritos"
   },
   "search": {
     "title": "Buscar",

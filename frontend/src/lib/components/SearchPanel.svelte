@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
-  import { Clock, Compass, Search, Star } from "@lucide/svelte";
+  import { Clock, Compass, Search, Star, Waypoints } from "@lucide/svelte";
   import EmptyState from "$lib/components/EmptyState.svelte";
   import type { HistoryEntry, Node } from "$lib/app/types";
   import { t } from "$lib/i18n/i18n.svelte";
@@ -236,7 +236,13 @@
                   <span class="icon" aria-hidden="true"><Icon size={14} /></span>
                   <span class="name">{result.title}</span>
                   {#if result.kind === "site" && result.hops !== undefined && result.hops >= 0}
-                    <span class="hops-badge">{formatHops(result.hops)}</span>
+                    <span
+                      class="hops-icon"
+                      title={formatHops(result.hops)}
+                      aria-label={formatHops(result.hops)}
+                    >
+                      <Waypoints size={14} aria-hidden="true" />
+                    </span>
                   {/if}
                 </span>
                 <span class="meta">{result.subtitle}</span>
@@ -338,15 +344,13 @@
     white-space: nowrap;
   }
 
-  .hops-badge {
+  .hops-icon {
     flex-shrink: 0;
-    font-size: 0.72rem;
-    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: var(--ren-muted);
-    border: 1px solid var(--ren-border);
-    border-radius: 999px;
-    padding: 0.1rem 0.45rem;
-    white-space: nowrap;
+    line-height: 0;
   }
 
   .meta {

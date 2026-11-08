@@ -51,6 +51,9 @@
     "history": "History",
     "search": "Search",
     "discovery": "Discovery",
+    "favorites": "Favorites",
+    "favoritePage": "Favorite this page",
+    "unfavoritePage": "Remove from favorites",
     "devtools": "Developer tools",
     "settings": "Settings",
     "toggleTheme": "Toggle theme",
@@ -62,6 +65,7 @@
     "browse": "Browse",
     "search": "Search",
     "discover": "Discover",
+    "favorites": "Favorites",
     "history": "History",
     "downloads": "Downloads",
     "devtools": "Devtools",
@@ -321,6 +325,13 @@
     "noMatching": "No matching pages",
     "clear": "Clear history",
     "clearConfirm": "Clear all browsing history? This cannot be undone."
+  },
+  "favorites": {
+    "title": "Favorites",
+    "subtitle": "Sites you saved for quick access.",
+    "empty": "No favorites yet",
+    "emptyDescription": "Star a site in Discovery or tap the star next to the address bar to save it here.",
+    "remove": "Remove favorite"
   },
   "search": {
     "title": "Search",

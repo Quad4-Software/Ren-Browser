@@ -2,7 +2,14 @@
 export type PluginPanelId = `plugin:${string}`;
 
 export type ActivePanel =
-  "browser" | "search" | "discovery" | "history" | "devtools" | "settings" | PluginPanelId;
+  | "browser"
+  | "search"
+  | "discovery"
+  | "favorites"
+  | "history"
+  | "devtools"
+  | "settings"
+  | PluginPanelId;
 
 export type Disposable = {
   dispose(): void;

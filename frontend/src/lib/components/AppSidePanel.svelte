@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: MIT -->
 <script lang="ts">
   import DiscoveryPanel from "$lib/components/DiscoveryPanel.svelte";
+  import FavoritesPanel from "$lib/components/FavoritesPanel.svelte";
   import HistoryPanel from "$lib/components/HistoryPanel.svelte";
   import SearchPanel from "$lib/components/SearchPanel.svelte";
   import DevToolsPanel from "$lib/components/DevToolsPanel.svelte";
@@ -33,7 +34,16 @@
       slowMode={app.discoverySlowMode}
       onSlowModeChange={app.saveDiscoverySlowMode}
       onOpen={app.browseURL}
-      onFavorite={(favUrl) => void app.addFavoriteUrl(favUrl)}
+      onToggleFavorite={(favUrl) => void app.toggleFavoriteUrl(favUrl)}
+    />
+  </aside>
+{:else if app.activePanel === "favorites"}
+  <aside class="side-pane">
+    <FavoritesPanel
+      favorites={app.favorites}
+      nodes={app.nodes}
+      onOpen={app.browseURL}
+      onRemove={(favUrl) => void app.removeFavoriteUrl(favUrl)}
     />
   </aside>
 {:else if app.activePanel === "history"}

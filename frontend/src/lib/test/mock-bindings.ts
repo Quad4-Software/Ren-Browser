@@ -243,6 +243,37 @@ export function createBrowserserviceMocks(
     const value = override !== undefined ? override : defaults[name];
     mocks[name] = vi.fn(async () => value);
   }
+
+  // Favorites bindings share state so add/remove/get behave like the backend:
+  // each call returns the full updated list, oldest first.
+  const favoritesSeed = Array.isArray(overrides.GetFavorites)
+    ? (overrides.GetFavorites as string[])
+    : Array.isArray(defaults.GetFavorites)
+      ? (defaults.GetFavorites as string[])
+      : [];
+  const favoritesState: string[] = [...favoritesSeed];
+  const favoriteMocks: Record<string, BindingMock> = {
+    GetFavorites: vi.fn(async () => [...favoritesState]),
+    AddFavorite: vi.fn(async (url: string) => {
+      const target = String(url ?? "").trim();
+      if (target && !favoritesState.includes(target)) {
+        favoritesState.push(target);
+      }
+      return [...favoritesState];
+    }),
+    RemoveFavorite: vi.fn(async (url: string) => {
+      const idx = favoritesState.indexOf(String(url ?? ""));
+      if (idx >= 0) {
+        favoritesState.splice(idx, 1);
+      }
+      return [...favoritesState];
+    }),
+  };
+  for (const name of Object.keys(favoriteMocks)) {
+    if (overrides[name] === undefined) {
+      mocks[name] = favoriteMocks[name];
+    }
+  }
   return mocks;
 }
 
