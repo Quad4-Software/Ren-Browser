@@ -5,6 +5,8 @@ package transport
 
 import (
 	"sync"
+
+	"github.com/Quad4-Software/Reticulum-Go/pkg/packet"
 )
 
 // Inbound traffic classes (RNS 1.5.0 Transport.TC_*).
@@ -61,7 +63,6 @@ func (q *inboundQueues) put(tc int, job packetJob) bool {
 	defer q.mu.Unlock()
 	if len(q.queues[tc]) >= q.sizes[tc] {
 		q.dropped[tc]++
-		putPacketCopy(job.pc)
 		return false
 	}
 	q.queues[tc] = append(q.queues[tc], job)
@@ -81,6 +82,10 @@ func (q *inboundQueues) get(done <-chan struct{}) (packetJob, bool) {
 				job := q.queues[tc][0]
 				q.queues[tc][0] = packetJob{}
 				q.queues[tc] = q.queues[tc][1:]
+				// A slot just freed. Wake producers parked in putWait or
+				// HandlePacketBlocking callers sleep forever once the queue
+				// has space and no further puts arrive to signal them.
+				q.cond.Broadcast()
 				return job, true
 			}
 		}
@@ -202,6 +207,15 @@ func (t *Transport) inboundQueueDrainer() {
 		job, ok := t.inboundQueues.get(t.done)
 		if !ok {
 			return
+		}
+		// Data packets for established links take this serial path so wire
+		// order survives to Link.HandleInbound. Sending them through the
+		// shared worker channel let consecutive packets for one link be
+		// dequeued in order but processed out of order, which broke
+		// identify-before-request sequencing.
+		if job.destType == DestTypeLink && job.packetType == packet.PacketTypeData {
+			t.runPacketJob(job)
+			continue
 		}
 		if !t.enqueuePacket(job, false) {
 			putPacketCopy(job.pc)
