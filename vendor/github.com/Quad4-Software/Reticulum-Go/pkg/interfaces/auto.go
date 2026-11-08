@@ -280,7 +280,7 @@ func (ai *AutoInterface) Start() error {
 
 		ifaceCopy := iface
 		if err := ai.configureInterface(&ifaceCopy); err != nil {
-			debug.Log(debug.DebugVerbose, "Failed to configure interface", "name", iface.Name, "error", err)
+			debug.Log(debug.DebugError, "Failed to configure interface", "name", iface.Name, "error", err)
 			continue
 		}
 	}

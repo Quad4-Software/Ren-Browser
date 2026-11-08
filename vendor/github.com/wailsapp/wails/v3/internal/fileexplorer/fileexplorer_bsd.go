@@ -3,12 +3,13 @@
 package fileexplorer
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"syscall"
 )
 
-func explorerBinArgs(path string, selectFile bool) (string, []string, error) {
+func explorerBinArgs(ctx context.Context, path string, selectFile bool) (string, []string, error) {
 	return "", nil, fmt.Errorf("file explorer not supported on %s", runtime.GOOS)
 }
 
