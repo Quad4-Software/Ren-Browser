@@ -30,7 +30,7 @@
   "dependencies": {
     "@lucide/svelte": "1.66.0",
     "@wailsio/runtime": "3.1.0",
-    "bits-ui": "2.20.2",
+    "bits-ui": "2.20.3",
     "dompurify": "3.4.17",
     "jszip": "^3.10.2",
     "marked": "18.1.2",
