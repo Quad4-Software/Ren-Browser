@@ -28,7 +28,7 @@
     "screenshots": "node scripts/capture-screenshots.mjs"
   },
   "dependencies": {
-    "@lucide/svelte": "1.66.0",
+    "@lucide/svelte": "1.70.0",
     "@wailsio/runtime": "3.1.0",
     "bits-ui": "2.20.2",
     "dompurify": "3.4.17",
