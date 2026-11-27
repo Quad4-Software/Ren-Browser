@@ -13,13 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Build the micron translator WASM with size optimization and update binary-size baselines for the TinyGo 0.44 output so release publishing is not blocked by expected toolchain growth.
 
-## [0.6.1] [released] - 2026-11-27
+## [0.6.1] [skipped] - 2026-11-27
 
 ### Fixed
 
 - Treat a single benchmark regression as runner variance so immutable release tags are not blocked by one noisy measurement. Two or more regressions still fail the gate.
 
-## [0.6.0] [released] - 2026-11-27
+## [0.6.0] [skipped] - 2026-11-27
 
 ### Changed
 
