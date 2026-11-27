@@ -99,6 +99,7 @@ func extractZipManifest(zipPath string) (Manifest, string, error) {
 		return Manifest{}, "", fmt.Errorf("zip has too many files")
 	}
 	var total int64
+	seenEntries := make(map[string]struct{}, len(reader.File))
 	var manifestData []byte
 	tmpDir, err := os.MkdirTemp("", "renplugin-preview-*")
 	if err != nil {
@@ -119,6 +120,11 @@ func extractZipManifest(zipPath string) (Manifest, string, error) {
 		if clean == "" || clean == "." {
 			continue
 		}
+		if _, duplicate := seenEntries[clean]; duplicate {
+			cleanup()
+			return Manifest{}, "", fmt.Errorf("zip has duplicate entry: %s", clean)
+		}
+		seenEntries[clean] = struct{}{}
 		dest, err := safeZipJoin(tmpDir, clean)
 		if err != nil {
 			cleanup()

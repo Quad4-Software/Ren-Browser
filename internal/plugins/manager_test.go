@@ -3,6 +3,7 @@ package plugins_test
 
 import (
 	"archive/zip"
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -105,4 +106,94 @@ func packHelloZip(dest string) error {
 		return err
 	}
 	return f.Close()
+}
+
+func TestInstallFromZipRejectsDuplicateEntries(t *testing.T) {
+	tmp := t.TempDir()
+	database, err := db.Open(filepath.Join(tmp, "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = database.Close() })
+
+	zipPath := filepath.Join(tmp, "duplicate.renplugin.zip")
+	f, err := os.Create(zipPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := zip.NewWriter(f)
+	for range 2 {
+		entry, err := w.Create("renbrowser.plugin.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := entry.Write([]byte(`{}`)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	manager := plugins.NewManager(database)
+	manager.SetPluginsDirForTest(filepath.Join(tmp, "plugins"))
+	if _, err := manager.InstallFromZip(zipPath, nil); err == nil {
+		t.Fatal("expected duplicate zip entries to be rejected")
+	}
+}
+
+func TestInstallFromZipRejectsUndeclaredInflation(t *testing.T) {
+	tmp := t.TempDir()
+	database, err := db.Open(filepath.Join(tmp, "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = database.Close() })
+
+	zipPath := filepath.Join(tmp, "inflated.renplugin.zip")
+	f, err := os.Create(zipPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := zip.NewWriter(f)
+	entry, err := w.Create("renbrowser.plugin.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := entry.Write([]byte(`{"id":"x"}`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(zipPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	local := bytes.Index(raw, []byte{'P', 'K', 3, 4})
+	central := bytes.Index(raw, []byte{'P', 'K', 1, 2})
+	if local < 0 || central < 0 {
+		t.Fatal("zip headers not found")
+	}
+	for _, off := range []int{local + 22, central + 24} {
+		for i := range 4 {
+			raw[off+i] = 0
+		}
+		raw[off] = 1
+	}
+	if err := os.WriteFile(zipPath, raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	manager := plugins.NewManager(database)
+	manager.SetPluginsDirForTest(filepath.Join(tmp, "plugins"))
+	if _, err := manager.InstallFromZip(zipPath, nil); err == nil {
+		t.Fatal("expected zip inflation beyond declared size to be rejected")
+	}
 }

@@ -342,6 +342,7 @@ func (m *Manager) InstallFromZip(zipPath string, granted []string) (InstalledPlu
 		return InstalledPlugin{}, fmt.Errorf("zip has too many files")
 	}
 	var total int64
+	seenEntries := make(map[string]struct{}, len(reader.File))
 	var manifestData []byte
 	tmpDir, err := os.MkdirTemp("", "renplugin-*")
 	if err != nil {
@@ -360,6 +361,10 @@ func (m *Manager) InstallFromZip(zipPath string, granted []string) (InstalledPlu
 		if clean == "" || clean == "." {
 			continue
 		}
+		if _, duplicate := seenEntries[clean]; duplicate {
+			return InstalledPlugin{}, fmt.Errorf("zip has duplicate entry: %s", clean)
+		}
+		seenEntries[clean] = struct{}{}
 		dest, err := safeZipJoin(tmpDir, clean)
 		if err != nil {
 			return InstalledPlugin{}, err
@@ -614,6 +619,13 @@ func copyDir(src, dest string) error {
 		target := filepath.Join(dest, rel)
 		if d.IsDir() {
 			return os.MkdirAll(target, 0o750)
+		}
+		info, err := d.Info()
+		if err != nil {
+			return err
+		}
+		if !info.Mode().IsRegular() {
+			return fmt.Errorf("plugin install contains non-regular file: %s", rel)
 		}
 		data, err := os.ReadFile(path) // #nosec G304 G122 -- install copies user-selected plugin tree
 		if err != nil {
