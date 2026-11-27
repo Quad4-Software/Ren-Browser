@@ -5,6 +5,7 @@
 package sandbox
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -225,7 +226,7 @@ func TestSeccompHelper(t *testing.T) {
 		_ = unix.Unmount("/tmp", unix.MNT_DETACH)
 		t.Fatal("expected mount to be blocked by seccomp")
 	}
-	if err != unix.EPERM && err != unix.EACCES {
+	if !errors.Is(err, unix.EPERM) && !errors.Is(err, unix.EACCES) {
 		// Unprivileged mount often fails with EPERM from LSM before seccomp.
 		// Accept either denial path as long as mount did not succeed.
 		t.Logf("mount denied with %v (acceptable)", err)

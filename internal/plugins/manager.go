@@ -6,6 +6,7 @@ package plugins
 
 import (
 	"archive/zip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -133,7 +134,7 @@ func (m *Manager) LoadAll() error {
 		}
 
 		var integrityErr string
-		settings, okIntegrity, integrityErr := m.verifyIntegrityOnLoad(manifest.ID, dir, settings)
+		settings, okIntegrity, integrityErr := m.verifyIntegrityOnLoad(dir, settings)
 		if !okIntegrity {
 			enabled = false
 		}
@@ -152,7 +153,7 @@ func (m *Manager) LoadAll() error {
 		m.mu.Unlock()
 		if !okIntegrity {
 			_ = m.store.SetPluginEnabled(manifest.ID, false)
-			m.logPlugin(manifest.ID, "integrity", "error", integrityErr, "")
+			m.logPlugin(manifest.ID, "integrity", integrityErr, "")
 			continue
 		}
 		if enabled {
@@ -164,7 +165,7 @@ func (m *Manager) LoadAll() error {
 				m.plugins[manifest.ID] = p
 				m.mu.Unlock()
 				_ = m.store.SetPluginEnabled(manifest.ID, false)
-				m.logPlugin(manifest.ID, "enable", "error", err.Error(), "")
+				m.logPlugin(manifest.ID, "enable", err.Error(), "")
 				m.emitPluginError(manifest.ID, "enable", err.Error())
 			}
 		}
@@ -210,7 +211,7 @@ func (m *Manager) Enable(id string) error {
 	}
 
 	m.mu.Lock()
-	p, ok = m.plugins[id]
+	_, ok = m.plugins[id]
 	if !ok {
 		m.mu.Unlock()
 		return fmt.Errorf("plugin %q not found", id)
@@ -512,8 +513,8 @@ func (m *Manager) enableLocked(id string) error {
 	m.reg.RegisterContributions(id, p.Manifest.Contributes)
 	if p.Manifest.Backend != "" {
 		wasmPath := filepath.Join(p.Dir, p.Manifest.Backend)
-		fetch := func(req WasmHTTPRequest) (WasmHTTPResponse, error) {
-			return m.PluginHTTPFetch(id, req)
+		fetch := func(ctx context.Context, req WasmHTTPRequest) (WasmHTTPResponse, error) {
+			return m.PluginHTTPFetch(ctx, id, req)
 		}
 		wp, err := m.wasm.LoadPluginWithFetch(id, wasmPath, p.Manifest, p.GrantedPermissions, fetch)
 		if err != nil {
@@ -565,10 +566,6 @@ func (m *Manager) WasmCall(pluginID, exportName, input string) (string, error) {
 	wp, ok := m.wasm.Get(pluginID)
 	if !ok {
 		return "", fmt.Errorf("plugin %q wasm module not loaded", pluginID)
-	}
-	if wasmExportNeedsNetwork(exportName) {
-		beginWasmFetchBudget(pluginID, wasmMaxFetchesPerCall)
-		defer endWasmFetchBudget(pluginID)
 	}
 	out, err := wp.CallExport(exportName, []byte(input))
 	if err != nil {

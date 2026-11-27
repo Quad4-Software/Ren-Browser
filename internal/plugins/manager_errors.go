@@ -18,7 +18,7 @@ func (m *Manager) SetDevLogger(fn DevLogFunc) {
 }
 
 func (m *Manager) LogPluginError(pluginID, phase, message, detail string) {
-	m.logPlugin(pluginID, phase, "error", message, detail)
+	m.logPlugin(pluginID, phase, message, detail)
 }
 
 func (m *Manager) FailPlugin(pluginID, phase string, err error) error {
@@ -40,13 +40,13 @@ func (m *Manager) FailPlugin(pluginID, phase string, err error) error {
 	m.mu.Unlock()
 
 	_ = m.store.SetPluginEnabled(pluginID, false)
-	m.logPlugin(pluginID, phase, "error", msg, errDetail(err))
+	m.logPlugin(pluginID, phase, msg, errDetail(err))
 	m.emitPluginError(pluginID, phase, msg)
 	m.emitUnloaded(manifest)
 	return err
 }
 
-func (m *Manager) logPlugin(pluginID, phase, level, message, detail string) {
+func (m *Manager) logPlugin(pluginID, phase, message, detail string) {
 	label := fmt.Sprintf("plugin %s", pluginID)
 	if phase != "" {
 		label = fmt.Sprintf("plugin %s [%s]", pluginID, phase)
@@ -55,7 +55,7 @@ func (m *Manager) logPlugin(pluginID, phase, level, message, detail string) {
 	fn := m.devLog
 	m.mu.RUnlock()
 	if fn != nil {
-		fn(level, label+": "+message, detail)
+		fn("error", label+": "+message, detail)
 	}
 }
 

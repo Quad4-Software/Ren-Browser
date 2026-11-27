@@ -2,6 +2,7 @@
 package rns
 
 import (
+	"errors"
 	"path/filepath"
 	"testing"
 
@@ -45,7 +46,7 @@ func TestDeleteInterface(t *testing.T) {
 	}
 
 	// Try deleting non-existent interface
-	if err := stack.DeleteInterface("non_existent"); err != errInterfaceNotFound {
+	if err := stack.DeleteInterface("non_existent"); !errors.Is(err, errInterfaceNotFound) {
 		t.Fatalf("expected errInterfaceNotFound, got %v", err)
 	}
 }

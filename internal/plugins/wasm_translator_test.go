@@ -2,6 +2,7 @@
 package plugins
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -39,7 +40,7 @@ func TestWasmTranslatorTranslatesMicronText(t *testing.T) {
 		Permissions: []string{PermNetworkFetch},
 	}
 
-	wp, err := rt.LoadPluginForTest("renbrowser.micron-translator", data, manifest, mockGoogleTranslate)
+	wp, err := rt.LoadPluginForTest("renbrowser.micron-translator", data, manifest, mockGoogleTranslateContext)
 	if err != nil {
 		t.Fatalf("load wasm: %v", err)
 	}
@@ -120,7 +121,7 @@ func TestWasmHostDeniesHTTPWithoutPermission(t *testing.T) {
 	}
 }
 
-func mockGoogleTranslate(req WasmHTTPRequest) (WasmHTTPResponse, error) {
+func mockGoogleTranslateContext(_ context.Context, req WasmHTTPRequest) (WasmHTTPResponse, error) {
 	if strings.Contains(req.URL, "translate.googleapis.com") {
 		return WasmHTTPResponse{
 			StatusCode: 200,

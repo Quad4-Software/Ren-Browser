@@ -2,6 +2,7 @@
 package plugins
 
 import (
+	"context"
 	"fmt"
 	"sync"
 )
@@ -9,33 +10,39 @@ import (
 const wasmMaxFetchesPerCall = 64
 
 type wasmFetchBudget struct {
-	max     int
-	used    int
-	aborted bool
+	mu   sync.Mutex
+	max  int
+	used int
 }
 
-var wasmFetchBudgets sync.Map
+type wasmFetchBudgetContextKey struct{}
 
-func beginWasmFetchBudget(pluginID string, max int) {
+func newWasmFetchBudget(max int) *wasmFetchBudget {
 	if max <= 0 {
 		max = wasmMaxFetchesPerCall
 	}
-	wasmFetchBudgets.Store(pluginID, &wasmFetchBudget{max: max})
+	return &wasmFetchBudget{max: max}
 }
 
-func endWasmFetchBudget(pluginID string) {
-	wasmFetchBudgets.Delete(pluginID)
+func withWasmFetchBudget(ctx context.Context, budget *wasmFetchBudget) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, wasmFetchBudgetContextKey{}, budget)
 }
 
-func consumeWasmFetchBudget(pluginID string) error {
-	raw, ok := wasmFetchBudgets.Load(pluginID)
-	if !ok {
+func consumeWasmFetchBudget(ctx context.Context) error {
+	if ctx == nil {
 		return nil
 	}
-	budget := raw.(*wasmFetchBudget)
+	budget, ok := ctx.Value(wasmFetchBudgetContextKey{}).(*wasmFetchBudget)
+	if !ok || budget == nil {
+		return nil
+	}
+	budget.mu.Lock()
+	defer budget.mu.Unlock()
 	budget.used++
 	if budget.used > budget.max {
-		budget.aborted = true
 		return fmt.Errorf("extension exceeded network request limit (%d)", budget.max)
 	}
 	return nil

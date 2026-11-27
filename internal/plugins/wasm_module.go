@@ -5,11 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/tetratelabs/wazero/api"
 )
 
 type wasmPlugin struct {
+	mu       sync.Mutex
 	pluginID string
 	manifest Manifest
 	mod      api.Module
@@ -23,6 +26,13 @@ func (wp *wasmPlugin) hasExport(name string) bool {
 }
 
 func (wp *wasmPlugin) CallExport(export string, input []byte) ([]byte, error) {
+	return wp.callExportWithTimeout(export, input, wasmCallTimeout)
+}
+
+func (wp *wasmPlugin) callExportWithTimeout(export string, input []byte, timeout time.Duration) ([]byte, error) {
+	wp.mu.Lock()
+	defer wp.mu.Unlock()
+
 	if len(input) > wasmMaxIOBytes {
 		return nil, fmt.Errorf("wasm input too large")
 	}
@@ -39,8 +49,12 @@ func (wp *wasmPlugin) CallExport(export string, input []byte) ([]byte, error) {
 	if !mem.Write(wasmScratchAddr, scratch) {
 		return nil, fmt.Errorf("wasm memory write failed")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), wasmCallTimeout)
+	if timeout <= 0 {
+		timeout = wasmCallTimeout
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
+	ctx = withWasmFetchBudget(ctx, newWasmFetchBudget(wasmMaxFetchesPerCall))
 	results, err := fn.Call(ctx, api.EncodeU32(wasmScratchAddr), api.EncodeU32(uint32(len(input)))) // #nosec G115 -- wasm ABI
 	if err != nil {
 		return nil, fmt.Errorf("wasm %s failed: %w", export, err)
@@ -183,11 +197,7 @@ func (w wasmRendererAdapter) Render(path string, body []byte, nodeHash string) (
 	if err != nil {
 		return Rendered{}, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), wasmRenderBudget)
-	defer cancel()
-	_ = ctx
-
-	out, err := w.plugin.CallExport("render", req)
+	out, err := w.plugin.callExportWithTimeout("render", req, wasmRenderBudget)
 	if err != nil {
 		return Rendered{}, err
 	}

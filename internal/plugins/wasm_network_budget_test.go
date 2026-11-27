@@ -81,16 +81,33 @@ func TestWasmCallBlocksTranslateWithoutNetworkPermission(t *testing.T) {
 }
 
 func TestPluginHTTPFetchBudget(t *testing.T) {
-	beginWasmFetchBudget("test.plugin", 2)
-	t.Cleanup(func() { endWasmFetchBudget("test.plugin") })
+	ctx := withWasmFetchBudget(t.Context(), newWasmFetchBudget(2))
 
 	for i := range 2 {
-		if err := consumeWasmFetchBudget("test.plugin"); err != nil {
+		if err := consumeWasmFetchBudget(ctx); err != nil {
 			t.Fatalf("fetch %d: %v", i, err)
 		}
 	}
-	if err := consumeWasmFetchBudget("test.plugin"); err == nil {
+	if err := consumeWasmFetchBudget(ctx); err == nil {
 		t.Fatal("expected budget error")
+	}
+}
+
+func TestWasmFetchBudgetsArePerCall(t *testing.T) {
+	first := withWasmFetchBudget(t.Context(), newWasmFetchBudget(1))
+	second := withWasmFetchBudget(t.Context(), newWasmFetchBudget(1))
+
+	if err := consumeWasmFetchBudget(first); err != nil {
+		t.Fatalf("first call fetch: %v", err)
+	}
+	if err := consumeWasmFetchBudget(second); err != nil {
+		t.Fatalf("second call fetch: %v", err)
+	}
+	if err := consumeWasmFetchBudget(first); err == nil {
+		t.Fatal("expected first call budget error")
+	}
+	if err := consumeWasmFetchBudget(second); err == nil {
+		t.Fatal("expected second call budget error")
 	}
 }
 

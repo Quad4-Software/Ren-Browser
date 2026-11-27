@@ -48,7 +48,7 @@ func ValidateRSG(rsgData, message []byte, requiredSigner []byte) (signerHex stri
 
 	var envelope rsgEnvelope
 	if err := msgpack.Unmarshal(envelopeBytes, &envelope); err != nil {
-		return "", fmt.Errorf("%w: %v", errRSGEnvelope, err)
+		return "", fmt.Errorf("%w: %w", errRSGEnvelope, err)
 	}
 	if envelope.HashType != "sha256" {
 		return "", errRSGHashType

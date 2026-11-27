@@ -2,6 +2,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 
 	"renbrowser/internal/plugins"
@@ -31,7 +32,7 @@ func (h *PluginHost) PluginFetch(pluginID string, req PluginHTTPRequest) (Plugin
 		return PluginHTTPResponse{}, err
 	}
 
-	resp, err := h.manager.PluginHTTPFetch(pluginID, plugins.WasmHTTPRequest{
+	resp, err := h.manager.PluginHTTPFetch(context.Background(), pluginID, plugins.WasmHTTPRequest{
 		Method:  req.Method,
 		URL:     req.URL,
 		Headers: req.Headers,

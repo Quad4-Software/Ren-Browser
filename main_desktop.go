@@ -86,7 +86,10 @@ func main() {
 
 	if os.Getenv("REN_BROWSER_ASSET_PROBE") == "1" {
 		log.Printf("asset source: %s", appBundle.Loader.Kind())
-		_, _ = http.Get("http://127.0.0.1")
+		resp, err := http.Get("http://127.0.0.1") // #nosec G704 -- fixed loopback probe
+		if err == nil {
+			_ = resp.Body.Close()
+		}
 	}
 
 	if err := appBundle.Wails.Run(); err != nil {

@@ -40,3 +40,38 @@ func TestSaveTabsTruncatesOversizedBodies(t *testing.T) {
 		t.Fatalf("persisted html not truncated: %d", len(loaded[0].HTML))
 	}
 }
+
+func TestSaveTabsTruncatesOversizedMetadataFields(t *testing.T) {
+	st, err := store.Open(t.TempDir() + "/profile.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = st.Close() }()
+
+	t.Setenv("REN_BROWSER_MAX_TAB_FIELD_BYTES", "32")
+	large := strings.Repeat("x", 4096)
+	saved := st.SaveTabs([]store.TabSnapshot{{
+		ID:          "tab-1",
+		Title:       large,
+		URL:         large,
+		ContentType: large,
+		Error:       large,
+		PageFG:      large,
+		PageBG:      large,
+	}})
+	if len(saved) != 1 {
+		t.Fatalf("tabs = %d", len(saved))
+	}
+	for name, value := range map[string]string{
+		"title":       saved[0].Title,
+		"url":         saved[0].URL,
+		"contentType": saved[0].ContentType,
+		"error":       saved[0].Error,
+		"pageFg":      saved[0].PageFG,
+		"pageBg":      saved[0].PageBG,
+	} {
+		if len(value) != 32 {
+			t.Fatalf("%s not truncated: len=%d", name, len(value))
+		}
+	}
+}

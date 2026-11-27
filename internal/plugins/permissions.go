@@ -39,10 +39,3 @@ func ValidatePermissions(perms []string) error {
 func HasPermission(m Manifest, perm string) bool {
 	return slices.Contains(m.Permissions, perm)
 }
-
-func RequirePermission(m Manifest, perm string) error {
-	if HasPermission(m, perm) {
-		return nil
-	}
-	return fmt.Errorf("plugin %s lacks permission %s", m.ID, perm)
-}

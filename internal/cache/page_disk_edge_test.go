@@ -111,6 +111,9 @@ func TestPageCachePutPartialCommitCleansIndex(t *testing.T) {
 	if !errors.Is(c.diskErr, errDiskPartialCommit) {
 		t.Fatalf("expected partial commit error, got %v", c.diskErr)
 	}
+	if !errors.Is(c.diskErr, syscall.ENOSPC) {
+		t.Fatalf("expected wrapped ENOSPC, got %v", c.diskErr)
+	}
 
 	c.mu.Lock()
 	c.entries = make(map[pageKey]Entry, c.ramMax)

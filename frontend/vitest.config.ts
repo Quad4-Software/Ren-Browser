@@ -46,6 +46,12 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html", "lcov"],
       reportsDirectory: "../coverage/frontend",
+      thresholds: {
+        statements: 38,
+        branches: 34,
+        functions: 35,
+        lines: 38,
+      },
       include: ["src/lib/**/*.{ts,svelte}"],
       exclude: ["src/lib/**/*.test.ts", "src/lib/test/**"],
     },

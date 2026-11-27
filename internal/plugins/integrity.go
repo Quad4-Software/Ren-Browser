@@ -4,7 +4,6 @@ package plugins
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 )
 
 const integrityTamperMessage = "extension files were modified outside RenBrowser"
@@ -30,8 +29,4 @@ func VerifyDirIntegrity(dir, expectedHash string) (bool, string, error) {
 		return false, current, nil
 	}
 	return true, current, nil
-}
-
-func IntegrityTamperError() error {
-	return fmt.Errorf("%s", integrityTamperMessage)
 }

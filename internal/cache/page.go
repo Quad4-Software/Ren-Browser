@@ -505,7 +505,7 @@ func (c *PageCache) writeDiskObject(hash string, body []byte, meta diskMeta) err
 		_ = os.Remove(metaTmp)
 		_ = os.Remove(binPath)
 		_ = os.Remove(metaPath)
-		return fmt.Errorf("%w: %v", errDiskPartialCommit, err)
+		return fmt.Errorf("%w: %w", errDiskPartialCommit, err)
 	}
 	return nil
 }

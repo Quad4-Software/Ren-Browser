@@ -42,7 +42,7 @@ func (rt *WasmRuntime) LoadPlugin(pluginID, wasmPath string, manifest Manifest, 
 	return rt.LoadPluginWithFetch(pluginID, wasmPath, manifest, granted, nil)
 }
 
-func (rt *WasmRuntime) LoadPluginWithFetch(pluginID, wasmPath string, manifest Manifest, granted []string, fetch func(WasmHTTPRequest) (WasmHTTPResponse, error)) (*wasmPlugin, error) {
+func (rt *WasmRuntime) LoadPluginWithFetch(pluginID, wasmPath string, manifest Manifest, granted []string, fetch func(context.Context, WasmHTTPRequest) (WasmHTTPResponse, error)) (*wasmPlugin, error) {
 	data, err := os.ReadFile(wasmPath) // #nosec G304 -- plugin wasm from managed dir
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (rt *WasmRuntime) LoadPluginWithFetch(pluginID, wasmPath string, manifest M
 	return rt.loadPlugin(pluginID, data, manifest, granted, fetch)
 }
 
-func (rt *WasmRuntime) loadPlugin(pluginID string, data []byte, manifest Manifest, granted []string, fetch func(WasmHTTPRequest) (WasmHTTPResponse, error)) (*wasmPlugin, error) {
+func (rt *WasmRuntime) loadPlugin(pluginID string, data []byte, manifest Manifest, granted []string, fetch func(context.Context, WasmHTTPRequest) (WasmHTTPResponse, error)) (*wasmPlugin, error) {
 	rt.mu.Lock()
 	defer rt.mu.Unlock()
 	if existing, ok := rt.modules[pluginID]; ok {
@@ -155,7 +155,7 @@ func (rt *WasmRuntime) AfterFetchHook(pluginID string) AfterFetchHook {
 	return wp.AfterFetchHook()
 }
 
-func (rt *WasmRuntime) loadPluginForTest(pluginID string, data []byte, manifest Manifest, granted []string, fetch func(WasmHTTPRequest) (WasmHTTPResponse, error)) (*wasmPlugin, error) {
+func (rt *WasmRuntime) loadPluginForTest(pluginID string, data []byte, manifest Manifest, granted []string, fetch func(context.Context, WasmHTTPRequest) (WasmHTTPResponse, error)) (*wasmPlugin, error) {
 	rt.mu.Lock()
 	if wp, ok := rt.modules[pluginID]; ok {
 		rt.mu.Unlock()
@@ -166,6 +166,6 @@ func (rt *WasmRuntime) loadPluginForTest(pluginID string, data []byte, manifest 
 }
 
 // LoadPluginForTest loads a wasm plugin with an optional HTTP fetch stub.
-func (rt *WasmRuntime) LoadPluginForTest(pluginID string, data []byte, manifest Manifest, fetch func(WasmHTTPRequest) (WasmHTTPResponse, error)) (*wasmPlugin, error) {
+func (rt *WasmRuntime) LoadPluginForTest(pluginID string, data []byte, manifest Manifest, fetch func(context.Context, WasmHTTPRequest) (WasmHTTPResponse, error)) (*wasmPlugin, error) {
 	return rt.loadPluginForTest(pluginID, data, manifest, DefaultGrantedPermissions(manifest), fetch)
 }

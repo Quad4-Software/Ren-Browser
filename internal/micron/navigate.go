@@ -16,11 +16,6 @@ type FieldInput struct {
 	Checked bool   `json:"checked"`
 }
 
-func HeaderColors(source string) (fg, bg string) {
-	pc := mp.ParseHeaderTags(source)
-	return pc.FG, pc.BG
-}
-
 func ResolveNavigation(currentURL, destination, fieldsSpec string, inputs []FieldInput) (string, error) {
 	mpInputs := make([]mp.FieldInput, len(inputs))
 	for i, in := range inputs {

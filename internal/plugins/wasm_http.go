@@ -2,6 +2,7 @@
 package plugins
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,7 +15,10 @@ const pluginHTTPTimeout = 30 * time.Second
 const pluginFetchMaxBody = 1 << 20
 const pluginFetchMaxURLLen = 2048
 
-func DoPluginHTTP(req WasmHTTPRequest) (WasmHTTPResponse, error) {
+func DoPluginHTTP(ctx context.Context, req WasmHTTPRequest) (WasmHTTPResponse, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	method := strings.ToUpper(strings.TrimSpace(req.Method))
 	if method == "" {
 		method = http.MethodGet
@@ -45,7 +49,7 @@ func DoPluginHTTP(req WasmHTTPRequest) (WasmHTTPResponse, error) {
 		body = strings.NewReader(req.Body)
 	}
 
-	httpReq, err := http.NewRequest(method, rawURL, body)
+	httpReq, err := http.NewRequestWithContext(ctx, method, rawURL, body)
 	if err != nil {
 		return WasmHTTPResponse{}, err
 	}

@@ -12,10 +12,10 @@ type wasmHost struct {
 	pluginID     string
 	manifest     Manifest
 	networkFetch bool
-	fetch        func(WasmHTTPRequest) (WasmHTTPResponse, error)
+	fetch        func(context.Context, WasmHTTPRequest) (WasmHTTPResponse, error)
 }
 
-func newWasmHost(pluginID string, manifest Manifest, networkFetch bool, fetch func(WasmHTTPRequest) (WasmHTTPResponse, error)) *wasmHost {
+func newWasmHost(pluginID string, manifest Manifest, networkFetch bool, fetch func(context.Context, WasmHTTPRequest) (WasmHTTPResponse, error)) *wasmHost {
 	if fetch == nil {
 		fetch = DoPluginHTTP
 	}
@@ -39,7 +39,7 @@ func (h *wasmHost) httpFetch(ctx context.Context, mod api.Module, reqPtr, reqLen
 	if err := json.Unmarshal(reqBytes, &req); err != nil {
 		return writeWasmHTTPError(mod, respPtr, respCap, "invalid request JSON")
 	}
-	resp, err := h.fetch(req)
+	resp, err := h.fetch(ctx, req)
 	if err != nil {
 		return writeWasmHTTPError(mod, respPtr, respCap, err.Error())
 	}

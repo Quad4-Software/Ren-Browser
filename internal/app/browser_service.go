@@ -137,10 +137,6 @@ type ServiceOptions struct {
 	ImportProfile string
 }
 
-func NewBrowserService(stack *rns.Stack, app *application.App) (*BrowserService, error) {
-	return NewBrowserServiceWithOptions(stack, app, ServiceOptions{})
-}
-
 func NewBrowserServiceWithOptions(stack *rns.Stack, app *application.App, opts ServiceOptions) (*BrowserService, error) {
 	dbPath := opts.ProfilePath
 	if dbPath == "" {

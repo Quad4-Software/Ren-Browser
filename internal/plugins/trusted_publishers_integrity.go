@@ -15,7 +15,6 @@ const trustedPublishersDigestKey = "plugins.trustedPublishersDigest"
 
 var (
 	trustedIntegrityMu      sync.RWMutex
-	trustedIntegrityStore   SettingsStore
 	userTrustedTampered     bool
 	userTrustedTamperReason string
 )
@@ -26,9 +25,6 @@ type SettingsStore interface {
 }
 
 func InitTrustedPublishersIntegrity(store SettingsStore) error {
-	trustedIntegrityMu.Lock()
-	trustedIntegrityStore = store
-	trustedIntegrityMu.Unlock()
 	return VerifyUserTrustedPublishersIntegrity(store)
 }
 

@@ -5,19 +5,6 @@ import (
 	mp "micron-parser-go/micron"
 )
 
-type Options struct {
-	DarkTheme      bool
-	ForceMonospace bool
-}
-
-func ToHTML(source string, opts Options) string {
-	p := mp.Parser{
-		DarkTheme:      opts.DarkTheme,
-		ForceMonospace: opts.ForceMonospace,
-	}
-	return p.ConvertMicronToHTML(source)
-}
-
 func ToHTMLDark(source string) string {
 	html, _, _ := RenderDark(source)
 	return html

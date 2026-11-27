@@ -137,14 +137,3 @@ func registerEvents() {
 	application.RegisterEvent[map[string]string]("plugin:scheme")
 	application.RegisterEvent[string](app.DeepLinkEvent)
 }
-
-func AssetHandlerForServer(loader *assets.Loader, pluginMgr *plugins.Manager, cfg config.Runtime) http.Handler {
-	base := loader.Handler()
-	if pluginMgr != nil {
-		base = assets.PluginHandler(pluginMgr, base)
-	}
-	return servermw.Wrap(base, servermw.Options{
-		TrustProxy: cfg.TrustProxy,
-		BasePath:   cfg.BasePath,
-	})
-}

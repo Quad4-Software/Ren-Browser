@@ -73,10 +73,6 @@ func (l *Loader) Kind() SourceKind {
 	return l.kind
 }
 
-func (l *Loader) FS() fs.FS {
-	return l.root
-}
-
 func (l *Loader) Close() error {
 	if l.zip != nil {
 		return l.zip.Close()

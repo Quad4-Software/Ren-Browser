@@ -80,6 +80,7 @@ tasks:
     desc: Run Go unit tests
     cmds:
       - go test ./...
+      - go test -tags server ./internal/serverauth ./internal/serverlog ./internal/servermw
     env:
       GOFLAGS: "-mod=vendor"
 

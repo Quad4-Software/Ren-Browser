@@ -180,7 +180,7 @@ func OpenIdentityRegistry(storageDir string) (*IdentityRegistry, error) {
 		return nil, fmt.Errorf("%w: empty registry file", ErrRegistryCorrupt)
 	}
 	if err := json.Unmarshal(raw, &reg.data); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrRegistryCorrupt, err)
+		return nil, fmt.Errorf("%w: %w", ErrRegistryCorrupt, err)
 	}
 	if err := reg.validateRegistryData(); err != nil {
 		return nil, err

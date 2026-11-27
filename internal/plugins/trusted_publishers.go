@@ -35,10 +35,6 @@ func loadUserTrustedPublishers() []TrustedPublisher {
 	return file.Publishers
 }
 
-func AddUserTrustedPublisher(identity, name string) error {
-	return AddUserTrustedPublisherWithStore(trustedIntegrityStore, identity, name)
-}
-
 func AddUserTrustedPublisherWithStore(store SettingsStore, identity, name string) error {
 	identity = strings.ToLower(strings.TrimSpace(identity))
 	if identity == "" {

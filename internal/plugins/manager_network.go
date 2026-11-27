@@ -5,6 +5,7 @@
 package plugins
 
 import (
+	"context"
 	"time"
 )
 
@@ -14,12 +15,12 @@ func (m *Manager) SetNetworkRecorder(fn PluginNetworkRecorder) {
 	m.mu.Unlock()
 }
 
-func (m *Manager) PluginHTTPFetch(pluginID string, req WasmHTTPRequest) (WasmHTTPResponse, error) {
-	if err := consumeWasmFetchBudget(pluginID); err != nil {
+func (m *Manager) PluginHTTPFetch(ctx context.Context, pluginID string, req WasmHTTPRequest) (WasmHTTPResponse, error) {
+	if err := consumeWasmFetchBudget(ctx); err != nil {
 		return WasmHTTPResponse{}, err
 	}
 	start := time.Now()
-	resp, err := DoPluginHTTP(req)
+	resp, err := DoPluginHTTP(ctx, req)
 	m.recordNetworkFetch(pluginID, req, resp, time.Since(start), err)
 	return resp, err
 }
@@ -66,7 +67,7 @@ func (m *Manager) establishIntegrityHash(dir string, settings RuntimeSettings) (
 	return settings, nil
 }
 
-func (m *Manager) verifyIntegrityOnLoad(id, dir string, settings RuntimeSettings) (RuntimeSettings, bool, string) {
+func (m *Manager) verifyIntegrityOnLoad(dir string, settings RuntimeSettings) (RuntimeSettings, bool, string) {
 	hash, err := ComputeDirIntegrityHash(dir)
 	if err != nil {
 		return settings, false, err.Error()
