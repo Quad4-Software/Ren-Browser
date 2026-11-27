@@ -92,6 +92,9 @@ func (s *BrowserService) ExportProfile() (string, error) {
 }
 
 func (s *BrowserService) ImportProfile(jsonData string) error {
+	if err := validateProfileImport(jsonData); err != nil {
+		return err
+	}
 	var data ProfileData
 	if err := json.Unmarshal([]byte(jsonData), &data); err != nil {
 		return err
