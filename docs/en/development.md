@@ -92,8 +92,6 @@ CI checks are **bash and Task only**. No dependency on GitHub Marketplace action
 | `CI_CONTAINER=podman bash build/scripts/ci/run-docker.sh pr` | Force podman |
 | `task ci:docker` | Wrapper for `run-docker.sh pr` |
 
-Forgejo and Gitea: `.gitea/workflows/ci.yml` and `.forgejo/workflows/ci.yml` only run `bootstrap.sh install` and `run.sh`. The forge clones the repo into the workspace. No `uses: actions/*` steps.
-
 Local quick run without `renbrowser.rsm` / `rnid`:
 
 ```sh
@@ -108,7 +106,7 @@ Optional env:
 
 Pinned versions live in `build/scripts/ci/versions.env`.
 
-The large `.github/workflows/ci.yml` on github.com still uses Marketplace actions for matrix builds, caches, and releases. Use the bootstrap plus `run.sh` path above (or Gitea workflows) if you want CI without that stack.
+The large `.github/workflows/ci.yml` on github.com still uses Marketplace actions for matrix builds, caches, and releases. Use the bootstrap plus `run.sh` path above if you want CI without that stack.
 
 ## Frontend only
 

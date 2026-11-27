@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Run CI jobs outside GitHub Actions. Same entry points for local shells,
-# Forgejo, Gitea, and thin workflow wrappers.
+# Run CI jobs outside GitHub Actions or inside thin workflow wrappers.
 #
 # Usage:
 #   bash build/scripts/ci/run.sh <job>

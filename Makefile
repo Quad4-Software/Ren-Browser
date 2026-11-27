@@ -4,7 +4,7 @@
 SHELL := /bin/bash
 .PHONY: help check format test test-go test-regression frontend-check frontend-test frontend-fmt \
 	build build-frontend build-server screenshots e2e coverage-go server-smoke dev clean vendor mod-tidy gosec sbom \
-	tree-manifest tree-rsm-sign tree-rsm-verify hooks-install ci ci-pr ci-full
+	tree-manifest tree-rsm-sign tree-rsm-verify ci ci-pr ci-full
 
 export GOFLAGS ?= -mod=vendor
 export PNPM ?= pnpm
@@ -20,7 +20,7 @@ help:
 	@printf '%s\n' \
 		"Targets:" \
 		"  make check            Run Go and frontend quality gates" \
-		"  make ci-pr            Portable PR CI (Forgejo, Gitea, local)" \
+		"  make ci-pr            Portable PR CI (local)" \
 		"  make ci-full          Extended portable CI" \
 		"  make format           Format Go and frontend sources" \
 		"  make test             Run Go and frontend unit tests" \
@@ -35,8 +35,7 @@ help:
 		"  make vendor           Refresh vendor/ from go.mod" \
 		"  make mod-tidy         go mod tidy + vendor refresh" \
 		"  make tree-rsm-verify  Verify renbrowser.rsm signature and hashes" \
-		"  make tree-rsm-sign    Sign tree inventory (requires RNS_ID_PATH)" \
-		"  make hooks-install    Enable .githooks pre-commit (resigns RSM)"
+		"  make tree-rsm-sign    Sign tree inventory (requires RNS_ID_PATH)"
 
 check: fmt-go test-go gosec frontend-check
 
@@ -140,6 +139,3 @@ tree-rsm-verify:
 
 tree-rsm-sign:
 	sh build/scripts/sign-tree-rsm.sh
-
-hooks-install:
-	sh build/scripts/install-git-hooks.sh

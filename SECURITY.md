@@ -48,13 +48,6 @@ export RNS_ID_PATH="$HOME/.rngit/client_identity"
 make tree-rsm-sign
 ```
 
-Enable the tracked pre-commit hook so commits that change inventory paths resign `renbrowser.rsm` automatically when that identity is available:
-
-```bash
-make hooks-install
-```
-
-Skip one commit with `SKIP_TREE_RSM_HOOK=1`.
 
 ### Practical tips
 

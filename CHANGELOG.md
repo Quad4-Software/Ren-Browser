@@ -14,10 +14,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Move CI to Node.js 26.13.1, pnpm 12.23.0, and Task 3.54.0, with current pinned GitHub Actions
 - Refresh frontend dependencies, including Svelte 5.58.0, Vite 8.3.8, Vitest 5.1.1, Playwright 1.65.1, and PDF.js 6.5.438
 
+### Fixed
+
+- Serialize WASM access to shared plugin memory and keep network fetch budgets scoped to each call
+- Honor context cancellation in plugin HTTP fetches and use the intended render timeout for export hooks
+- Close probe response bodies, wrap storage errors with their causes, and enforce configured tab field limits
+- Close Reticulum transport SQLite handles even when a stack is stopped before startup, fixing Windows test cleanup
+- Skip shared-instance interop tests when no local shared Reticulum instance is available
+- Pin the linuxdeploy GTK plugin and skip absent GTK4 and gdk-pixbuf loader directories on glycin-based systems
+- Let GitHub CI fetch Reticulum-Go from the GitHub mirror when the vendored copy is absent
+- Key benchmark baselines by runner CPU model and normalize comparisons with a CPU calibration benchmark
+
+### Removed
+
+- Drop the duplicate Forgejo and Gitea workflow copies, the tracked pre-commit hook, Dependabot configuration, and the stale TODO file
+
 ### Security
 
 - Tighten pnpm supply-chain defaults with a seven-day minimum release age, strict dependency builds, no-downgrade trust policy, and blocked exotic subdependencies
 - Verify tree inventory signatures with the current rngit peer identity
+- Add Go and frontend coverage gates, with the Go floor tracking clean CI coverage at 50 percent
 
 ## [0.5.1] [released] - 2026-10-29
 

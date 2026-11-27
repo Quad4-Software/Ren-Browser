@@ -239,7 +239,7 @@ tasks:
       - bash build/scripts/ci/setup.sh
 
   ci:pr:
-    desc: PR quality gate (local, Forgejo, Gitea, or workflow wrapper)
+    desc: PR quality gate
     cmds:
       - bash build/scripts/ci/run.sh pr
 
@@ -491,10 +491,6 @@ tasks:
     cmds:
       - sh build/scripts/verify-tree-rsm.sh
 
-  hooks:install:
-    desc: Enable tracked .githooks (pre-commit resigns renbrowser.rsm)
-    cmds:
-      - sh build/scripts/install-git-hooks.sh
 
   tree-workspace-clean:
     desc: Recheck inventory and fail on unexpected workspace changes
