@@ -260,9 +260,6 @@ func (s *Stack) Start() error {
 func (s *Stack) Stop() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if !s.started {
-		return nil
-	}
 	if s.browser != nil {
 		s.browser.Close()
 	}
