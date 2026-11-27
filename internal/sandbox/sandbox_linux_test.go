@@ -212,7 +212,7 @@ func TestSeccompHelper(t *testing.T) {
 	name := tmp.Name()
 	_, _ = tmp.WriteString("ok")
 	_ = tmp.Close()
-	defer os.Remove(name)
+	defer func() { _ = os.Remove(name) }()
 
 	data, err := os.ReadFile(name)
 	if err != nil || string(data) != "ok" {

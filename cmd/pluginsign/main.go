@@ -109,7 +109,7 @@ func signZip(identity, zipPath string) error {
 	if err != nil {
 		return err
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 	payload, err := plugins.CanonicalZipPayload(reader.File)
 	if err != nil {
 		return err
@@ -163,7 +163,7 @@ func signPayload(identity string, payload []byte) ([]byte, error) {
 		return nil, err
 	}
 	tmpPath := tmp.Name()
-	defer os.Remove(tmpPath)
+	defer func() { _ = os.Remove(tmpPath) }()
 	if _, err := tmp.Write(payload); err != nil {
 		_ = tmp.Close() // #nosec G104 -- cleanup after write failure
 		return nil, err
@@ -186,7 +186,7 @@ func signPayload(identity string, payload []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer os.Remove(rsgPath)
+	defer func() { _ = os.Remove(rsgPath) }()
 	return rsg, nil
 }
 

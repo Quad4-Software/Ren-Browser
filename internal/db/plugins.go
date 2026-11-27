@@ -42,7 +42,7 @@ func (d *DB) ListPlugins() ([]PluginRow, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []PluginRow
 	for rows.Next() {
 		var row PluginRow

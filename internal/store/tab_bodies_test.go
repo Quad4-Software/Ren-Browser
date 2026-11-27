@@ -18,7 +18,7 @@ func TestSaveTabsStoresBodiesOnDiskNotSQLite(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	large := strings.Repeat("x", 300*1024)
 	saved := st.SaveTabs([]store.TabSnapshot{
@@ -59,7 +59,7 @@ func TestSaveTabsKeepsExistingBodyWhenPayloadOmitsIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	st.SaveTabs([]store.TabSnapshot{{
 		ID: "tab-1", Title: "kept", URL: "nomad://abc/page/index.mu", Active: true, HTML: "<p>full</p>", LastRaw: "full",
@@ -94,7 +94,7 @@ func TestOpenMigratesLegacySQLiteBodiesToFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 	loaded := st.Tabs()
 	if len(loaded) != 1 || loaded[0].HTML != html || loaded[0].LastRaw != "src" {
 		t.Fatalf("migrated tabs=%#v", loaded)
@@ -118,7 +118,7 @@ func TestTabBodyFileStorageBoundsHeap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	body := strings.Repeat("m", pageSize)
 	snapshots := make([]store.TabSnapshot, tabs)
@@ -166,7 +166,7 @@ func TestEditorDraftReadsFileBody(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 	st.SaveTabs([]store.TabSnapshot{{
 		ID: "ed", Title: "Editor", URL: "editor:", Active: false, LastRaw: ">>hello",
 	}})
@@ -181,7 +181,7 @@ func TestResetClearsTabBodyFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 	st.SaveTabs([]store.TabSnapshot{{
 		ID: "tab-1", Title: "A", URL: "about:", Active: true, HTML: "<p>x</p>",
 	}})

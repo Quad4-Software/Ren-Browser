@@ -7,14 +7,6 @@ import (
 	"strings"
 )
 
-func userHome() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return ""
-	}
-	return home
-}
-
 func scanFontDirs(dirs []string) []string {
 	seen := map[string]bool{}
 	var out []string

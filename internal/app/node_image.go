@@ -46,9 +46,7 @@ func validateNodeImagePath(path string) error {
 		p = p[:i]
 	}
 	p = strings.TrimSpace(p)
-	if strings.HasPrefix(p, "/") {
-		p = p[1:]
-	}
+	p = strings.TrimPrefix(p, "/")
 	if strings.HasPrefix(p, "media/") {
 		if !nodeImageMediaRe.MatchString(p) {
 			return fmt.Errorf("unsupported image type for %q", path)

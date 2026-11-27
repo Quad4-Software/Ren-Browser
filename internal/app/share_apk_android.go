@@ -135,7 +135,7 @@ func (s *BrowserService) StartApkShareServer() ApkShareSession {
 			http.Error(w, "apk unavailable", http.StatusInternalServerError)
 			return
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		w.Header().Set("Content-Type", "application/vnd.android.package-archive")
 		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
 		_, _ = io.Copy(w, f)

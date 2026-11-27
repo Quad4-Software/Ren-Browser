@@ -15,7 +15,7 @@ func TestAuthCredentialRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	enabled, err := database.AuthEnabled()
 	if err != nil || enabled {
@@ -51,7 +51,7 @@ func TestAuthBruteState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	state := db.AuthBruteState{ClientHash: "deadbeef", FailCount: 2, BannedUntil: 42}
 	if err := database.UpsertAuthBruteState(state); err != nil {

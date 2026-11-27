@@ -12,7 +12,7 @@ func TestSQLiteBusyTimeoutConfigured(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	var timeout int
 	if err := database.sql.QueryRow(`PRAGMA busy_timeout`).Scan(&timeout); err != nil {
@@ -29,7 +29,7 @@ func TestSQLiteForeignKeysEnabled(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	var enabled int
 	if err := database.sql.QueryRow(`PRAGMA foreign_keys`).Scan(&enabled); err != nil {

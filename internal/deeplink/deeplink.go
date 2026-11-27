@@ -114,9 +114,7 @@ func Unwrap(raw string) (string, bool) {
 func unwrapRenBrowser(raw string) (string, bool) {
 	trimmed := strings.TrimSpace(raw)
 	rest := trimmed[len("renbrowser"):]
-	if strings.HasPrefix(rest, ":") {
-		rest = rest[1:]
-	}
+	rest = strings.TrimPrefix(rest, ":")
 	rest = strings.TrimSpace(rest)
 	if rest == "" {
 		return "", false

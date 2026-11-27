@@ -12,7 +12,7 @@ func TestJournalModeIsWAL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	mode, err := database.PragmaString("journal_mode")
 	if err != nil {
@@ -28,7 +28,7 @@ func TestDurabilityPragmasConfigured(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	timeout, err := database.PragmaInt("busy_timeout")
 	if err != nil {
@@ -84,7 +84,7 @@ func TestSaveTabsSurvivesReopen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	tabs, err := database.Tabs()
 	if err != nil {
@@ -101,7 +101,7 @@ func TestSaveTabsRollbackPreservesExisting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	seed := []TabRow{{ID: "keep", Title: "Keep", URL: "deadbeef:/page/keep.mu"}}
 	if err := database.SaveTabs(seed); err != nil {
@@ -142,7 +142,7 @@ func TestSaveTabsUpsertAndPrune(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	if err := database.SaveTabs([]TabRow{
 		{ID: "a", Title: "A", URL: "deadbeef:/page/a.mu"},
@@ -217,7 +217,7 @@ func TestQuickCheckDetectsBitFlip(t *testing.T) {
 		}
 		t.Fatalf("open err=%v", err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	health, err := database.QuickCheck()
 	if err != nil {
@@ -258,7 +258,7 @@ func TestBackupAndRestore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	tabs, err := database.Tabs()
 	if err != nil {
@@ -275,7 +275,7 @@ func TestDeletePluginTransactional(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	if err := database.UpsertPlugin("demo", true, `{}`); err != nil {
 		t.Fatal(err)

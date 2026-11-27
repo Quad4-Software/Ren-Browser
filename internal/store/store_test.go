@@ -15,7 +15,7 @@ func TestStoreFavoritesAndHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	url := "deadbeef:/page/index.mu"
 	favs := s.AddFavorite(url)
@@ -35,7 +35,7 @@ func TestStoreFavoritesAndHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s2.Close()
+	defer func() { _ = s2.Close() }()
 	if len(s2.Favorites()) != 1 {
 		t.Fatal("favorites not persisted")
 	}
@@ -58,7 +58,7 @@ func TestStoreNodes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	node := nomadnet.Node{
 		Hash:     "abb3ebcd03cb2388a838e70c001291f9",
@@ -81,7 +81,7 @@ func TestStorePinnedTabs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s.Close()
+	defer func() { _ = s.Close() }()
 
 	tabs := []store.TabSnapshot{
 		{ID: "a", Title: "A", URL: "deadbeef:/page/a.mu", Active: true, Pinned: true},
@@ -93,7 +93,7 @@ func TestStorePinnedTabs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer s2.Close()
+	defer func() { _ = s2.Close() }()
 
 	loaded := s2.Tabs()
 	if len(loaded) != 2 {

@@ -336,7 +336,7 @@ func (m *Manager) InstallFromZip(zipPath string, granted []string) (InstalledPlu
 	if err != nil {
 		return InstalledPlugin{}, err
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 	if len(reader.File) > maxZipFiles {
 		return InstalledPlugin{}, fmt.Errorf("zip has too many files")
 	}
@@ -346,7 +346,7 @@ func (m *Manager) InstallFromZip(zipPath string, granted []string) (InstalledPlu
 	if err != nil {
 		return InstalledPlugin{}, err
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	for _, f := range reader.File {
 		if f.UncompressedSize64 > uint64(maxZipUncompressed) {
 			return InstalledPlugin{}, fmt.Errorf("zip uncompressed size too large")

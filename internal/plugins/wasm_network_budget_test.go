@@ -94,20 +94,6 @@ func TestPluginHTTPFetchBudget(t *testing.T) {
 	}
 }
 
-type nilStore struct{}
-
-func (nilStore) UpsertPlugin(string, bool, string) error { return nil }
-func (nilStore) GetPlugin(string) (db.PluginRow, error)  { return db.PluginRow{}, os.ErrNotExist }
-func (nilStore) ListPlugins() ([]db.PluginRow, error)    { return nil, nil }
-func (nilStore) SetPluginEnabled(string, bool) error     { return nil }
-func (nilStore) DeletePlugin(string) error               { return nil }
-func (nilStore) GetPluginSetting(string, string) (string, error) {
-	return "", os.ErrNotExist
-}
-func (nilStore) SetPluginSetting(string, string, string) error { return nil }
-func (nilStore) GetSetting(string) (string, error)             { return "", os.ErrNotExist }
-func (nilStore) SetSetting(string, string) error               { return nil }
-
 func openTestDB(path string) (*db.DB, error) {
 	return db.Open(path)
 }

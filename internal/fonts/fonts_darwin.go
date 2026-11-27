@@ -4,6 +4,16 @@
 
 package fonts
 
+import "os"
+
+func userHome() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+	return home
+}
+
 func detectPlatformFonts() []string {
 	home := userHome()
 	dirs := []string{

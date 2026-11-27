@@ -19,7 +19,7 @@ func TestStoreHealthReportsCorruptDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	health := st.Health()
 	if health.OK {
@@ -53,7 +53,7 @@ func TestStoreRecoversFromBackupOnCorruptOpen(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer st2.Close()
+	defer func() { _ = st2.Close() }()
 
 	health := st2.Health()
 	if !health.OK {
@@ -71,7 +71,7 @@ func TestStoreResetCreatesBackup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 	st.SaveTabs([]store.TabSnapshot{{ID: "tab", Title: "Before Reset", URL: "deadbeef:/page/before.mu"}})
 	if err := st.Reset(); err != nil {
 		t.Fatal(err)
@@ -105,7 +105,7 @@ func TestStoreSaveTabsSurvivesUncleanClose(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer st2.Close()
+	defer func() { _ = st2.Close() }()
 
 	tabs := st2.Tabs()
 	if len(tabs) != 1 || tabs[0].Title != "A" {

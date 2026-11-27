@@ -12,7 +12,7 @@ func (d *DB) Favorites() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []string
 	for rows.Next() {
@@ -69,7 +69,7 @@ func (d *DB) Tabs() ([]TabRow, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []TabRow
 	for rows.Next() {
@@ -118,7 +118,7 @@ func (d *DB) SaveTabs(tabs []TabRow) error {
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	keepIDs := make([]any, len(tabs))
 	for i, t := range tabs {

@@ -13,7 +13,7 @@ func TestSaveTabsTruncatesOversizedBodies(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	t.Setenv("REN_BROWSER_MAX_PAGE_BYTES", "1024")
 	large := strings.Repeat("x", 4096)

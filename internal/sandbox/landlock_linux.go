@@ -76,7 +76,7 @@ func applyLandlock(opts Options) error {
 		return fmt.Errorf("landlock_create_ruleset: %w", errno)
 	}
 	rulesetFD := int(fd) // #nosec G115 -- syscall fd is always a small non-negative integer on Linux
-	defer unix.Close(rulesetFD)
+	defer func() { _ = unix.Close(rulesetFD) }()
 
 	for _, root := range collectReadRoots(opts) {
 		_ = landlockAddRule(rulesetFD, root, landlockReadAccess(handledFS), handledFS)
@@ -306,7 +306,7 @@ func landlockAddRule(rulesetFD int, path string, access, handledFS uint64) error
 		}
 		return err
 	}
-	defer unix.Close(fd)
+	defer func() { _ = unix.Close(fd) }()
 
 	info, err := os.Stat(resolved)
 	if err != nil {

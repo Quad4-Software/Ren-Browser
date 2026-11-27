@@ -15,7 +15,7 @@ func TestAuthSessionExpiryPrune(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	if err := database.CreateAuthSession("expired", time.Now().Add(-time.Hour).Unix()); err != nil {
 		t.Fatal(err)
@@ -40,7 +40,7 @@ func TestAuthClearResetsState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	if err := database.SetAuthCredential("hash"); err != nil {
 		t.Fatal(err)

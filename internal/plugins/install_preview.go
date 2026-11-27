@@ -46,7 +46,7 @@ func PreviewInstallFromZip(zipPath string) (InstallPreview, error) {
 	if err != nil {
 		return InstallPreview{}, err
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 	if err := ValidatePermissions(manifest.Permissions); err != nil {
 		return InstallPreview{}, err
 	}
@@ -94,7 +94,7 @@ func extractZipManifest(zipPath string) (Manifest, string, error) {
 	if err != nil {
 		return Manifest{}, "", err
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 	if len(reader.File) > maxZipFiles {
 		return Manifest{}, "", fmt.Errorf("zip has too many files")
 	}

@@ -67,7 +67,7 @@ func TestReliabilityPipelineStoreTruncation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	large := strings.Repeat("z", 300*1024)
 	saved := st.SaveTabs([]store.TabSnapshot{{

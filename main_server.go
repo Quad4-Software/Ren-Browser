@@ -44,7 +44,7 @@ func main() {
 		serverlog.Error("server bootstrap failed", err)
 		os.Exit(1)
 	}
-	defer appBundle.Loader.Close()
+	defer func() { _ = appBundle.Loader.Close() }()
 
 	logServerStartup(appBundle.Service, cfg)
 

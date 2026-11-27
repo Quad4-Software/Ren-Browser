@@ -40,7 +40,7 @@ func main() {
 	if err != nil {
 		handleFatalError(err)
 	}
-	defer appBundle.Loader.Close()
+	defer func() { _ = appBundle.Loader.Close() }()
 
 	if cfg.SelfCheck {
 		log.Println("Running self-check diagnostics...")

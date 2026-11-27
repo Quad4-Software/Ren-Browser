@@ -99,7 +99,7 @@ func (l *Loader) ReadFile(name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	max := int64(limits.MaxAssetBytes()) + 1
 	data, err := io.ReadAll(io.LimitReader(f, max))
 	if err != nil {

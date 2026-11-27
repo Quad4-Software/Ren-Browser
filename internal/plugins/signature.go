@@ -59,7 +59,7 @@ func VerifyZipSignature(zipPath string) SignatureInfo {
 	if err != nil {
 		return SignatureInfo{Error: err.Error()}
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	var rsgData []byte
 	for _, f := range reader.File {
@@ -167,10 +167,10 @@ func canonicalDirPayload(dir string) ([]byte, error) {
 			return nil, readErr
 		}
 		header := &zip.FileHeader{
-			Name:   name,
-			Method: zip.Deflate,
+			Name:     name,
+			Method:   zip.Deflate,
+			Modified: fixedZipModTime,
 		}
-		header.SetModTime(fixedZipModTime)
 		writer, createErr := w.CreateHeader(header)
 		if createErr != nil {
 			_ = w.Close() // #nosec G104 -- cleanup after zip header failure
@@ -230,10 +230,10 @@ func canonicalZipPayload(files []*zip.File) ([]byte, error) {
 			return nil, err
 		}
 		header := &zip.FileHeader{
-			Name:   item.name,
-			Method: zip.Deflate,
+			Name:     item.name,
+			Method:   zip.Deflate,
+			Modified: fixedZipModTime,
 		}
-		header.SetModTime(fixedZipModTime)
 		writer, err := w.CreateHeader(header)
 		if err != nil {
 			_ = w.Close() // #nosec G104 -- cleanup after zip header failure
@@ -279,7 +279,7 @@ func EmbedSignatureInZip(zipPath string, rsgData []byte) error {
 	if err != nil {
 		return err
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	tmpPath := zipPath + ".signed"
 	out, err := os.Create(tmpPath) // #nosec G304 -- temp sibling of validated zip path
@@ -306,10 +306,10 @@ func EmbedSignatureInZip(zipPath string, rsgData []byte) error {
 		wrote[clean] = struct{}{}
 	}
 	header := &zip.FileHeader{
-		Name:   SignatureFileName,
-		Method: zip.Deflate,
+		Name:     SignatureFileName,
+		Method:   zip.Deflate,
+		Modified: fixedZipModTime,
 	}
-	header.SetModTime(fixedZipModTime)
 	entry, err := writer.CreateHeader(header)
 	if err != nil {
 		_ = writer.Close()     // #nosec G104 -- cleanup after zip header failure
@@ -340,16 +340,16 @@ func copyZipEntry(writer *zip.Writer, f *zip.File, name string) error {
 	if err != nil {
 		return err
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 	data, err := io.ReadAll(rc)
 	if err != nil {
 		return err
 	}
 	header := &zip.FileHeader{
-		Name:   name,
-		Method: zip.Deflate,
+		Name:     name,
+		Method:   zip.Deflate,
+		Modified: fixedZipModTime,
 	}
-	header.SetModTime(fixedZipModTime)
 	entry, err := writer.CreateHeader(header)
 	if err != nil {
 		return err

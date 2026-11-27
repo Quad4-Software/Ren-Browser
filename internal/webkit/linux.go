@@ -87,10 +87,6 @@ func runningInAppImage() bool {
 	return runtimeenv.InAppImage()
 }
 
-func runningInFlatpak() bool {
-	return runtimeenv.InFlatpak()
-}
-
 func init() {
 	ApplyLinuxDefaults()
 }

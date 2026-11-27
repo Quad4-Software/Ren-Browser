@@ -536,19 +536,6 @@ func writeTempDiskFileImpl(dir, pattern string, data []byte, perm os.FileMode) (
 	return tmpName, nil
 }
 
-func atomicWriteFile(path string, data []byte, perm os.FileMode) error {
-	dir := filepath.Dir(path)
-	tmp, err := writeTempDiskFile(dir, filepath.Base(path)+".*.tmp", data, perm)
-	if err != nil {
-		return err
-	}
-	if err := renameDiskFile(tmp, path); err != nil {
-		_ = os.Remove(tmp)
-		return err
-	}
-	return nil
-}
-
 func (c *PageCache) loadDiskIndex() error {
 	objectsDir := filepath.Join(c.dir, "objects")
 	entries, err := os.ReadDir(objectsDir)

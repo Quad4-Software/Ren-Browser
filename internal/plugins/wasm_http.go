@@ -65,7 +65,7 @@ func DoPluginHTTP(req WasmHTTPRequest) (WasmHTTPResponse, error) {
 	if err != nil {
 		return WasmHTTPResponse{}, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	limited := io.LimitReader(resp.Body, pluginFetchMaxBody+1)
 	data, err := io.ReadAll(limited)

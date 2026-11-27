@@ -240,7 +240,7 @@ func (d *DB) ListNodes() ([]NodeRow, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []NodeRow
 	for rows.Next() {
@@ -309,7 +309,7 @@ func (d *DB) ListHistory(limit int) ([]HistoryRow, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []HistoryRow
 	for rows.Next() {
@@ -333,7 +333,7 @@ func (d *DB) ListRecentURLs(limit int) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var out []string
 	for rows.Next() {

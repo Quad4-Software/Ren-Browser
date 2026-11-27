@@ -21,7 +21,7 @@ func TestLoaderDir(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New dir loader: %v", err)
 	}
-	defer loader.Close()
+	defer func() { _ = loader.Close() }()
 
 	if loader.Kind() != assets.SourceDir {
 		t.Fatalf("kind = %q; want dir", loader.Kind())
@@ -63,7 +63,7 @@ func TestLoaderZip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New zip loader: %v", err)
 	}
-	defer loader.Close()
+	defer func() { _ = loader.Close() }()
 
 	if loader.Kind() != assets.SourceZip {
 		t.Fatalf("kind = %q; want zip", loader.Kind())
@@ -90,7 +90,7 @@ func TestLoaderRejectsOversizedFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New dir loader: %v", err)
 	}
-	defer loader.Close()
+	defer func() { _ = loader.Close() }()
 
 	_, err = loader.ReadFile("big.bin")
 	if err == nil {

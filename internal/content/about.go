@@ -51,11 +51,11 @@ func RenderAbout(info AboutInfo) string {
 
 	var body strings.Builder
 	for _, row := range rows {
-		body.WriteString(fmt.Sprintf(
+		fmt.Fprintf(&body,
 			`<tr><th>%s</th><td>%s</td></tr>`,
 			html.EscapeString(row.label),
 			html.EscapeString(row.value),
-		))
+		)
 	}
 
 	return `<article class="about-page">` +

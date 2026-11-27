@@ -29,7 +29,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer appBundle.Loader.Close()
+	defer func() { _ = appBundle.Loader.Close() }()
 
 	prefs := appBundle.Service.GetBrowserPrefs()
 	frameless := !prefs.NativeTitlebar

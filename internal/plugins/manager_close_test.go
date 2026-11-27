@@ -14,7 +14,7 @@ func TestManagerCloseIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	manager := plugins.NewManager(database)
 	if err := manager.Close(); err != nil {

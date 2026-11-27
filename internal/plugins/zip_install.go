@@ -38,12 +38,12 @@ func extractZipFile(f *zip.File, dest string) error {
 	if err != nil {
 		return err
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 	out, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, f.Mode()) // #nosec G304
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 	_, err = io.Copy(out, rc) // #nosec G110 -- zip size limits enforced before extract
 	return err
 }

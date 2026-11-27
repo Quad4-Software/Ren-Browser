@@ -14,7 +14,7 @@ func TestSQLiteWALAndHistory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	mode, err := database.PragmaString("journal_mode")
 	if err != nil {
@@ -52,7 +52,7 @@ func TestStoredNodesAndHistoryAreCapped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer func() { _ = database.Close() }()
 
 	for i := 1; i <= 8; i++ {
 		if err := database.UpsertNode(db.NodeRow{

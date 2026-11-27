@@ -50,7 +50,7 @@ func stripZipCentralDirectory(t *testing.T, body []byte) []byte {
 	t.Helper()
 	searchStart := len(body) - zipEndCentralSize
 	minStart := max(len(body)-65557, 0)
-	var eocdOffset int = -1
+	eocdOffset := -1
 	for i := searchStart; i >= minStart; i-- {
 		if binary.LittleEndian.Uint32(body[i:]) == zipEndCentralSig {
 			eocdOffset = i
