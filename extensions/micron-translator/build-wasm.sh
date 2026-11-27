@@ -14,7 +14,7 @@ if ! command -v tinygo >/dev/null 2>&1; then
   exit 127
 fi
 
-tinygo build -tags wasm -o "$out" -target=wasm-unknown -scheduler=none -opt=2 "${wasm_src}"
+tinygo build -tags wasm -o "$out" -target=wasm-unknown -scheduler=none -opt=z "${wasm_src}"
 echo "build-wasm: wrote ${out}"
 
 bundle_out="${root}/renbrowser.micron-translator.wasm"
