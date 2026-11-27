@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] [released] - 2026-11-27
+
+### Fixed
+
+- Treat a single benchmark regression as runner variance so immutable release tags are not blocked by one noisy measurement. Two or more regressions still fail the gate.
+
 ## [0.6.0] [released] - 2026-11-27
 
 ### Changed

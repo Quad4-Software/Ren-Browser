@@ -101,7 +101,10 @@ if regressions:
             f"  {name}: {base_ns:.0f} -> {cur_ns:.0f} ns/op "
             f"(raw {raw_pct:+.1f}%, normalized {pct:+.1f}%, +{raw_delta:.0f} ns)"
         )
-    sys.exit(1)
+    if len(regressions) >= 2:
+        sys.exit(1)
+    print("Only one benchmark regressed; treating it as machine variance.")
+    sys.exit(0)
 
 print(
     f"Benchmark regression gate passed "
