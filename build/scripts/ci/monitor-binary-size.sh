@@ -32,7 +32,7 @@ REF_SIZES["renbrowser-server-windows7-amd64.exe"]=27.6
 REF_SIZES["renbrowser-windows-amd64-installer.exe"]=12.0
 REF_SIZES["renbrowser-windows-amd64.exe"]=27.2
 
-# Go 1.27.3 release artifacts are up to 32% above these baselines.
+# Go 1.27.4 release artifacts are up to 32% above these baselines.
 # Keep a 35% ceiling so that expected toolchain growth passes while large regressions fail.
 THRESHOLD_RATIO=1.35
 

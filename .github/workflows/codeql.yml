@@ -1,7 +1,7 @@
 # Pinned third-party actions (bump tag and SHA together when upgrading):
 #   actions/checkout@v7.0.1                    3d3c42e5aac5ba805825da76410c181273ba90b1
-#   github/codeql-action/init@v4.38.0          b96794f015dfd88f77b49b1c93e0fa7110f94c63
-#   github/codeql-action/analyze@v4.38.0       b96794f015dfd88f77b49b1c93e0fa7110f94c63
+#   github/codeql-action/init@v4.39.5          915412ff23e8b7659517e607487dbeae018f2934
+#   github/codeql-action/analyze@v4.39.5       915412ff23e8b7659517e607487dbeae018f2934
 
 name: CodeQL Advanced
 
@@ -47,7 +47,7 @@ jobs:
             build-mode: none
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: audit
       - name: Checkout repository
@@ -63,13 +63,13 @@ jobs:
           install-linux-deps: "true"
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63
+        uses: github/codeql-action/init@915412ff23e8b7659517e607487dbeae018f2934
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63
+        uses: github/codeql-action/analyze@915412ff23e8b7659517e607487dbeae018f2934
         with:
           category: "/language:${{matrix.language}}"

@@ -17,7 +17,7 @@ install_tinygo() {
     echo "build-extension-wasm: TinyGo not installed and auto-install is Linux amd64 only" >&2
     return 1
   fi
-  local ver="${TINYGO_VERSION:-0.41.0}"
+  local ver="${TINYGO_VERSION:-0.44.0}"
   local deb="tinygo_${ver}_amd64.deb"
   local url="https://github.com/tinygo-org/tinygo/releases/download/v${ver}/${deb}"
   echo "build-extension-wasm: installing TinyGo ${ver}..."

@@ -1,6 +1,6 @@
 # Pinned actions (bump tag and SHA together when upgrading):
 #   actions/checkout@v7.0.1            3d3c42e5aac5ba805825da76410c181273ba90b1
-#   actions/upload-artifact@v7.0.1     043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+#   actions/upload-artifact@v7.0.2     cf430e030ddbb5b0abf93d22962f4752f3646cd9
 #
 name: Security
 
@@ -16,7 +16,7 @@ permissions:
   actions: read
 
 env:
-  CI_TRIVY_VERSION: "0.74.0"
+  CI_TRIVY_VERSION: "0.76.2"
   GOFLAGS: -mod=vendor
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Harden runner
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: audit
       - name: Checkout Ren Browser
@@ -51,7 +51,7 @@ jobs:
         run: task sbom
 
       - name: Upload SBOM artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: sbom-${{ github.ref_name }}
           path: sbom/
