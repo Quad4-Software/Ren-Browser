@@ -115,14 +115,24 @@ jobs:
           install-wails: "false"
           install-linux-deps: "true"
 
+      - name: Benchmark machine key
+        id: bench-machine
+        shell: bash
+        run: |
+          model="$(awk -F: '/^model name/ { gsub(/^[ \t]+/, "", $2); print $2; exit }' /proc/cpuinfo)"
+          if [ -z "$model" ]; then
+            model="unknown"
+          fi
+          digest="$(printf '%s' "$model" | sha256sum | awk '{ print substr($1, 1, 16) }')"
+          echo "key=${digest}" >> "$GITHUB_OUTPUT"
+          echo "benchmark cpu: ${model} (${digest})"
+
       - name: Restore benchmark baseline
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: bench/baseline
-          # v7: reset for the Go 1.27.4 toolchain and dependency baseline update.
-          key: go-bench-v7-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            go-bench-v7-${{ runner.os }}-
+          # v8: fixed baselines per CPU model. Bump after intentional performance shifts.
+          key: go-bench-v8-${{ runner.os }}-${{ steps.bench-machine.outputs.key }}
 
       - name: Benchmark job
         env:

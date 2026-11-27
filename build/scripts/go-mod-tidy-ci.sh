@@ -34,8 +34,9 @@ if [[ ! -f "${dist}/index.html" ]]; then
   created_stub=1
 fi
 
+bash "${root}/build/scripts/fetch-reticulum-go.sh"
 if [[ ! -f third_party/reticulum-go/go.mod || ! -f third_party/reticulum-go/pkg/interfaces/interface.go ]]; then
-  echo "go-mod-tidy-ci: vendored Reticulum-Go copy is missing or incomplete" >&2
+  echo "go-mod-tidy-ci: Reticulum-Go copy is missing or incomplete" >&2
   exit 1
 fi
 GOFLAGS=-mod=mod go mod tidy -e

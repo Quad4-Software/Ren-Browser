@@ -57,9 +57,21 @@ if not base or not cur:
     print("Benchmark parse produced no entries; skipping gate.")
     sys.exit(0)
 
+calibration = "BenchmarkCPUCalibration"
+base_scale = median_ns(base[calibration]) if calibration in base else 0.0
+cur_scale = median_ns(cur[calibration]) if calibration in cur else 0.0
+normalized = base_scale > 0 and cur_scale > 0
+if normalized:
+    print(
+        "Using CPU calibration normalization "
+        f"({base_scale:.0f} -> {cur_scale:.0f} ns/op)."
+    )
+else:
+    print("No CPU calibration pair found; using unnormalized wall time.")
+
 regressions = []
 for name, base_samples in base.items():
-    if name not in cur or not base_samples:
+    if name == calibration or name not in cur or not base_samples:
         continue
     cur_samples = cur[name]
     if not cur_samples:
@@ -68,15 +80,27 @@ for name, base_samples in base.items():
     cur_ns = median_ns(cur_samples)
     if base_ns <= 0:
         continue
-    delta = cur_ns - base_ns
-    pct = (delta / base_ns) * 100.0
-    if pct > threshold and delta > min_abs_ns:
-        regressions.append((name, base_ns, cur_ns, pct, delta))
+    raw_delta = cur_ns - base_ns
+    raw_pct = (raw_delta / base_ns) * 100.0
+    if normalized:
+        compare_base = base_ns / base_scale
+        compare_cur = cur_ns / cur_scale
+    else:
+        compare_base = base_ns
+        compare_cur = cur_ns
+    if compare_base <= 0:
+        continue
+    pct = ((compare_cur - compare_base) / compare_base) * 100.0
+    if pct > threshold and raw_delta > min_abs_ns:
+        regressions.append((name, base_ns, cur_ns, raw_pct, pct, raw_delta))
 
 if regressions:
     print(f"Benchmark regressions over {threshold:.0f}% and {min_abs_ns:.0f} ns (median):")
-    for name, base_ns, cur_ns, pct, delta in sorted(regressions, key=lambda x: -x[3]):
-        print(f"  {name}: {base_ns:.0f} -> {cur_ns:.0f} ns/op ({pct:+.1f}%, +{delta:.0f} ns)")
+    for name, base_ns, cur_ns, raw_pct, pct, raw_delta in sorted(regressions, key=lambda x: -x[4]):
+        print(
+            f"  {name}: {base_ns:.0f} -> {cur_ns:.0f} ns/op "
+            f"(raw {raw_pct:+.1f}%, normalized {pct:+.1f}%, +{raw_delta:.0f} ns)"
+        )
     sys.exit(1)
 
 print(

@@ -6,7 +6,13 @@ vendor_dir="${root}/third_party/reticulum-go"
 mod_go="${vendor_dir}/go.mod"
 iface_go="${vendor_dir}/pkg/interfaces/interface.go"
 version_file="${root}/build/scripts/reticulum-go-version"
-repo="${RETICULUM_GO_REPO:-https://git.quad4.io/reticulum/Reticulum-Go.git}"
+if [[ -n "${RETICULUM_GO_REPO:-}" ]]; then
+  repo="${RETICULUM_GO_REPO}"
+elif [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+  repo="https://github.com/Quad4-Software/Reticulum-Go.git"
+else
+  repo="https://git.quad4.io/reticulum/Reticulum-Go.git"
+fi
 
 if [[ ! -f "${version_file}" ]]; then
   echo "fetch-reticulum-go: missing ${version_file}" >&2

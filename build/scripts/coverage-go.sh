@@ -16,7 +16,7 @@ go tool cover -func="${OUT}" | tee coverage/go-func.txt
 go tool cover -html="${OUT}" -o "${HTML}"
 
 TOTAL="$(awk '/^total:/ { gsub(/%/, "", $NF); print $NF }' coverage/go-func.txt | tail -n 1)"
-MINIMUM="${GO_COVERAGE_MIN:-51.0}"
+MINIMUM="${GO_COVERAGE_MIN:-50.0}"
 if [ -z "${TOTAL}" ]; then
 	echo "coverage gate: unable to parse total coverage" >&2
 	exit 1

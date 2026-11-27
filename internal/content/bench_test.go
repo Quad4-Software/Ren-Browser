@@ -27,6 +27,22 @@ func loadNomadNetGuide(b *testing.B) []byte {
 	return data
 }
 
+var benchmarkCPUCalibrationSink uint64
+
+func BenchmarkCPUCalibration(b *testing.B) {
+	x := uint64(0x9e3779b97f4a7c15)
+	b.ReportAllocs()
+	for b.Loop() {
+		for i := uint64(0); i < 64; i++ {
+			x ^= x << 13
+			x ^= x >> 7
+			x ^= x << 17
+			x += i + 0x9e3779b97f4a7c15
+		}
+	}
+	benchmarkCPUCalibrationSink = x
+}
+
 func BenchmarkRenderMicronSmall(b *testing.B) {
 	body := []byte(smallMicron)
 	b.SetBytes(int64(len(body)))
