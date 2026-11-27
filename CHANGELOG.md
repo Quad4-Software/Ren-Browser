@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pin the linuxdeploy GTK plugin and skip absent GTK4 and gdk-pixbuf loader directories on glycin-based systems
 - Let GitHub CI fetch Reticulum-Go from the GitHub mirror when the vendored copy is absent
 - Key benchmark baselines by runner CPU model and normalize comparisons with a CPU calibration benchmark
+- Remove stale disk cache entries when an oversized replacement cannot be written, and avoid a second copy when pages enter RAM
+- Treat configured server base paths as path segments so /renamed no longer matches /ren
 
 ### Removed
 
@@ -34,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tighten pnpm supply-chain defaults with a seven-day minimum release age, strict dependency builds, no-downgrade trust policy, and blocked exotic subdependencies
 - Verify tree inventory signatures with the current rngit peer identity
 - Add Go and frontend coverage gates, with the Go floor tracking clean CI coverage at 50 percent
+- Replace regex HTML cleanup with tokenized allowlist sanitization, covering encoded schemes, foreign markup, resource attributes, deep nesting, and oversized output
+- Scope server brute-force state to client IP, serialize counter updates, cap concurrent password verification, and set Secure on HTTPS session cookies
+- Reject duplicate zip entries, non-regular files, and inflation beyond declared sizes during plugin installation, and reject symlinks in directory installs
+- Harden download filenames for Windows reserved names, control characters, trailing dots, and long names, and use exclusive file creation so existing symlinks are not overwritten
 
 ## [0.5.1] [released] - 2026-10-29
 
