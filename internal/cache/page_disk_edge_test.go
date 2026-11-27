@@ -348,3 +348,26 @@ func TestPageCacheDiskWriteRecoversAfterError(t *testing.T) {
 		t.Fatalf("expected disk hit after recovery, got %#v ok=%v", entry, ok)
 	}
 }
+
+func TestPageCacheOversizedReplacementRemovesStaleDiskEntry(t *testing.T) {
+	dir := t.TempDir()
+	req := nomadnet.RequestData{}
+	c, err := OpenPageCache(dir, PageCacheOptions{
+		RAMMaxEntries:  8,
+		RAMMaxBytes:    4 << 20,
+		RAMKeepBytes:   64,
+		DiskMaxEntries: 32,
+		DiskMaxBytes:   64,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.Put("node", "/page/index.mu", req, []byte("small"), "micron")
+	if c.Stats().DiskEntries != 1 {
+		t.Fatal("expected initial disk entry")
+	}
+	c.Put("node", "/page/index.mu", req, make([]byte, 65), "micron")
+	if c.Stats().DiskEntries != 0 {
+		t.Fatalf("oversized replacement left stale disk entry, entries=%d", c.Stats().DiskEntries)
+	}
+}

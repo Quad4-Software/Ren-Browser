@@ -343,24 +343,18 @@ func (c *PageCache) putRAMLocked(key pageKey, entry Entry) {
 	}
 	if existing, ok := c.entries[key]; ok {
 		c.ramBytes -= len(existing.Body)
-		stored := cloneBody(existing.Body, entry.Body)
 		c.entries[key] = Entry{
-			Body:        stored,
+			Body:        entry.Body,
 			ContentType: entry.ContentType,
 			StoredAt:    entry.StoredAt,
 		}
-		c.ramBytes += len(stored)
+		c.ramBytes += len(entry.Body)
 		c.touchRAMLocked(key)
 		c.evictRAMOverflowLocked()
 		return
 	}
-	stored := cloneBody(nil, entry.Body)
-	c.entries[key] = Entry{
-		Body:        stored,
-		ContentType: entry.ContentType,
-		StoredAt:    entry.StoredAt,
-	}
-	c.ramBytes += len(stored)
+	c.entries[key] = entry
+	c.ramBytes += len(entry.Body)
 	c.order = append(c.order, key)
 	c.evictRAMOverflowLocked()
 }
@@ -378,10 +372,11 @@ func (c *PageCache) touchRAMLocked(key pageKey) {
 }
 
 func (c *PageCache) putDiskLocked(key pageKey, entry Entry) {
+	hash := pageKeyHash(key)
 	if len(entry.Body) > c.diskMaxBytes {
+		c.removeDiskEntryLocked(hash)
 		return
 	}
-	hash := pageKeyHash(key)
 	meta := diskMeta{
 		Node:              key.node,
 		Path:              key.path,
