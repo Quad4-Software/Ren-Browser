@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"path"
 	"strings"
+	"sync"
 	"time"
 
 	"renbrowser/internal/auth"
@@ -21,6 +22,8 @@ import (
 	"renbrowser/internal/constants"
 	"renbrowser/internal/db"
 )
+
+var loginVerifySem = make(chan struct{}, 2)
 
 const (
 	sessionCookieName = constants.ServerAuthSessionCookieName
@@ -31,6 +34,7 @@ const (
 
 type Guard struct {
 	db              *db.DB
+	bruteMu         sync.Mutex
 	enabled         bool
 	trustProxy      bool
 	basePath        string
@@ -200,8 +204,7 @@ func (g *Guard) writeStatus(w http.ResponseWriter, r *http.Request) {
 
 func (g *Guard) handleLogin(w http.ResponseWriter, r *http.Request) {
 	ip := auth.ClientIP(r, g.trustProxy)
-	ua := auth.ClientUserAgent(r)
-	clientHash := auth.ClientHash(g.pepper, ip, ua)
+	clientHash := auth.ClientHash(g.pepper, ip, "")
 
 	if blocked, retryIn := g.isBlocked(clientHash); blocked {
 		writeJSON(w, http.StatusTooManyRequests, loginResponse{
@@ -224,7 +227,12 @@ func (g *Guard) handleLogin(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, loginResponse{OK: false, Error: "auth unavailable"})
 		return
 	}
-	if err := auth.VerifyPassword(cred.PasswordHash, req.Password); err != nil {
+	verifyErr := func() error {
+		loginVerifySem <- struct{}{}
+		defer func() { <-loginVerifySem }()
+		return auth.VerifyPassword(cred.PasswordHash, req.Password)
+	}()
+	if verifyErr != nil {
 		g.recordFailure(clientHash)
 		writeJSON(w, http.StatusUnauthorized, loginResponse{OK: false, Error: "invalid password"})
 		return
@@ -241,7 +249,7 @@ func (g *Guard) handleLogin(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, loginResponse{OK: false, Error: "session error"})
 		return
 	}
-	g.setSessionCookie(w, token, expiresAt)
+	g.setSessionCookie(w, r, token, expiresAt)
 	writeJSON(w, http.StatusOK, loginResponse{OK: true})
 }
 
@@ -256,6 +264,7 @@ func (g *Guard) handleLogout(w http.ResponseWriter, r *http.Request) {
 		Path:     cookiePath(g.basePath),
 		MaxAge:   -1,
 		HttpOnly: true,
+		Secure:   requestSecure(r, g.trustProxy),
 		SameSite: http.SameSiteLaxMode,
 	})
 	writeJSON(w, http.StatusOK, map[string]bool{"ok": true})
@@ -281,6 +290,8 @@ func (g *Guard) isBlocked(clientHash string) (bool, int64) {
 	if !g.bruteEnabled {
 		return false, 0
 	}
+	g.bruteMu.Lock()
+	defer g.bruteMu.Unlock()
 	state, err := g.db.GetAuthBruteState(clientHash)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -299,6 +310,8 @@ func (g *Guard) recordFailure(clientHash string) {
 	if !g.bruteEnabled {
 		return
 	}
+	g.bruteMu.Lock()
+	defer g.bruteMu.Unlock()
 	state, err := g.db.GetAuthBruteState(clientHash)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return
@@ -360,15 +373,23 @@ func cookiePath(basePath string) string {
 	return basePath
 }
 
-func (g *Guard) setSessionCookie(w http.ResponseWriter, token string, expiresAt int64) {
+func (g *Guard) setSessionCookie(w http.ResponseWriter, r *http.Request, token string, expiresAt int64) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
 		Value:    token,
 		Path:     cookiePath(g.basePath),
 		Expires:  time.Unix(expiresAt, 0),
 		HttpOnly: true,
+		Secure:   requestSecure(r, g.trustProxy),
 		SameSite: http.SameSiteLaxMode,
 	})
+}
+
+func requestSecure(r *http.Request, trustProxy bool) bool {
+	if r.TLS != nil || strings.EqualFold(r.URL.Scheme, "https") {
+		return true
+	}
+	return trustProxy && strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
 }
 
 func isPublicPath(route string) bool {

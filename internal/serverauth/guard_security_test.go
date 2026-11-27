@@ -109,6 +109,23 @@ func TestGuardSessionCookieHttpOnly(t *testing.T) {
 	}
 }
 
+func TestGuardSessionCookieSecureOnlyForHTTPS(t *testing.T) {
+	guard, _ := newTestGuard(t, config.Runtime{})
+	handler := guard.Middleware()(okHandler())
+
+	plain := loginRequest(t, handler, "secret")
+	if cookie := sessionCookie(plain); cookie == nil || cookie.Secure {
+		t.Fatal("plain HTTP session cookie should not be Secure")
+	}
+
+	secure := loginRequest(t, handler, "secret", func(r *http.Request) {
+		r.URL.Scheme = "https"
+	})
+	if cookie := sessionCookie(secure); cookie == nil || !cookie.Secure {
+		t.Fatal("HTTPS session cookie must be Secure")
+	}
+}
+
 func TestGuardLoginIssuesUniqueSessions(t *testing.T) {
 	guard, _ := newTestGuard(t, config.Runtime{})
 	handler := guard.Middleware()(okHandler())
@@ -274,7 +291,7 @@ func TestGuardNoBruteForceDisablesBan(t *testing.T) {
 	}
 }
 
-func TestGuardBruteForceIsolatedByUserAgent(t *testing.T) {
+func TestGuardBruteForceSharedAcrossUserAgents(t *testing.T) {
 	cfg := config.Runtime{AuthBruteMax: 2, AuthBruteBanMin: 15}
 	guard, _ := newTestGuard(t, cfg)
 	handler := guard.Middleware()(okHandler())
@@ -299,8 +316,8 @@ func TestGuardBruteForceIsolatedByUserAgent(t *testing.T) {
 		r.Header.Set("User-Agent", "other-agent")
 		r.RemoteAddr = "203.0.113.50:1234"
 	})
-	if rec.Code == http.StatusTooManyRequests {
-		t.Fatal("same IP different UA should not inherit ban")
+	if rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("same IP different UA should inherit ban, status=%d", rec.Code)
 	}
 }
 
