@@ -142,28 +142,8 @@ tasks:
     summary: Download linuxdeploy and the AppImage output plugin for the host architecture
     cmds:
       - mkdir -p build/tools
-      - |
-        set -euo pipefail
-        arch="$(uname -m)"
-        case "${arch}" in
-          x86_64|amd64) suffix=x86_64 ;;
-          aarch64|arm64) suffix=aarch64 ;;
-          *)
-            printf 'Unsupported architecture for AppImage tooling: %s\n' "${arch}" >&2
-            exit 1
-            ;;
-        esac
-        fetch() {
-          url="$1"
-          dest="$2"
-          if [ ! -f "$dest" ]; then
-            curl -fsSL -o "$dest" "$url"
-          fi
-          chmod +x "$dest"
-        }
-        fetch "https://github.com/linuxdeploy/linuxdeploy/releases/download/{{.LINUXDEPLOY_TAG}}/linuxdeploy-${suffix}.AppImage" "build/tools/linuxdeploy-${suffix}.AppImage"
-        fetch "{{.APPIMAGETOOL_URL}}-${suffix}.AppImage" "build/tools/appimagetool-${suffix}.AppImage"
-        fetch "https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-gtk/master/linuxdeploy-plugin-gtk.sh" "build/tools/linuxdeploy-plugin-gtk.sh"
+      - chmod +x build/linux/appimage/fetch-linuxdeploy.sh
+      - LINUXDEPLOY_TAG='{{.LINUXDEPLOY_TAG}}' APPIMAGETOOL_URL='{{.APPIMAGETOOL_URL}}' build/linux/appimage/fetch-linuxdeploy.sh
     preconditions:
       - sh: command -v curl >/dev/null 2>&1
         msg: "curl is required to download linuxdeploy"
