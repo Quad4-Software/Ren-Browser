@@ -4,8 +4,8 @@
 
 ## 要求
 
-- Go 1.27.3+
-- Node.js 22+ 和 pnpm 12+
+- Go 1.27.4+
+- Node.js 26+ 和 pnpm 12+
 - Task（推荐）
 - 用于实时网状网络测试的 Reticulum 配置（可选）
 

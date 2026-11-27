@@ -78,7 +78,7 @@ task run:docker
 ### 要求
 
 - [Go](https://go.dev/) 1.26 或更新版本
-- [Node.js](https://nodejs.org/) 22+ 和 [pnpm](https://pnpm.io/) 11+
+- [Node.js](https://nodejs.org/) 26+ 和 [pnpm](https://pnpm.io/) 12+
 - [Task](https://taskfile.dev/)（推荐）
 - `~/.reticulum-go/` 下的 Reticulum 配置（或设置 `REN_BROWSER_CONFIG`）
 

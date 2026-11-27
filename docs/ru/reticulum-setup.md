@@ -1,6 +1,6 @@
 # Настройка Reticulum
 
-Ren Browser использует [Reticulum](https://reticulum.network/) через стек `github.com/Quad4-Software/Reticulum-Go`. Ниже : что ожидает приложение и как исправить типичные проблемы mesh.
+Ren Browser использует [Reticulum](https://reticulum.network/) через стек `git.quad4.io/reticulum/Reticulum-Go`. Ниже : что ожидает приложение и как исправить типичные проблемы mesh.
 
 ## Расположение конфига по умолчанию
 

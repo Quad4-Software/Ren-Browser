@@ -78,7 +78,7 @@ task run:docker
 ### 要件
 
 - [Go](https://go.dev/) 1.26 以降
-- [Node.js](https://nodejs.org/) 22 以降と [pnpm](https://pnpm.io/) 11 以降
+- [Node.js](https://nodejs.org/) 26 以降と [pnpm](https://pnpm.io/) 12 以降
 - [Task](https://taskfile.dev/)（推奨）
 - `~/.reticulum-go/` の Reticulum 設定（または `REN_BROWSER_CONFIG` を設定）
 

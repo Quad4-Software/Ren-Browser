@@ -1,6 +1,6 @@
 # Reticulum 配置
 
-Ren Browser 通过 `github.com/Quad4-Software/Reticulum-Go` 栈使用 [Reticulum](https://reticulum.network/)。本页说明应用的期望配置以及如何修复常见的网状网络问题。
+Ren Browser 通过 `git.quad4.io/reticulum/Reticulum-Go` 栈使用 [Reticulum](https://reticulum.network/)。本页说明应用的期望配置以及如何修复常见的网状网络问题。
 
 ## 默认配置位置
 

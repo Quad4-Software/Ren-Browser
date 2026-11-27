@@ -84,9 +84,9 @@ For contributors or platforms without a pre-built package.
 
 **You will need:**
 
-- [Go](https://go.dev/) 1.27.3 or newer
+- [Go](https://go.dev/) 1.27.4 or newer
 - WebKitGTK-6.0 (for wails desktop apps)
-- [Node.js](https://nodejs.org/) 22+ and [pnpm](https://pnpm.io/) 11+
+- [Node.js](https://nodejs.org/) 26+ and [pnpm](https://pnpm.io/) 12+
 - [Task](https://taskfile.dev/) (optional, recommended)
 - Reticulum config at `~/.reticulum-go/` (or set `REN_BROWSER_CONFIG`)
 
@@ -142,7 +142,7 @@ task package:android
 
 #### Android / iOS memory tagging (MTE)
 
-Android and iOS app builds use a local Go 1.27.3 toolchain under `build/tools/go-mte` (gitignored). It includes the upstream Android MTE fix and applies a local iOS parity patch. The first mobile build compiles the toolchain once (needs network access and a bootstrap Go). Desktop and server builds use the version declared in `go.mod`.
+Android and iOS app builds use a local Go 1.27.4 toolchain under `build/tools/go-mte` (gitignored). It includes the upstream Android MTE fix and applies a local iOS parity patch. The first mobile build compiles the toolchain once (needs network access and a bootstrap Go). Desktop and server builds use the version declared in `go.mod`.
 
 ```sh
 task toolchain:mte   # optional: prebuild the mobile Go toolchain

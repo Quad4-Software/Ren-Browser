@@ -74,7 +74,7 @@ Für Mitwirkende oder Plattformen ohne vorgefertigtes Paket.
 ### Voraussetzungen
 
 - [Go](https://go.dev/) 1.26 oder neuer
-- [Node.js](https://nodejs.org/) 22+ und [pnpm](https://pnpm.io/) 11+
+- [Node.js](https://nodejs.org/) 26+ und [pnpm](https://pnpm.io/) 12+
 - [Task](https://taskfile.dev/) (empfohlen)
 - Reticulum-Konfiguration unter `~/.reticulum-go/` (oder `REN_BROWSER_CONFIG` setzen)
 

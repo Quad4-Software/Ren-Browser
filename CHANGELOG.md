@@ -5,6 +5,20 @@ All notable changes to Ren Browser are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Update Reticulum-Go to current master after v1.6.1 on the git.quad4.io module path
+- Move the Go baseline to 1.27.4 and refresh Go dependencies, including sqlite 1.63.0, quic-go 0.66.0, and golang.org/x modules
+- Move CI to Node.js 26.13.1, pnpm 12.23.0, and Task 3.54.0, with current pinned GitHub Actions
+- Refresh frontend dependencies, including Svelte 5.58.0, Vite 8.3.8, Vitest 5.1.1, Playwright 1.65.1, and PDF.js 6.5.438
+
+### Security
+
+- Tighten pnpm supply-chain defaults with a seven-day minimum release age, strict dependency builds, no-downgrade trust policy, and blocked exotic subdependencies
+- Verify tree inventory signatures with the current rngit peer identity
+
 ## [0.5.1] [released] - 2026-10-29
 
 ### Added
