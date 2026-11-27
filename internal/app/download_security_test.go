@@ -4,6 +4,7 @@ package app
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -84,5 +85,53 @@ func TestDownloadManagerTracksManyEntries(t *testing.T) {
 	}
 	if n := mgr.runningCount(); n < 32 {
 		t.Fatalf("runningCount=%d want >=32", n)
+	}
+}
+
+func TestDownloadFilenameWindowsReservedAndTrailingNames(t *testing.T) {
+	for _, tc := range []struct {
+		in   string
+		want string
+	}{
+		{"CON", "_CON"},
+		{"con.txt", "_con.txt"},
+		{"NUL", "_NUL"},
+		{"COM1", "_COM1"},
+		{"lpt9.bin", "_lpt9.bin"},
+		{"name.", "name"},
+		{"name   ", "name"},
+	} {
+		if got := sanitizeDownloadFilename(tc.in); got != tc.want {
+			t.Fatalf("sanitize(%q)=%q want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
+func TestDownloadWriteDoesNotFollowExistingSymlink(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlink creation requires extra privileges on Windows")
+	}
+	dir := t.TempDir()
+	outside := filepath.Join(t.TempDir(), "outside")
+	if err := os.WriteFile(outside, []byte("keep"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, "x.bin")
+	if err := os.Symlink(outside, link); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	dest, err := writeDownloadBytes(dir, "x.bin", []byte("new"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dest == link {
+		t.Fatal("write reused existing symlink path")
+	}
+	data, err := os.ReadFile(outside)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "keep" {
+		t.Fatalf("symlink target overwritten: %q", data)
 	}
 }

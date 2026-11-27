@@ -5,9 +5,11 @@
 package app
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"renbrowser/internal/paths"
@@ -43,11 +45,34 @@ func writeDownloadBytes(dir, name string, data []byte) (string, error) {
 		return "", err
 	}
 	name = sanitizeDownloadFilename(name)
-	dest := uniqueFilePath(filepath.Join(dir, name))
-	if err := os.WriteFile(dest, data, 0o600); err != nil {
-		return "", err
+	for i := 0; i < 1000; i++ {
+		candidate := name
+		if i != 0 {
+			ext := filepath.Ext(name)
+			base := strings.TrimSuffix(name, ext)
+			candidate = base + " (" + strconv.Itoa(i) + ")" + ext
+		}
+		dest := filepath.Join(dir, candidate)
+		file, err := os.OpenFile(dest, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) // #nosec G304 -- confined by sanitized leaf name
+		if errors.Is(err, os.ErrExist) {
+			continue
+		}
+		if err != nil {
+			return "", err
+		}
+		_, writeErr := file.Write(data)
+		closeErr := file.Close()
+		if writeErr != nil {
+			_ = os.Remove(dest)
+			return "", writeErr
+		}
+		if closeErr != nil {
+			_ = os.Remove(dest)
+			return "", closeErr
+		}
+		return dest, nil
 	}
-	return dest, nil
+	return "", os.ErrExist
 }
 
 func platformOpenPath(path string) error {

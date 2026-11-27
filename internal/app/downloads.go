@@ -307,10 +307,32 @@ func sanitizeDownloadFilename(name string) string {
 		case '/', '\\', ':', '*', '?', '"', '<', '>', '|', '\x00':
 			b.WriteByte('_')
 		default:
-			b.WriteRune(r)
+			if r < 0x20 || r == 0x7f {
+				b.WriteByte('_')
+			} else {
+				b.WriteRune(r)
+			}
 		}
 	}
-	out := strings.TrimSpace(b.String())
+	out := strings.TrimRight(strings.TrimSpace(b.String()), ".")
+	if out == "" {
+		return "download.bin"
+	}
+	stem := strings.ToLower(strings.TrimSuffix(out, filepath.Ext(out)))
+	switch stem {
+	case "con", "prn", "aux", "nul", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9":
+		out = "_" + out
+	}
+	if len(out) > 200 {
+		cut := 0
+		for i := range out {
+			if i > 200 {
+				break
+			}
+			cut = i
+		}
+		out = strings.TrimRight(out[:cut], ".")
+	}
 	if out == "" {
 		return "download.bin"
 	}
