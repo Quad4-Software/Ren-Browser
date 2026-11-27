@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] [released] - 2026-11-27
+
 ### Changed
 
 - Update Reticulum-Go to current master after v1.6.1 on the git.quad4.io module path
