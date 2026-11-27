@@ -445,9 +445,9 @@
 
   {#if mobileGestures && gesture.pullOffset > 0}
     <div class="gesture-pull-indicator" class:triggered={gesture.pullTriggered} aria-hidden="true">
-      <span
-        >{gesture.pullTriggered ? t("content.releaseToRefresh") : t("content.pullToRefresh")}</span
-      >
+      <span>
+        {gesture.pullTriggered ? t("content.releaseToRefresh") : t("content.pullToRefresh")}
+      </span>
     </div>
   {/if}
 
@@ -503,6 +503,7 @@
     {:else if displayHtml}
       <!-- role=document with tabindex enables keyboard scrolling and the ContextMenu key -->
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
       <div
         class="content"
         class:micron={isMicron}

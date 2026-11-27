@@ -360,9 +360,9 @@
                 <Select.Content class="ren-select-content" sideOffset={4}>
                   <Select.Viewport>
                     {#each parserOptions as option (option.value)}
-                      <Select.Item value={option.value} label={option.label}
-                        >{option.label}</Select.Item
-                      >
+                      <Select.Item value={option.value} label={option.label}>
+                        {option.label}
+                      </Select.Item>
                     {/each}
                   </Select.Viewport>
                 </Select.Content>
@@ -386,6 +386,7 @@
       {/if}
       <!-- role=document with tabindex enables keyboard scrolling and the ContextMenu key -->
       <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
       <div
         class="preview"
         style={shellStyle}

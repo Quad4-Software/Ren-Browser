@@ -265,9 +265,9 @@
       >
         <ChevronLeft size={16} />
       </button>
-      <span class="status"
-        >{t("documents.pageOf", { current: String(page), total: String(numPages || 1) })}</span
-      >
+      <span class="status">
+        {t("documents.pageOf", { current: String(page), total: String(numPages || 1) })}
+      </span>
       <button
         type="button"
         aria-label={t("documents.nextPage")}

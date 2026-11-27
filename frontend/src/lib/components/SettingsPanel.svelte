@@ -688,12 +688,12 @@
       onchange={onChangePageCacheEnabled}
     />
     <div class="cache-row">
-      <span class="meta"
-        >{t("common.pageCacheStats", {
+      <span class="meta">
+        {t("common.pageCacheStats", {
           ram: pageCacheRAMEntries,
           disk: pageCacheDiskEntries,
-        })}</span
-      >
+        })}
+      </span>
       <button
         type="button"
         class="reset-btn"
@@ -807,8 +807,9 @@
                   <Select.Content class="ren-select-content" sideOffset={4}>
                     <Select.Viewport>
                       {#each micronImagePolicyItems as item (item.value)}
-                        <Select.Item value={item.value} label={item.label}>{item.label}</Select.Item
-                        >
+                        <Select.Item value={item.value} label={item.label}>
+                          {item.label}
+                        </Select.Item>
                       {/each}
                     </Select.Viewport>
                   </Select.Content>
@@ -838,9 +839,9 @@
     {/if}
 
     <div class="reset-row">
-      <button type="button" class="reset-btn" onclick={onResetDefaults}
-        >{t("settings.resetDefaults")}</button
-      >
+      <button type="button" class="reset-btn" onclick={onResetDefaults}>
+        {t("settings.resetDefaults")}
+      </button>
     </div>
   </SettingsSection>
 
@@ -1010,9 +1011,9 @@
 
     <p class="hint" style="margin-top: 1rem;">{t("settings.restartReticulumHint")}</p>
     <div class="reset-row" style="margin-bottom: 1rem;">
-      <button type="button" class="reset-btn" onclick={onRestartReticulum}
-        >{t("settings.restartReticulum")}</button
-      >
+      <button type="button" class="reset-btn" onclick={onRestartReticulum}>
+        {t("settings.restartReticulum")}
+      </button>
     </div>
 
     <ul class="ifaces">
@@ -1348,16 +1349,16 @@
     >
       <p class="hint">{t("settings.shutdownHint")}</p>
       <div class="reset-row">
-        <button type="button" class="reset-btn" onclick={onShutdown}
-          >{t("settings.shutdown")}</button
-        >
+        <button type="button" class="reset-btn" onclick={onShutdown}>
+          {t("settings.shutdown")}
+        </button>
       </div>
 
       <p class="hint" style="margin-top: 1rem;">{t("settings.resetBrowserHint")}</p>
       <div class="reset-row">
-        <button type="button" class="reset-btn" onclick={onResetBrowser}
-          >{t("settings.resetBrowser")}</button
-        >
+        <button type="button" class="reset-btn" onclick={onResetBrowser}>
+          {t("settings.resetBrowser")}
+        </button>
       </div>
     </SettingsSection>
   {/if}

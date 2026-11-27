@@ -200,9 +200,9 @@
       >
         <Download size={16} />
         {#if activeDownloadCount > 0}
-          <span class="download-badge"
-            >{activeDownloadCount > 99 ? "99+" : activeDownloadCount}</span
-          >
+          <span class="download-badge">
+            {activeDownloadCount > 99 ? "99+" : activeDownloadCount}
+          </span>
         {/if}
       </button>
       <DownloadsMenu

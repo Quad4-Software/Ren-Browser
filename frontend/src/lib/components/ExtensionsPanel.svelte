@@ -312,9 +312,9 @@
     {#if showTitle}
       <h3>{t("extensions.title")}</h3>
     {/if}
-    <button type="button" onclick={() => void refresh()} disabled={loading}
-      >{t("common.refresh")}</button
-    >
+    <button type="button" onclick={() => void refresh()} disabled={loading}>
+      {t("common.refresh")}
+    </button>
   </header>
 
   {#if error}
@@ -430,8 +430,10 @@
               type="button"
               class="danger"
               disabled={uninstalling}
-              onclick={() => requestRemove(plugin)}>{t("extensions.uninstall")}</button
+              onclick={() => requestRemove(plugin)}
             >
+              {t("extensions.uninstall")}
+            </button>
           </div>
         </li>
       {/each}

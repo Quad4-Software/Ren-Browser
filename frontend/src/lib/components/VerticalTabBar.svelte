@@ -424,8 +424,10 @@
                 ondblclick={(event) => {
                   event.stopPropagation();
                   startRenameGroup(item.group);
-                }}>{groupDisplayName(item.group)}</span
+                }}
               >
+                {groupDisplayName(item.group)}
+              </span>
             {/if}
             <span class="group-count">{item.tabs.length}</span>
           </button>

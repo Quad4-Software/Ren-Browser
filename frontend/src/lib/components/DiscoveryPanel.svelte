@@ -135,25 +135,25 @@
               <DropdownMenu.RadioGroup bind:value={sortMode}>
                 <DropdownMenu.RadioItem value="newest" textValue={t("discovery.sortNewest")}>
                   {#snippet children({ checked })}
-                    <span class="sort-check"
-                      >{#if checked}<Check size={14} />{/if}</span
-                    >
+                    <span class="sort-check">
+                      {#if checked}<Check size={14} />{/if}
+                    </span>
                     {t("discovery.sortNewest")}
                   {/snippet}
                 </DropdownMenu.RadioItem>
                 <DropdownMenu.RadioItem value="announces" textValue={t("discovery.sortAnnounces")}>
                   {#snippet children({ checked })}
-                    <span class="sort-check"
-                      >{#if checked}<Check size={14} />{/if}</span
-                    >
+                    <span class="sort-check">
+                      {#if checked}<Check size={14} />{/if}
+                    </span>
                     {t("discovery.sortAnnounces")}
                   {/snippet}
                 </DropdownMenu.RadioItem>
                 <DropdownMenu.RadioItem value="name" textValue={t("discovery.sortName")}>
                   {#snippet children({ checked })}
-                    <span class="sort-check"
-                      >{#if checked}<Check size={14} />{/if}</span
-                    >
+                    <span class="sort-check">
+                      {#if checked}<Check size={14} />{/if}
+                    </span>
                     {t("discovery.sortName")}
                   {/snippet}
                 </DropdownMenu.RadioItem>

@@ -53,9 +53,9 @@
         {@render children()}
       {/if}
       <div class="confirm-actions">
-        <AlertDialog.Cancel type="button" class="confirm-cancel-btn"
-          >{cancelLabel}</AlertDialog.Cancel
-        >
+        <AlertDialog.Cancel type="button" class="confirm-cancel-btn">
+          {cancelLabel}
+        </AlertDialog.Cancel>
         <AlertDialog.Action
           type="button"
           class="confirm-confirm-btn"

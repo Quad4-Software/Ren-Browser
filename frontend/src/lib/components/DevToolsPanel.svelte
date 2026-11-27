@@ -164,11 +164,11 @@
         <span>{durationMs} ms</span>
       {/if}
       {#if fromCache}
-        <span
-          >{t("devtools.cached", {
+        <span>
+          {t("devtools.cached", {
             when: cachedAt > 0 ? new Date(cachedAt).toLocaleString() : "",
-          })}</span
-        >
+          })}
+        </span>
       {/if}
     </div>
 
@@ -252,12 +252,12 @@
     </Tabs.Content>
     <Tabs.Content value="raw" class="panel raw">
       <div class="raw-actions">
-        <button class:active={rawMode === "text"} onclick={() => (rawMode = "text")}
-          >{t("devtools.text")}</button
-        >
-        <button class:active={rawMode === "hex"} onclick={() => (rawMode = "hex")}
-          >{t("devtools.hex")}</button
-        >
+        <button class:active={rawMode === "text"} onclick={() => (rawMode = "text")}>
+          {t("devtools.text")}
+        </button>
+        <button class:active={rawMode === "hex"} onclick={() => (rawMode = "hex")}>
+          {t("devtools.hex")}
+        </button>
       </div>
       {#if raw.trim().length === 0}
         <EmptyState title={t("devtools.noRaw")} description={t("devtools.noRawDescription")}>

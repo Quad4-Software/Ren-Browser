@@ -141,9 +141,9 @@
             class:error={item.status === "failed" || item.status === "canceled"}
           >
             <div class="active-head">
-              <span class="name" class:pending={item.status === "pending"} title={item.name}
-                >{item.name}</span
-              >
+              <span class="name" class:pending={item.status === "pending"} title={item.name}>
+                {item.name}
+              </span>
               <div class="active-actions">
                 {#if item.status === "pending" || item.status === "downloading" || item.status === "retrying"}
                   <button
@@ -190,12 +190,12 @@
             {:else if item.status === "interrupted"}
               <span class="error-text">{item.error || t("downloads.interrupted")}</span>
             {:else if item.status === "retrying"}
-              <span class="meta"
-                >{t("downloads.retrying", {
+              <span class="meta">
+                {t("downloads.retrying", {
                   attempt: item.attempt ?? 1,
                   max: item.maxAttempts ?? 1,
-                })}</span
-              >
+                })}
+              </span>
             {:else if item.status === "canceled"}
               <span class="meta">{t("downloads.canceled")}</span>
             {:else if item.status === "completed"}
