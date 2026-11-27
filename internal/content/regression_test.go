@@ -19,10 +19,10 @@ func TestRenderUppercaseMicronExtension(t *testing.T) {
 	}
 }
 
-func TestSanitizeHTMLFastPathCleanDocument(t *testing.T) {
+func TestSanitizeHTMLEmitsBodyFragment(t *testing.T) {
 	const clean = "<html><body><p>safe</p></body></html>"
 	out := content.SanitizeHTML(clean)
 	if out != clean {
-		t.Fatalf("sanitizer mutated clean html: %q", out)
+		t.Fatalf("sanitizer mutated clean passive html: %q", out)
 	}
 }

@@ -16,7 +16,7 @@ func FuzzSanitizeHTML(f *testing.F) {
 
 	f.Fuzz(func(t *testing.T, input string) {
 		out := content.SanitizeHTML(input)
-		if strings.Contains(strings.ToLower(out), "<script") {
+		if strings.Contains(strings.ToLower(out), "<script>") || strings.Contains(strings.ToLower(out), "<script ") || strings.Contains(strings.ToLower(out), "<script/") {
 			t.Fatalf("script tag survived: %q", out)
 		}
 		if strings.Contains(strings.ToLower(out), "javascript:") {

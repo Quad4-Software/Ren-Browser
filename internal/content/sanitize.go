@@ -2,185 +2,307 @@
 package content
 
 import (
+	"html"
 	"regexp"
+	"strings"
+	"unicode/utf8"
+
+	xhtml "golang.org/x/net/html"
 )
 
-var (
-	scriptBlockRe = regexp.MustCompile(`(?is)<script\b[^>]*>.*?</script>`)
-	scriptOpenRe  = regexp.MustCompile(`(?is)<script[^>]*>?`)
-	styleBlockRe  = regexp.MustCompile(`(?is)<style\b[^>]*>.*?</style>`)
-	onAttrRe      = regexp.MustCompile(`(?i)\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)`)
-	iframeRe      = regexp.MustCompile(`(?is)<iframe\b[^>]*>.*?</iframe>`)
-	objectRe      = regexp.MustCompile(`(?is)<object\b[^>]*>.*?</object>`)
-	embedRe       = regexp.MustCompile(`(?is)<embed\b[^>]*/?>`)
-	jsSchemeRe    = regexp.MustCompile(`(?i)javascript:`)
-	metaRefreshRe = regexp.MustCompile(`(?is)<meta\b[^>]*http-equiv\s*=\s*["']?refresh["']?[^>]*>`)
-	baseHrefRe    = regexp.MustCompile(`(?is)<base\b[^>]*>`)
+const (
+	maxSanitizedHTMLNodes   = 20000
+	maxSanitizedHTMLDepth   = 256
+	maxSanitizedAttrBytes   = 2048
+	maxSanitizedClassBytes  = 1024
+	maxSanitizedURLBytes    = 2048
+	maxSanitizedOutputBytes = 12 * 1024 * 1024
 )
+
+var javascriptSchemeRe = regexp.MustCompile(`(?i)javascript:`)
+
+var allowedSanitizedTags = map[string]struct{}{
+	"a": {}, "abbr": {}, "address": {}, "article": {}, "aside": {}, "b": {},
+	"blockquote": {}, "br": {}, "caption": {}, "cite": {}, "code": {}, "col": {},
+	"colgroup": {}, "dd": {}, "del": {}, "details": {}, "dfn": {}, "div": {},
+	"dl": {}, "dt": {}, "em": {}, "figcaption": {}, "figure": {}, "footer": {},
+	"h1": {}, "h2": {}, "h3": {}, "h4": {}, "h5": {}, "h6": {}, "header": {},
+	"hgroup": {}, "hr": {}, "i": {}, "img": {}, "ins": {}, "kbd": {}, "li": {},
+	"main": {}, "mark": {}, "nav": {}, "ol": {}, "p": {}, "pre": {}, "q": {},
+	"rp": {}, "rt": {}, "ruby": {}, "s": {}, "samp": {}, "section": {}, "small": {},
+	"span": {}, "strong": {}, "sub": {}, "summary": {}, "sup": {}, "table": {},
+	"tbody": {}, "td": {}, "tfoot": {}, "th": {}, "thead": {}, "time": {}, "tr": {},
+	"u": {}, "ul": {}, "var": {}, "wbr": {},
+}
+
+var forbiddenSanitizedTags = map[string]struct{}{
+	"applet": {}, "audio": {}, "base": {}, "button": {}, "embed": {}, "fencedframe": {},
+	"form": {}, "frame": {}, "frameset": {}, "iframe": {}, "input": {}, "link": {},
+	"math": {}, "meta": {}, "noscript": {}, "object": {}, "option": {}, "picture": {},
+	"plaintext": {}, "portal": {}, "script": {}, "select": {}, "source": {}, "style": {},
+	"svg": {}, "template": {}, "textarea": {}, "track": {}, "video": {}, "xmp": {},
+}
+
+var allowedSanitizedAttrs = map[string]struct{}{
+	"abbr": {}, "align": {}, "alt": {}, "aria-describedby": {}, "aria-hidden": {},
+	"aria-label": {}, "aria-labelledby": {}, "class": {}, "colspan": {}, "datetime": {},
+	"dir": {}, "headers": {}, "height": {}, "id": {}, "lang": {}, "reversed": {},
+	"rowspan": {}, "scope": {}, "span": {}, "start": {}, "title": {}, "type": {},
+	"value": {}, "width": {},
+}
 
 func SanitizeHTML(input string) string {
-	if input == "" || !needsHTMLSanitize(input) {
+	if input == "" {
 		return input
 	}
-	out := input
-	for range 3 {
-		if !mayContainScript(out) {
-			break
-		}
-		prev := out
-		out = scriptBlockRe.ReplaceAllString(out, "")
-		out = scriptOpenRe.ReplaceAllString(out, "")
-		if out == prev {
-			break
-		}
+	if strings.IndexByte(input, '<') < 0 {
+		return stripJavaScriptSchemeText(input)
 	}
-	out = styleBlockRe.ReplaceAllString(out, "")
-	out = iframeRe.ReplaceAllString(out, "")
-	out = objectRe.ReplaceAllString(out, "")
-	out = embedRe.ReplaceAllString(out, "")
-	out = metaRefreshRe.ReplaceAllString(out, "")
-	out = baseHrefRe.ReplaceAllString(out, "")
-	out = onAttrRe.ReplaceAllString(out, "")
-	for range 3 {
-		prev := out
-		out = jsSchemeRe.ReplaceAllString(out, "")
-		if out == prev {
+	if clearlyPassiveHTML(input) {
+		return input
+	}
+	z := xhtml.NewTokenizer(strings.NewReader(input))
+	var out strings.Builder
+	out.Grow(len(input))
+	budget := maxSanitizedHTMLNodes
+	depth := 0
+	skipTag := ""
+	skipDepth := 0
+	for budget > 0 && out.Len() < maxSanitizedOutputBytes {
+		tokenType := z.Next()
+		if tokenType == xhtml.ErrorToken {
 			break
 		}
-	}
-	return out
-}
-
-func needsHTMLSanitize(s string) bool {
-	n := len(s)
-	for i := range n {
-		switch s[i] {
-		case 'j', 'J':
-			if i+10 < n && asciiEqualFold(s[i:i+11], "javascript:") {
-				return true
+		switch tokenType {
+		case xhtml.TextToken:
+			if skipDepth != 0 {
+				continue
 			}
-		case '<':
-			if dangerousHTMLTagAt(s, i) {
-				return true
-			}
-		case ' ', '\t', '\n', '\r':
-			if i+3 < n && asciiEqualFold(s[i+1:i+3], "on") {
-				c := s[i+3]
-				if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
-					return true
+			budget--
+			out.WriteString(html.EscapeString(stripJavaScriptSchemeText(string(z.Text()))))
+		case xhtml.StartTagToken, xhtml.SelfClosingTagToken:
+			name, _ := z.TagName()
+			tag := strings.ToLower(string(name))
+			if skipDepth != 0 {
+				if tag == skipTag {
+					skipDepth++
 				}
+				continue
+			}
+			if _, forbidden := forbiddenSanitizedTags[tag]; forbidden {
+				if !voidSanitizedTag(tag) && tokenType == xhtml.StartTagToken {
+					skipTag = tag
+					skipDepth = 1
+				}
+				continue
+			}
+			if _, allowed := allowedSanitizedTags[tag]; !allowed || depth >= maxSanitizedHTMLDepth {
+				continue
+			}
+			budget--
+			out.WriteByte('<')
+			out.WriteString(tag)
+			writeSanitizedAttrs(&out, z, tag)
+			out.WriteByte('>')
+			if voidSanitizedTag(tag) {
+				continue
+			}
+			if tokenType == xhtml.SelfClosingTagToken {
+				out.WriteString("</")
+				out.WriteString(tag)
+				out.WriteByte('>')
+				continue
+			}
+			depth++
+		case xhtml.EndTagToken:
+			name, _ := z.TagName()
+			tag := strings.ToLower(string(name))
+			if skipDepth != 0 {
+				if tag == skipTag {
+					skipDepth--
+					if skipDepth == 0 {
+						skipTag = ""
+					}
+				}
+				continue
+			}
+			if _, allowed := allowedSanitizedTags[tag]; !allowed || voidSanitizedTag(tag) {
+				continue
+			}
+			out.WriteString("</")
+			out.WriteString(tag)
+			out.WriteByte('>')
+			if depth > 0 {
+				depth--
 			}
 		}
 	}
-	return false
+	if out.Len() > maxSanitizedOutputBytes {
+		return out.String()[:maxSanitizedOutputBytes]
+	}
+	return out.String()
 }
 
-func dangerousHTMLTagAt(s string, i int) bool {
-	if s[i] != '<' {
+func clearlyPassiveHTML(input string) bool {
+	if strings.ContainsAny(input, "&=") {
 		return false
 	}
-	j := i + 1
-	if j < len(s) && s[j] == '/' {
-		j++
-	}
-	if j >= len(s) {
+	lower := strings.ToLower(input)
+	if strings.Contains(lower, "javascript:") {
 		return false
 	}
-	switch asciiLower(s[j]) {
-	case 'b':
-		return htmlTagNameAt(s, j, "base")
-	case 'e':
-		return htmlTagNameAt(s, j, "embed")
-	case 'i':
-		return htmlTagNameAt(s, j, "iframe")
-	case 'm':
-		return htmlTagNameAt(s, j, "meta")
-	case 'o':
-		return htmlTagNameAt(s, j, "object")
-	case 's':
-		if htmlTagNameAt(s, j, "script") || htmlTagNameAt(s, j, "style") {
-			return true
+	depth := 0
+	for i := 0; i < len(lower); i++ {
+		c := lower[i]
+		if c < 0x20 || c == 0x7f {
+			return false
 		}
-		return looksLikePartialTag(s, j, "script")
-	default:
-		return false
-	}
-}
-
-func mayContainScript(s string) bool {
-	n := len(s)
-	for i := range n {
-		if s[i] != '<' {
+		if c != '<' {
 			continue
 		}
 		j := i + 1
-		if j < n && s[j] == '/' {
+		endTag := false
+		if j < len(lower) && lower[j] == '/' {
+			endTag = true
 			j++
 		}
-		if j+1 < n && asciiEqualFoldByte(s[j], 's') && asciiEqualFoldByte(s[j+1], 'c') {
+		start := j
+		for j < len(lower) && ((lower[j] >= 'a' && lower[j] <= 'z') || (lower[j] >= '0' && lower[j] <= '9')) {
+			j++
+		}
+		if start == j {
+			continue
+		}
+		name := lower[start:j]
+		if _, forbidden := forbiddenSanitizedTags[name]; forbidden {
+			return false
+		}
+		if endTag {
+			if depth > 0 {
+				depth--
+			}
+			continue
+		}
+		if !voidSanitizedTag(name) {
+			depth++
+			if depth > maxSanitizedHTMLDepth {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func writeSanitizedAttrs(out *strings.Builder, z *xhtml.Tokenizer, tag string) {
+	count := 0
+	for {
+		key, val, more := z.TagAttr()
+		if len(key) == 0 {
+			break
+		}
+		name := strings.ToLower(string(key))
+		value := string(val)
+		if count < 64 && validSanitizedAttr(tag, name, value) {
+			out.WriteByte(' ')
+			out.WriteString(name)
+			out.WriteString(`="`)
+			out.WriteString(html.EscapeString(value))
+			out.WriteByte('"')
+		}
+		count++
+		if !more {
+			break
+		}
+	}
+}
+
+func validSanitizedAttr(tag, name, value string) bool {
+	if name == "" || strings.HasPrefix(name, "on") || !utf8.ValidString(value) || len(value) > maxSanitizedAttrBytes {
+		return false
+	}
+	if strings.HasPrefix(name, "data-") {
+		return true
+	}
+	if name == "class" && len(value) > maxSanitizedClassBytes {
+		return false
+	}
+	switch name {
+	case "href":
+		return tag == "a" && safeSanitizedLinkURL(value)
+	case "src":
+		return tag == "img" && safeSanitizedImageURL(value)
+	case "srcset", "srcdoc", "style", "formaction", "action", "poster", "background", "xlink:href":
+		return false
+	default:
+		_, ok := allowedSanitizedAttrs[name]
+		return ok
+	}
+}
+
+func stripJavaScriptSchemeText(input string) string {
+	for range 3 {
+		out := javascriptSchemeRe.ReplaceAllString(input, "")
+		if out == input {
+			return input
+		}
+		input = out
+	}
+	return input
+}
+
+func voidSanitizedTag(tag string) bool {
+	switch tag {
+	case "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr":
+		return true
+	}
+	return false
+}
+
+func safeSanitizedLinkURL(raw string) bool {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || len(raw) > maxSanitizedURLBytes || hasURLControlByte(raw) || strings.HasPrefix(raw, "//") {
+		return false
+	}
+	colon := strings.IndexByte(raw, ':')
+	if colon < 0 {
+		return true
+	}
+	scheme := strings.ToLower(raw[:colon])
+	if len(scheme) == 32 && isLowerHex(scheme) {
+		return true
+	}
+	return scheme == "rns"
+}
+
+func safeSanitizedImageURL(raw string) bool {
+	raw = strings.TrimSpace(raw)
+	if len(raw) == 0 || len(raw) > maxSanitizedURLBytes || hasURLControlByte(raw) {
+		return false
+	}
+	lower := strings.ToLower(raw)
+	for _, mime := range []string{"png", "jpeg", "jpg", "gif", "webp", "bmp", "tiff"} {
+		if strings.HasPrefix(lower, "data:image/"+mime+";base64,") {
 			return true
 		}
 	}
 	return false
 }
 
-func looksLikePartialTag(s string, j int, tag string) bool {
-	for k := 0; k < len(tag); k++ {
-		if j+k >= len(s) {
-			return k > 0
+func hasURLControlByte(raw string) bool {
+	for i := 0; i < len(raw); i++ {
+		if raw[i] <= 0x20 || raw[i] == 0x7f {
+			return true
 		}
-		if !asciiEqualFoldByte(s[j+k], tag[k]) {
+	}
+	return false
+}
+
+func isLowerHex(raw string) bool {
+	for i := 0; i < len(raw); i++ {
+		c := raw[i]
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
 			return false
 		}
 	}
 	return true
-}
-
-func htmlTagNameAt(s string, j int, tag string) bool {
-	if j+len(tag) > len(s) {
-		return false
-	}
-	for k := 0; k < len(tag); k++ {
-		if !asciiEqualFoldByte(s[j+k], tag[k]) {
-			return false
-		}
-	}
-	if j+len(tag) == len(s) {
-		return true
-	}
-	switch s[j+len(tag)] {
-	case '>', ' ', '\t', '\n', '\r', '/':
-		return true
-	default:
-		return false
-	}
-}
-
-func asciiLower(b byte) byte {
-	if b >= 'A' && b <= 'Z' {
-		return b + ('a' - 'A')
-	}
-	return b
-}
-
-func asciiEqualFold(a, b string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := 0; i < len(a); i++ {
-		if !asciiEqualFoldByte(a[i], b[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-func asciiEqualFoldByte(a, b byte) bool {
-	if a >= 'A' && a <= 'Z' {
-		a += 'a' - 'A'
-	}
-	if b >= 'A' && b <= 'Z' {
-		b += 'a' - 'A'
-	}
-	return a == b
 }

@@ -10,6 +10,7 @@ require (
 	github.com/wailsapp/wails/v3 v3.1.0
 	go.uber.org/goleak v1.3.0
 	golang.org/x/crypto v0.59.0
+	golang.org/x/net v0.63.0
 	golang.org/x/sys v0.50.0
 	golang.org/x/term v0.48.0
 	micron-parser-go v1.3.0
@@ -36,7 +37,6 @@ require (
 	github.com/quic-go/webtransport-go v0.13.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	go.bug.st/serial v1.8.0 // indirect
-	golang.org/x/net v0.63.0 // indirect
 	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
 	kernel.org/pub/linux/libs/security/libcap/psx v1.2.78 // indirect

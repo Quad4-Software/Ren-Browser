@@ -30,11 +30,11 @@ func TestRenderMicron(t *testing.T) {
 	}
 }
 
-func TestRenderHTMLPassthrough(t *testing.T) {
+func TestRenderHTMLSanitizedBodyFragment(t *testing.T) {
 	raw := "<html><body>ok</body></html>"
 	out := content.Render("/page/x.html", []byte(raw), "")
 	if out.HTML != raw {
-		t.Fatalf("html passthrough failed")
+		t.Fatalf("html passthrough failed: %q", out.HTML)
 	}
 }
 
