@@ -7,12 +7,10 @@ import (
 	"log/slog"
 	"net/http"
 	"runtime"
-	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
 
-	"github.com/quic-go/qpack"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/qlogwriter"
 )
@@ -20,16 +18,15 @@ import (
 // RawServerConn is an HTTP/3 server connection.
 // It can be used for advanced use cases where the application wants to manage the QUIC connection lifecycle.
 type RawServerConn struct {
-	rawConn rawConn
+	rawConn *rawConn
 
-	idleTimeout time.Duration
-	idleTimer   *time.Timer
+	idleTimeout       time.Duration
+	idleTimer         *time.Timer
+	readHeaderTimeout time.Duration
 
 	serverContext  context.Context
 	requestHandler http.Handler
-	maxHeaderBytes int
 
-	decoder       *qpack.Decoder
 	priorityAware atomic.Bool // whether the client sent an RFC 9218 priority signal
 
 	qlogger qlogwriter.Recorder
@@ -50,12 +47,10 @@ func newRawServerConn(
 		idleTimeout:    idleTimeout,
 		serverContext:  serverContext,
 		requestHandler: requestHandler,
-		maxHeaderBytes: maxHeaderBytes,
-		decoder:        qpack.NewDecoder(),
 		qlogger:        qlogger,
 		logger:         logger,
 	}
-	c.rawConn = *newRawConn(conn, enableDatagrams, c.onStreamsEmpty, c.handleControlStream, qlogger, logger)
+	c.rawConn = newRawConn(conn, enableDatagrams, maxHeaderBytes, c.onStreamsEmpty, c.handleControlStream, qlogger, logger)
 	if idleTimeout > 0 {
 		c.idleTimer = time.AfterFunc(idleTimeout, func() {
 			conn.CloseWithError(quic.ApplicationErrorCode(ErrCodeNoError), "idle timeout")
@@ -82,15 +77,13 @@ func (c *RawServerConn) CloseWithError(code quic.ApplicationErrorCode, msg strin
 // The stream can either be obtained by calling [quic.Conn.AcceptStream] on the underlying QUIC connection,
 // or (internally) by using the server's stream accept loop.
 func (c *RawServerConn) HandleRequestStream(str *quic.Stream) {
+	// HTTP/3 handles this stream, so the peer can replace it as soon as it completes.
+	str.ReleaseStreamCredit()
+	// the handler can produce qlog events until it returns, even after the connection was closed
+	c.rawConn.AddQlogProducer()
+	defer c.rawConn.RemoveQlogProducer()
 	hstr := c.rawConn.TrackStream(str)
 	c.handleRequestStream(hstr)
-}
-
-func (c *RawServerConn) requestMaxHeaderBytes() int {
-	if c.maxHeaderBytes <= 0 {
-		return http.DefaultMaxHeaderBytes
-	}
-	return c.maxHeaderBytes
 }
 
 func (c *RawServerConn) openControlStream(settings *settingsFrame) (*quic.SendStream, error) {
@@ -98,94 +91,54 @@ func (c *RawServerConn) openControlStream(settings *settingsFrame) (*quic.SendSt
 }
 
 func (c *RawServerConn) handleRequestStream(str *stateTrackingStream) {
+	if c.readHeaderTimeout > 0 {
+		_ = str.SetReadDeadline(time.Now().Add(c.readHeaderTimeout))
+	}
 	if c.idleTimeout > 0 {
 		// This only applies if the stream is the first active stream,
 		// but it's ok to stop a stopped timer.
 		c.idleTimer.Stop()
 	}
 
-	conn := &c.rawConn
-	qlogger := c.qlogger
-	decoder := c.decoder
+	conn := c.rawConn
 	connCtx := c.serverContext
-	maxHeaderBytes := c.requestMaxHeaderBytes()
 
-	fp := &frameParser{closeConn: conn.CloseWithError, r: str, streamID: str.StreamID()}
-	frame, err := fp.ParseNext(qlogger)
-	if err != nil {
-		if errors.Is(err, errPriorityUpdateForPush) {
-			conn.CloseWithError(quic.ApplicationErrorCode(ErrCodeFrameUnexpected), "")
-			return
-		}
-		str.CancelRead(quic.StreamErrorCode(ErrCodeRequestIncomplete))
-		str.CancelWrite(quic.StreamErrorCode(ErrCodeRequestIncomplete))
-		return
-	}
-	hf, ok := frame.(*headersFrame)
-	if !ok {
-		conn.CloseWithError(quic.ApplicationErrorCode(ErrCodeFrameUnexpected), "expected first frame to be a HEADERS frame")
-		return
-	}
-	if hf.Length > uint64(maxHeaderBytes) {
-		maybeQlogInvalidHeadersFrame(qlogger, str.StreamID(), hf.Length)
-		// stop the client from sending more data
-		str.CancelRead(quic.StreamErrorCode(ErrCodeExcessiveLoad))
-		// send a 431 Response (Request Header Fields Too Large)
-		c.rejectWithHeaderFieldsTooLarge(str)
-		return
-	}
-	headerBlock, err := readHeaderBlock(str, hf.Length)
-	if err != nil {
-		maybeQlogInvalidHeadersFrame(qlogger, str.StreamID(), hf.Length)
-		str.CancelRead(quic.StreamErrorCode(ErrCodeRequestIncomplete))
-		str.CancelWrite(quic.StreamErrorCode(ErrCodeRequestIncomplete))
-		return
-	}
-	decodeFn := decoder.Decode(headerBlock)
-	var hfs []qpack.HeaderField
-	if qlogger != nil {
-		hfs = make([]qpack.HeaderField, 0, 16)
-	}
-	req, err := requestFromHeaders(decodeFn, maxHeaderBytes, &hfs)
-	if qlogger != nil {
-		qlogParsedHeadersFrame(qlogger, str.StreamID(), hf, hfs)
-	}
+	hstr := newServerStream(str, conn, c.qlogger)
+	req, err := hstr.readRequestHeader()
 	if err != nil {
 		if errors.Is(err, errHeaderTooLarge) {
-			// stop the client from sending more data
-			str.CancelRead(quic.StreamErrorCode(ErrCodeExcessiveLoad))
-			// send a 431 Response (Request Header Fields Too Large)
-			c.rejectWithHeaderFieldsTooLarge(str)
-			return
+			c.rejectWithHeaderFieldsTooLarge(hstr)
 		}
-
-		errCode := ErrCodeMessageError
-		if _, ok := errors.AsType[*qpackError](err); ok {
-			errCode = ErrCodeQPACKDecompressionFailed
-		}
-		str.CancelRead(quic.StreamErrorCode(errCode))
-		str.CancelWrite(quic.StreamErrorCode(errCode))
 		return
+	}
+	// The header timeout must not limit reads of the request body.
+	if c.readHeaderTimeout > 0 {
+		_ = str.SetReadDeadline(time.Time{})
 	}
 
 	connState := conn.ConnectionState().TLS
 	req.TLS = &connState
 	req.RemoteAddr = conn.RemoteAddr().String()
 
-	// Check that the client doesn't send more data in DATA frames than indicated by the Content-Length header (if set).
-	// See section 4.1.2 of RFC 9114.
+	// Enforce the Content-Length, if set (section 4.1.2 of RFC 9114).
 	contentLength := int64(-1)
 	if _, ok := req.Header["Content-Length"]; ok && req.ContentLength >= 0 {
 		contentLength = req.ContentLength
 	}
-	hstr := newStream(str, conn, nil, func(r io.Reader, hf *headersFrame) error {
-		trailers, err := decodeTrailers(r, hf, maxHeaderBytes, decoder, qlogger, str.StreamID())
-		if err != nil {
-			return err
-		}
-		req.Trailer = trailers
-		return nil
-	}, qlogger)
+	ctx, cancel := context.WithCancel(connCtx)
+	req = req.WithContext(ctx)
+	context.AfterFunc(str.Context(), cancel)
+
+	// Only DATA frames are allowed after a CONNECT request (RFC 9114, Section 4.4).
+	if req.Method == http.MethodConnect {
+		hstr.rejectTrailer()
+	}
+	// HTTP Datagrams received for a request without datagram semantics abort the request (RFC 9297, Section 2).
+	// Only Extended CONNECT requests can define such semantics.
+	// For these, req.Proto is the :protocol value, otherwise it's "HTTP/3.0".
+	if req.Proto == "HTTP/3.0" {
+		str.RejectDatagrams()
+	}
 
 	// We only use the client's priority for local scheduling.
 	// A Priority response header is only transmitted so that potential intermediaries can use it,
@@ -201,18 +154,15 @@ func (c *RawServerConn) handleRequestStream(str *stateTrackingStream) {
 	}
 	hstr.SetPriority(urgency, incremental)
 
-	body := newRequestBody(hstr, contentLength, connCtx, conn.ReceivedSettings(), conn.Settings)
+	// The body stores the trailers in the request passed to the handler.
+	body := newRequestBody(hstr, contentLength, &req.Trailer, connCtx, conn.ReceivedSettings(), conn.Settings)
 	req.Body = body
 
 	if c.logger != nil {
 		c.logger.Debug("handling request", "method", req.Method, "host", req.Host, "uri", req.RequestURI)
 	}
 
-	ctx, cancel := context.WithCancel(connCtx)
-	req = req.WithContext(ctx)
-	context.AfterFunc(str.Context(), cancel)
-
-	r := newResponseWriter(hstr, conn, req.Method == http.MethodHead, c.logger)
+	r := newResponseWriter(hstr, conn, req.Method, c.logger)
 	handler := c.requestHandler
 	if handler == nil {
 		handler = http.DefaultServeMux
@@ -252,13 +202,13 @@ func (c *RawServerConn) handleRequestStream(str *stateTrackingStream) {
 		return
 	}
 
-	// response not written to the client yet, set Content-Length
-	if !r.headerWritten {
-		if _, haveCL := r.header["Content-Length"]; !haveCL {
-			r.header.Set("Content-Length", strconv.FormatInt(r.numWritten, 10))
-		}
+	// Abort the stream if the response is incomplete: flushing failed, or the handler returned
+	// after a write failed partway through a DATA frame, which would leave the frame truncated.
+	if err := r.Finish(); err != nil || hstr.hasUnfinishedFrame() {
+		str.CancelRead(quic.StreamErrorCode(ErrCodeRequestCanceled))
+		str.CancelWrite(quic.StreamErrorCode(ErrCodeRequestCanceled))
+		return
 	}
-	r.Flush()
 	r.flushTrailers()
 
 	// If the EOF was read by the handler, CancelRead() is a no-op.
@@ -294,7 +244,9 @@ func (c *RawServerConn) handleControlStream(_ *quic.ReceiveStream, fp *framePars
 			urgency, incremental := parsePriority(frame.PriorityFieldValue)
 			c.rawConn.UpdateStreamPriority(quic.StreamID(frame.ElementID), urgency, incremental)
 		case *goAwayFrame:
-			// Server push is not supported, so there is no push state to update.
+			// Server push is not supported, so we ignore the push ID.
+			// We don't close the connection if it increased since the last GOAWAY frame,
+			// although RFC 9114, Section 5.2 requires it.
 		default:
 			c.CloseWithError(quic.ApplicationErrorCode(ErrCodeFrameUnexpected), "")
 			return
@@ -302,10 +254,11 @@ func (c *RawServerConn) handleControlStream(_ *quic.ReceiveStream, fp *framePars
 	}
 }
 
-func (c *RawServerConn) rejectWithHeaderFieldsTooLarge(str *stateTrackingStream) {
-	hstr := newStream(str, &c.rawConn, nil, nil, c.qlogger)
-	defer hstr.Close()
-	r := newResponseWriter(hstr, &c.rawConn, false, c.logger)
+func (c *RawServerConn) rejectWithHeaderFieldsTooLarge(str *Stream) {
+	// stop the client from sending more data
+	str.CancelRead(quic.StreamErrorCode(ErrCodeExcessiveLoad))
+	defer str.Close()
+	r := newResponseWriter(str, c.rawConn, "", c.logger)
 	r.WriteHeader(http.StatusRequestHeaderFieldsTooLarge)
 	r.Flush()
 }

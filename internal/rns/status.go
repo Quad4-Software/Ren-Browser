@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/Quad4-Software/Reticulum-Go/pkg/sharedinstance"
+	"git.quad4.io/reticulum/Reticulum-Go/pkg/sharedinstance"
 )
 
 var (

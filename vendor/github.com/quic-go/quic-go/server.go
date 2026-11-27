@@ -13,6 +13,7 @@ import (
 	"github.com/quic-go/quic-go/internal/monotime"
 	"github.com/quic-go/quic-go/internal/protocol"
 	"github.com/quic-go/quic-go/internal/qerr"
+	"github.com/quic-go/quic-go/internal/udp"
 	"github.com/quic-go/quic-go/internal/utils"
 	"github.com/quic-go/quic-go/internal/wire"
 	"github.com/quic-go/quic-go/qlog"
@@ -68,7 +69,7 @@ type baseServer struct {
 	tlsConf *tls.Config
 	config  *Config
 
-	conn rawConn
+	conn udp.Conn
 
 	tokenGenerator *handshake.TokenGenerator
 	maxTokenAge    time.Duration
@@ -91,7 +92,7 @@ type baseServer struct {
 		sendConn,
 		connRunner,
 		protocol.ConnectionID, /* original dest connection ID */
-		*protocol.ConnectionID, /* retry src connection ID */
+		protocol.ConnectionID, /* retry src connection ID */
 		protocol.ConnectionID, /* client dest connection ID */
 		protocol.ConnectionID, /* destination connection ID */
 		protocol.ConnectionID, /* source connection ID */
@@ -239,7 +240,6 @@ func listenUDP(addr string) (*net.UDPConn, error) {
 // This is a convenience function. More advanced use cases should instantiate a [Transport],
 // which offers configuration options for a more fine-grained control of the connection establishment,
 // including reusing the underlying UDP socket for outgoing QUIC connections.
-// When closing a listener created with Listen, all established QUIC connections will be closed immediately.
 func Listen(conn net.PacketConn, tlsConf *tls.Config, config *Config) (*Listener, error) {
 	tr := &Transport{Conn: conn, isSingleUse: true}
 	return tr.Listen(tlsConf, config)
@@ -252,7 +252,7 @@ func ListenEarly(conn net.PacketConn, tlsConf *tls.Config, config *Config) (*Ear
 }
 
 func newServer(
-	conn rawConn,
+	conn udp.Conn,
 	tr *packetHandlerMap,
 	connIDGenerator ConnectionIDGenerator,
 	statelessResetter *statelessResetter,
@@ -415,7 +415,7 @@ func (s *baseServer) handlePacket(p receivedPacket) {
 		s.logger.Debugf("Dropping packet from %s (%d bytes). Server receive queue full.", p.remoteAddr, p.Size())
 		if s.qlogger != nil {
 			s.qlogger.RecordEvent(qlog.PacketDropped{
-				Raw:     qlog.RawInfo{Length: int(p.Size())},
+				Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 				Trigger: qlog.PacketDropDOSPrevention,
 			})
 		}
@@ -431,8 +431,8 @@ func (s *baseServer) handlePacketImpl(p receivedPacket) bool /* is the buffer st
 		s.logger.Debugf("Dropping Version Negotiation packet.")
 		if s.qlogger != nil {
 			s.qlogger.RecordEvent(qlog.PacketDropped{
-				Header:  qlog.PacketHeader{PacketType: qlog.PacketTypeVersionNegotiation},
-				Raw:     qlog.RawInfo{Length: int(p.Size())},
+				Header:  qlog.PacketHeader{PacketNumber: protocol.InvalidPacketNumber, PacketType: qlog.PacketTypeVersionNegotiation},
+				Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 				Trigger: qlog.PacketDropUnexpectedPacket,
 			})
 		}
@@ -448,7 +448,7 @@ func (s *baseServer) handlePacketImpl(p receivedPacket) bool /* is the buffer st
 		s.logger.Debugf("Dropping a packet with an unknown version")
 		if s.qlogger != nil {
 			s.qlogger.RecordEvent(qlog.PacketDropped{
-				Raw:     qlog.RawInfo{Length: int(p.Size())},
+				Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 				Trigger: qlog.PacketDropUnexpectedPacket,
 			})
 		}
@@ -459,8 +459,8 @@ func (s *baseServer) handlePacketImpl(p receivedPacket) bool /* is the buffer st
 		if s.disableVersionNegotiation {
 			if s.qlogger != nil {
 				s.qlogger.RecordEvent(qlog.PacketDropped{
-					Header:  qlog.PacketHeader{Version: v},
-					Raw:     qlog.RawInfo{Length: int(p.Size())},
+					Header:  qlog.PacketHeader{PacketNumber: protocol.InvalidPacketNumber, Version: v},
+					Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 					Trigger: qlog.PacketDropUnexpectedVersion,
 				})
 			}
@@ -471,8 +471,8 @@ func (s *baseServer) handlePacketImpl(p receivedPacket) bool /* is the buffer st
 			s.logger.Debugf("Dropping a packet with an unsupported version number %d that is too small (%d bytes)", v, p.Size())
 			if s.qlogger != nil {
 				s.qlogger.RecordEvent(qlog.PacketDropped{
-					Header:  qlog.PacketHeader{Version: v},
-					Raw:     qlog.RawInfo{Length: int(p.Size())},
+					Header:  qlog.PacketHeader{PacketNumber: protocol.InvalidPacketNumber, Version: v},
+					Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 					Trigger: qlog.PacketDropUnexpectedPacket,
 				})
 			}
@@ -489,7 +489,7 @@ func (s *baseServer) handlePacketImpl(p receivedPacket) bool /* is the buffer st
 						PacketType:   qlog.PacketType0RTT,
 						PacketNumber: protocol.InvalidPacketNumber,
 					},
-					Raw:     qlog.RawInfo{Length: int(p.Size())},
+					Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 					Trigger: qlog.PacketDropUnexpectedPacket,
 				})
 			}
@@ -504,7 +504,7 @@ func (s *baseServer) handlePacketImpl(p receivedPacket) bool /* is the buffer st
 	if err != nil {
 		if s.qlogger != nil {
 			s.qlogger.RecordEvent(qlog.PacketDropped{
-				Raw:     qlog.RawInfo{Length: int(p.Size())},
+				Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 				Trigger: qlog.PacketDropHeaderParseError,
 			})
 		}
@@ -520,7 +520,7 @@ func (s *baseServer) handlePacketImpl(p receivedPacket) bool /* is the buffer st
 					PacketNumber: protocol.InvalidPacketNumber,
 					Version:      v,
 				},
-				Raw:     qlog.RawInfo{Length: int(p.Size())},
+				Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 				Trigger: qlog.PacketDropUnexpectedPacket,
 			})
 		}
@@ -550,7 +550,7 @@ func (s *baseServer) handlePacketImpl(p receivedPacket) bool /* is the buffer st
 					PacketNumber: protocol.InvalidPacketNumber,
 					Version:      v,
 				},
-				Raw:     qlog.RawInfo{Length: int(p.Size())},
+				Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 				Trigger: qlog.PacketDropUnexpectedPacket,
 			})
 		}
@@ -578,7 +578,7 @@ func (s *baseServer) handle0RTTPacket(p receivedPacket) bool {
 					PacketNumber: protocol.InvalidPacketNumber,
 					Version:      v,
 				},
-				Raw:     qlog.RawInfo{Length: int(p.Size())},
+				Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 				Trigger: qlog.PacketDropHeaderParseError,
 			})
 		}
@@ -601,7 +601,7 @@ func (s *baseServer) handle0RTTPacket(p receivedPacket) bool {
 						PacketNumber: protocol.InvalidPacketNumber,
 						Version:      v,
 					},
-					Raw:     qlog.RawInfo{Length: int(p.Size())},
+					Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 					Trigger: qlog.PacketDropDOSPrevention,
 				})
 			}
@@ -620,7 +620,7 @@ func (s *baseServer) handle0RTTPacket(p receivedPacket) bool {
 					PacketNumber: protocol.InvalidPacketNumber,
 					Version:      v,
 				},
-				Raw:     qlog.RawInfo{Length: int(p.Size())},
+				Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 				Trigger: qlog.PacketDropDOSPrevention,
 			})
 		}
@@ -657,7 +657,7 @@ func (s *baseServer) cleanupZeroRTTQueues(now monotime.Time) {
 						PacketNumber: protocol.InvalidPacketNumber,
 						Version:      v,
 					},
-					Raw:     qlog.RawInfo{Length: int(p.Size())},
+					Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 					Trigger: qlog.PacketDropDOSPrevention,
 				})
 			}
@@ -673,13 +673,17 @@ func (s *baseServer) cleanupZeroRTTQueues(now monotime.Time) {
 
 // validateToken returns false if:
 //   - address is invalid
+//   - token was issued for a different QUIC version
 //   - token is expired
 //   - token is null
-func (s *baseServer) validateToken(token *handshake.Token, addr net.Addr) bool {
+func (s *baseServer) validateToken(token *handshake.Token, addr net.Addr, v protocol.Version) bool {
 	if token == nil {
 		return false
 	}
 	if !token.ValidateRemoteAddr(addr) {
+		return false
+	}
+	if token.Version != v {
 		return false
 	}
 	if !token.IsRetryToken && time.Since(token.SentTime) > s.maxTokenAge {
@@ -700,7 +704,7 @@ func (s *baseServer) handleInitialImpl(p receivedPacket, hdr *wire.Header) error
 					PacketNumber: protocol.InvalidPacketNumber,
 					Version:      hdr.Version,
 				},
-				Raw:     qlog.RawInfo{Length: int(p.Size())},
+				Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 				Trigger: qlog.PacketDropUnexpectedPacket,
 			})
 		}
@@ -718,7 +722,7 @@ func (s *baseServer) handleInitialImpl(p receivedPacket, hdr *wire.Header) error
 
 	var (
 		token              *handshake.Token
-		retrySrcConnID     *protocol.ConnectionID
+		retrySrcConnID     protocol.ConnectionID
 		clientAddrVerified bool
 	)
 	origDestConnID := hdr.DestConnectionID
@@ -727,13 +731,13 @@ func (s *baseServer) handleInitialImpl(p receivedPacket, hdr *wire.Header) error
 		if err == nil {
 			if tok.IsRetryToken {
 				origDestConnID = tok.OriginalDestConnectionID
-				retrySrcConnID = &tok.RetrySrcConnectionID
+				retrySrcConnID = tok.RetrySrcConnectionID
 			}
 			token = tok
 		}
 	}
 	if token != nil {
-		clientAddrVerified = s.validateToken(token, p.remoteAddr)
+		clientAddrVerified = s.validateToken(token, p.remoteAddr, hdr.Version)
 		if !clientAddrVerified {
 			// For invalid and expired non-retry tokens, we don't send an INVALID_TOKEN error.
 			// We just ignore them, and act as if there was no token on this packet at all.
@@ -928,7 +932,7 @@ func (s *baseServer) sendRetryPacket(p rejectedPacket) error {
 	if err != nil {
 		return err
 	}
-	token, err := s.tokenGenerator.NewRetryToken(p.remoteAddr, hdr.DestConnectionID, srcConnID)
+	token, err := s.tokenGenerator.NewRetryToken(p.remoteAddr, hdr.DestConnectionID, srcConnID, hdr.Version)
 	if err != nil {
 		return err
 	}
@@ -944,7 +948,7 @@ func (s *baseServer) sendRetryPacket(p rejectedPacket) error {
 		replyHdr.Log(s.logger)
 	}
 
-	buf := getPacketBuffer()
+	buf := udp.GetPacketBuffer()
 	defer buf.Release()
 	buf.Data, err = replyHdr.Append(buf.Data, hdr.Version)
 	if err != nil {
@@ -964,7 +968,7 @@ func (s *baseServer) sendRetryPacket(p rejectedPacket) error {
 			},
 			Raw: qlog.RawInfo{
 				Length:        len(buf.Data),
-				PayloadLength: int(replyHdr.Length),
+				PayloadLength: qlog.OmitLength,
 			},
 		})
 	}
@@ -990,7 +994,7 @@ func (s *baseServer) maybeSendInvalidToken(p rejectedPacket) {
 					PacketType:   qlog.PacketTypeInitial,
 					PacketNumber: protocol.InvalidPacketNumber,
 				},
-				Raw:     qlog.RawInfo{Length: int(p.Size())},
+				Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 				Trigger: qlog.PacketDropHeaderParseError,
 			})
 		}
@@ -1005,7 +1009,7 @@ func (s *baseServer) maybeSendInvalidToken(p rejectedPacket) {
 					PacketNumber: protocol.InvalidPacketNumber,
 					Version:      hdr.Version,
 				},
-				Raw:     qlog.RawInfo{Length: int(p.Size())},
+				Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 				Trigger: qlog.PacketDropPayloadDecryptError,
 			})
 		}
@@ -1028,8 +1032,8 @@ func (s *baseServer) sendConnectionRefused(p rejectedPacket) {
 }
 
 // sendError sends the error as a response to the packet received with header hdr
-func (s *baseServer) sendError(remoteAddr net.Addr, hdr *wire.Header, sealer handshake.LongHeaderSealer, errorCode qerr.TransportErrorCode, info packetInfo) error {
-	b := getPacketBuffer()
+func (s *baseServer) sendError(remoteAddr net.Addr, hdr *wire.Header, sealer handshake.LongHeaderSealer, errorCode qerr.TransportErrorCode, info udp.PacketInfo) error {
+	b := udp.GetPacketBuffer()
 	defer b.Release()
 
 	ccf := &wire.ConnectionCloseFrame{ErrorCode: uint64(errorCode)}
@@ -1109,7 +1113,7 @@ func (s *baseServer) maybeSendVersionNegotiationPacket(p receivedPacket) {
 		s.logger.Debugf("Dropping a packet with an unknown version for which we failed to parse connection IDs")
 		if s.qlogger != nil {
 			s.qlogger.RecordEvent(qlog.PacketDropped{
-				Raw:     qlog.RawInfo{Length: int(p.Size())},
+				Raw:     qlog.RawInfo{Length: int(p.Size()), PayloadLength: qlog.OmitLength},
 				Trigger: qlog.PacketDropUnexpectedPacket,
 			})
 		}

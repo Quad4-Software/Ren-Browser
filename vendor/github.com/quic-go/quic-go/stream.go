@@ -32,6 +32,8 @@ type streamSender interface {
 	recordStreamPriorityUpdated(protocol.StreamID, int8, bool)
 	// must be called without holding the mutex that is acquired by closeForShutdown
 	onStreamCompleted(protocol.StreamID)
+	// must be called without holding the mutex that is acquired by closeForShutdown
+	onStreamCreditReleased(protocol.StreamID)
 }
 
 // Each of the both stream halves gets its own uniStreamSender.
@@ -194,6 +196,14 @@ func (s *Stream) Close() error {
 	return s.sendStr.Close()
 }
 
+// ReleaseStreamCredit allows the peer to open a new stream in place of this one,
+// once both directions of the stream have completed.
+// See [ReceiveStream.ReleaseStreamCredit] for more details.
+// For streams opened by us, it is a no-op.
+func (s *Stream) ReleaseStreamCredit() {
+	s.sender.onStreamCreditReleased(s.StreamID())
+}
+
 func (s *Stream) handleResetStreamFrame(frame *wire.ResetStreamFrame, rcvTime monotime.Time) error {
 	return s.receiveStr.handleResetStreamFrame(frame, rcvTime)
 }
@@ -214,16 +224,17 @@ func (s *Stream) enableResetStreamAt() {
 	s.sendStr.enableResetStreamAt()
 }
 
-func (s *Stream) popStreamFrame(maxBytes protocol.ByteCount, v protocol.Version) (_ ackhandler.StreamFrame, _ *wire.StreamDataBlockedFrame, hasMore bool) {
+func (s *Stream) popStreamFrame(maxBytes protocol.ByteCount, v protocol.Version) (ackhandler.StreamFrame, *wire.StreamDataBlockedFrame, sendState) {
 	return s.sendStr.popStreamFrame(maxBytes, v)
 }
 
 func (s *Stream) getControlFrame(now monotime.Time) (_ ackhandler.Frame, ok, hasMore bool) {
-	f, ok, _ := s.sendStr.getControlFrame(now)
+	f, ok, sendHasMore := s.sendStr.getControlFrame(now)
 	if ok {
 		return f, true, true
 	}
-	return s.receiveStr.getControlFrame(now)
+	f, ok, hasMore = s.receiveStr.getControlFrame(now)
+	return f, ok, hasMore || sendHasMore
 }
 
 // SetReadDeadline sets the deadline for future [Stream.Read] calls.

@@ -6,10 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"strings"
 	"sync/atomic"
-	"time"
 
+	"github.com/quic-go/quic-go/internal/monotime"
 	"github.com/quic-go/quic-go/internal/protocol"
 	"github.com/quic-go/quic-go/internal/qerr"
 	"github.com/quic-go/quic-go/internal/utils"
@@ -46,10 +45,10 @@ type cryptoSetup struct {
 
 	perspective protocol.Perspective
 
-	handshakeCompleteTime time.Time
-
 	zeroRTTOpener LongHeaderOpener // only set for the server
 	zeroRTTSealer LongHeaderSealer // only set for the client
+	// set when the server receives its first 1-RTT packet while holding 0-RTT keys
+	first1RTTPacketTime monotime.Time
 
 	initialOpener LongHeaderOpener
 	initialSealer LongHeaderSealer
@@ -247,8 +246,7 @@ func (h *cryptoSetup) handleEvent(ev tls.QUICEvent) (err error) {
 		h.setReadKey(ev.Level, ev.Suite, ev.Data)
 		return nil
 	case tls.QUICSetWriteSecret:
-		h.setWriteKey(ev.Level, ev.Suite, ev.Data)
-		return nil
+		return h.setWriteKey(ev.Level, ev.Suite, ev.Data)
 	case tls.QUICTransportParameters:
 		return h.handleTransportParameters(ev.Data)
 	case tls.QUICTransportParametersRequired:
@@ -369,6 +367,7 @@ func decodeDataFromSessionState(b []byte, earlyData bool) (*wire.TransportParame
 
 func (h *cryptoSetup) getDataForSessionTicket() []byte {
 	return (&sessionTicket{
+		Version:    h.version,
 		Parameters: h.ourParams,
 	}).Marshal()
 }
@@ -381,14 +380,6 @@ func (h *cryptoSetup) GetSessionTicket() ([]byte, error) {
 		EarlyData: h.allow0RTT,
 		Extra:     [][]byte{addSessionStateExtraPrefix(h.getDataForSessionTicket())},
 	}); err != nil {
-		// Session tickets might be disabled by tls.Config.SessionTicketsDisabled.
-		// We can't check h.tlsConfig here, since the actual config might have been obtained from
-		// the GetConfigForClient callback.
-		// See https://github.com/golang/go/issues/62032.
-		// This error assertion can be removed once we drop support for Go 1.25.
-		if strings.Contains(err.Error(), "session ticket keys unavailable") {
-			return nil, nil
-		}
 		return nil, err
 	}
 	// If session tickets are disabled, NextEvent will immediately return QUICNoEvent,
@@ -423,6 +414,11 @@ func (h *cryptoSetup) handleSessionTicket(data []byte, using0RTT bool) (allowEar
 		return false
 	}
 	if !using0RTT {
+		return false
+	}
+	// Session tickets are specific to the QUIC version of the connection that issued them.
+	if t.Version != h.version {
+		h.logger.Debugf("Session ticket was issued for %s. Rejecting 0-RTT.", t.Version)
 		return false
 	}
 	valid := h.ourParams.ValidFor0RTT(t.Parameters)
@@ -495,7 +491,7 @@ func (h *cryptoSetup) setReadKey(el tls.QUICEncryptionLevel, suiteID uint16, tra
 	}
 }
 
-func (h *cryptoSetup) setWriteKey(el tls.QUICEncryptionLevel, suiteID uint16, trafficSecret []byte) {
+func (h *cryptoSetup) setWriteKey(el tls.QUICEncryptionLevel, suiteID uint16, trafficSecret []byte) error {
 	suite := getCipherSuite(suiteID)
 	//nolint:exhaustive // The TLS stack doesn't export Initial keys.
 	switch el {
@@ -517,7 +513,7 @@ func (h *cryptoSetup) setWriteKey(el tls.QUICEncryptionLevel, suiteID uint16, tr
 			})
 		}
 		// don't set used0RTT here. 0-RTT might still get rejected.
-		return
+		return nil
 	case tls.QUICEncryptionLevelHandshake:
 		h.handshakeSealer = newLongHeaderSealer(
 			createAEAD(suite, trafficSecret, h.version),
@@ -534,6 +530,13 @@ func (h *cryptoSetup) setWriteKey(el tls.QUICEncryptionLevel, suiteID uint16, tr
 		}
 		if h.zeroRTTSealer != nil {
 			// Once we receive handshake keys, we know that 0-RTT was not rejected.
+			// The server must not reduce any of the limits it used for 0-RTT.
+			if !h.peerParams.ValidForUpdate(h.zeroRTTParameters) {
+				return &qerr.TransportError{
+					ErrorCode:    qerr.ProtocolViolation,
+					ErrorMessage: "server sent reduced limits after accepting 0-RTT data",
+				}
+			}
 			h.used0RTT.Store(true)
 			h.zeroRTTSealer = nil
 			h.logger.Debugf("Dropping 0-RTT keys.")
@@ -550,6 +553,7 @@ func (h *cryptoSetup) setWriteKey(el tls.QUICEncryptionLevel, suiteID uint16, tr
 			KeyType: encLevelToKeyType(protocol.FromTLSEncryptionLevel(el), h.perspective),
 		})
 	}
+	return nil
 }
 
 // writeRecord is called when TLS writes data
@@ -581,7 +585,6 @@ func (h *cryptoSetup) DiscardInitialKeys() {
 }
 
 func (h *cryptoSetup) handshakeComplete() {
-	h.handshakeCompleteTime = time.Now()
 	h.events = append(h.events, Event{Kind: EventHandshakeComplete})
 }
 
@@ -642,6 +645,7 @@ func (h *cryptoSetup) GetInitialOpener() (LongHeaderOpener, error) {
 }
 
 func (h *cryptoSetup) Get0RTTOpener() (LongHeaderOpener, error) {
+	h.maybeDrop0RTTKeys()
 	if h.zeroRTTOpener == nil {
 		if h.initialOpener != nil {
 			return nil, ErrKeysNotYetAvailable
@@ -664,18 +668,30 @@ func (h *cryptoSetup) GetHandshakeOpener() (LongHeaderOpener, error) {
 }
 
 func (h *cryptoSetup) Get1RTTOpener() (ShortHeaderOpener, error) {
-	if h.zeroRTTOpener != nil && time.Since(h.handshakeCompleteTime) > 3*h.rttStats.PTO(true) {
-		h.zeroRTTOpener = nil
-		h.logger.Debugf("Dropping 0-RTT keys.")
-		if h.qlogger != nil {
-			h.qlogger.RecordEvent(qlog.KeyDiscarded{KeyType: qlog.KeyTypeClient0RTT})
-		}
-	}
-
 	if !h.has1RTTOpener {
 		return nil, ErrKeysNotYetAvailable
 	}
+	if h.zeroRTTOpener != nil && h.first1RTTPacketTime.IsZero() {
+		h.first1RTTPacketTime = monotime.Now()
+	}
+	h.maybeDrop0RTTKeys()
 	return h.aead, nil
+}
+
+// After receiving a 1-RTT packet, servers MUST discard 0-RTT keys within a short time.
+// The RECOMMENDED time period is three times the PTO.
+func (h *cryptoSetup) maybeDrop0RTTKeys() {
+	if h.zeroRTTOpener == nil || h.first1RTTPacketTime.IsZero() {
+		return
+	}
+	if monotime.Since(h.first1RTTPacketTime) <= 3*h.rttStats.PTO(true) {
+		return
+	}
+	h.zeroRTTOpener = nil
+	h.logger.Debugf("Dropping 0-RTT keys.")
+	if h.qlogger != nil {
+		h.qlogger.RecordEvent(qlog.KeyDiscarded{KeyType: qlog.KeyTypeClient0RTT})
+	}
 }
 
 func (h *cryptoSetup) ConnectionState() ConnectionState {
@@ -688,6 +704,9 @@ func (h *cryptoSetup) ConnectionState() ConnectionState {
 func wrapError(err error) error {
 	if alertErr, ok := errors.AsType[tls.AlertError](err); ok {
 		return qerr.NewLocalCryptoError(uint8(alertErr), err)
+	}
+	if transportErr, ok := errors.AsType[*qerr.TransportError](err); ok {
+		return transportErr
 	}
 	return &qerr.TransportError{ErrorCode: qerr.InternalError, ErrorMessage: err.Error()}
 }

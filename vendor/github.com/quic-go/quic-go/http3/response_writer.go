@@ -19,6 +19,12 @@ import (
 // HTTPStreamer allows an HTTP handler to take over an HTTP/3 stream.
 // It is implemented by the [http.ResponseWriter] passed to HTTP/3 handlers.
 // When a stream is taken over, it's the caller's responsibility to close the stream.
+//
+// HTTPStream doesn't send the response header.
+// It is sent by flushing the ResponseWriter, before or after calling HTTPStream.
+// Writes to the stream fail until then, and must not be made while the ResponseWriter is flushed.
+// HTTPStream panics if any response body was written.
+// Calling Write on the ResponseWriter after HTTPStream returns [http.ErrHijacked].
 type HTTPStreamer interface {
 	HTTPStream() *Stream
 }
@@ -31,18 +37,19 @@ type responseWriter struct {
 	conn     *rawConn
 	header   http.Header
 	trailers map[string]struct{}
-	buf      []byte
-	status   int // status code passed to WriteHeader
+	buf      []byte // the unwritten part of the HEADERS frame
+	status   int    // status code passed to WriteHeader
 
 	// for responses smaller than maxSmallResponseSize, we buffer calls to Write,
 	// and automatically add the Content-Length header
 	smallResponseBuf []byte
 
-	contentLen     int64 // if handler set valid Content-Length header
+	contentLen     int64 // if handler set valid Content-Length header, -1 otherwise
 	numWritten     int64 // bytes written
 	headerComplete bool  // set once WriteHeader is called with a status code >= 200
 	headerWritten  bool  // set once the response header has been serialized to the stream
 	isHead         bool
+	isConnect      bool
 	trailerWritten bool // set once the response trailers has been serialized to the stream
 
 	hijacked bool // set on HTTPStream is called
@@ -64,14 +71,15 @@ var (
 	} = &responseWriter{}
 )
 
-func newResponseWriter(str *Stream, conn *rawConn, isHead bool, logger *slog.Logger) *responseWriter {
+func newResponseWriter(str *Stream, conn *rawConn, method string, logger *slog.Logger) *responseWriter {
 	return &responseWriter{
-		str:    str,
-		conn:   conn,
-		header: http.Header{},
-		buf:    make([]byte, frameHeaderLen),
-		isHead: isHead,
-		logger: logger,
+		str:        str,
+		conn:       conn,
+		header:     http.Header{},
+		contentLen: -1,
+		isHead:     method == http.MethodHead,
+		isConnect:  method == http.MethodConnect,
+		logger:     logger,
 	}
 }
 
@@ -92,7 +100,10 @@ func (w *responseWriter) WriteHeader(status int) {
 
 	// immediately write 1xx headers
 	if status < 200 {
-		w.writeHeader(status)
+		// WriteHeader can't return an error, so a failed informational header isn't resumed
+		if err := w.writeHeader(status); err != nil {
+			w.buf = nil
+		}
 		return
 	}
 
@@ -134,6 +145,9 @@ func (w *responseWriter) sniffContentType(p []byte) {
 }
 
 func (w *responseWriter) Write(p []byte) (int, error) {
+	if w.hijacked {
+		return 0, http.ErrHijacked
+	}
 	bodyAllowed := bodyAllowedForStatus(w.status)
 	if !w.headerComplete {
 		w.sniffContentType(p)
@@ -144,12 +158,12 @@ func (w *responseWriter) Write(p []byte) (int, error) {
 		return 0, http.ErrBodyNotAllowed
 	}
 
-	w.numWritten += int64(len(p))
-	if w.contentLen != 0 && w.numWritten > w.contentLen {
+	if w.contentLen != -1 && w.numWritten+int64(len(p)) > w.contentLen {
 		return 0, http.ErrContentLength
 	}
 
 	if w.isHead {
+		w.numWritten += int64(len(p))
 		return len(p), nil
 	}
 
@@ -158,10 +172,13 @@ func (w *responseWriter) Write(p []byte) (int, error) {
 		// This allows us to automatically set the Content-Length field.
 		if len(w.smallResponseBuf)+len(p) < maxSmallResponseSize {
 			w.smallResponseBuf = append(w.smallResponseBuf, p...)
+			w.numWritten += int64(len(p))
 			return len(p), nil
 		}
 	}
-	return w.doWrite(p)
+	n, err := w.doWrite(p)
+	w.numWritten += int64(n)
+	return n, err
 }
 
 func (w *responseWriter) doWrite(p []byte) (int, error) {
@@ -173,46 +190,42 @@ func (w *responseWriter) doWrite(p []byte) (int, error) {
 		w.headerWritten = true
 	}
 
-	l := uint64(len(w.smallResponseBuf) + len(p))
-	if l == 0 {
-		return 0, nil
-	}
-	df := &dataFrame{Length: l}
-	w.buf = w.buf[:0]
-	w.buf = df.Append(w.buf)
-	if w.str.qlogger != nil {
-		w.str.qlogger.RecordEvent(qlog.FrameCreated{
-			StreamID: w.str.StreamID(),
-			Raw:      qlog.RawInfo{Length: len(w.buf) + int(l), PayloadLength: int(l)},
-			Frame:    qlog.Frame{Frame: qlog.DataFrame{}},
-		})
-	}
-	if _, err := w.str.writeUnframed(w.buf); err != nil {
-		return 0, err
-	}
 	if len(w.smallResponseBuf) > 0 {
-		if _, err := w.str.writeUnframed(w.smallResponseBuf); err != nil {
+		n, err := w.str.Write(w.smallResponseBuf)
+		if err != nil {
+			w.smallResponseBuf = w.smallResponseBuf[n:]
 			return 0, err
 		}
 		w.smallResponseBuf = nil
 	}
-	var n int
-	if len(p) > 0 {
-		var err error
-		n, err = w.str.writeUnframed(p)
-		if err != nil {
-			return n, err
-		}
-	}
-	return n, nil
+	return w.str.Write(p)
 }
 
+// writeHeader writes the HEADERS frame.
+// It's only encoded once: if writing fails partway (e.g. because the write deadline expired),
+// the next call writes the rest.
 func (w *responseWriter) writeHeader(status int) error {
+	if len(w.buf) == 0 {
+		var err error
+		if w.buf, err = w.encodeHeader(status); err != nil {
+			return err
+		}
+	}
+	n, err := w.str.writeHeader(w.buf, status >= 200)
+	if err != nil && n < len(w.buf) {
+		w.buf = w.buf[n:]
+		return err
+	}
+	w.buf = w.buf[len(w.buf):]
+	return nil
+}
+
+func (w *responseWriter) encodeHeader(status int) ([]byte, error) {
 	var headerFields []qlog.HeaderField // only used for qlog
 	var headers bytes.Buffer
 	enc := qpack.NewEncoder(&headers)
 	if err := enc.WriteField(qpack.HeaderField{Name: ":status", Value: strconv.Itoa(status)}); err != nil {
-		return err
+		return nil, err
 	}
 	if w.str.qlogger != nil {
 		headerFields = append(headerFields, qlog.HeaderField{Name: ":status", Value: strconv.Itoa(status)})
@@ -238,11 +251,18 @@ func (w *responseWriter) writeHeader(status int) error {
 		if strings.HasPrefix(k, http.TrailerPrefix) {
 			continue
 		}
-		for index := range v {
-			name := strings.ToLower(k)
-			value := v[index]
+		name := strings.ToLower(k)
+		// A 2xx response to CONNECT must not contain a Content-Length.
+		if name == "content-length" && w.isConnect && status >= 200 && status < 300 {
+			continue
+		}
+		for _, value := range v {
+			// drop fields that HTTP/3 does not allow
+			if !canSendField(name, value) {
+				continue
+			}
 			if err := enc.WriteField(qpack.HeaderField{Name: name, Value: value}); err != nil {
-				return err
+				return nil, err
 			}
 			if w.str.qlogger != nil {
 				headerFields = append(headerFields, qlog.HeaderField{Name: name, Value: value})
@@ -257,9 +277,7 @@ func (w *responseWriter) writeHeader(status int) error {
 	if w.str.qlogger != nil {
 		qlogCreatedHeadersFrame(w.str.qlogger, w.str.StreamID(), len(buf), headers.Len(), headerFields)
 	}
-
-	_, err := w.str.writeUnframed(buf)
-	return err
+	return buf, nil
 }
 
 func (w *responseWriter) FlushError() error {
@@ -270,8 +288,21 @@ func (w *responseWriter) FlushError() error {
 	return err
 }
 
+// Finish flushes the response after the handler returned.
+// If the response header wasn't sent yet, it adds the Content-Length, unless the status doesn't allow a body.
+func (w *responseWriter) Finish() error {
+	_, haveCL := w.header["Content-Length"]
+	// without a final status, FlushError sends a 200
+	bodyAllowed := !w.headerComplete || bodyAllowedForStatus(w.status)
+	if !haveCL && !w.headerWritten && bodyAllowed {
+		w.header.Set("Content-Length", strconv.FormatInt(w.numWritten, 10))
+	}
+	return w.FlushError()
+}
+
 func (w *responseWriter) flushTrailers() {
-	if w.trailerWritten {
+	// A 2xx response to CONNECT starts a tunnel that only carries DATA frames (section 4.4 of RFC 9114).
+	if w.trailerWritten || (w.isConnect && w.status >= 200 && w.status < 300) {
 		return
 	}
 	if err := w.writeTrailers(); err != nil {
@@ -334,8 +365,10 @@ func (w *responseWriter) writeTrailers() error {
 }
 
 func (w *responseWriter) HTTPStream() *Stream {
+	if w.numWritten > 0 {
+		panic("http3: HTTPStream called after writing the response body")
+	}
 	w.hijacked = true
-	w.Flush()
 	return w.str
 }
 

@@ -1,48 +1,50 @@
-# github.com/Quad4-Software/Reticulum-Go v1.4.2 => ./third_party/reticulum-go
-## explicit; go 1.27.3
-github.com/Quad4-Software/Reticulum-Go/internal/storage
-github.com/Quad4-Software/Reticulum-Go/pkg/announce
-github.com/Quad4-Software/Reticulum-Go/pkg/backbone
-github.com/Quad4-Software/Reticulum-Go/pkg/blackhole
-github.com/Quad4-Software/Reticulum-Go/pkg/channel
-github.com/Quad4-Software/Reticulum-Go/pkg/common
-github.com/Quad4-Software/Reticulum-Go/pkg/cryptography
-github.com/Quad4-Software/Reticulum-Go/pkg/debug
-github.com/Quad4-Software/Reticulum-Go/pkg/destination
-github.com/Quad4-Software/Reticulum-Go/pkg/health
-github.com/Quad4-Software/Reticulum-Go/pkg/hostcap
-github.com/Quad4-Software/Reticulum-Go/pkg/i2p
-github.com/Quad4-Software/Reticulum-Go/pkg/identity
-github.com/Quad4-Software/Reticulum-Go/pkg/identity/store
-github.com/Quad4-Software/Reticulum-Go/pkg/ifac
-github.com/Quad4-Software/Reticulum-Go/pkg/interfaces
-github.com/Quad4-Software/Reticulum-Go/pkg/link
-github.com/Quad4-Software/Reticulum-Go/pkg/packet
-github.com/Quad4-Software/Reticulum-Go/pkg/pathfinder
-github.com/Quad4-Software/Reticulum-Go/pkg/profiler
-github.com/Quad4-Software/Reticulum-Go/pkg/protect
-github.com/Quad4-Software/Reticulum-Go/pkg/rate
-github.com/Quad4-Software/Reticulum-Go/pkg/resource
-github.com/Quad4-Software/Reticulum-Go/pkg/reticulumconfig
-github.com/Quad4-Software/Reticulum-Go/pkg/sandbox
-github.com/Quad4-Software/Reticulum-Go/pkg/sdr
-github.com/Quad4-Software/Reticulum-Go/pkg/securemem
-github.com/Quad4-Software/Reticulum-Go/pkg/sharedinstance
-github.com/Quad4-Software/Reticulum-Go/pkg/term
-github.com/Quad4-Software/Reticulum-Go/pkg/transport
-# github.com/Quad4-Software/bzip2 v1.0.1
-## explicit; go 1.27.1
-github.com/Quad4-Software/bzip2/internal/enc
-github.com/Quad4-Software/bzip2/pkg/bzip2
-# github.com/Quad4-Software/msgpack/v5 v5.9.2
-## explicit; go 1.27.1
-github.com/Quad4-Software/msgpack/v5/pkg/msgpack
-github.com/Quad4-Software/msgpack/v5/pkg/msgpack/msgpcode
-# github.com/Quad4-Software/tagparser/v2 v2.2.1
-## explicit; go 1.27.1
-github.com/Quad4-Software/tagparser/v2/internal
-github.com/Quad4-Software/tagparser/v2/internal/parser
-github.com/Quad4-Software/tagparser/v2/pkg/tagparser
+# git.quad4.io/libraries/bzip2 v1.0.2
+## explicit; go 1.27.4
+git.quad4.io/libraries/bzip2/internal/enc
+git.quad4.io/libraries/bzip2/pkg/bzip2
+# git.quad4.io/libraries/msgpack/v5 v5.9.3
+## explicit; go 1.27.4
+git.quad4.io/libraries/msgpack/v5/pkg/msgpack
+git.quad4.io/libraries/msgpack/v5/pkg/msgpack/msgpcode
+# git.quad4.io/libraries/tagparser/v2 v2.2.2
+## explicit; go 1.27.4
+git.quad4.io/libraries/tagparser/v2/internal
+git.quad4.io/libraries/tagparser/v2/internal/parser
+git.quad4.io/libraries/tagparser/v2/pkg/tagparser
+# git.quad4.io/reticulum/Reticulum-Go v1.6.1-0.20261126222014-01045d6d96ba => ./third_party/reticulum-go
+## explicit; go 1.27.4
+git.quad4.io/reticulum/Reticulum-Go/internal/sqlitestore
+git.quad4.io/reticulum/Reticulum-Go/internal/storage
+git.quad4.io/reticulum/Reticulum-Go/pkg/announce
+git.quad4.io/reticulum/Reticulum-Go/pkg/backbone
+git.quad4.io/reticulum/Reticulum-Go/pkg/blackhole
+git.quad4.io/reticulum/Reticulum-Go/pkg/channel
+git.quad4.io/reticulum/Reticulum-Go/pkg/common
+git.quad4.io/reticulum/Reticulum-Go/pkg/cryptography
+git.quad4.io/reticulum/Reticulum-Go/pkg/debug
+git.quad4.io/reticulum/Reticulum-Go/pkg/destination
+git.quad4.io/reticulum/Reticulum-Go/pkg/health
+git.quad4.io/reticulum/Reticulum-Go/pkg/hostcap
+git.quad4.io/reticulum/Reticulum-Go/pkg/i2p
+git.quad4.io/reticulum/Reticulum-Go/pkg/identity
+git.quad4.io/reticulum/Reticulum-Go/pkg/identity/store
+git.quad4.io/reticulum/Reticulum-Go/pkg/ifac
+git.quad4.io/reticulum/Reticulum-Go/pkg/interfaces
+git.quad4.io/reticulum/Reticulum-Go/pkg/link
+git.quad4.io/reticulum/Reticulum-Go/pkg/packet
+git.quad4.io/reticulum/Reticulum-Go/pkg/pathfinder
+git.quad4.io/reticulum/Reticulum-Go/pkg/profiler
+git.quad4.io/reticulum/Reticulum-Go/pkg/protect
+git.quad4.io/reticulum/Reticulum-Go/pkg/rate
+git.quad4.io/reticulum/Reticulum-Go/pkg/resource
+git.quad4.io/reticulum/Reticulum-Go/pkg/reticulumconfig
+git.quad4.io/reticulum/Reticulum-Go/pkg/sandbox
+git.quad4.io/reticulum/Reticulum-Go/pkg/sdr
+git.quad4.io/reticulum/Reticulum-Go/pkg/securemem
+git.quad4.io/reticulum/Reticulum-Go/pkg/sharedinstance
+git.quad4.io/reticulum/Reticulum-Go/pkg/stamps
+git.quad4.io/reticulum/Reticulum-Go/pkg/term
+git.quad4.io/reticulum/Reticulum-Go/pkg/transport
 # github.com/adrg/xdg v0.5.3
 ## explicit; go 1.19
 github.com/adrg/xdg
@@ -80,7 +82,7 @@ github.com/godbus/dbus/v5/prop
 # github.com/google/uuid v1.6.0
 ## explicit
 github.com/google/uuid
-# github.com/landlock-lsm/go-landlock v0.11.0
+# github.com/landlock-lsm/go-landlock v0.11.2
 ## explicit; go 1.26.0
 github.com/landlock-lsm/go-landlock/landlock
 github.com/landlock-lsm/go-landlock/landlock/internal
@@ -100,7 +102,7 @@ github.com/ncruces/go-strftime
 # github.com/quic-go/qpack v0.6.0
 ## explicit; go 1.24
 github.com/quic-go/qpack
-# github.com/quic-go/quic-go v0.64.1
+# github.com/quic-go/quic-go v0.66.0
 ## explicit; go 1.26.0
 github.com/quic-go/quic-go
 github.com/quic-go/quic-go/http3
@@ -111,6 +113,7 @@ github.com/quic-go/quic-go/internal/handshake
 github.com/quic-go/quic-go/internal/monotime
 github.com/quic-go/quic-go/internal/protocol
 github.com/quic-go/quic-go/internal/qerr
+github.com/quic-go/quic-go/internal/udp
 github.com/quic-go/quic-go/internal/utils
 github.com/quic-go/quic-go/internal/utils/linkedlist
 github.com/quic-go/quic-go/internal/utils/minheap
@@ -208,7 +211,7 @@ go.bug.st/serial/unixutils
 ## explicit; go 1.20
 go.uber.org/goleak
 go.uber.org/goleak/internal/stack
-# golang.org/x/crypto v0.58.0
+# golang.org/x/crypto v0.59.0
 ## explicit; go 1.26.0
 golang.org/x/crypto/argon2
 golang.org/x/crypto/blake2b
@@ -218,7 +221,7 @@ golang.org/x/crypto/curve25519
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/internal/alias
 golang.org/x/crypto/internal/poly1305
-# golang.org/x/net v0.62.0
+# golang.org/x/net v0.63.0
 ## explicit; go 1.26.0
 golang.org/x/net/bpf
 golang.org/x/net/http/httpguts
@@ -228,20 +231,20 @@ golang.org/x/net/internal/iana
 golang.org/x/net/internal/socket
 golang.org/x/net/ipv4
 golang.org/x/net/ipv6
-# golang.org/x/sync v0.24.0
+# golang.org/x/sync v0.25.0
 ## explicit; go 1.26.0
 golang.org/x/sync/errgroup
-# golang.org/x/sys v0.49.0
+# golang.org/x/sys v0.50.0
 ## explicit; go 1.26.0
 golang.org/x/sys/cpu
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 golang.org/x/sys/windows/registry
-# golang.org/x/term v0.47.0
+# golang.org/x/term v0.48.0
 ## explicit; go 1.26.0
 golang.org/x/term
-# golang.org/x/text v0.43.0
+# golang.org/x/text v0.44.0
 ## explicit; go 1.26.0
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
@@ -253,7 +256,7 @@ kernel.org/pub/linux/libs/security/libcap/psx
 # micron-parser-go v1.3.0 => github.com/Quad4-Software/Micron-Parser-Go v1.3.0
 ## explicit; go 1.27.1
 micron-parser-go/micron
-# modernc.org/libc v1.80.1
+# modernc.org/libc v1.82.14
 ## explicit; go 1.26.0
 modernc.org/libc
 modernc.org/libc/errno
@@ -263,6 +266,7 @@ modernc.org/libc/grp
 modernc.org/libc/honnef.co/go/netdb
 modernc.org/libc/langinfo
 modernc.org/libc/limits
+modernc.org/libc/locale
 modernc.org/libc/netdb
 modernc.org/libc/netinet/in
 modernc.org/libc/poll
@@ -284,13 +288,13 @@ modernc.org/libc/wctype
 # modernc.org/mathutil v1.7.1
 ## explicit; go 1.21
 modernc.org/mathutil
-# modernc.org/memory v1.12.1
+# modernc.org/memory v1.13.1
 ## explicit; go 1.23.0
 modernc.org/memory
-# modernc.org/sqlite v1.62.0
+# modernc.org/sqlite v1.63.0
 ## explicit; go 1.26.0
 modernc.org/sqlite
 modernc.org/sqlite/lib
 modernc.org/sqlite/vtab
 # micron-parser-go => github.com/Quad4-Software/Micron-Parser-Go v1.3.0
-# github.com/Quad4-Software/Reticulum-Go => ./third_party/reticulum-go
+# git.quad4.io/reticulum/Reticulum-Go => ./third_party/reticulum-go

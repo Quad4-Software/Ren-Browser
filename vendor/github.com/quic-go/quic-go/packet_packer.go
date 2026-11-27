@@ -12,6 +12,7 @@ import (
 	"github.com/quic-go/quic-go/internal/monotime"
 	"github.com/quic-go/quic-go/internal/protocol"
 	"github.com/quic-go/quic-go/internal/qerr"
+	"github.com/quic-go/quic-go/internal/udp"
 	"github.com/quic-go/quic-go/internal/wire"
 	"github.com/quic-go/quic-go/qlog"
 	"github.com/quic-go/quic-go/qlogwriter"
@@ -21,15 +22,16 @@ var errNothingToPack = errors.New("nothing to pack")
 
 type packer interface {
 	PackCoalescedPacket(onlyAck bool, maxPacketSize protocol.ByteCount, now monotime.Time, v protocol.Version) (*coalescedPacket, error)
-	PackAckOnlyPacket(maxPacketSize protocol.ByteCount, now monotime.Time, v protocol.Version) (shortHeaderPacket, *packetBuffer, error)
-	AppendPacket(_ *packetBuffer, maxPacketSize protocol.ByteCount, now monotime.Time, v protocol.Version) (shortHeaderPacket, error)
+	PackAckOnlyPacket(maxPacketSize protocol.ByteCount, now monotime.Time, v protocol.Version) (shortHeaderPacket, *udp.PacketBuffer, error)
+	AppendPacket(_ *udp.PacketBuffer, maxPacketSize protocol.ByteCount, now monotime.Time, v protocol.Version) (shortHeaderPacket, error)
 	PackPTOProbePacket(_ protocol.EncryptionLevel, _ protocol.ByteCount, addPingIfEmpty bool, now monotime.Time, v protocol.Version) (*coalescedPacket, error)
 	PackConnectionClose(*qerr.TransportError, protocol.ByteCount, protocol.Version) (*coalescedPacket, error)
 	PackApplicationClose(*qerr.ApplicationError, protocol.ByteCount, protocol.Version) (*coalescedPacket, error)
-	PackPathProbePacket(protocol.ConnectionID, []ackhandler.Frame, protocol.Version) (shortHeaderPacket, *packetBuffer, error)
-	PackMTUProbePacket(ping ackhandler.Frame, size protocol.ByteCount, v protocol.Version) (shortHeaderPacket, *packetBuffer, error)
+	PackPathProbePacket(protocol.ConnectionID, []ackhandler.Frame, protocol.Version) (shortHeaderPacket, *udp.PacketBuffer, error)
+	PackMTUProbePacket(ping ackhandler.Frame, size protocol.ByteCount, v protocol.Version) (shortHeaderPacket, *udp.PacketBuffer, error)
 
 	SetToken([]byte)
+	SetMaxDatagramFrameSize(protocol.ByteCount)
 }
 
 type sealer interface {
@@ -39,8 +41,11 @@ type sealer interface {
 type payload struct {
 	streamFrames []ackhandler.StreamFrame
 	frames       []ackhandler.Frame
-	ack          *wire.AckFrame
-	length       protocol.ByteCount
+	// The number of DATAGRAM frames in frames.
+	// DATAGRAM frames are the last frames in frames.
+	numDatagramFrames int
+	ack               *wire.AckFrame
+	length            protocol.ByteCount
 }
 
 type longHeaderPacket struct {
@@ -70,7 +75,7 @@ type shortHeaderPacket struct {
 func (p *shortHeaderPacket) IsAckEliciting() bool { return ackhandler.HasAckElicitingFrames(p.Frames) }
 
 type coalescedPacket struct {
-	buffer         *packetBuffer
+	buffer         *udp.PacketBuffer
 	longHdrPackets []*longHeaderPacket
 	shortHdrPacket *shortHeaderPacket
 }
@@ -110,7 +115,8 @@ type sealingManager interface {
 
 type frameSource interface {
 	HasData() bool
-	Append([]ackhandler.Frame, []ackhandler.StreamFrame, protocol.ByteCount, monotime.Time, protocol.Version) ([]ackhandler.Frame, []ackhandler.StreamFrame, protocol.ByteCount)
+	AppendControlFrames([]ackhandler.Frame, protocol.ByteCount, monotime.Time, protocol.Version) ([]ackhandler.Frame, protocol.ByteCount)
+	AppendStreamFrames([]ackhandler.Frame, []ackhandler.StreamFrame, protocol.ByteCount, protocol.Version) ([]ackhandler.Frame, []ackhandler.StreamFrame, protocol.ByteCount)
 }
 
 type ackFrameSource interface {
@@ -124,10 +130,11 @@ type packetPacker struct {
 	perspective protocol.Perspective
 	cryptoSetup sealingManager
 
-	initialStream   *initialCryptoStream
-	handshakeStream *cryptoStream
+	cryptoStreamManager *cryptoStreamManager
 
 	token []byte
+
+	maxDatagramFrameSize protocol.ByteCount // the peer's max_datagram_frame_size
 
 	pnManager           packetNumberManager
 	framer              frameSource
@@ -145,8 +152,7 @@ var _ packer = &packetPacker{}
 func newPacketPacker(
 	srcConnID protocol.ConnectionID,
 	getDestConnID func() protocol.ConnectionID,
-	initialStream *initialCryptoStream,
-	handshakeStream *cryptoStream,
+	cryptoStreamManager *cryptoStreamManager,
 	packetNumberManager packetNumberManager,
 	retransmissionQueue *retransmissionQueue,
 	cryptoSetup sealingManager,
@@ -163,8 +169,7 @@ func newPacketPacker(
 		cryptoSetup:         cryptoSetup,
 		getDestConnID:       getDestConnID,
 		srcConnID:           srcConnID,
-		initialStream:       initialStream,
-		handshakeStream:     handshakeStream,
+		cryptoStreamManager: cryptoStreamManager,
 		retransmissionQueue: retransmissionQueue,
 		datagramQueue:       datagramQueue,
 		perspective:         perspective,
@@ -213,23 +218,6 @@ func (p *packetPacker) packConnectionClose(
 		if p.perspective == protocol.PerspectiveServer && encLevel == protocol.Encryption0RTT {
 			continue
 		}
-		ccf := &wire.ConnectionCloseFrame{
-			IsApplicationError: isApplicationError,
-			ErrorCode:          errorCode,
-			FrameType:          frameType,
-			ReasonPhrase:       reason,
-		}
-		// don't send application errors in Initial or Handshake packets
-		if isApplicationError && (encLevel == protocol.EncryptionInitial || encLevel == protocol.EncryptionHandshake) {
-			ccf.IsApplicationError = false
-			ccf.ErrorCode = uint64(qerr.ApplicationErrorErrorCode)
-			ccf.ReasonPhrase = ""
-		}
-		pl := payload{
-			frames: []ackhandler.Frame{{Frame: ccf}},
-			length: ccf.Length(v),
-		}
-
 		var sealer sealer
 		var err error
 		switch encLevel {
@@ -254,6 +242,23 @@ func (p *packetPacker) packConnectionClose(
 			return nil, err
 		}
 		sealers[i] = sealer
+		ccf := &wire.ConnectionCloseFrame{
+			IsApplicationError: isApplicationError,
+			ErrorCode:          errorCode,
+			FrameType:          frameType,
+			ReasonPhrase:       reason,
+		}
+		// don't send application errors in Initial or Handshake packets
+		if isApplicationError && (encLevel == protocol.EncryptionInitial || encLevel == protocol.EncryptionHandshake) {
+			ccf.IsApplicationError = false
+			ccf.ErrorCode = uint64(qerr.ApplicationErrorErrorCode)
+			ccf.ReasonPhrase = ""
+		}
+		pl := payload{
+			frames: []ackhandler.Frame{{Frame: ccf}},
+			length: ccf.Length(v),
+		}
+
 		var hdr *wire.ExtendedHeader
 		if encLevel == protocol.Encryption1RTT {
 			connID = p.getDestConnID()
@@ -273,7 +278,7 @@ func (p *packetPacker) packConnectionClose(
 	if size > maxPacketSize {
 		return nil, fmt.Errorf("packet too large (%d bytes, allowed %d bytes)", size, maxPacketSize)
 	}
-	buffer := getPacketBuffer()
+	buffer := udp.GetPacketBuffer()
 	packet := &coalescedPacket{
 		buffer:         buffer,
 		longHdrPackets: make([]*longHeaderPacket, 0, numLongHdrPackets),
@@ -444,7 +449,7 @@ func (p *packetPacker) PackCoalescedPacket(onlyAck bool, maxSize protocol.ByteCo
 	if size > maxSize {
 		return nil, fmt.Errorf("packet too large (%d bytes, allowed %d bytes)", size, maxSize)
 	}
-	buffer := getPacketBuffer()
+	buffer := udp.GetPacketBuffer()
 	packet := &coalescedPacket{
 		buffer:         buffer,
 		longHdrPackets: make([]*longHeaderPacket, 0, 3),
@@ -482,20 +487,20 @@ func (p *packetPacker) PackCoalescedPacket(onlyAck bool, maxSize protocol.ByteCo
 
 // PackAckOnlyPacket packs a packet containing only an ACK in the application data packet number space.
 // It should be called after the handshake is confirmed.
-func (p *packetPacker) PackAckOnlyPacket(maxSize protocol.ByteCount, now monotime.Time, v protocol.Version) (shortHeaderPacket, *packetBuffer, error) {
-	buf := getPacketBuffer()
+func (p *packetPacker) PackAckOnlyPacket(maxSize protocol.ByteCount, now monotime.Time, v protocol.Version) (shortHeaderPacket, *udp.PacketBuffer, error) {
+	buf := udp.GetPacketBuffer()
 	packet, err := p.appendPacket(buf, true, maxSize, now, v)
 	return packet, buf, err
 }
 
 // AppendPacket packs a packet in the application data packet number space.
 // It should be called after the handshake is confirmed.
-func (p *packetPacker) AppendPacket(buf *packetBuffer, maxSize protocol.ByteCount, now monotime.Time, v protocol.Version) (shortHeaderPacket, error) {
+func (p *packetPacker) AppendPacket(buf *udp.PacketBuffer, maxSize protocol.ByteCount, now monotime.Time, v protocol.Version) (shortHeaderPacket, error) {
 	return p.appendPacket(buf, false, maxSize, now, v)
 }
 
 func (p *packetPacker) appendPacket(
-	buf *packetBuffer,
+	buf *udp.PacketBuffer,
 	onlyAck bool,
 	maxPacketSize protocol.ByteCount,
 	now monotime.Time,
@@ -535,23 +540,13 @@ func (p *packetPacker) maybeGetCryptoPacket(
 		return nil, payload{length: 0}
 	}
 
-	var hasCryptoData func() bool
-	var popCryptoFrame func(maxLen protocol.ByteCount) *wire.CryptoFrame
-	//nolint:exhaustive // Initial and Handshake are the only two encryption levels here.
-	switch encLevel {
-	case protocol.EncryptionInitial:
-		hasCryptoData = p.initialStream.HasData
-		popCryptoFrame = p.initialStream.PopCryptoFrame
-	case protocol.EncryptionHandshake:
-		hasCryptoData = p.handshakeStream.HasData
-		popCryptoFrame = p.handshakeStream.PopCryptoFrame
-	}
 	handler := p.retransmissionQueue.AckHandler(encLevel)
 	hasRetransmission := p.retransmissionQueue.HasData(encLevel)
+	hasCryptoData := p.cryptoStreamManager.HasData(encLevel)
 
-	ack := p.acks.GetAckFrame(encLevel, now, !hasRetransmission && !hasCryptoData())
+	ack := p.acks.GetAckFrame(encLevel, now, !hasRetransmission && !hasCryptoData)
 	var pl payload
-	if !hasCryptoData() && !hasRetransmission && ack == nil {
+	if !hasCryptoData && !hasRetransmission && ack == nil {
 		if !addPingIfEmpty {
 			// nothing to send
 			return nil, payload{}
@@ -586,8 +581,8 @@ func (p *packetPacker) maybeGetCryptoPacket(
 		}
 		return hdr, pl
 	} else {
-		for hasCryptoData() {
-			cf := popCryptoFrame(maxPacketSize)
+		for p.cryptoStreamManager.HasData(encLevel) {
+			cf := p.cryptoStreamManager.PopCryptoFrame(encLevel, maxPacketSize)
 			if cf == nil {
 				break
 			}
@@ -674,32 +669,10 @@ func (p *packetPacker) composeNextPacket(
 		}
 	}
 
-	if p.datagramQueue != nil {
-		if f := p.datagramQueue.Peek(); f != nil {
-			size := f.Length(v)
-			if size <= maxPayloadSize-pl.length { // DATAGRAM frame fits
-				pl.frames = append(pl.frames, ackhandler.Frame{Frame: f})
-				pl.length += size
-				p.datagramQueue.Pop()
-			} else if pl.ack == nil {
-				// The DATAGRAM frame doesn't fit, and the packet doesn't contain an ACK.
-				// Discard this frame. There's no point in retrying this in the next packet,
-				// as it's unlikely that the available packet size will increase.
-				p.datagramQueue.Pop()
-				if p.qlogger != nil {
-					p.qlogger.RecordEvent(qlog.DatagramDropped{
-						Direction: qlog.DirectionSending,
-						Raw:       qlog.RawInfo{Length: len(f.Data)},
-						Trigger:   "too_large",
-					})
-				}
-			}
-			// If the DATAGRAM frame was too large and the packet contained an ACK, we'll try to send it out later.
-		}
-	}
-
-	if pl.ack != nil && !hasData && !hasRetransmission {
-		return pl
+	if hasData {
+		var lengthAdded protocol.ByteCount
+		pl.frames, lengthAdded = p.framer.AppendControlFrames(pl.frames, maxPayloadSize-pl.length, now, v)
+		pl.length += lengthAdded
 	}
 
 	if hasRetransmission {
@@ -717,25 +690,94 @@ func (p *packetPacker) composeNextPacket(
 		}
 	}
 
+	var lastDatagram *wire.DatagramFrame
+	if p.datagramQueue != nil {
+		for {
+			f := p.datagramQueue.Peek()
+			if f == nil {
+				break
+			}
+			size := f.Length(v)
+			if size > maxPayloadSize-pl.length {
+				// The DATAGRAM frame might still fit without the length field.
+				// In that case, less than MinStreamFrameSize bytes would then remain, so no STREAM frames
+				// will be packed, and the DATAGRAM frame will be the last frame in the packet.
+				f.DataLenPresent = false
+				size = f.Length(v)
+			}
+			// RFC 9221, Section 3: DATAGRAM frames MUST NOT be larger than the peer's max_datagram_frame_size.
+			// Frames queued during 0-RTT can exceed it if the server rejected 0-RTT and reduced the limit.
+			tooLarge := size > p.maxDatagramFrameSize
+			if !tooLarge && size <= maxPayloadSize-pl.length { // DATAGRAM frame fits
+				p.datagramQueue.Pop()
+				pl.frames = append(pl.frames, ackhandler.Frame{Frame: f})
+				pl.numDatagramFrames++
+				pl.length += size
+				lastDatagram = f
+				if !f.DataLenPresent {
+					// This DATAGRAM frame only fit without the length field, so it has to be the last frame in the packet.
+					break
+				}
+			} else if tooLarge || (pl.ack == nil && len(pl.frames) == 0) {
+				// The DATAGRAM frame exceeds the peer's limit,
+				// or it doesn't fit and the packet doesn't contain an ACK or any other frames.
+				// Discard this frame. There's no point in retrying this in the next packet,
+				// as it's unlikely that the available packet size will increase.
+				p.datagramQueue.Pop()
+				if p.qlogger != nil {
+					p.qlogger.RecordEvent(qlog.DatagramDropped{
+						Direction: qlog.DirectionSending,
+						Raw:       qlog.RawInfo{Length: len(f.Data), PayloadLength: qlog.OmitLength},
+						Trigger:   "too_large",
+					})
+				}
+			} else {
+				// The DATAGRAM frame will be sent in a later packet.
+				// It might not be the last frame in that packet, so it needs the length field.
+				f.DataLenPresent = true
+				break
+			}
+		}
+	}
+
 	if hasData {
 		var lengthAdded protocol.ByteCount
 		startLen := len(pl.frames)
-		pl.frames, pl.streamFrames, lengthAdded = p.framer.Append(pl.frames, pl.streamFrames, maxPayloadSize-pl.length, now, v)
+		pl.frames, pl.streamFrames, lengthAdded = p.framer.AppendStreamFrames(pl.frames, pl.streamFrames, maxPayloadSize-pl.length, v)
 		pl.length += lengthAdded
-		// add handlers for the control frames that were added
-		for i := startLen; i < len(pl.frames); i++ {
-			if pl.frames[i].Handler != nil {
-				continue
-			}
-			switch pl.frames[i].Frame.(type) {
-			case *wire.PathChallengeFrame, *wire.PathResponseFrame:
-				// Path probing is currently not supported, therefore we don't need to set the OnAcked callback yet.
-				// PATH_CHALLENGE and PATH_RESPONSE are never retransmitted.
-			default:
-				// we might be packing a 0-RTT packet, but we need to use the 1-RTT ack handler anyway
-				pl.frames[i].Handler = p.retransmissionQueue.AckHandler(protocol.Encryption1RTT)
+		// Move STREAM_DATA_BLOCKED and DATA_BLOCKED frames in front of the DATAGRAM frames,
+		// such that the DATAGRAM frames remain the last frames.
+		if n := pl.numDatagramFrames; n > 0 {
+			for i := startLen; i < len(pl.frames); i++ {
+				f := pl.frames[i]
+				copy(pl.frames[i-n+1:i+1], pl.frames[i-n:i])
+				pl.frames[i-n] = f
 			}
 		}
+	}
+
+	// add handlers for the control frames that were added
+	for i := range pl.frames {
+		if pl.frames[i].Handler != nil {
+			continue
+		}
+		switch pl.frames[i].Frame.(type) {
+		case *wire.DatagramFrame:
+			// DATAGRAM frames are never retransmitted.
+		case *wire.PathChallengeFrame, *wire.PathResponseFrame:
+			// PATH_CHALLENGE and PATH_RESPONSE are never retransmitted.
+		default:
+			// we might be packing a 0-RTT packet, but we need to use the 1-RTT ack handler anyway
+			pl.frames[i].Handler = p.retransmissionQueue.AckHandler(protocol.Encryption1RTT)
+		}
+	}
+
+	// STREAM frames are serialized after all other frames.
+	// If there are none, the last DATAGRAM frame is the last frame in the packet, and doesn't need a length field.
+	if lastDatagram != nil && len(pl.streamFrames) == 0 {
+		pl.length -= lastDatagram.Length(v)
+		lastDatagram.DataLenPresent = false
+		pl.length += lastDatagram.Length(v)
 	}
 	return pl
 }
@@ -787,7 +829,7 @@ func (p *packetPacker) PackPTOProbePacket(
 	if size > maxPacketSize {
 		return nil, fmt.Errorf("packet too large (%d bytes, allowed %d bytes)", size, maxPacketSize)
 	}
-	buffer := getPacketBuffer()
+	buffer := udp.GetPacketBuffer()
 	packet := &coalescedPacket{buffer: buffer}
 	var padding protocol.ByteCount
 	if encLevel == protocol.EncryptionInitial {
@@ -820,7 +862,7 @@ func (p *packetPacker) packPTOProbePacket1RTT(maxPacketSize protocol.ByteCount, 
 		pl.frames = append(pl.frames, ackhandler.Frame{Frame: ping, Handler: emptyHandler{}})
 		pl.length += ping.Length(v)
 	}
-	buffer := getPacketBuffer()
+	buffer := udp.GetPacketBuffer()
 	packet := &coalescedPacket{buffer: buffer}
 	shp, err := p.appendShortHeaderPacket(buffer, connID, pn, pnLen, kp, pl, 0, maxPacketSize, s, false, v)
 	if err != nil {
@@ -830,12 +872,12 @@ func (p *packetPacker) packPTOProbePacket1RTT(maxPacketSize protocol.ByteCount, 
 	return packet, nil
 }
 
-func (p *packetPacker) PackMTUProbePacket(ping ackhandler.Frame, size protocol.ByteCount, v protocol.Version) (shortHeaderPacket, *packetBuffer, error) {
+func (p *packetPacker) PackMTUProbePacket(ping ackhandler.Frame, size protocol.ByteCount, v protocol.Version) (shortHeaderPacket, *udp.PacketBuffer, error) {
 	pl := payload{
 		frames: []ackhandler.Frame{ping},
 		length: ping.Frame.Length(v),
 	}
-	buffer := getPacketBuffer()
+	buffer := udp.GetPacketBuffer()
 	s, err := p.cryptoSetup.Get1RTTSealer()
 	if err != nil {
 		return shortHeaderPacket{}, nil, err
@@ -848,9 +890,9 @@ func (p *packetPacker) PackMTUProbePacket(ping ackhandler.Frame, size protocol.B
 	return packet, buffer, err
 }
 
-func (p *packetPacker) PackPathProbePacket(connID protocol.ConnectionID, frames []ackhandler.Frame, v protocol.Version) (shortHeaderPacket, *packetBuffer, error) {
+func (p *packetPacker) PackPathProbePacket(connID protocol.ConnectionID, frames []ackhandler.Frame, v protocol.Version) (shortHeaderPacket, *udp.PacketBuffer, error) {
 	pn, pnLen := p.pnManager.PeekPacketNumber(protocol.PacketNumberSpaceAppData)
-	buf := getPacketBuffer()
+	buf := udp.GetPacketBuffer()
 	s, err := p.cryptoSetup.Get1RTTSealer()
 	if err != nil {
 		return shortHeaderPacket{}, nil, err
@@ -895,7 +937,7 @@ func (p *packetPacker) getLongHeader(encLevel protocol.EncryptionLevel, v protoc
 	return hdr
 }
 
-func (p *packetPacker) appendLongHeaderPacket(buffer *packetBuffer, header *wire.ExtendedHeader, pl payload, padding protocol.ByteCount, sealer sealer, v protocol.Version) (*longHeaderPacket, error) {
+func (p *packetPacker) appendLongHeaderPacket(buffer *udp.PacketBuffer, header *wire.ExtendedHeader, pl payload, padding protocol.ByteCount, sealer sealer, v protocol.Version) (*longHeaderPacket, error) {
 	var paddingLen protocol.ByteCount
 	pnLen := protocol.ByteCount(header.PacketNumberLen)
 	if pl.length < 4-pnLen {
@@ -929,7 +971,7 @@ func (p *packetPacker) appendLongHeaderPacket(buffer *packetBuffer, header *wire
 }
 
 func (p *packetPacker) appendShortHeaderPacket(
-	buffer *packetBuffer,
+	buffer *udp.PacketBuffer,
 	connID protocol.ConnectionID,
 	pn protocol.PacketNumber,
 	pnLen protocol.PacketNumberLen,
@@ -998,8 +1040,14 @@ func (p *packetPacker) appendPacketPayload(raw []byte, pl payload, paddingLen pr
 	}
 	// Randomize the order of the control frames.
 	// This makes sure that the receiver doesn't rely on the order in which frames are packed.
-	if len(pl.frames) > 1 {
-		p.rand.Shuffle(len(pl.frames), func(i, j int) { pl.frames[i], pl.frames[j] = pl.frames[j], pl.frames[i] })
+	// DATAGRAM frames are not shuffled, as this would reorder the datagrams delivered to the application.
+	// The last DATAGRAM frame also needs to stay at the end, since it might omit its length field.
+	toShuffle := pl.frames[:len(pl.frames)-pl.numDatagramFrames]
+	if len(toShuffle) > 1 {
+		p.rand.Shuffle(
+			len(toShuffle),
+			func(i, j int) { toShuffle[i], toShuffle[j] = toShuffle[j], toShuffle[i] },
+		)
 	}
 	for _, f := range pl.frames {
 		var err error
@@ -1033,6 +1081,11 @@ func (p *packetPacker) encryptPacket(raw []byte, sealer sealer, pn protocol.Pack
 
 func (p *packetPacker) SetToken(token []byte) {
 	p.token = token
+}
+
+// SetMaxDatagramFrameSize sets the peer's max_datagram_frame_size.
+func (p *packetPacker) SetMaxDatagramFrameSize(size protocol.ByteCount) {
+	p.maxDatagramFrameSize = size
 }
 
 type emptyHandler struct{}

@@ -28,7 +28,7 @@ func init() {
 			quicGoVersion = d.Version
 			if d.Replace != nil {
 				if len(d.Replace.Version) > 0 {
-					quicGoVersion = d.Version
+					quicGoVersion = d.Replace.Version
 				} else {
 					quicGoVersion += " (replaced)"
 				}
@@ -52,7 +52,7 @@ func (h *encoderHelper) WriteToken(t jsontext.Token) {
 
 type traceHeader struct {
 	VantagePointType string
-	GroupID          *ConnectionID
+	GroupID          ConnectionID
 	ReferenceTime    time.Time
 	EventSchemas     []string
 }
@@ -66,8 +66,6 @@ func (l traceHeader) Encode(enc *jsontext.Encoder) error {
 	h.WriteToken(jsontext.String("application/qlog+json-seq"))
 	h.WriteToken(jsontext.String("title"))
 	h.WriteToken(jsontext.String("quic-go qlog"))
-	h.WriteToken(jsontext.String("code_version"))
-	h.WriteToken(jsontext.String(quicGoVersion))
 
 	h.WriteToken(jsontext.String("trace"))
 	// trace
@@ -89,10 +87,20 @@ func (l traceHeader) Encode(enc *jsontext.Encoder) error {
 	// -- end vantage_point
 	h.WriteToken(jsontext.EndObject)
 
+	h.WriteToken(jsontext.String("implementation"))
+	// -- implementation
+	h.WriteToken(jsontext.BeginObject)
+	h.WriteToken(jsontext.String("name"))
+	h.WriteToken(jsontext.String("quic-go"))
+	h.WriteToken(jsontext.String("version"))
+	h.WriteToken(jsontext.String(quicGoVersion))
+	// -- end implementation
+	h.WriteToken(jsontext.EndObject)
+
 	h.WriteToken(jsontext.String("common_fields"))
 	// -- common_fields
 	h.WriteToken(jsontext.BeginObject)
-	if l.GroupID != nil {
+	if l.GroupID.Valid() {
 		h.WriteToken(jsontext.String("group_id"))
 		h.WriteToken(jsontext.String(l.GroupID.String()))
 	}

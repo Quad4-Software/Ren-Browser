@@ -1,0 +1,72 @@
+// SPDX-License-Identifier: LicenseRef-Reticulum
+// Copyright (c) 2024-2026 Quad4.io
+
+package transport
+
+import (
+	"time"
+
+	"git.quad4.io/reticulum/Reticulum-Go/pkg/common"
+	"git.quad4.io/reticulum/Reticulum-Go/pkg/debug"
+)
+
+// handleUnvalidatedLinkExpiry mirrors Python link-table proof-timeout rediscovery.
+func (t *Transport) handleUnvalidatedLinkExpiry(entry *LinkRelayEntry) {
+	if t == nil || entry == nil || len(entry.DestinationHash) == 0 {
+		return
+	}
+	dest := append([]byte(nil), entry.DestinationHash...)
+
+	lastPR := time.Time{}
+	t.mutex.RLock()
+	if ts, ok := t.lastPathRequest[pathMapKey(dest)]; ok {
+		lastPR = ts
+	}
+	t.mutex.RUnlock()
+	throttled := !lastPR.IsZero() && time.Since(lastPR) < PathRequestMI
+
+	needPR := false
+	markUnresponsive := false
+	var blockedIface common.NetworkInterface
+
+	if !t.HasPath(dest) {
+		needPR = true
+		debug.Log(debug.DebugInfo, "Rediscovering path after failed link (path missing)",
+			"dest", debug.Hex(dest))
+	} else if !throttled && entry.TakenHops == 0 && t.HopsTo(dest) != 0 {
+		needPR = true
+		debug.Log(debug.DebugInfo, "Rediscovering path after failed local-client link",
+			"dest", debug.Hex(dest))
+	} else if !throttled && t.HopsTo(dest) == 1 {
+		needPR = true
+		markUnresponsive = true
+		blockedIface = entry.ReceivedIface
+		debug.Log(debug.DebugInfo, "Rediscovering path after failed 1-hop link",
+			"dest", debug.Hex(dest))
+	} else if !throttled && entry.TakenHops == 1 {
+		needPR = true
+		markUnresponsive = true
+		blockedIface = entry.ReceivedIface
+		debug.Log(debug.DebugInfo, "Rediscovering path after failed link with local initiator",
+			"dest", debug.Hex(dest))
+	}
+
+	if markUnresponsive && t.transportEnabled() {
+		if blockedIface == nil || blockedIface.GetMode() != common.IFModeBoundary {
+			t.MarkPathUnresponsive(dest)
+		}
+	}
+
+	if needPR {
+		if err := t.RequestPath(dest, "", nil, true); err != nil {
+			debug.Log(debug.DebugInfo, "Path rediscovery after link expiry failed",
+				"dest", debug.Hex(dest), "error", err)
+		}
+	}
+
+	// RNS 1.6.1: local destination paths (hops == 0) are never expired
+	// here, only remote paths on non-transport instances.
+	if !t.transportEnabled() && t.HopsTo(dest) != 0 {
+		t.ExpirePath(dest)
+	}
+}

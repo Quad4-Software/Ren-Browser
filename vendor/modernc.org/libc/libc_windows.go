@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	gotime "time"
 	"unicode"
 	"unicode/utf16"
@@ -104,6 +105,7 @@ var (
 	procFindFirstFileExW           = modkernel32.NewProc("FindFirstFileExW")
 	procFindFirstFileW             = modkernel32.NewProc("FindFirstFileW")
 	procFindNextFileW              = modkernel32.NewProc("FindNextFileW")
+	procFormatMessageA             = modkernel32.NewProc("FormatMessageA")
 	procFormatMessageW             = modkernel32.NewProc("FormatMessageW")
 	procGetACP                     = modkernel32.NewProc("GetACP")
 	procGetCommState               = modkernel32.NewProc("GetCommState")
@@ -128,6 +130,7 @@ var (
 	procGetFullPathNameW           = modkernel32.NewProc("GetFullPathNameW")
 	procGetLastError               = modkernel32.NewProc("GetLastError")
 	procGetLogicalDriveStringsA    = modkernel32.NewProc("GetLogicalDriveStringsA")
+	procGetModuleFileNameA         = modkernel32.NewProc("GetModuleFileNameA")
 	procGetModuleFileNameW         = modkernel32.NewProc("GetModuleFileNameW")
 	procGetModuleHandleA           = modkernel32.NewProc("GetModuleHandleA")
 	procGetModuleHandleW           = modkernel32.NewProc("GetModuleHandleW")
@@ -238,15 +241,13 @@ var (
 	modcrt       = windows.NewLazySystemDLL("msvcrt.dll")
 	procAccess   = modcrt.NewProc("_access")
 	procChmod    = modcrt.NewProc("_chmod")
-	procCtime64  = modcrt.NewProc("ctime64")
+	procCtime64  = modcrt.NewProc("_ctime64")
 	procGmtime   = modcrt.NewProc("gmtime")
 	procGmtime32 = modcrt.NewProc("_gmtime32")
-	procGmtime64 = modcrt.NewProc("_gmtime64")
 	procStati64  = modcrt.NewProc("_stati64")
 	procStrftime = modcrt.NewProc("strftime")
 	procStrnicmp = modcrt.NewProc("_strnicmp")
 	procStrtod   = modcrt.NewProc("strtod")
-	procTime64   = modcrt.NewProc("time64")
 	procWcsncpy  = modcrt.NewProc("wcsncpy")
 	procWcsrchr  = modcrt.NewProc("wcsrchr")
 
@@ -295,11 +296,23 @@ type file struct {
 	eof    bool  // set by a read that returned nothing, feof reports it
 	unget  int32 // the character pushed back by ungetc, -1 if none
 	t      uintptr
+	popen  *exec.Cmd // the command of a stream from _popen, _pclose waits for it
 	windows.Handle
+
+	// The buffers, see stdio_windows.go. mu guards them and the fields
+	// above.
+	mu      sync.Mutex
+	bufMode int32  // stdio.X_IOFBF, X_IOLBF or X_IONBF
+	bufSize int    // the size of the buffer
+	rbuf    []byte // read ahead, rbuf[rpos:] is not consumed yet
+	rpos    int
+	wbuf    []byte // written, not yet written out
+	noRead  bool   // the stream was opened for writing only
+	noWrite bool   // the stream was opened for reading only
 }
 
 func addFile(hdl windows.Handle, fd int32) uintptr {
-	var f = file{_fd: fd, Handle: hdl, unget: -1}
+	var f = file{_fd: fd, Handle: hdl, unget: -1, bufMode: defaultBufMode(fd), bufSize: streamBufSize}
 	w_fdLock.Lock()
 	defer w_fdLock.Unlock()
 	w_fd_to_file[fd] = &f
@@ -329,6 +342,23 @@ func wrapFdHandle(hdl windows.Handle) (uintptr, int32) {
 
 func (f *file) err() bool {
 	return f.hadErr
+}
+
+// write writes all of b, or fails. WriteFile on a pipe may write less than it
+// was given.
+func (f *file) write(b []byte) (n int, err error) {
+	for n < len(b) {
+		m, err := windows.Write(f.Handle, b[n:])
+		n += m
+		if err != nil {
+			return n, err
+		}
+
+		if m == 0 {
+			return n, windows.ERROR_WRITE_FAULT
+		}
+	}
+	return n, nil
 }
 
 func (f *file) setErr() {
@@ -396,29 +426,20 @@ func newFile(t *TLS, fd int32) uintptr {
 	return 0
 }
 
+// close writes out the buffered output of f and closes it. It returns EOF if
+// either fails.
 func (f *file) close(t *TLS) int32 {
+	err := f.flush()
 	remFile(f)
-	err := windows.Close(f.Handle)
+	if e := windows.Close(f.Handle); err == nil {
+		err = e
+	}
 	if err != nil {
-		return (-1) // EOF
+		t.setErrno(err)
+		return stdio.EOF
 	}
+
 	return 0
-}
-
-func fwrite(fd int32, b []byte) (int, error) {
-	if fd == unistd.STDOUT_FILENO {
-		return write(b)
-	}
-
-	f, ok := fdToFile(fd)
-	if !ok {
-		return -1, EBADF
-	}
-
-	if dmesgs {
-		dmesg("%v: fd %v: %s", origin(1), fd, b)
-	}
-	return windows.Write(f.Handle, b)
 }
 
 // int fprintf(FILE *stream, const char *format, ...);
@@ -432,7 +453,17 @@ func Xfprintf(t *TLS, stream, format, args uintptr) int32 {
 		return -1
 	}
 
-	n, _ := fwrite(f._fd, printf(format, args))
+	b := printf(format, args)
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	n, err := f.put(b)
+	if err != nil {
+		f.setErr()
+		t.setErrno(err)
+		return -1
+	}
+
 	return int32(n)
 }
 
@@ -495,25 +526,24 @@ func Xchdir(t *TLS, path uintptr) int32 {
 var localtime time.Tm
 
 // struct tm *localtime(const time_t *timep);
-func Xlocaltime(_ *TLS, timep uintptr) uintptr {
-	loc := getLocalLocation()
-	ut := *(*time.Time_t)(unsafe.Pointer(timep))
-	t := gotime.Unix(int64(ut), 0).In(loc)
-	localtime.Ftm_sec = int32(t.Second())
-	localtime.Ftm_min = int32(t.Minute())
-	localtime.Ftm_hour = int32(t.Hour())
-	localtime.Ftm_mday = int32(t.Day())
-	localtime.Ftm_mon = int32(t.Month() - 1)
-	localtime.Ftm_year = int32(t.Year() - 1900)
-	localtime.Ftm_wday = int32(t.Weekday())
-	localtime.Ftm_yday = int32(t.YearDay() - 1)
-	localtime.Ftm_isdst = Bool32(isTimeDST(t))
+func Xlocaltime(t *TLS, timep uintptr) uintptr {
+	if !localtimeTm(t, int64(*(*time.Time_t)(unsafe.Pointer(timep))), &localtime) {
+		return 0
+	}
+
 	return uintptr(unsafe.Pointer(&localtime))
 }
 
-// struct tm *localtime(const time_t *timep);
-func X_localtime64(_ *TLS, timep uintptr) uintptr {
-	return Xlocaltime(nil, timep)
+// struct tm *_localtime64(const __time64_t *timep);
+func X_localtime64(t *TLS, timep uintptr) uintptr {
+	if __ccgo_strace {
+		trc("t=%v timep=%v, (%v:)", t, timep, origin(2))
+	}
+	if !localtimeTm(t, *(*int64)(unsafe.Pointer(timep)), &localtime) {
+		return 0
+	}
+
+	return uintptr(unsafe.Pointer(&localtime))
 }
 
 // struct tm *localtime_r(const time_t *timep, struct tm *result);
@@ -1078,25 +1108,81 @@ func Xgetpid(t *TLS) int32 {
 }
 
 // int system(const char *command);
+//
+// system runs command as the UCRT does, with %COMSPEC% /c, and returns the exit
+// code of the command processor. system(NULL) says whether there is one.
 func Xsystem(t *TLS, command uintptr) int32 {
 	if __ccgo_strace {
 		trc("t=%v command=%v, (%v:)", t, command, origin(2))
 	}
-	s := GoString(command)
 	if command == 0 {
-		panic(todo(""))
+		if _, err := comspec(); err != nil {
+			t.setErrno(errno.ENOENT)
+			return 0
+		}
+
+		return 1
 	}
 
-	cmd := exec.Command("sh", "-c", s)
+	cmd, err := shellCommand(GoString(command))
+	if err != nil {
+		t.setErrno(errno.ENOENT)
+		return -1
+	}
+
+	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	if err != nil {
-		ps := err.(*exec.ExitError)
-		return int32(ps.ExitCode())
+	if err := cmd.Start(); err != nil {
+		t.setErrno(startErrno(err))
+		return -1
 	}
 
-	return 0
+	return waitExitCode(t, cmd)
+}
+
+// comspec returns the command processor, %COMSPEC% or else cmd.exe.
+func comspec() (string, error) {
+	if s := os.Getenv("COMSPEC"); s != "" {
+		return s, nil
+	}
+
+	return exec.LookPath("cmd.exe")
+}
+
+// shellCommand returns the command that runs s as the UCRT's system and _popen
+// do: %COMSPEC% /c s. s goes to the command processor as is; Go's quoting of
+// arguments would break cmd.exe's own.
+func shellCommand(s string) (*exec.Cmd, error) {
+	sh, err := comspec()
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := exec.Command(sh)
+	cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: syscall.EscapeArg(sh) + " /c " + s}
+	return cmd, nil
+}
+
+// startErrno returns the errno value for err, an error from exec.Cmd.Start.
+func startErrno(err error) int32 {
+	var e syscall.Errno
+	if errors.As(err, &e) {
+		return winErrno(e)
+	}
+
+	return errno.ENOENT
+}
+
+// waitExitCode waits for cmd and returns its exit code, or -1 with errno set.
+func waitExitCode(t *TLS, cmd *exec.Cmd) int32 {
+	err := cmd.Wait()
+	if cmd.ProcessState == nil {
+		t.setErrno(startErrno(err))
+		return -1
+	}
+
+	return int32(cmd.ProcessState.Sys().(syscall.WaitStatus).ExitCode)
 }
 
 // var staticGetpwuid pwd.Passwd
@@ -1174,14 +1260,6 @@ func Xgetpwuid(t *TLS, uid uint32) uintptr {
 // 	p.Fpw_dir = cString(t, dir)
 // 	p.Fpw_shell = cString(t, shell)
 // }
-
-// int setvbuf(FILE *stream, char *buf, int mode, size_t size);
-func Xsetvbuf(t *TLS, stream, buf uintptr, mode int32, size types.Size_t) int32 {
-	if __ccgo_strace {
-		trc("t=%v buf=%v mode=%v size=%v, (%v:)", t, buf, mode, size, origin(2))
-	}
-	return 0 //TODO
-}
 
 // int raise(int sig);
 func Xraise(t *TLS, sig int32) int32 {
@@ -1647,14 +1725,21 @@ func Xtzset(t *TLS) {
 	//TODO
 }
 
-var strerrorBuf [256]byte
+var strerrorBuf [64]byte
 
 // char *strerror(int errnum);
+//
+// strerror returns the UCRT's message for errnum, or "Unknown error".
 func Xstrerror(t *TLS, errnum int32) uintptr {
 	if __ccgo_strace {
 		trc("t=%v errnum=%v, (%v:)", t, errnum, origin(2))
 	}
-	copy((*RawMem)(unsafe.Pointer(&strerrorBuf[0]))[:len(strerrorBuf):len(strerrorBuf)], fmt.Sprintf("errno %d\x00", errnum))
+	s, ok := strerrorTexts[errnum]
+	if !ok {
+		s = "Unknown error"
+	}
+	n := copy(strerrorBuf[:len(strerrorBuf)-1], s)
+	strerrorBuf[n] = 0
 	return uintptr(unsafe.Pointer(&strerrorBuf[0]))
 }
 
@@ -1695,11 +1780,12 @@ func Xperror(tls *TLS, msg uintptr) {
 	if __ccgo_strace {
 		trc("tls=%v msg=%v, (%v:)", tls, msg, origin(2))
 	}
+	var s string
 	if msg != 0 && *(*int8)(unsafe.Pointer(msg)) != 0 {
-		fmt.Fprintf(os.Stderr, "%s: ", GoString(msg))
+		s = GoString(msg) + ": "
 	}
 	errstr := Xstrerror(tls, *(*int32)(unsafe.Pointer(X__errno_location(tls))))
-	fmt.Fprintf(os.Stderr, "%s\n", GoString(errstr))
+	fwrite(unistd.STDERR_FILENO, []byte(s+GoString(errstr)+"\n"))
 }
 
 // int pclose(FILE *stream);
@@ -1846,11 +1932,18 @@ func Xrealpath(t *TLS, path, resolved_path uintptr) uintptr {
 // 	return uintptr(unsafe.Pointer(&in6_addr_any))
 // }
 
+// void abort(void);
+//
+// abort ends the process with exit code 3, as the C runtime documents it,
+// without running the atexit handlers.
 func Xabort(t *TLS) {
 	if __ccgo_strace {
 		trc("t=%v, (%v:)", t, origin(2))
 	}
-	panic(todo(""))
+	if dmesgs {
+		dmesg("%v:\n%s", origin(1), debug.Stack())
+	}
+	os.Exit(3)
 	// 	if dmesgs {
 	// 		dmesg("%v:\n%s", origin(1), debug.Stack())
 	// 	}
@@ -1869,20 +1962,38 @@ func Xabort(t *TLS) {
 }
 
 // int fflush(FILE *stream);
+//
+// fflush writes out what the stream buffered, or what all streams buffered
+// when stream is NULL. It is not fsync: FlushFileBuffers would wait for the
+// disk, fail on devices such as NUL and block on a pipe until its reader has
+// read everything.
 func Xfflush(t *TLS, stream uintptr) int32 {
 	if __ccgo_strace {
 		trc("t=%v stream=%v, (%v:)", t, stream, origin(2))
 	}
+	if stream == 0 {
+		if err := flushAll(false); err != nil {
+			t.setErrno(err)
+			return stdio.EOF
+		}
+
+		return 0
+	}
+
 	f, ok := winGetObject(stream).(*file)
 	if !ok {
 		t.setErrno(errno.EBADF)
-		return -1
+		return stdio.EOF
 	}
-	err := windows.FlushFileBuffers(f.Handle)
-	if err != nil {
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if err := f.flush(); err != nil {
 		t.setErrno(err)
-		return -1
+		return stdio.EOF
 	}
+
 	return 0
 }
 
@@ -1902,24 +2013,13 @@ func Xfread(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) types
 
 	var sz = size * nmemb
 	var obuf = ((*RawMem)(unsafe.Pointer(ptr)))[:sz]
-	var n int
-	if c := f.unget; c >= 0 {
-		f.unget = -1
-		obuf[0] = byte(c)
-		n = 1
-		obuf = obuf[1:]
-	}
-	if len(obuf) != 0 {
-		m, err := windows.Read(f.Handle, obuf)
-		if err != nil {
-			f.setErr()
-			return 0
-		}
+	f.mu.Lock()
+	defer f.mu.Unlock()
 
-		n += m
-	}
-	if types.Size_t(n) < sz {
-		f.eof = true
+	n, err := f.read(obuf)
+	if err != nil {
+		f.setErr()
+		t.setErrno(err)
 	}
 
 	if dmesgs {
@@ -1946,10 +2046,13 @@ func Xfwrite(t *TLS, ptr uintptr, size, nmemb types.Size_t, stream uintptr) type
 
 	var sz = size * nmemb
 	var obuf = ((*RawMem)(unsafe.Pointer(ptr)))[:sz]
-	n, err := windows.Write(f.Handle, obuf)
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	n, err := f.put(obuf)
 	if err != nil {
 		f.setErr()
-		return 0
+		t.setErrno(err)
 	}
 
 	if dmesgs {
@@ -1969,6 +2072,10 @@ func Xfclose(t *TLS, stream uintptr) int32 {
 		t.setErrno(errno.EBADF)
 		return -1
 	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	return f.close(t)
 }
 
@@ -1982,7 +2089,12 @@ func Xfputc(t *TLS, c int32, stream uintptr) int32 {
 		t.setErrno(errno.EBADF)
 		return -1
 	}
-	if _, err := fwrite(f._fd, []byte{byte(c)}); err != nil {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if _, err := f.put([]byte{byte(c)}); err != nil {
+		f.setErr()
+		t.setErrno(err)
 		return -1
 	}
 	return int32(byte(c))
@@ -1998,8 +2110,18 @@ func Xfseek(t *TLS, stream uintptr, offset long, whence int32) int32 {
 		t.setErrno(errno.EBADF)
 		return -1
 	}
-	f.eof = false
-	f.unget = -1
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if err := f.flush(); err != nil {
+		t.setErrno(err)
+		return -1
+	}
+
+	if whence == unistd.SEEK_CUR {
+		offset -= long(f.unread())
+	}
+	f.rbuf, f.rpos, f.unget, f.eof = f.rbuf[:0], 0, -1, false
 	if n := Xlseek(t, f._fd, types.Off_t(offset), whence); n < 0 {
 		if dmesgs {
 			dmesg("%v: fd %v, off %#x, whence %v: %v", origin(1), f._fd, offset, whenceStr(whence), n)
@@ -2025,11 +2147,16 @@ func Xftell(t *TLS, stream uintptr) long {
 		return -1
 	}
 
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	n := Xlseek(t, f._fd, 0, windows.FILE_CURRENT)
 	if n < 0 {
 		f.setErr()
 		return -1
 	}
+
+	n += types.Off_t(len(f.wbuf) - f.unread())
 
 	if dmesgs {
 		dmesg("%v: fd %v, n %#x: ok %#x", origin(1), f._fd, n, long(n))
@@ -2048,6 +2175,9 @@ func Xferror(t *TLS, stream uintptr) int32 {
 		return -1
 	}
 
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	return Bool32(f.err())
 }
 
@@ -2062,18 +2192,17 @@ func Xfgetc(t *TLS, stream uintptr) int32 {
 		return stdio.EOF
 	}
 
-	if c := f.unget; c >= 0 {
-		f.unget = -1
-		return c
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	c, err := f.getc()
+	if err != nil {
+		f.setErr()
+		t.setErrno(err)
+		return stdio.EOF
 	}
 
-	var buf [1]byte
-	if n, _ := windows.Read(f.Handle, buf[:]); n != 0 {
-		return int32(buf[0])
-	}
-
-	f.eof = true
-	return stdio.EOF
+	return c
 }
 
 // int ungetc(int c, FILE *stream);
@@ -2082,7 +2211,14 @@ func Xungetc(t *TLS, c int32, stream uintptr) int32 {
 		trc("t=%v c=%v stream=%v, (%v:)", t, c, stream, origin(2))
 	}
 	f, ok := winGetObject(stream).(*file)
-	if !ok || c == stdio.EOF || f.unget >= 0 {
+	if !ok || c == stdio.EOF {
+		return stdio.EOF
+	}
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.unget >= 0 {
 		return stdio.EOF
 	}
 
@@ -2102,6 +2238,9 @@ func Xfeof(t *TLS, stream uintptr) int32 {
 		return 0
 	}
 
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
 	return Bool32(f.eof)
 }
 
@@ -2111,8 +2250,10 @@ func Xclearerr(t *TLS, stream uintptr) {
 		trc("t=%v stream=%v, (%v:)", t, stream, origin(2))
 	}
 	if f, ok := winGetObject(stream).(*file); ok {
+		f.mu.Lock()
 		f.hadErr = false
 		f.eof = false
+		f.mu.Unlock()
 	}
 }
 
@@ -2134,8 +2275,13 @@ func Xfputs(t *TLS, s, stream uintptr) int32 {
 		t.setErrno(errno.EBADF)
 		return -1
 	}
-	gS := GoString(s)
-	if _, err := fwrite(f._fd, []byte(gS)); err != nil {
+	b := []byte(GoString(s))
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if _, err := f.put(b); err != nil {
+		f.setErr()
+		t.setErrno(err)
 		return -1
 	}
 	return 0
@@ -2322,7 +2468,7 @@ func X__acrt_iob_func(t *TLS, fd uint32) uintptr {
 
 	f, ok := fdToFile(int32(fd))
 	if !ok {
-		t.setErrno(EBADF)
+		t.setErrno(errno.EBADF)
 		return 0
 	}
 	return f.t
@@ -2543,11 +2689,7 @@ func XGetLastError(t *TLS) uint32 {
 	if __ccgo_strace {
 		trc("t=%v, (%v:)", t, origin(2))
 	}
-	var rv = *(*int32)(unsafe.Pointer(t.errnop))
-	return uint32(rv)
-
-	//r1, _, _ := procGetLastError.Call(0, 0, 0)
-	//return uint32(r1)
+	return t.lastError
 }
 
 // DWORD SetFilePointer(
@@ -3602,11 +3744,31 @@ func X_InterlockedCompareExchange(t *TLS, Destination uintptr, Exchange, Compara
 }
 
 // int rename(const char *oldpath, const char *newpath);
+//
+// rename does what the UCRT's does: it fails with EEXIST if newpath exists, and
+// moves a file to another volume by copying it.
 func Xrename(t *TLS, oldpath, newpath uintptr) int32 {
 	if __ccgo_strace {
 		trc("t=%v newpath=%v, (%v:)", t, newpath, origin(2))
 	}
-	panic(todo(""))
+	from, err := windows.UTF16PtrFromString(GoString(oldpath))
+	if err != nil {
+		t.setErrno(errno.EINVAL)
+		return -1
+	}
+
+	to, err := windows.UTF16PtrFromString(GoString(newpath))
+	if err != nil {
+		t.setErrno(errno.EINVAL)
+		return -1
+	}
+
+	if err := windows.MoveFileEx(from, to, windows.MOVEFILE_COPY_ALLOWED); err != nil {
+		t.setErrno(err)
+		return -1
+	}
+
+	return 0
 }
 
 // BOOL AreFileApisANSI();
@@ -3732,7 +3894,17 @@ func XFormatMessageA(t *TLS, dwFlagsAndAttributes uint32, lpSource uintptr, dwMe
 	if __ccgo_strace {
 		trc("t=%v dwFlagsAndAttributes=%v lpSource=%v dwLanguageId=%v lpBuffer=%v nSize=%v Arguments=%v, (%v:)", t, dwFlagsAndAttributes, lpSource, dwLanguageId, lpBuffer, nSize, Arguments, origin(2))
 	}
-	panic(todo(""))
+	r0, _, e1 := procFormatMessageA.Call(uintptr(dwFlagsAndAttributes), lpSource, uintptr(dwMessageId), uintptr(dwLanguageId),
+		lpBuffer, uintptr(nSize), Arguments)
+	n := uint32(r0)
+	if n == 0 {
+		if e1 != windows.NOERROR {
+			t.setErrno(e1)
+		} else {
+			t.setErrno(errno.EINVAL)
+		}
+	}
+	return n
 }
 
 // DWORD FormatMessageW(
@@ -3768,7 +3940,12 @@ func XFreeLibrary(t *TLS, hLibModule uintptr) int32 {
 	if __ccgo_strace {
 		trc("t=%v hLibModule=%v, (%v:)", t, hLibModule, origin(2))
 	}
-	panic(todo(""))
+	if err := windows.FreeLibrary(windows.Handle(hLibModule)); err != nil {
+		t.setErrno(err)
+		return 0
+	}
+
+	return 1
 }
 
 // DWORD GetCurrentProcessId();
@@ -5395,8 +5572,22 @@ func XlstrcmpiA(t *TLS, lpString1, lpString2 uintptr) int32 {
 	return int32(strings.Compare(s1, s2))
 }
 
-func XGetModuleFileNameA(t *TLS, _ ...interface{}) int32 {
-	panic(todo(""))
+// DWORD GetModuleFileNameA(
+//
+//	HMODULE hModule,
+//	LPSTR   lpFilename,
+//	DWORD   nSize
+//
+// );
+func XGetModuleFileNameA(t *TLS, hModule, lpFilename uintptr, nSize uint32) uint32 {
+	if __ccgo_strace {
+		trc("t=%v hModule=%v lpFilename=%v nSize=%v, (%v:)", t, hModule, lpFilename, nSize, origin(2))
+	}
+	r0, _, err := procGetModuleFileNameA.Call(hModule, lpFilename, uintptr(nSize))
+	if r0 == 0 || uint32(r0) == nSize {
+		t.setErrno(err)
+	}
+	return uint32(r0)
 }
 
 // UINT GetACP();
@@ -6190,11 +6381,15 @@ func Xputchar(t *TLS, c int32) int32 {
 //	unsigned line
 //
 // );
+//
+// _assert reports a failed assert as the UCRT does in a console program, on
+// stderr, and calls abort.
 func X_assert(t *TLS, message, filename uintptr, line uint32) {
 	if __ccgo_strace {
 		trc("t=%v filename=%v line=%v, (%v:)", t, filename, line, origin(2))
 	}
-	panic(todo(""))
+	fmt.Fprintf(os.Stderr, "Assertion failed: %s, file %s, line %d\n", GoString(message), GoString(filename), line)
+	Xabort(t)
 }
 
 // char *strdup(const char *s);
@@ -6353,11 +6548,72 @@ func XGetConsoleScreenBufferInfo(t *TLS, hConsoleOutput, lpConsoleScreenBufferIn
 //	const char *mode
 //
 // );
+//
+// _popen runs command as system does, with %COMSPEC% /c, and returns a stream
+// reading its standard output, for mode "r", or writing its standard input, for
+// mode "w". A "b" or "t" may follow; the streams are binary either way.
 func X_popen(t *TLS, command, mode uintptr) uintptr {
 	if __ccgo_strace {
 		trc("t=%v mode=%v, (%v:)", t, mode, origin(2))
 	}
-	panic(todo(""))
+	var read bool
+	switch GoString(mode) {
+	case "r", "rb", "rt":
+		read = true
+	case "w", "wb", "wt":
+	default:
+		t.setErrno(errno.EINVAL)
+		return 0
+	}
+
+	if command == 0 {
+		t.setErrno(errno.EINVAL)
+		return 0
+	}
+
+	cmd, err := shellCommand(GoString(command))
+	if err != nil {
+		t.setErrno(errno.ENOENT)
+		return 0
+	}
+
+	pr, pw, err := os.Pipe()
+	if err != nil {
+		t.setErrno(err)
+		return 0
+	}
+
+	ours, theirs := pw, pr
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = pr, os.Stdout, os.Stderr
+	if read {
+		ours, theirs = pr, pw
+		cmd.Stdin, cmd.Stdout = os.Stdin, pw
+	}
+	// The stream gets a handle of its own, so the *os.File can be closed now
+	// and fclose can close the handle.
+	var h windows.Handle
+	p := windows.CurrentProcess()
+	err = windows.DuplicateHandle(p, windows.Handle(ours.Fd()), p, &h, 0, false, windows.DUPLICATE_SAME_ACCESS)
+	ours.Close()
+	if err != nil {
+		theirs.Close()
+		t.setErrno(err)
+		return 0
+	}
+
+	err = cmd.Start()
+	theirs.Close()
+	if err != nil {
+		windows.Close(h)
+		t.setErrno(startErrno(err))
+		return 0
+	}
+
+	stream, _ := wrapFdHandle(h)
+	f, _ := winGetObject(stream).(*file)
+	f.popen = cmd
+	f.noRead, f.noWrite = !read, read
+	return stream
 }
 
 // int _wunlink(
@@ -6405,12 +6661,31 @@ func X_unlink(t *TLS, filename uintptr) int32 {
 	panic(todo(""))
 }
 
-// int pclose(FILE *stream);
+// int _pclose(FILE *stream);
+//
+// _pclose closes a stream from _popen, waits for its command and returns the
+// exit code of the command processor.
 func X_pclose(t *TLS, stream uintptr) int32 {
 	if __ccgo_strace {
 		trc("t=%v stream=%v, (%v:)", t, stream, origin(2))
 	}
-	panic(todo(""))
+	f, ok := winGetObject(stream).(*file)
+	if !ok {
+		t.setErrno(errno.EINVAL)
+		return -1
+	}
+
+	f.mu.Lock()
+	cmd := f.popen
+	if cmd == nil {
+		f.mu.Unlock()
+		t.setErrno(errno.EINVAL)
+		return -1
+	}
+
+	f.close(t)
+	f.mu.Unlock()
+	return waitExitCode(t, cmd)
 }
 
 // int setmode (int fd, int mode);
@@ -6478,7 +6753,9 @@ func Xrewind(t *TLS, stream uintptr) {
 	if __ccgo_strace {
 		trc("t=%v stream=%v, (%v:)", t, stream, origin(2))
 	}
-	Xfseek(t, stream, 0, unistd.SEEK_SET)
+	if Xfseek(t, stream, 0, unistd.SEEK_SET) == 0 {
+		Xclearerr(t, stream)
+	}
 }
 
 // __atomic_load_n
@@ -7337,23 +7614,56 @@ func Xfdopen(t *TLS, fd int32, mode uintptr) uintptr {
 }
 
 // struct tm *_gmtime64( const __time64_t *sourceTime );
-func X_gmtime64(t *TLS, sourceTime uintptr) uintptr {
+func X_gmtime64(t *TLS, sourceTime uintptr) (r uintptr) {
 	if __ccgo_strace {
 		trc("t=%v sourceTime=%v, (%v:)", t, sourceTime, origin(2))
+		defer func() { trc("-> %v", r) }()
 	}
-	r0, _, err := procGmtime64.Call(uintptr(sourceTime))
-	if err != windows.NOERROR {
-		t.setErrno(err)
+	if x___secs_to_tm(t, *(*int64)(unsafe.Pointer(sourceTime)), uintptr(unsafe.Pointer(&_tm))) < 0 {
+		t.setErrno(errno.EOVERFLOW)
+		return 0
 	}
-	return uintptr(r0)
+
+	_tm.Ftm_isdst = 0
+	return uintptr(unsafe.Pointer(&_tm))
 }
 
 // __time64_t _mktime64(struct tm *timeptr);
-func X_mktime64(t *TLS, timeptr uintptr) time.X__time64_t {
+func X_mktime64(t *TLS, timeptr uintptr) (r time.X__time64_t) {
 	if __ccgo_strace {
 		trc("t=%v timeptr=%v, (%v:)", t, timeptr, origin(2))
+		defer func() { trc("-> %v", r) }()
 	}
-	return time.X__time64_t(Xmktime(t, timeptr))
+	u, ok := mktime(t, timeptr, false)
+	if !ok {
+		return -1
+	}
+
+	return time.X__time64_t(u)
+}
+
+// double _difftime64(__time64_t time1, __time64_t time0);
+func X_difftime64(t *TLS, time1, time0 int64) float64 {
+	if __ccgo_strace {
+		trc("t=%v time1=%v time0=%v, (%v:)", t, time1, time0, origin(2))
+	}
+	return float64(time1) - float64(time0)
+}
+
+// double _difftime32(__time32_t time1, __time32_t time0);
+func X_difftime32(t *TLS, time1, time0 int32) float64 {
+	if __ccgo_strace {
+		trc("t=%v time1=%v time0=%v, (%v:)", t, time1, time0, origin(2))
+	}
+	return float64(time1) - float64(time0)
+}
+
+// double difftime(time_t time1, time_t time0);
+func Xdifftime(t *TLS, time1, time0 types.Time_t) float64 {
+	if __ccgo_strace {
+		trc("t=%v time1=%v time0=%v, (%v:)", t, time1, time0, origin(2))
+	}
+	return float64(time1) - float64(time0)
 }
 
 // char * gai_strerrorA(int ecode);
@@ -7927,7 +8237,7 @@ func X_ctime64(tls *TLS, __Time uintptr) (r uintptr) {
 	}
 	r0, _, err := procCtime64.Call(__Time)
 	if err != windows.NOERROR {
-		tls.setErrno(int32(err.(windows.Errno)))
+		tls.setErrno(err)
 	}
 	return uintptr(r0)
 }
@@ -7938,11 +8248,27 @@ func X_time64(tls *TLS, __Time uintptr) (r int64) {
 		trc("_Time=%+v", __Time)
 		defer func() { trc(`X_time64->%+v`, r) }()
 	}
-	r0, _, err := procTime64.Call(__Time)
-	if err != windows.NOERROR {
-		tls.setErrno(int32(err.(windows.Errno)))
+	r = gotime.Now().Unix()
+	if __Time != 0 {
+		*(*int64)(unsafe.Pointer(__Time)) = r
 	}
-	return int64(r0)
+	return r
+}
+
+// time_t time(time_t *tloc);
+//
+// time_t has 32 bits on windows/386 here, as in the msvcrt headers. The UCRT
+// headers make it 64 bits there, and send time to _time64.
+func Xtime(t *TLS, tloc uintptr) (r types.Time_t) {
+	if __ccgo_strace {
+		trc("t=%v tloc=%v, (%v:)", t, tloc, origin(2))
+		defer func() { trc("-> %v", r) }()
+	}
+	r = types.Time_t(gotime.Now().Unix())
+	if tloc != 0 {
+		*(*types.Time_t)(unsafe.Pointer(tloc)) = r
+	}
+	return r
 }
 
 // __attribute__ ((__dllimport__)) int __attribute__((__cdecl__)) _strnicmp(const char *_Str1,const char *_Str2,size_t _MaxCount);
@@ -7953,7 +8279,7 @@ func X_strnicmp(tls *TLS, __Str1 uintptr, __Str2 uintptr, __MaxCount types.Size_
 	}
 	r0, _, err := procStrnicmp.Call(__Str1, __Str2, uintptr(__MaxCount))
 	if err != windows.NOERROR {
-		tls.setErrno(int32(err.(windows.Errno)))
+		tls.setErrno(err)
 	}
 	return int32(r0)
 }
@@ -7966,7 +8292,7 @@ func X__builtin_ctz(t *TLS, n uint32) int32 {
 func X_wfindfirst64i32(tls *TLS, filespec, fileinfo uintptr) (r types.Intptr_t) {
 	r0, _, err := procWfindfirst64i32.Call(filespec, fileinfo)
 	if err != windows.NOERROR {
-		tls.setErrno(int32(err.(windows.Errno)))
+		tls.setErrno(err)
 	}
 	return types.Intptr_t(r0)
 }
@@ -7975,7 +8301,7 @@ func X_wfindfirst64i32(tls *TLS, filespec, fileinfo uintptr) (r types.Intptr_t) 
 func X_wfindnext64i32(tls *TLS, handle types.Intptr_t, fileinfo uintptr) (r int32) {
 	r0, _, err := procWfindnext64i32.Call(uintptr(handle), fileinfo)
 	if err != windows.NOERROR {
-		tls.setErrno(int32(err.(windows.Errno)))
+		tls.setErrno(err)
 	}
 	return int32(r0)
 }
@@ -7990,7 +8316,7 @@ func X_wfindnext64i32(tls *TLS, handle types.Intptr_t, fileinfo uintptr) (r int3
 func X_wfullpath(tls *TLS, absPath, relPath uintptr, maxLength Tsize_t) (r uintptr) {
 	r0, _, err := procWfullpath.Call(absPath, relPath, uintptr(maxLength))
 	if err != windows.NOERROR {
-		tls.setErrno(int32(err.(windows.Errno)))
+		tls.setErrno(err)
 	}
 	return r0
 }
@@ -7999,7 +8325,7 @@ func X_wfullpath(tls *TLS, absPath, relPath uintptr, maxLength Tsize_t) (r uintp
 func X_wchmod(tls *TLS, filename uintptr, pmode int32) (r int32) {
 	r0, _, err := procWchmod.Call(filename, uintptr(pmode))
 	if err != windows.NOERROR {
-		tls.setErrno(int32(err.(windows.Errno)))
+		tls.setErrno(err)
 	}
 	return int32(r0)
 }
@@ -8008,7 +8334,7 @@ func X_wchmod(tls *TLS, filename uintptr, pmode int32) (r int32) {
 func X_wmkdir(tls *TLS, dirname uintptr) (r int32) {
 	r0, _, err := procWmkdir.Call(dirname)
 	if err != windows.NOERROR {
-		tls.setErrno(int32(err.(windows.Errno)))
+		tls.setErrno(err)
 	}
 	return int32(r0)
 }
@@ -8017,7 +8343,7 @@ func X_wmkdir(tls *TLS, dirname uintptr) (r int32) {
 func X_wstat64i32(tls *TLS, path, buffer uintptr) (r int32) {
 	r0, _, err := procWstat64i32.Call(path, buffer)
 	if err != windows.NOERROR {
-		tls.setErrno(int32(err.(windows.Errno)))
+		tls.setErrno(err)
 	}
 	return int32(r0)
 }
@@ -8026,7 +8352,7 @@ func X_wstat64i32(tls *TLS, path, buffer uintptr) (r int32) {
 func X_wfindfirst32(tls *TLS, filespec, fileinfo uintptr) (r types.Intptr_t) {
 	r0, _, err := procWfindfirst32.Call(filespec, fileinfo)
 	if err != windows.NOERROR {
-		tls.setErrno(int32(err.(windows.Errno)))
+		tls.setErrno(err)
 	}
 	return types.Intptr_t(r0)
 }
@@ -8035,7 +8361,7 @@ func X_wfindfirst32(tls *TLS, filespec, fileinfo uintptr) (r types.Intptr_t) {
 func X_wfindnext32(tls *TLS, handle types.Intptr_t, fileinfo uintptr) (r int32) {
 	r0, _, err := procWfindnext32.Call(uintptr(handle), fileinfo)
 	if err != windows.NOERROR {
-		tls.setErrno(int32(err.(windows.Errno)))
+		tls.setErrno(err)
 	}
 	return int32(r0)
 }
@@ -8044,7 +8370,7 @@ func X_wfindnext32(tls *TLS, handle types.Intptr_t, fileinfo uintptr) (r int32) 
 func X_wstat32(tls *TLS, path, buffer uintptr) (r int32) {
 	r0, _, err := procWstat32.Call(path, buffer)
 	if err != windows.NOERROR {
-		tls.setErrno(int32(err.(windows.Errno)))
+		tls.setErrno(err)
 	}
 	return int32(r0)
 }
@@ -8260,6 +8586,7 @@ func dup2(t *TLS, oldfd, newfd int32) int32 {
 	}
 
 	if old, ok := fdToFile(newfd); ok {
+		flushFile(old)
 		remFile(old)
 		windows.Close(old.Handle)
 	}
@@ -8302,6 +8629,7 @@ func WrapWindowsHandle(h windows.Handle) int32 {
 // descriptor closes h.
 func WrapWindowsHandleAt(h windows.Handle, fd int32) {
 	if old, ok := fdToFile(fd); ok {
+		flushFile(old)
 		remFile(old)
 	}
 	addFile(h, fd)
@@ -8321,6 +8649,11 @@ func ReleaseWindowsHandle(fd int32) (windows.Handle, bool) {
 		return windows.InvalidHandle, false
 	}
 
+	flushFile(f)
 	remFile(f)
 	return f.Handle, true
 }
+
+// tmSetZone would set the zone fields of tm, which this struct tm does not
+// have.
+func tmSetZone(tm *time.Tm, name string, off int) {}

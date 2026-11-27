@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Quad4-Software/Reticulum-Go/pkg/interfaces"
-	rlink "github.com/Quad4-Software/Reticulum-Go/pkg/link"
+	"git.quad4.io/reticulum/Reticulum-Go/pkg/interfaces"
+	rlink "git.quad4.io/reticulum/Reticulum-Go/pkg/link"
 )
 
 func TestBitrateWindowMatchesPathExchangeFormula(t *testing.T) {

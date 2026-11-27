@@ -8,9 +8,11 @@ import (
 	"log/slog"
 	"maps"
 	"net"
+	"net/http"
 	"sync"
 	"sync/atomic"
 
+	"github.com/quic-go/qpack"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3/qlog"
 	"github.com/quic-go/quic-go/qlogwriter"
@@ -32,6 +34,9 @@ type rawConn struct {
 
 	enableDatagrams bool
 
+	decoder             *qpack.Decoder
+	maxFieldSectionSize int // the SETTINGS_MAX_FIELD_SECTION_SIZE we send
+
 	streamMx sync.Mutex
 	streams  map[quic.StreamID]*stateTrackingStream
 
@@ -45,32 +50,82 @@ type rawConn struct {
 	settings         *Settings
 	receivedSettings chan struct{}
 
-	qlogger   qlogwriter.Recorder
-	qloggerWG sync.WaitGroup // tracks goroutines that may produce qlog events
+	qlogger          qlogwriter.Recorder
+	qloggerMx        sync.Mutex
+	qloggerProducers int // the open connection, and goroutines and calls that may produce qlog events
 }
 
 func newRawConn(
 	quicConn *quic.Conn,
 	enableDatagrams bool,
+	maxFieldSectionSize int,
 	onStreamsEmpty func(),
 	controlStrHandler func(*quic.ReceiveStream, *frameParser),
 	qlogger qlogwriter.Recorder,
 	logger *slog.Logger,
 ) *rawConn {
 	c := &rawConn{
-		conn:              quicConn,
-		logger:            logger,
-		enableDatagrams:   enableDatagrams,
-		receivedSettings:  make(chan struct{}),
-		streams:           make(map[quic.StreamID]*stateTrackingStream),
-		qlogger:           qlogger,
-		onStreamsEmpty:    onStreamsEmpty,
-		controlStrHandler: controlStrHandler,
+		conn:                quicConn,
+		logger:              logger,
+		enableDatagrams:     enableDatagrams,
+		decoder:             qpack.NewDecoder(),
+		maxFieldSectionSize: maxFieldSectionSize,
+		receivedSettings:    make(chan struct{}),
+		streams:             make(map[quic.StreamID]*stateTrackingStream),
+		qlogger:             qlogger,
+		qloggerProducers:    1,
+		onStreamsEmpty:      onStreamsEmpty,
+		controlStrHandler:   controlStrHandler,
 	}
 	if qlogger != nil {
-		context.AfterFunc(quicConn.Context(), c.closeQlogger)
+		context.AfterFunc(quicConn.Context(), c.RemoveQlogProducer)
 	}
 	return c
+}
+
+// ReadRequestHeader reads and decodes the request header section of hf from r.
+// A non-nil fields collects the decoded fields.
+func (c *rawConn) ReadRequestHeader(r io.Reader, hf *headersFrame, fields *[]qpack.HeaderField) (*http.Request, error) {
+	b, err := c.readFieldSection(r, hf)
+	if err != nil {
+		return nil, err
+	}
+	return requestFromHeaders(c.decoder.Decode(b), c.maxFieldSectionSize, fields)
+}
+
+// ReadResponseHeader reads and decodes the response header section of hf from r.
+// A non-nil fields collects the decoded fields.
+func (c *rawConn) ReadResponseHeader(r io.Reader, hf *headersFrame, fields *[]qpack.HeaderField) (*http.Response, error) {
+	b, err := c.readFieldSection(r, hf)
+	if err != nil {
+		return nil, err
+	}
+	rsp := &http.Response{}
+	if err := updateResponseFromHeaders(rsp, c.decoder.Decode(b), c.maxFieldSectionSize, fields); err != nil {
+		return nil, err
+	}
+	return rsp, nil
+}
+
+// ReadTrailer reads and decodes the trailer section of hf from r.
+// A non-nil fields collects the decoded fields.
+func (c *rawConn) ReadTrailer(r io.Reader, hf *headersFrame, fields *[]qpack.HeaderField) (http.Header, error) {
+	b, err := c.readFieldSection(r, hf)
+	if err != nil {
+		return nil, err
+	}
+	return parseTrailers(c.decoder.Decode(b), c.maxFieldSectionSize, fields)
+}
+
+func (c *rawConn) readFieldSection(r io.Reader, hf *headersFrame) ([]byte, error) {
+	if hf.Length > uint64(c.maxFieldSectionSize) {
+		return nil, &fieldSectionReadError{fmt.Errorf("%w: %d bytes (max: %d)", errHeadersFrameTooLarge, hf.Length, c.maxFieldSectionSize)}
+	}
+	b, err := readHeaderBlock(r, hf.Length)
+	if err != nil {
+		return nil, &fieldSectionReadError{err}
+	}
+	return b, nil
 }
 
 func (c *rawConn) OpenUniStream() (*quic.SendStream, error) {
@@ -80,8 +135,8 @@ func (c *rawConn) OpenUniStream() (*quic.SendStream, error) {
 // openControlStream opens the control stream and sends the SETTINGS frame.
 // It returns the control stream (needed by the server for sending GOAWAY later).
 func (c *rawConn) openControlStream(settings *settingsFrame) (*quic.SendStream, error) {
-	c.qloggerWG.Add(1)
-	defer c.qloggerWG.Done()
+	c.AddQlogProducer()
+	defer c.RemoveQlogProducer()
 
 	str, err := c.conn.OpenUniStream()
 	if err != nil {
@@ -91,19 +146,26 @@ func (c *rawConn) openControlStream(settings *settingsFrame) (*quic.SendStream, 
 	b = quicvarint.Append(b, streamTypeControlStream)
 	b = settings.Append(b)
 	if c.qlogger != nil {
+		c.qlogger.RecordEvent(qlog.StreamTypeSet{
+			Initiator:  qlog.InitiatorLocal,
+			StreamID:   str.StreamID(),
+			StreamType: qlog.StreamTypeControl,
+		})
 		sf := qlog.SettingsFrame{
 			MaxFieldSectionSize: settings.MaxFieldSectionSize,
+			Datagram:            -1,
+			ExtendedConnect:     -1,
 			Other:               maps.Clone(settings.Other),
 		}
 		if settings.Datagram {
-			sf.Datagram = new(true)
+			sf.Datagram = 1
 		}
 		if settings.ExtendedConnect {
-			sf.ExtendedConnect = new(true)
+			sf.ExtendedConnect = 1
 		}
 		c.qlogger.RecordEvent(qlog.FrameCreated{
 			StreamID: str.StreamID(),
-			Raw:      qlog.RawInfo{Length: len(b)},
+			Raw:      qlog.RawInfo{Length: len(b), PayloadLength: qlog.OmitLength},
 			Frame:    qlog.Frame{Frame: sf},
 		})
 	}
@@ -118,7 +180,6 @@ func (c *rawConn) TrackStream(str *quic.Stream) *stateTrackingStream {
 
 	c.streamMx.Lock()
 	c.streams[str.StreamID()] = hstr
-	c.qloggerWG.Add(1)
 	c.streamMx.Unlock()
 	return hstr
 }
@@ -130,6 +191,16 @@ func (c *rawConn) UpdateStreamPriority(id quic.StreamID, urgency int8, increment
 	// A PRIORITY_UPDATE can arrive before its request stream. We deliberately ignore such reordered frames.
 	if str != nil {
 		str.SetPriority(urgency, incremental)
+	}
+}
+
+// RejectDatagrams makes HTTP Datagrams received for the stream abort it.
+func (c *rawConn) RejectDatagrams(id quic.StreamID) {
+	c.streamMx.Lock()
+	str := c.streams[id]
+	c.streamMx.Unlock()
+	if str != nil {
+		str.RejectDatagrams()
 	}
 }
 
@@ -145,16 +216,13 @@ func (c *rawConn) clearStream(id quic.StreamID) {
 	c.streamMx.Lock()
 	defer c.streamMx.Unlock()
 
-	if _, ok := c.streams[id]; ok {
-		delete(c.streams, id)
-		c.qloggerWG.Done()
-	}
+	delete(c.streams, id)
 	if len(c.streams) == 0 {
 		c.onStreamsEmpty()
 	}
 }
 
-func (c *rawConn) hasActiveStreams() bool {
+func (c *rawConn) HasActiveStreams() bool {
 	c.streamMx.Lock()
 	defer c.streamMx.Unlock()
 
@@ -166,8 +234,10 @@ func (c *rawConn) CloseWithError(code quic.ApplicationErrorCode, msg string) err
 }
 
 func (c *rawConn) handleUnidirectionalStream(str *quic.ReceiveStream, isServer bool) {
-	c.qloggerWG.Add(1)
-	defer c.qloggerWG.Done()
+	// HTTP/3 handles this stream, so the peer can replace it as soon as it completes.
+	str.ReleaseStreamCredit()
+	c.AddQlogProducer()
+	defer c.RemoveQlogProducer()
 
 	streamType, err := quicvarint.Read(quicvarint.NewReader(str))
 	if err != nil {
@@ -175,6 +245,14 @@ func (c *rawConn) handleUnidirectionalStream(str *quic.ReceiveStream, isServer b
 			c.logger.Debug("reading stream type on stream failed", "stream ID", str.StreamID(), "error", err)
 		}
 		return
+	}
+	if c.qlogger != nil {
+		c.qlogger.RecordEvent(qlog.StreamTypeSet{
+			Initiator:       qlog.InitiatorRemote,
+			StreamID:        str.StreamID(),
+			StreamType:      qlogStreamType(streamType),
+			StreamTypeBytes: streamType,
+		})
 	}
 	// We're only interested in the control stream here.
 	switch streamType {
@@ -247,12 +325,14 @@ func (c *rawConn) handleControlStream(str *quic.ReceiveStream) {
 			c.CloseWithError(quic.ApplicationErrorCode(ErrCodeSettingsError), "missing QUIC Datagram support")
 			return
 		}
-		c.qloggerWG.Go(func() {
+		c.AddQlogProducer()
+		go func() {
+			defer c.RemoveQlogProducer()
 			err := c.receiveDatagrams()
 			if c.logger != nil {
 				c.logger.Debug("receiving datagrams failed", "error", err)
 			}
-		})
+		}()
 	}
 
 	c.controlStrHandler(str, fp)
@@ -319,12 +399,47 @@ func (c *rawConn) ReceivedSettings() <-chan struct{} { return c.receivedSettings
 // It is only valid to call this function after the channel returned by ReceivedSettings was closed.
 func (c *rawConn) Settings() *Settings { return c.settings }
 
-// closeQlogger waits for all goroutines that may produce qlog events to finish,
-// then closes the qlogger.
-func (c *rawConn) closeQlogger() {
-	if c.qlogger == nil {
+// WaitForExtendedConnect blocks until the peer's SETTINGS were received.
+// It returns an error if the peer didn't enable Extended CONNECT.
+func (c *rawConn) WaitForExtendedConnect(ctx context.Context) error {
+	connCtx := c.conn.Context()
+	select {
+	case <-c.receivedSettings:
+	case <-connCtx.Done():
+		return context.Cause(connCtx)
+	case <-ctx.Done():
+		return context.Cause(ctx)
+	}
+	if !c.settings.EnableExtendedConnect {
+		return errors.New("http3: server didn't enable Extended CONNECT")
+	}
+	return nil
+}
+
+// AddQlogProducer registers a goroutine or call that may produce qlog events.
+// It returns false once the qlogger has been closed.
+func (c *rawConn) AddQlogProducer() bool {
+	c.qloggerMx.Lock()
+	defer c.qloggerMx.Unlock()
+
+	if c.qloggerProducers == 0 {
+		return false
+	}
+	c.qloggerProducers++
+	return true
+}
+
+// RemoveQlogProducer closes the qlogger when the last producer is removed.
+func (c *rawConn) RemoveQlogProducer() {
+	c.qloggerMx.Lock()
+	defer c.qloggerMx.Unlock()
+
+	if c.qloggerProducers == 0 {
 		return
 	}
-	c.qloggerWG.Wait()
-	c.qlogger.Close()
+	c.qloggerProducers--
+	if c.qloggerProducers == 0 {
+		// Closing might block until the trace was written. No producer can be added anymore.
+		go c.qlogger.Close()
+	}
 }

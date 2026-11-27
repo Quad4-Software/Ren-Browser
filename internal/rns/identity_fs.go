@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Quad4-Software/Reticulum-Go/pkg/identity"
+	"git.quad4.io/reticulum/Reticulum-Go/pkg/identity"
 )
 
 func openStorageRoot(storageDir string) (*os.Root, error) {
@@ -26,7 +26,7 @@ func readStorageFile(storageDir, name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 	return root.ReadFile(name)
 }
 
@@ -47,7 +47,7 @@ func atomicWriteStorageFile(storageDir, name string, data []byte, perm os.FileMo
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 	return atomicWriteRootFile(root, name, data, perm)
 }
 
@@ -59,7 +59,7 @@ func readIdentityKeyBytes(storageDir, id string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 	data, err := root.ReadFile(id)
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func writeIdentityToStorage(storageDir, id string, ident *identity.Identity) err
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 	return root.WriteFile(id, privateKey, 0o600)
 }
 
@@ -105,7 +105,7 @@ func removeIdentityKeyStorage(storageDir, id string) error {
 	if err != nil {
 		return err
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 	if err := root.Remove(id); err != nil && !os.IsNotExist(err) {
 		return err
 	}
@@ -132,6 +132,6 @@ func atomicWriteExportFile(destPath string, data []byte) error {
 	if err != nil {
 		return fmt.Errorf("open export directory: %w", err)
 	}
-	defer root.Close()
+	defer func() { _ = root.Close() }()
 	return atomicWriteRootFile(root, name, data, 0o600)
 }

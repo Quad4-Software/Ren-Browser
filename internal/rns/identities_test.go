@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Quad4-Software/Reticulum-Go/pkg/identity"
+	"git.quad4.io/reticulum/Reticulum-Go/pkg/identity"
 )
 
 func TestOpenIdentityRegistryCreatesDefault(t *testing.T) {

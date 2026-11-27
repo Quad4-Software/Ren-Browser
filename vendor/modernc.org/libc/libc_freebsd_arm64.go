@@ -6,7 +6,6 @@ package libc // import "modernc.org/libc"
 
 import (
 	"strings"
-	gotime "time"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
@@ -21,10 +20,6 @@ import (
 type (
 	long  = int64
 	ulong = uint64
-)
-
-var (
-	startTime = gotime.Now() // For clock(3)
 )
 
 // int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
@@ -240,19 +235,6 @@ func Xchmod(t *TLS, pathname uintptr, mode types.Mode_t) int32 {
 		dmesg("%v: %q %#o: ok", origin(1), GoString(pathname), mode)
 	}
 	return 0
-}
-
-// time_t time(time_t *tloc);
-func Xtime(t *TLS, tloc uintptr) time.Time_t {
-	if __ccgo_strace {
-		trc("t=%v tloc=%v, (%v:)", t, tloc, origin(2))
-	}
-	panic(todo(""))
-	// n := time.Now().UTC().Unix()
-	// if tloc != 0 {
-	// 	*(*types.Time_t)(unsafe.Pointer(tloc)) = types.Time_t(n)
-	// }
-	// return types.Time_t(n)
 }
 
 // int utimes(const char *filename, const struct timeval times[2]);
@@ -887,14 +869,6 @@ func Xrewinddir(tls *TLS, f uintptr) {
 		trc("tls=%v f=%v, (%v:)", tls, f, origin(2))
 	}
 	Xfseek(tls, f, 0, stdio.SEEK_SET)
-}
-
-// clock_t clock(void);
-func Xclock(t *TLS) time.Clock_t {
-	if __ccgo_strace {
-		trc("t=%v, (%v:)", t, origin(2))
-	}
-	return time.Clock_t(gotime.Since(startTime) * gotime.Duration(time.CLOCKS_PER_SEC) / gotime.Second)
 }
 
 // setTmGmtoff stores off into tm.Ftm_gmtoff at the platform-native width.

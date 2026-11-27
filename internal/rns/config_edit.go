@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Quad4-Software/Reticulum-Go/pkg/common"
-	"github.com/Quad4-Software/Reticulum-Go/pkg/reticulumconfig"
+	"git.quad4.io/reticulum/Reticulum-Go/pkg/common"
+	"git.quad4.io/reticulum/Reticulum-Go/pkg/reticulumconfig"
 
 	"renbrowser/internal/brand"
 	"renbrowser/internal/paths"
@@ -158,7 +158,7 @@ func loadConfigFromText(text string) (*common.ReticulumConfig, error) {
 		return nil, err
 	}
 	path := tmp.Name()
-	defer os.Remove(path)
+	defer func() { _ = os.Remove(path) }()
 
 	if _, err := tmp.WriteString(text); err != nil {
 		_ = tmp.Close()

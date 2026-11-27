@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Quad4-Software/Reticulum-Go/pkg/common"
+	"git.quad4.io/reticulum/Reticulum-Go/pkg/common"
 )
 
 func TestDeleteInterface(t *testing.T) {
@@ -16,7 +16,7 @@ func TestDeleteInterface(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer stack.Stop()
+	defer func() { _ = stack.Stop() }()
 
 	// Add a test interface
 	stack.mu.Lock()
